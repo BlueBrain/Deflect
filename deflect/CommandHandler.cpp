@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,59 +37,54 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENT_H
-#define DEFLECT_PIXELSTREAMSEGMENT_H
+#include "CommandHandler.h"
 
-#include <deflect/PixelStreamSegmentParameters.h>
+#include "Command.h"
+#include "AbstractCommandHandler.h"
 
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
-
-#include <QByteArray>
+#include <iostream>
 
 namespace deflect
 {
 
-/**
- * Image data and parameters for a single segment of a PixelStream.
- */
-struct PixelStreamSegment
+CommandHandler::CommandHandler()
 {
-    /** Parameters of the segment. */
-    PixelStreamSegmentParameters parameters;
-
-    /** Image data of the segment. */
-    QByteArray imageData;
-
-private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void save(Archive & ar, const unsigned int) const
-    {
-        ar & parameters;
-
-        int size = imageData.size();
-        ar & size;
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), imageData.size());
-    }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int)
-    {
-        ar & parameters;
-
-        int size = 0;
-        ar & size;
-        imageData.resize(size);
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), size);
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
-};
-
 }
 
-#endif
+CommandHandler::~CommandHandler()
+{
+    for(CommandHandlerMap::iterator it = handlers_.begin(); it != handlers_.end(); ++it)
+        delete it->second;
+}
+
+void CommandHandler::registerCommandHandler(AbstractCommandHandler* handler)
+{
+    unregisterCommandHandler(handler->getType());
+    handlers_[handler->getType()] = handler;
+}
+
+void CommandHandler::unregisterCommandHandler(CommandType type)
+{
+    if (handlers_.count(type))
+    {
+        delete handlers_[type];
+        handlers_.erase(type);
+    }
+}
+
+void CommandHandler::process(const QString command, const QString parentWindowUri)
+{
+    Command commandObject(command);
+
+    if (handlers_.count(commandObject.getType()))
+    {
+        handlers_[commandObject.getType()]->handle(command, parentWindowUri);
+    }
+    else
+    {
+        std::cerr << "No handler for command: " << command.toStdString()
+                  << std::endl;
+    }
+}
+
+}

@@ -37,59 +37,99 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENT_H
-#define DEFLECT_PIXELSTREAMSEGMENT_H
+#include "PixelStreamDispatcher.h"
+#include "PixelStreamFrame.h"
 
-#include <deflect/PixelStreamSegmentParameters.h>
-
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
-
-#include <QByteArray>
+#define STREAM_WINDOW_DEFAULT_SIZE 100
 
 namespace deflect
 {
 
-/**
- * Image data and parameters for a single segment of a PixelStream.
- */
-struct PixelStreamSegment
+PixelStreamDispatcher::PixelStreamDispatcher()
 {
-    /** Parameters of the segment. */
-    PixelStreamSegmentParameters parameters;
-
-    /** Image data of the segment. */
-    QByteArray imageData;
-
-private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void save(Archive & ar, const unsigned int) const
-    {
-        ar & parameters;
-
-        int size = imageData.size();
-        ar & size;
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), imageData.size());
-    }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int)
-    {
-        ar & parameters;
-
-        int size = 0;
-        ar & size;
-        imageData.resize(size);
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), size);
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
-};
-
 }
 
-#endif
+void PixelStreamDispatcher::addSource(const QString uri, const size_t sourceIndex)
+{
+    streamBuffers_[uri].addSource(sourceIndex);
+}
+
+void PixelStreamDispatcher::removeSource(const QString uri, const size_t sourceIndex)
+{
+    if(!streamBuffers_.count(uri))
+        return;
+
+    streamBuffers_[uri].removeSource(sourceIndex);
+
+    if (streamBuffers_[uri].getSourceCount() == 0)
+    {
+        deleteStream(uri);
+    }
+}
+
+void PixelStreamDispatcher::processSegment(const QString uri, const size_t sourceIndex, PixelStreamSegment segment)
+{
+    if (streamBuffers_.count(uri))
+        streamBuffers_[uri].insertSegment(segment, sourceIndex);
+}
+
+void PixelStreamDispatcher::processFrameFinished(const QString uri, const size_t sourceIndex)
+{
+    if (!streamBuffers_.count(uri))
+        return;
+
+    PixelStreamBuffer& buffer = streamBuffers_[uri];
+    buffer.finishFrameForSource(sourceIndex);
+
+    // When the first frame is complete, notify that the stream is now open
+    if (buffer.isFirstCompleteFrame())
+    {
+        QSize size = buffer.getFrameSize();
+        emit openPixelStream(uri, size);
+        buffer.setAllowedToSend(true);
+    }
+
+    if (buffer.isAllowedToSend())
+        sendLatestFrame(uri);
+}
+
+void PixelStreamDispatcher::deleteStream(const QString uri)
+{
+    if (streamBuffers_.count(uri))
+    {
+        streamBuffers_.erase(uri);
+        emit deletePixelStream(uri);
+    }
+}
+
+void PixelStreamDispatcher::requestFrame(const QString uri)
+{
+    if (!streamBuffers_.count(uri))
+        return;
+
+    PixelStreamBuffer& buffer = streamBuffers_[uri];
+    buffer.setAllowedToSend(true);
+    sendLatestFrame(uri);
+}
+
+void PixelStreamDispatcher::sendLatestFrame(const QString uri)
+{
+    PixelStreamFramePtr frame(new PixelStreamFrame);
+    frame->uri = uri;
+
+    PixelStreamBuffer& buffer = streamBuffers_[uri];
+
+    // Only send the lastest frame
+    while (buffer.hasCompleteFrame())
+        frame->segments = buffer.popFrame();
+
+    if (frame->segments.empty())
+        return;
+
+    // receiver will request a new frame once this frame was consumed
+    buffer.setAllowedToSend(false);
+
+    emit sendFrame(frame);
+}
+
+}

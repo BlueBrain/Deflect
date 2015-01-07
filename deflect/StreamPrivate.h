@@ -55,9 +55,6 @@ class QString;
 namespace deflect
 {
 
-struct PixelStreamSegment;
-struct PixelStreamSegmentParameters;
-class Stream;
 class StreamSendWorker;
 
 /**

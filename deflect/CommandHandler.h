@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,57 +37,57 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENT_H
-#define DEFLECT_PIXELSTREAMSEGMENT_H
+#ifndef DEFLECT_COMMANDHANDLER_H
+#define DEFLECT_COMMANDHANDLER_H
 
-#include <deflect/PixelStreamSegmentParameters.h>
-
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
-
-#include <QByteArray>
+#include <deflect/types.h>
+#include <deflect/CommandType.h>
+#include <QObject>
 
 namespace deflect
 {
 
 /**
- * Image data and parameters for a single segment of a PixelStream.
+ * A command handler for String formatted network commands.
  */
-struct PixelStreamSegment
+class CommandHandler : public QObject
 {
-    /** Parameters of the segment. */
-    PixelStreamSegmentParameters parameters;
+    Q_OBJECT
 
-    /** Image data of the segment. */
-    QByteArray imageData;
+public:
+    /** Constructor */
+    CommandHandler();
+
+    /** Destructor */
+    ~CommandHandler();
+
+    /**
+     * Register a command handler.
+     *
+     * This class takes ownership of the handler. If a handler for the same
+     * CommandType was already registered, it will be replaced.
+     * @param handler The handler to register.
+     */
+    void registerCommandHandler(AbstractCommandHandler* handler);
+
+    /**
+     * Unregister a command handler.
+     *
+     * @param type The type for which to unregister the command handler.
+     */
+    void unregisterCommandHandler(CommandType type);
+
+public slots:
+    /**
+     * Process a command.
+     * @param command The command string, formatted by the Command class.
+     * @param parentWindowUri Optional identifier of the window issuing the command.
+     */
+    void process(const QString command, const QString parentWindowUri);
 
 private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void save(Archive & ar, const unsigned int) const
-    {
-        ar & parameters;
-
-        int size = imageData.size();
-        ar & size;
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), imageData.size());
-    }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int)
-    {
-        ar & parameters;
-
-        int size = 0;
-        ar & size;
-        imageData.resize(size);
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), size);
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
+    typedef std::map< CommandType, AbstractCommandHandler* > CommandHandlerMap;
+    CommandHandlerMap handlers_;
 };
 
 }

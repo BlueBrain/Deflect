@@ -37,57 +37,48 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENT_H
-#define DEFLECT_PIXELSTREAMSEGMENT_H
+#ifndef DEFLECT_PIXELSTREAMSEGMENTDECODER_H
+#define DEFLECT_PIXELSTREAMSEGMENTDECODER_H
 
-#include <deflect/PixelStreamSegmentParameters.h>
+#include <deflect/types.h>
 
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
-
-#include <QByteArray>
+#include <QFuture>
+#include <boost/noncopyable.hpp>
 
 namespace deflect
 {
 
 /**
- * Image data and parameters for a single segment of a PixelStream.
+ * Decode a PixelStreamSegment image data asynchronously.
  */
-struct PixelStreamSegment
+class PixelStreamSegmentDecoder : public boost::noncopyable
 {
-    /** Parameters of the segment. */
-    PixelStreamSegmentParameters parameters;
+public:
+    /** Construct a Decoder */
+    PixelStreamSegmentDecoder();
 
-    /** Image data of the segment. */
-    QByteArray imageData;
+    /** Destruct a Decoder */
+    ~PixelStreamSegmentDecoder();
+
+    /**
+     * Start decoding a segment.
+     *
+     * This function will silently ignore the request if a decoding is already in progress.
+     * @param segment The segement to decode. The segment is NOT copied internally and is modified by this
+     * function. It must remain valid and should not be accessed until the decoding procedure has completed.
+     * @see isRunning()
+     */
+    void startDecoding(PixelStreamSegment& segment);
+
+    /** Check if the decoding thread is running. */
+    bool isRunning() const;
 
 private:
-    friend class boost::serialization::access;
+    /** The decompressor instance */
+    ImageJpegDecompressor* decompressor_;
 
-    template<class Archive>
-    void save(Archive & ar, const unsigned int) const
-    {
-        ar & parameters;
-
-        int size = imageData.size();
-        ar & size;
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), imageData.size());
-    }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int)
-    {
-        ar & parameters;
-
-        int size = 0;
-        ar & size;
-        imageData.resize(size);
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), size);
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
+    /** Async image decoding future */
+    QFuture<void> decodingFuture_;
 };
 
 }

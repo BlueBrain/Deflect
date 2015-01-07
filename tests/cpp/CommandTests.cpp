@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,59 +37,62 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENT_H
-#define DEFLECT_PIXELSTREAMSEGMENT_H
 
-#include <deflect/PixelStreamSegmentParameters.h>
+#define BOOST_TEST_MODULE CommandTests
+#include <boost/test/unit_test.hpp>
+namespace ut = boost::unit_test;
 
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
+#include <deflect/Command.h>
+#include <deflect/CommandType.h>
 
-#include <QByteArray>
-
-namespace deflect
+BOOST_AUTO_TEST_CASE( testCommandTypeToStringConversion )
 {
+    BOOST_CHECK_EQUAL( deflect::getCommandTypeString(deflect::COMMAND_TYPE_UNKNOWN).toStdString(), "unknown" );
+    BOOST_CHECK_EQUAL( deflect::getCommandTypeString(deflect::COMMAND_TYPE_FILE).toStdString(), "file" );
+    BOOST_CHECK_EQUAL( deflect::getCommandTypeString(deflect::COMMAND_TYPE_SESSION).toStdString(), "session" );
+    BOOST_CHECK_EQUAL( deflect::getCommandTypeString(deflect::COMMAND_TYPE_WEBBROWSER).toStdString(), "webbrowser" );
 
-/**
- * Image data and parameters for a single segment of a PixelStream.
- */
-struct PixelStreamSegment
-{
-    /** Parameters of the segment. */
-    PixelStreamSegmentParameters parameters;
-
-    /** Image data of the segment. */
-    QByteArray imageData;
-
-private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void save(Archive & ar, const unsigned int) const
-    {
-        ar & parameters;
-
-        int size = imageData.size();
-        ar & size;
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), imageData.size());
-    }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int)
-    {
-        ar & parameters;
-
-        int size = 0;
-        ar & size;
-        imageData.resize(size);
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), size);
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
-};
-
+    BOOST_CHECK_EQUAL( deflect::getCommandType(""), deflect::COMMAND_TYPE_UNKNOWN );
+    BOOST_CHECK_EQUAL( deflect::getCommandType("zorglump"), deflect::COMMAND_TYPE_UNKNOWN );
+    BOOST_CHECK_EQUAL( deflect::getCommandType("unknown"), deflect::COMMAND_TYPE_UNKNOWN );
+    BOOST_CHECK_EQUAL( deflect::getCommandType("file"), deflect::COMMAND_TYPE_FILE );
+    BOOST_CHECK_EQUAL( deflect::getCommandType("session"), deflect::COMMAND_TYPE_SESSION );
+    BOOST_CHECK_EQUAL( deflect::getCommandType("webbrowser"), deflect::COMMAND_TYPE_WEBBROWSER );
 }
 
-#endif
+BOOST_AUTO_TEST_CASE( testCommandConstruction )
+{
+    deflect::Command command(deflect::COMMAND_TYPE_WEBBROWSER, "http://www.google.com");
+
+    BOOST_CHECK_EQUAL( command.getType(), deflect::COMMAND_TYPE_WEBBROWSER );
+    BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "http://www.google.com");
+    BOOST_CHECK_EQUAL( command.getCommand().toStdString(), "webbrowser::http://www.google.com");
+    BOOST_CHECK( command.isValid( ));
+}
+
+BOOST_AUTO_TEST_CASE( testCommandValidDeconstruction )
+{
+    deflect::Command command("webbrowser::http://www.google.com");
+
+    BOOST_CHECK_EQUAL( command.getType(), deflect::COMMAND_TYPE_WEBBROWSER );
+    BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "http://www.google.com");
+    BOOST_CHECK( command.isValid( ));
+}
+
+BOOST_AUTO_TEST_CASE( testCommandInvalidDeconstruction )
+{
+    {
+        deflect::Command command("iruegfn09::83r(*RY$r4//froif");
+
+        BOOST_CHECK_EQUAL( command.getType(), deflect::COMMAND_TYPE_UNKNOWN );
+        BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "");
+        BOOST_CHECK( !command.isValid( ));
+    }
+    {
+        deflect::Command command("otgninh");
+
+        BOOST_CHECK_EQUAL( command.getType(), deflect::COMMAND_TYPE_UNKNOWN );
+        BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "");
+        BOOST_CHECK( !command.isValid( ));
+    }
+}

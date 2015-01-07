@@ -5,20 +5,42 @@
 
 set(DEFLECT_PUBLIC_HEADERS
   ${COMMON_INCLUDES}
+  AbstractCommandHandler.h
+  Command.h
+  CommandHandler.h
+  CommandType.h
   Event.h
-  ImageJpegCompressor.h
-  ImageSegmenter.h
+  EventReceiver.h
   ImageWrapper.h
-  MessageHeader.h
-  NetworkProtocol.h
+  NetworkListener.h
+  PixelStreamBuffer.h
+  PixelStreamFrame.h
+  PixelStreamDispatcher.h
   PixelStreamSegment.h
+  PixelStreamSegmentDecoder.h
   PixelStreamSegmentParameters.h
   Socket.h
   Stream.h
   types.h
 )
 
+set(DEFLECT_HEADERS
+  ${COMMON_INCLUDES}
+  ImageJpegCompressor.h
+  ImageJpegDecompressor.h
+  ImageSegmenter.h
+  MessageHeader.h
+  NetworkListenerWorker.h
+  NetworkProtocol.h
+  PixelStreamFrame.h
+)
+
 set(DEFLECT_MOC_HEADERS
+  CommandHandler.h
+  EventReceiver.h
+  NetworkListener.h
+  NetworkListenerWorker.h
+  PixelStreamDispatcher.h
   Socket.h
   StreamPrivate.h
 )
@@ -27,11 +49,20 @@ qt4_wrap_cpp(MOC_OUTFILES ${DEFLECT_MOC_HEADERS})
 
 set(DEFLECT_SOURCES
   ${MOC_OUTFILES}
+  Command.cpp
+  CommandHandler.cpp
+  CommandType.cpp
   Event.cpp
   ImageJpegCompressor.cpp
+  ImageJpegDecompressor.cpp
   ImageSegmenter.cpp
   ImageWrapper.cpp
   MessageHeader.cpp
+  NetworkListener.cpp
+  NetworkListenerWorker.cpp
+  PixelStreamBuffer.cpp
+  PixelStreamDispatcher.cpp
+  PixelStreamSegmentDecoder.cpp
   Socket.cpp
   Stream.cpp
   StreamPrivate.cpp

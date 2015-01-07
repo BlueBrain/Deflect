@@ -1,6 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,57 +36,60 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENT_H
-#define DEFLECT_PIXELSTREAMSEGMENT_H
+#ifndef DEFLECT_NETWORK_LISTENER_H
+#define DEFLECT_NETWORK_LISTENER_H
 
-#include <deflect/PixelStreamSegmentParameters.h>
-
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
-
-#include <QByteArray>
+#include <deflect/types.h>
+#include <QtNetwork/QTcpServer>
 
 namespace deflect
 {
 
 /**
- * Image data and parameters for a single segment of a PixelStream.
+ * Listen to incoming PixelStream connections from Stream clients.
  */
-struct PixelStreamSegment
+class NetworkListener : public QTcpServer
 {
-    /** Parameters of the segment. */
-    PixelStreamSegmentParameters parameters;
+    Q_OBJECT
 
-    /** Image data of the segment. */
-    QByteArray imageData;
+public:
+    /** The default port number used for Stream connections. */
+    static const int defaultPortNumber_;
+
+    /**
+     * Create a new server listening for Stream connections.
+     * @param port The port to listen on. Must be available.
+     * @throw std::runtime_error if the server could not be started.
+     */
+    explicit NetworkListener(int port = defaultPortNumber_);
+
+    /** Destructor */
+    ~NetworkListener();
+
+    /** Get the command handler. */
+    CommandHandler& getCommandHandler();
+
+    /** Get the PixelStreamDispatcher. */
+    PixelStreamDispatcher& getPixelStreamDispatcher();
+
+signals:
+    void registerToEvents( QString uri, bool exclusive,
+                           deflect::EventReceiver* receiver );
+
+public slots:
+    void onPixelStreamerClosed( QString uri);
+    void onEventRegistrationReply( QString uri, bool success );
 
 private:
-    friend class boost::serialization::access;
+    /** Re-implemented handling of connections from QTCPSocket. */
+    void incomingConnection( int socketHandle ) override;
 
-    template<class Archive>
-    void save(Archive & ar, const unsigned int) const
-    {
-        ar & parameters;
+    PixelStreamDispatcher* pixelStreamDispatcher_;
+    CommandHandler* commandHandler_;
 
-        int size = imageData.size();
-        ar & size;
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), imageData.size());
-    }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int)
-    {
-        ar & parameters;
-
-        int size = 0;
-        ar & size;
-        imageData.resize(size);
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), size);
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
+signals:
+    void pixelStreamerClosed( QString uri );
+    void eventRegistrationReply( QString uri, bool success );
 };
 
 }
