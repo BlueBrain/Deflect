@@ -51,7 +51,7 @@ macro(COMMON_PACKAGE Name)
   endif()
 endmacro()
 
-common_package(Boost 1.41.0 COMPONENTS program_options unit_test_framework serialization system thread QUIET)
+common_package(Boost 1.41.0 COMPONENTS date_time program_options unit_test_framework serialization system thread QUIET)
 if(NOT Boost_FOUND AND NOT BOOST_FOUND)
   set(FIND_REQUIRED_FAILED "${FIND_REQUIRED_FAILED} Boost")
 endif()

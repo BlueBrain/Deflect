@@ -37,59 +37,52 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENT_H
-#define DEFLECT_PIXELSTREAMSEGMENT_H
+#include "ImageJpegDecompressor.h"
 
-#include <deflect/PixelStreamSegmentParameters.h>
-
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
-
-#include <QByteArray>
+#include <iostream>
 
 namespace deflect
 {
 
-/**
- * Image data and parameters for a single segment of a PixelStream.
- */
-struct PixelStreamSegment
+ImageJpegDecompressor::ImageJpegDecompressor()
+    : tjHandle_(tjInitDecompress())
 {
-    /** Parameters of the segment. */
-    PixelStreamSegmentParameters parameters;
-
-    /** Image data of the segment. */
-    QByteArray imageData;
-
-private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void save(Archive & ar, const unsigned int) const
-    {
-        ar & parameters;
-
-        int size = imageData.size();
-        ar & size;
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), imageData.size());
-    }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int)
-    {
-        ar & parameters;
-
-        int size = 0;
-        ar & size;
-        imageData.resize(size);
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), size);
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
-};
-
 }
 
-#endif
+ImageJpegDecompressor::~ImageJpegDecompressor()
+{
+    tjDestroy(tjHandle_);
+}
+
+QByteArray ImageJpegDecompressor::decompress(const QByteArray& jpegData)
+{
+    // get information from header
+    int width, height, jpegSubsamp;
+    int success = tjDecompressHeader2(tjHandle_, (unsigned char *)jpegData.data(), (unsigned long)jpegData.size(), &width, &height, &jpegSubsamp);
+
+    if(success != 0)
+    {
+        std::cerr << "libjpeg-turbo header decompression failure" << std::endl;
+        return QByteArray();
+    }
+
+    // decompress image data
+    int pixelFormat = TJPF_RGBX; // Format for OpenGL texture (GL_RGBA)
+    int pitch = width * tjPixelSize[pixelFormat];
+    int flags = TJ_FASTUPSAMPLE;
+
+    QByteArray decodedData;
+    decodedData.resize(height*pitch);
+
+    success = tjDecompress2(tjHandle_, (unsigned char *)jpegData.data(), (unsigned long)jpegData.size(), (unsigned char *)decodedData.data(), width, pitch, height, pixelFormat, flags);
+
+    if(success != 0)
+    {
+        std::cerr << "libjpeg-turbo image decompression failure" << std::endl;
+        return QByteArray();
+    }
+
+    return decodedData;
+}
+
+}

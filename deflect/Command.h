@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,57 +37,50 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENT_H
-#define DEFLECT_PIXELSTREAMSEGMENT_H
+#ifndef DEFLECT_COMMAND_H
+#define DEFLECT_COMMAND_H
 
-#include <deflect/PixelStreamSegmentParameters.h>
-
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
-
-#include <QByteArray>
+#include <deflect/types.h>
+#include <deflect/CommandType.h>
 
 namespace deflect
 {
 
 /**
- * Image data and parameters for a single segment of a PixelStream.
+ * String format, prefix-base network command.
  */
-struct PixelStreamSegment
+class Command
 {
-    /** Parameters of the segment. */
-    PixelStreamSegmentParameters parameters;
+public:
+    /**
+     * Constructor.
+     * @param type The type of the command.
+     * @param args The command arguments.
+     */
+    Command(const CommandType type, const QString& args);
 
-    /** Image data of the segment. */
-    QByteArray imageData;
+    /**
+     * Constructor.
+     * @param command A string-formatted command, as obtained by getCommand().
+     */
+    Command(const QString& command);
+
+    /** Get the command type. */
+    CommandType getType() const;
+
+    /** Get the command arguments */
+    const QString& getArguments() const;
+
+    /** Get the command in string format, typically for sending over the network. */
+    const QString& getCommand() const;
+
+    /** Check if the Command is valid (i.e. has a known type). */
+    bool isValid() const;
 
 private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void save(Archive & ar, const unsigned int) const
-    {
-        ar & parameters;
-
-        int size = imageData.size();
-        ar & size;
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), imageData.size());
-    }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int)
-    {
-        ar & parameters;
-
-        int size = 0;
-        ar & size;
-        imageData.resize(size);
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), size);
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
+    CommandType type_;
+    QString args_;
+    QString command_;
 };
 
 }

@@ -54,7 +54,6 @@ namespace deflect
 {
 
 class StreamPrivate;
-struct ImageWrapper;
 
 /**
  * Worker class that is used to send images that are pushed to a worker queue.

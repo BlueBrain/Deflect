@@ -30,6 +30,7 @@ before_install:
  - sudo apt-get install -qq git-review || /bin/true
  - sudo apt-get install -qq git-svn || /bin/true
  - sudo apt-get install -qq lcov || /bin/true
+ - sudo apt-get install -qq libboost-date-time-dev || /bin/true
  - sudo apt-get install -qq libboost-program-options-dev || /bin/true
  - sudo apt-get install -qq libboost-serialization-dev || /bin/true
  - sudo apt-get install -qq libboost-system-dev || /bin/true

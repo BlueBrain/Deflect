@@ -37,13 +37,10 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENT_H
-#define DEFLECT_PIXELSTREAMSEGMENT_H
+#ifndef DEFLECT_IMAGEJPEGDECOMPRESSOR_H
+#define DEFLECT_IMAGEJPEGDECOMPRESSOR_H
 
-#include <deflect/PixelStreamSegmentParameters.h>
-
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
+#include <turbojpeg.h>
 
 #include <QByteArray>
 
@@ -51,43 +48,26 @@ namespace deflect
 {
 
 /**
- * Image data and parameters for a single segment of a PixelStream.
+ * Decompress Jpeg compressed data.
  */
-struct PixelStreamSegment
+class ImageJpegDecompressor
 {
-    /** Parameters of the segment. */
-    PixelStreamSegmentParameters parameters;
+public:
+    ImageJpegDecompressor();
+    ~ImageJpegDecompressor();
 
-    /** Image data of the segment. */
-    QByteArray imageData;
+    /**
+     * Decompress a Jpeg image
+     *
+     * @param jpegData The compressed Jpeg data
+     * @return The decompressed image data in (GL_)RGBA format, or an
+     *         empty array if the image could not be decoded.
+     */
+    QByteArray decompress(const QByteArray& jpegData);
 
 private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void save(Archive & ar, const unsigned int) const
-    {
-        ar & parameters;
-
-        int size = imageData.size();
-        ar & size;
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), imageData.size());
-    }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int)
-    {
-        ar & parameters;
-
-        int size = 0;
-        ar & size;
-        imageData.resize(size);
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), size);
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
+    /** libjpeg-turbo handle for decompression */
+    tjhandle tjHandle_;
 };
 
 }

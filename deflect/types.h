@@ -40,12 +40,34 @@
 #ifndef DEFLECT_TYPES_H
 #define DEFLECT_TYPES_H
 
+#include <boost/shared_ptr.hpp>
+#include <map>
+#include <vector>
+
 namespace deflect
 {
+    class AbstractCommandHandler;
+    class Command;
+    class CommandHandler;
+    class EventReceiver;
+    class ImageJpegCompressor;
+    class ImageJpegDecompressor;
+    class NetworkListener;
+    class NetworkListenerWorker;
+    class PixelStreamDispatcher;
+    class PixelStreamSegmentDecoder;
+    class Stream;
+
     struct Event;
     struct ImageWrapper;
     struct MessageHeader;
-    class Stream;
+    struct PixelStreamFrame;
+    struct PixelStreamSegment;
+    struct PixelStreamSegmentParameters;
+
+    typedef boost::shared_ptr< PixelStreamFrame > PixelStreamFramePtr;
+    typedef std::vector< PixelStreamSegment > PixelStreamSegments;
+    typedef std::vector< PixelStreamSegmentParameters > SegmentParameters;
 }
 
-#endif // TYPES_H
+#endif

@@ -37,57 +37,28 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENT_H
-#define DEFLECT_PIXELSTREAMSEGMENT_H
+#ifndef DEFLECT_EVENTRECEIVER_H
+#define DEFLECT_EVENTRECEIVER_H
 
-#include <deflect/PixelStreamSegmentParameters.h>
+#include <deflect/Event.h>
 
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
-
-#include <QByteArray>
+#include <QObject>
 
 namespace deflect
 {
 
 /**
- * Image data and parameters for a single segment of a PixelStream.
+ * Interface for classes to register as receivers for events.
  */
-struct PixelStreamSegment
+class EventReceiver : public QObject
 {
-    /** Parameters of the segment. */
-    PixelStreamSegmentParameters parameters;
+    Q_OBJECT
 
-    /** Image data of the segment. */
-    QByteArray imageData;
+public:
+    virtual ~EventReceiver() {}
 
-private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void save(Archive & ar, const unsigned int) const
-    {
-        ar & parameters;
-
-        int size = imageData.size();
-        ar & size;
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), imageData.size());
-    }
-
-    template<class Archive>
-    void load(Archive & ar, const unsigned int)
-    {
-        ar & parameters;
-
-        int size = 0;
-        ar & size;
-        imageData.resize(size);
-
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), size);
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
+public slots:
+    virtual void processEvent( deflect::Event event ) = 0;
 };
 
 }

@@ -44,16 +44,10 @@
 #include <boost/function/function1.hpp>
 #include <vector>
 #include <deflect/api.h>
+#include <deflect/types.h>
 
 namespace deflect
 {
-
-struct PixelStreamSegment;
-struct PixelStreamSegmentParameters;
-typedef std::vector<PixelStreamSegment> PixelStreamSegments;
-typedef std::vector<PixelStreamSegmentParameters> SegmentParameters;
-
-struct ImageWrapper;
 
 /**
  * Transform images into PixelStreamSegments.

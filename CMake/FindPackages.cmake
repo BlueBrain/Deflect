@@ -52,7 +52,7 @@ macro(COMMON_PACKAGE Name)
   endif()
 endmacro()
 
-common_package(Boost 1.41.0  REQUIRED COMPONENTS program_options unit_test_framework serialization system thread)
+common_package(Boost 1.41.0  REQUIRED COMPONENTS date_time program_options unit_test_framework serialization system thread)
 common_package(LibJpegTurbo 1.2.1  REQUIRED )
 common_package(Qt4 4.6  REQUIRED COMPONENTS QtCore QtGui QtNetwork)
 common_package(GLUT    )
@@ -157,7 +157,7 @@ if(OpenGL_name)
   endif()
 endif()
 
-set(DEFLECT_BUILD_DEBS autoconf;automake;cmake;doxygen;freeglut3-dev;git;git-review;libboost-program-options-dev;libboost-serialization-dev;libboost-system-dev;libboost-test-dev;libboost-thread-dev;libjpeg-turbo8-dev;libturbojpeg;pkg-config;subversion)
+set(DEFLECT_BUILD_DEBS autoconf;automake;cmake;doxygen;freeglut3-dev;git;git-review;libboost-date-time-dev;libboost-program-options-dev;libboost-serialization-dev;libboost-system-dev;libboost-test-dev;libboost-thread-dev;libjpeg-turbo8-dev;libturbojpeg;pkg-config;subversion)
 
 set(DEFLECT_DEPENDS Boost;LibJpegTurbo;Qt4;GLUT;OpenGL)
 

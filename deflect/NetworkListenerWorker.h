@@ -1,6 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,57 +36,82 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENT_H
-#define DEFLECT_PIXELSTREAMSEGMENT_H
+#ifndef DEFLECT_NETWORK_LISTENER_WORKER_H
+#define DEFLECT_NETWORK_LISTENER_WORKER_H
 
-#include <deflect/PixelStreamSegmentParameters.h>
+#include <deflect/MessageHeader.h>
+#include <deflect/Event.h>
+#include <deflect/PixelStreamSegment.h>
+#include <deflect/EventReceiver.h>
 
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
-
-#include <QByteArray>
+#include <QtNetwork/QTcpSocket>
+#include <QQueue>
 
 namespace deflect
 {
 
-/**
- * Image data and parameters for a single segment of a PixelStream.
- */
-struct PixelStreamSegment
+class NetworkListenerWorker : public EventReceiver
 {
-    /** Parameters of the segment. */
-    PixelStreamSegmentParameters parameters;
+    Q_OBJECT
 
-    /** Image data of the segment. */
-    QByteArray imageData;
+public:
+
+    NetworkListenerWorker(int socketDescriptor);
+    ~NetworkListenerWorker();
+
+public slots:
+
+    void processEvent(Event evt);
+    void pixelStreamerClosed(QString uri);
+
+    void eventRegistrationReply(QString uri, bool success);
+
+signals:
+
+    void finished();
+
+    void receivedAddPixelStreamSource(QString uri, size_t sourceIndex);
+    void receivedPixelStreamSegement(QString uri, size_t SourceIndex,
+                                     PixelStreamSegment segment);
+    void receivedPixelStreamFinishFrame(QString uri, size_t SourceIndex);
+    void receivedRemovePixelStreamSource(QString uri, size_t sourceIndex);
+
+    void registerToEvents(QString uri, bool exclusive, deflect::EventReceiver* receiver);
+
+    void receivedCommand(QString command, QString senderUri);
+
+    /** @internal */
+    void dataAvailable();
+
+private slots:
+
+    void initialize();
+    void process();
+    void socketReceiveMessage();
 
 private:
-    friend class boost::serialization::access;
 
-    template<class Archive>
-    void save(Archive & ar, const unsigned int) const
-    {
-        ar & parameters;
+    int socketDescriptor_;
+    QTcpSocket* tcpSocket_;
 
-        int size = imageData.size();
-        ar & size;
+    QString pixelStreamUri_;
 
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), imageData.size());
-    }
+    bool registeredToEvents_;
+    QQueue<Event> events_;
 
-    template<class Archive>
-    void load(Archive & ar, const unsigned int)
-    {
-        ar & parameters;
+    MessageHeader receiveMessageHeader();
+    QByteArray receiveMessageBody(const int size);
 
-        int size = 0;
-        ar & size;
-        imageData.resize(size);
+    void handleMessage(const MessageHeader& messageHeader,
+                       const QByteArray& byteArray);
+    void handlePixelStreamMessage(const QString& uri, const QByteArray& byteArray);
 
-        ar & boost::serialization::make_binary_object((void *)imageData.data(), size);
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
+    void sendProtocolVersion();
+    void sendBindReply(const bool successful);
+    void send(const Event &evt);
+    void sendQuit();
+    bool send(const MessageHeader& messageHeader);
+    void flushSocket();
 };
 
 }

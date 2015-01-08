@@ -40,7 +40,7 @@
 #ifndef DEFLECT_EVENT_H
 #define DEFLECT_EVENT_H
 
-#include <cstring>
+#include <deflect/types.h>
 
 #define UNICODE_TEXT_SIZE 4
 
