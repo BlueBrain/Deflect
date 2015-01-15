@@ -40,6 +40,8 @@
 #ifndef DEFLECT_TYPES_H
 #define DEFLECT_TYPES_H
 
+#include <deflect/config.h>
+
 #include <boost/shared_ptr.hpp>
 #include <map>
 #include <vector>

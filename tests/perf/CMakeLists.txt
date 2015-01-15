@@ -18,7 +18,7 @@ if(NOT WIN32) # tests want to be with DLLs on Windows - no rpath
 endif()
 
 set(TEST_LIBRARIES Deflect ${Boost_LIBRARIES} ${QT_QTGUI_LIBRARY})
-set(PERF_TEST_SOURCES dcBenchmarkStreamer.cpp)
+set(PERF_TEST_SOURCES benchmarkStreamer.cpp streamTests.cpp)
 
 # Create executables but do not add them to the tests target
 foreach(FILE ${PERF_TEST_SOURCES})

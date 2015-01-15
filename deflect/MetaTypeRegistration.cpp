@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,62 +37,28 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_NETWORK_LISTENER_H
-#define DEFLECT_NETWORK_LISTENER_H
+#include "PixelStreamSegment.h"
+#include "Event.h"
 
-#include <deflect/types.h>
-#include <QtNetwork/QTcpServer>
+#include <QMetaType>
 
 namespace deflect
 {
 
 /**
- * Listen to incoming PixelStream connections from Stream clients.
+ * Register types for use in Qt signals/slots
  */
-class NetworkListener : public QTcpServer
+struct MetaTypeRegistration
 {
-    Q_OBJECT
-
-public:
-    /** The default port number used for Stream connections. */
-    static const int defaultPortNumber_;
-
-    /**
-     * Create a new server listening for Stream connections.
-     * @param port The port to listen on. Must be available.
-     * @throw std::runtime_error if the server could not be started.
-     */
-    explicit NetworkListener(int port = defaultPortNumber_);
-
-    /** Destructor */
-    ~NetworkListener();
-
-    /** Get the command handler. */
-    CommandHandler& getCommandHandler();
-
-    /** Get the PixelStreamDispatcher. */
-    PixelStreamDispatcher& getPixelStreamDispatcher();
-
-signals:
-    void registerToEvents( QString uri, bool exclusive,
-                           deflect::EventReceiver* receiver );
-
-public slots:
-    void onPixelStreamerClosed( QString uri);
-    void onEventRegistrationReply( QString uri, bool success );
-
-private:
-    /** Re-implemented handling of connections from QTCPSocket. */
-    void incomingConnection( int socketHandle ) final;
-
-    PixelStreamDispatcher* pixelStreamDispatcher_;
-    CommandHandler* commandHandler_;
-
-signals:
-    void pixelStreamerClosed( QString uri );
-    void eventRegistrationReply( QString uri, bool success );
+    MetaTypeRegistration()
+    {
+        qRegisterMetaType< size_t >( "size_t" );
+        qRegisterMetaType< deflect::PixelStreamSegment >( "PixelStreamSegment" );
+        qRegisterMetaType< deflect::Event >( "deflect::Event" );
+        qRegisterMetaType< deflect::PixelStreamFramePtr >( "deflect::PixelStreamFramePtr" );
+    }
 };
 
+// Static instance to register types during library static initialisation phase
+static MetaTypeRegistration staticInstance;
 }
-
-#endif

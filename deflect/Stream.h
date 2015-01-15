@@ -67,7 +67,8 @@ class StreamPrivate;
  * different applications each responsible for sending one part of the global
  * image.
  *
- * The methods in this class are reentrant (all instances are independant) but are not thread-safe.
+ * The methods in this class are reentrant (all instances are independant) but
+ * are not thread-safe.
  */
 class Stream
 {
@@ -215,7 +216,7 @@ public:
     /**
      * Get the next Event.
      *
-     * This method is sychronous and waits until an Event is available before
+     * This method is synchronous and waits until an Event is available before
      * returning (or a 1 second timeout occurs).
      *
      * Check if an Event is available with hasEvent() before calling this
