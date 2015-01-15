@@ -40,6 +40,7 @@
 #ifndef DEFLECT_STREAMEVENTTHREAD_H
 #define DEFLECT_STREAMEVENTTHREAD_H
 
+#include <deflect/config.h>
 #include <QObject>
 #include <QMutex>
 #include <QQueue>
@@ -68,7 +69,7 @@ public:
     InteractionState retrieveInteractionState();
 
     // thread execution
-    virtual void run();
+    void run() final;
 
 public slots:
     void storeNewInteractionState(InteractionState state);

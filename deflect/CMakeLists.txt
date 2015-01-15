@@ -6,6 +6,7 @@
 set(DEFLECT_PUBLIC_HEADERS
   ${COMMON_INCLUDES}
   AbstractCommandHandler.h
+  config.h
   Command.h
   CommandHandler.h
   CommandType.h
@@ -58,6 +59,7 @@ set(DEFLECT_SOURCES
   ImageSegmenter.cpp
   ImageWrapper.cpp
   MessageHeader.cpp
+  MetaTypeRegistration.cpp
   NetworkListener.cpp
   NetworkListenerWorker.cpp
   PixelStreamBuffer.cpp

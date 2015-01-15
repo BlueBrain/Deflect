@@ -49,6 +49,7 @@ typedef __int32 int32_t;
 
 #include <deflect/NetworkProtocol.h>
 #include <deflect/api.h>
+#include <deflect/config.h>
 
 class MockNetworkListener : public QTcpServer
 {
@@ -59,7 +60,7 @@ public:
     DEFLECT_API virtual ~MockNetworkListener();
 
 protected:
-    void incomingConnection(int handle) override;
+    void incomingConnection(int handle) final;
 
 private:
     int32_t protocolVersion_;
