@@ -41,12 +41,14 @@
 #ifndef DEFLECT_STREAM_H
 #define DEFLECT_STREAM_H
 
+#ifndef Q_MOC_RUN  // See: https://bugreports.qt-project.org/browse/QTBUG-22829
 // needed for future.hpp with Boost 1.41
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition_variable.hpp>
+#  include <boost/thread/mutex.hpp>
+#  include <boost/thread/condition_variable.hpp>
 
-#include <boost/thread/future.hpp>
-#include <boost/signals2/signal.hpp>
+#  include <boost/thread/future.hpp>
+#  include <boost/signals2/signal.hpp>
+#endif
 #include <string>
 
 #include "Event.h"
