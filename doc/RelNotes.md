@@ -1,13 +1,28 @@
 Release Notes {#ReleaseNotes}
 ============
 
+[TOC]
+
+# Introduction {#Introduction}
+
+Welcome to Deflect, a C++ library to develop applications that can send and
+receive pixel streams from other Deflect-based applictions.
+
+Deflect 0.4 is the first release, based on the version that was part of
+DisplayCluster 0.4. Deflect 0.4 offers a stable API marked with version 1.0 for
+the streaming part.
+The following applications are provided which make use of the streaming API:
+
+* DesktopStreamer: A small utility that lets you stream your desktop.
+* SimpleStreamer: A simple example to demonstrate streaming of an OpenGL application.
+
 # New in this release {#New}
 
 Deflect 0.4 provides the following improvements:
 
 ## New Features {#NewFeatures}
 
-* Initial move fro DisplayCluster 0.4
+* Initial move from DisplayCluster 0.4
 
 ## Enhancements {#Enhancements}
 
