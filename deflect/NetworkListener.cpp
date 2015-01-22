@@ -80,7 +80,7 @@ PixelStreamDispatcher& NetworkListener::getPixelStreamDispatcher()
 
 void NetworkListener::incomingConnection(int socketHandle)
 {
-    QThread * workerThread = new QThread();
+    QThread * workerThread = new QThread(this);
     NetworkListenerWorker * worker = new NetworkListenerWorker(socketHandle);
 
     worker->moveToThread(workerThread);
