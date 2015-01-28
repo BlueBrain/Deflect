@@ -39,6 +39,8 @@
 #ifndef DEFLECT_MESSAGE_HEADER_H
 #define DEFLECT_MESSAGE_HEADER_H
 
+#include <deflect/api.h>
+
 #ifdef _WIN32
     typedef unsigned __int32 uint32_t;
 #else
@@ -91,10 +93,10 @@ struct MessageHeader
     char uri[MESSAGE_HEADER_URI_LENGTH];
 
     /** Construct a default message header */
-    MessageHeader();
+    DEFLECT_API MessageHeader();
 
     /** Construct a message header with a uri */
-    MessageHeader(const MessageType type, const uint32_t size, const std::string& streamUri = "");
+    DEFLECT_API MessageHeader(const MessageType type, const uint32_t size, const std::string& streamUri = "");
 
     /** The size of the QDataStream serialized output. */
     static const size_t serializedSize;
@@ -103,7 +105,7 @@ struct MessageHeader
 }
 
 /** Serialization for network, where sizeof(MessageHeader) can differ between compilers. */
-QDataStream& operator<<(QDataStream& out, const deflect::MessageHeader &header);
-QDataStream& operator>>(QDataStream& in, deflect::MessageHeader &header);
+DEFLECT_API QDataStream& operator<<(QDataStream& out, const deflect::MessageHeader &header);
+DEFLECT_API QDataStream& operator>>(QDataStream& in, deflect::MessageHeader &header);
 
 #endif

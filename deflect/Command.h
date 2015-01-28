@@ -40,6 +40,7 @@
 #ifndef DEFLECT_COMMAND_H
 #define DEFLECT_COMMAND_H
 
+#include <deflect/api.h>
 #include <deflect/types.h>
 #include <deflect/CommandType.h>
 
@@ -57,25 +58,25 @@ public:
      * @param type The type of the command.
      * @param args The command arguments.
      */
-    Command(const CommandType type, const QString& args);
+    DEFLECT_API Command(const CommandType type, const QString& args);
 
     /**
      * Constructor.
      * @param command A string-formatted command, as obtained by getCommand().
      */
-    Command(const QString& command);
+    DEFLECT_API Command(const QString& command);
 
     /** Get the command type. */
-    CommandType getType() const;
+    DEFLECT_API CommandType getType() const;
 
     /** Get the command arguments */
-    const QString& getArguments() const;
+    DEFLECT_API const QString& getArguments() const;
 
     /** Get the command in string format, typically for sending over the network. */
-    const QString& getCommand() const;
+    DEFLECT_API const QString& getCommand() const;
 
     /** Check if the Command is valid (i.e. has a known type). */
-    bool isValid() const;
+    DEFLECT_API bool isValid() const;
 
 private:
     CommandType type_;

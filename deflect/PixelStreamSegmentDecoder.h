@@ -40,6 +40,7 @@
 #ifndef DEFLECT_PIXELSTREAMSEGMENTDECODER_H
 #define DEFLECT_PIXELSTREAMSEGMENTDECODER_H
 
+#include <deflect/api.h>
 #include <deflect/types.h>
 
 #include <QFuture>
@@ -55,10 +56,10 @@ class PixelStreamSegmentDecoder : public boost::noncopyable
 {
 public:
     /** Construct a Decoder */
-    PixelStreamSegmentDecoder();
+    DEFLECT_API PixelStreamSegmentDecoder();
 
     /** Destruct a Decoder */
-    ~PixelStreamSegmentDecoder();
+    DEFLECT_API ~PixelStreamSegmentDecoder();
 
     /**
      * Start decoding a segment.
@@ -68,10 +69,10 @@ public:
      * function. It must remain valid and should not be accessed until the decoding procedure has completed.
      * @see isRunning()
      */
-    void startDecoding(PixelStreamSegment& segment);
+    DEFLECT_API void startDecoding(PixelStreamSegment& segment);
 
     /** Check if the decoding thread is running. */
-    bool isRunning() const;
+    DEFLECT_API bool isRunning() const;
 
 private:
     /** The decompressor instance */

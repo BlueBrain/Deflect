@@ -40,6 +40,7 @@
 #ifndef DEFLECT_PIXELSTREAMBUFFER_H
 #define DEFLECT_PIXELSTREAMBUFFER_H
 
+#include <deflect/api.h>
 #include <deflect/PixelStreamSegment.h>
 #include <deflect/types.h>
 
@@ -92,7 +93,7 @@ class PixelStreamBuffer
 {
 public:
     /** Construct a Buffer */
-    PixelStreamBuffer();
+    DEFLECT_API PixelStreamBuffer();
 
     /**
      * Add a source of segments.
@@ -100,57 +101,57 @@ public:
      * @return false if the source was already added or if finishFrameForSource()
      *         has already been called for all existing source (TODO DISCL-241).
      */
-    bool addSource(const size_t sourceIndex);
+    DEFLECT_API bool addSource(const size_t sourceIndex);
 
     /**
      * Remove a source of segments.
      * @param sourceIndex Unique source identifier
      */
-    void removeSource(const size_t sourceIndex);
+    DEFLECT_API void removeSource(const size_t sourceIndex);
 
     /** Get the number of sources for this Stream */
-    size_t getSourceCount() const;
+    DEFLECT_API size_t getSourceCount() const;
 
     /**
      * Insert a segement for the current frame and source.
      * @param segment The segment to insert
      * @param sourceIndex Unique source identifier
      */
-    void insertSegment(const PixelStreamSegment& segment, const size_t sourceIndex);
+    DEFLECT_API void insertSegment(const PixelStreamSegment& segment, const size_t sourceIndex);
 
     /**
      * Notify that the given source has finished sending segment for the current frame.
      * @param sourceIndex Unique source identifier
      */
-    void finishFrameForSource(const size_t sourceIndex);
+    DEFLECT_API void finishFrameForSource(const size_t sourceIndex);
 
     /** Does the Buffer have a new complete frame (from all sources) */
-    bool hasCompleteFrame() const;
+    DEFLECT_API bool hasCompleteFrame() const;
 
     /** Is this the first frame to be finished by all sources */
-    bool isFirstCompleteFrame() const;
+    DEFLECT_API bool isFirstCompleteFrame() const;
 
     /** Get the size of the frame. Only meaningful if hasCompleteFrame() is true */
-    QSize getFrameSize() const;
+    DEFLECT_API QSize getFrameSize() const;
 
     /**
      * Get the finished frame.
      * @return A collection of segments that form a frame
      */
-    PixelStreamSegments popFrame();
+    DEFLECT_API PixelStreamSegments popFrame();
 
     /**
      * Compute the overall dimensions of a frame
      * @param segments A collection of segments that form a frame
      * @return The dimensions of the frame
      */
-    static QSize computeFrameDimensions(const PixelStreamSegments& segments);
+    DEFLECT_API static QSize computeFrameDimensions(const PixelStreamSegments& segments);
 
     /** Allow this buffer to be used by the next PixelStreamDispatcher::sendLatestFrame */
-    void setAllowedToSend(const bool enable);
+    DEFLECT_API void setAllowedToSend(const bool enable);
 
     /** @return true if this buffer can be sent by PixelStreamDispatcher, false otherwise */
-    bool isAllowedToSend() const;
+    DEFLECT_API bool isAllowedToSend() const;
 
 private:
     FrameIndex lastFrameComplete_;

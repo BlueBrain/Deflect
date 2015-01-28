@@ -39,6 +39,7 @@
 #ifndef DEFLECT_NETWORK_LISTENER_H
 #define DEFLECT_NETWORK_LISTENER_H
 
+#include <deflect/api.h>
 #include <deflect/types.h>
 #include <QtNetwork/QTcpServer>
 
@@ -54,23 +55,23 @@ class NetworkListener : public QTcpServer
 
 public:
     /** The default port number used for Stream connections. */
-    static const int defaultPortNumber_;
+    DEFLECT_API static const int defaultPortNumber_;
 
     /**
      * Create a new server listening for Stream connections.
      * @param port The port to listen on. Must be available.
      * @throw std::runtime_error if the server could not be started.
      */
-    explicit NetworkListener(int port = defaultPortNumber_);
+    DEFLECT_API explicit NetworkListener(int port = defaultPortNumber_);
 
     /** Destructor */
-    ~NetworkListener();
+    DEFLECT_API ~NetworkListener();
 
     /** Get the command handler. */
-    CommandHandler& getCommandHandler();
+    DEFLECT_API CommandHandler& getCommandHandler();
 
     /** Get the PixelStreamDispatcher. */
-    PixelStreamDispatcher& getPixelStreamDispatcher();
+    DEFLECT_API PixelStreamDispatcher& getPixelStreamDispatcher();
 
 signals:
     void registerToEvents( QString uri, bool exclusive,

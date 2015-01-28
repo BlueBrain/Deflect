@@ -40,6 +40,8 @@
 #ifndef DEFLECT_IMAGEJPEGDECOMPRESSOR_H
 #define DEFLECT_IMAGEJPEGDECOMPRESSOR_H
 
+#include <deflect/api.h>
+
 #include <turbojpeg.h>
 
 #include <QByteArray>
@@ -53,8 +55,8 @@ namespace deflect
 class ImageJpegDecompressor
 {
 public:
-    ImageJpegDecompressor();
-    ~ImageJpegDecompressor();
+    DEFLECT_API ImageJpegDecompressor();
+    DEFLECT_API ~ImageJpegDecompressor();
 
     /**
      * Decompress a Jpeg image
@@ -63,7 +65,7 @@ public:
      * @return The decompressed image data in (GL_)RGBA format, or an
      *         empty array if the image could not be decoded.
      */
-    QByteArray decompress(const QByteArray& jpegData);
+    DEFLECT_API QByteArray decompress(const QByteArray& jpegData);
 
 private:
     /** libjpeg-turbo handle for decompression */

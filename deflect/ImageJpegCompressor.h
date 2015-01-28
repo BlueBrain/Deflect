@@ -40,10 +40,12 @@
 #ifndef DEFLECT_IMAGEJPEGCOMPRESSOR_H
 #define DEFLECT_IMAGEJPEGCOMPRESSOR_H
 
+#include <deflect/api.h>
 #include <deflect/types.h>
 
 #include <QByteArray>
 #include <QRect>
+
 #include <turbojpeg.h>
 
 namespace deflect
@@ -55,8 +57,8 @@ namespace deflect
 class ImageJpegCompressor
 {
 public:
-    ImageJpegCompressor();
-    ~ImageJpegCompressor();
+    DEFLECT_API ImageJpegCompressor();
+    DEFLECT_API ~ImageJpegCompressor();
 
     /**
      * Compute the JPEG imageData for a segment
@@ -65,7 +67,8 @@ public:
      * @param imageRegion The region of the image to be compressed. It must not
      *        exceed image dimensions.
      */
-    QByteArray computeJpeg(const ImageWrapper& sourceImage, const QRect& imageRegion);
+    DEFLECT_API QByteArray computeJpeg(const ImageWrapper& sourceImage,
+                                       const QRect& imageRegion);
 
 private:
     tjhandle tjHandle_;

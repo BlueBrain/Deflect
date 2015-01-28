@@ -40,6 +40,7 @@
 #ifndef DEFLECT_EVENT_H
 #define DEFLECT_EVENT_H
 
+#include <deflect/api.h>
 #include <deflect/types.h>
 
 #define UNICODE_TEXT_SIZE 4
@@ -120,12 +121,12 @@ struct Event
     }
 
     /** The size of the QDataStream serialized output. */
-    static const size_t serializedSize;
+    static const uint32_t serializedSize;
 };
 
 /** Serialization for network, where sizeof(Event) can differ between compilers. */
-QDataStream& operator<<(QDataStream& out, const Event& event);
-QDataStream& operator>>(QDataStream& in, Event& event);
+DEFLECT_API QDataStream& operator<<(QDataStream& out, const Event& event);
+DEFLECT_API QDataStream& operator>>(QDataStream& in, Event& event);
 
 }
 

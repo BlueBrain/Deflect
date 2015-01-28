@@ -12,6 +12,7 @@ include(CTest)
 
 enable_testing()
 add_definitions(-DBOOST_TEST_DYN_LINK) # generates main() for unit tests
+add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)
 
 if(NOT WIN32) # tests want to be with DLLs on Windows - no rpath
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})

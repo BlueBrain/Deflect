@@ -40,6 +40,7 @@
 #ifndef DEFLECT_COMMANDTYPE_H
 #define DEFLECT_COMMANDTYPE_H
 
+#include <deflect/api.h>
 #include <QString>
 
 namespace deflect
@@ -57,10 +58,10 @@ enum CommandType
 };
 
 /** Get the string representation for a CommandType. */
-QString getCommandTypeString( const CommandType type );
+DEFLECT_API QString getCommandTypeString( const CommandType type );
 
 /** Get the CommandType from its string representation. */
-CommandType getCommandType( const QString& typeString );
+DEFLECT_API CommandType getCommandType( const QString& typeString );
 
 }
 

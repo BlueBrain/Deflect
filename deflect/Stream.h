@@ -101,7 +101,7 @@ public:
     DEFLECT_API bool isConnected() const;
 
     /** Emitted after the stream was disconnected. @version 1.0*/
-    DEFLECT_API boost::signals2::signal< void() > disconnected;
+    boost::signals2::signal< void() > disconnected;
 
     /** @name Asynchronous send API */
     //@{
