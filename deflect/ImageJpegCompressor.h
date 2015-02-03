@@ -40,11 +40,11 @@
 #ifndef DEFLECT_IMAGEJPEGCOMPRESSOR_H
 #define DEFLECT_IMAGEJPEGCOMPRESSOR_H
 
-#include <turbojpeg.h>
+#include <deflect/types.h>
+
 #include <QByteArray>
 #include <QRect>
-
-#include <deflect/types.h>
+#include <turbojpeg.h>
 
 namespace deflect
 {

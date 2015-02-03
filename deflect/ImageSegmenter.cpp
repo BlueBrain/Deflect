@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2014, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -40,11 +40,14 @@
 
 #include "ImageSegmenter.h"
 
-#include "ImageJpegCompressor.h"
 #include "ImageWrapper.h"
 #include "PixelStreamSegment.h"
+#ifdef DEFLECT_USE_LIBJPEGTURBO
+#  include "ImageJpegCompressor.h"
+#endif
 
 #include <QtConcurrentMap>
+#include <iostream>
 
 namespace deflect
 {
@@ -85,6 +88,7 @@ struct SegmentCompressionWrapper
     {}
 };
 
+#ifdef DEFLECT_USE_LIBJPEGTURBO
 // use libjpeg-turbo for JPEG conversion
 void computeJpeg( SegmentCompressionWrapper& task )
 {
@@ -98,10 +102,12 @@ void computeJpeg( SegmentCompressionWrapper& task )
     if( !task.handler( task.segment ))
         *task.result = false;
 }
+#endif
 
 bool ImageSegmenter::generateJpeg( const ImageWrapper& image,
                                    const Handler& handler ) const
 {
+#ifdef DEFLECT_USE_LIBJPEGTURBO
     const SegmentParameters& segmentParams = generateSegmentParameters( image );
 
     // The resulting Jpeg segments
@@ -118,6 +124,16 @@ bool ImageSegmenter::generateJpeg( const ImageWrapper& image,
     // create JPEGs for each segment, in parallel
     QtConcurrent::blockingMap( tasks, &computeJpeg );
     return result;
+#else
+    static bool first = true;
+    if( first )
+    {
+        first = false;
+        std::cout << "LibJpegTurbo not available, not using compression"
+                  << std::endl;
+    }
+    return generateRaw( image, handler );
+#endif
 }
 
 bool ImageSegmenter::generateRaw( const ImageWrapper &image,

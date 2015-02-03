@@ -18,7 +18,6 @@ set(DEFLECT_PUBLIC_HEADERS
   PixelStreamFrame.h
   PixelStreamDispatcher.h
   PixelStreamSegment.h
-  PixelStreamSegmentDecoder.h
   PixelStreamSegmentParameters.h
   Socket.h
   Stream.h
@@ -54,8 +53,6 @@ set(DEFLECT_SOURCES
   CommandHandler.cpp
   CommandType.cpp
   Event.cpp
-  ImageJpegCompressor.cpp
-  ImageJpegDecompressor.cpp
   ImageSegmenter.cpp
   ImageWrapper.cpp
   MessageHeader.cpp
@@ -64,7 +61,6 @@ set(DEFLECT_SOURCES
   NetworkListenerWorker.cpp
   PixelStreamBuffer.cpp
   PixelStreamDispatcher.cpp
-  PixelStreamSegmentDecoder.cpp
   Socket.cpp
   Stream.cpp
   StreamPrivate.cpp
@@ -74,9 +70,18 @@ set(DEFLECT_SOURCES
 set(DEFLECT_LINK_LIBRARIES
   ${QT_QTCORE_LIBRARY}
   ${QT_QTNETWORK_LIBRARY}
-  ${LibJpegTurbo_LIBRARIES}
   ${Boost_THREAD_LIBRARY}
   ${Boost_SYSTEM_LIBRARY}
 )
+
+if(DEFLECT_USE_LIBJPEGTURBO)
+  list(APPEND DEFLECT_PUBLIC_HEADERS PixelStreamSegmentDecoder.h)
+  list(APPEND DEFLECT_SOURCES
+    ImageJpegCompressor.cpp
+    ImageJpegDecompressor.cpp
+    PixelStreamSegmentDecoder.cpp
+  )
+  list(APPEND DEFLECT_LINK_LIBRARIES ${LibJpegTurbo_LIBRARIES})
+endif()
 
 common_library(Deflect)

@@ -49,7 +49,7 @@ namespace deflect
 {
 
 PixelStreamSegmentDecoder::PixelStreamSegmentDecoder()
-    : decompressor_(new ImageJpegDecompressor())
+    : decompressor_( new ImageJpegDecompressor )
 {
 }
 
@@ -58,7 +58,8 @@ PixelStreamSegmentDecoder::~PixelStreamSegmentDecoder()
     delete decompressor_;
 }
 
-void decodeSegment(ImageJpegDecompressor* decompressor, PixelStreamSegment* segment)
+void decodeSegment( ImageJpegDecompressor* decompressor,
+                    PixelStreamSegment* segment )
 {
     QByteArray decodedData = decompressor->decompress(segment->imageData);
 
@@ -72,7 +73,7 @@ void decodeSegment(ImageJpegDecompressor* decompressor, PixelStreamSegment* segm
 void PixelStreamSegmentDecoder::startDecoding(PixelStreamSegment& segment)
 {
     // drop frames if we're currently processing
-    if(isRunning())
+    if( isRunning( ))
     {
         std::cerr << "Decoding in process, Frame dropped. See if we need to "
                      "change this..." << std::endl;
