@@ -67,6 +67,8 @@ function(GIT_EXTERNAL DIR REPO TAG)
       message(FATAL_ERROR "${DIR} git clone failed: ${error}\n")
     endif()
   endif()
+
+  # set up "user" remote for github forks
   if(GIT_EXTERNAL_USER_FORK AND REPO MATCHES ".*github.com.*")
     string(REGEX REPLACE "(.*github.com[\\/:]).*(\\/.*)"
       "\\1${GIT_EXTERNAL_USER_FORK}\\2" GIT_EXTERNAL_USER_REPO ${REPO})
