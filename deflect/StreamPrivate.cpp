@@ -45,6 +45,8 @@
 #include "PixelStreamSegment.h"
 #include "PixelStreamSegmentParameters.h"
 
+#include <iostream>
+
 #include <boost/thread/thread.hpp>
 #define SEGMENT_SIZE 512
 

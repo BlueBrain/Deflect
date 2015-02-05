@@ -49,6 +49,8 @@
 #include <QDataStream>
 #include <boost/bind.hpp>
 
+#include <iostream>
+
 namespace deflect
 {
 
