@@ -4,4 +4,7 @@
 #                     Raphael Dumusc <raphael.dumusc@epfl.ch>
 
 set(TEST_LIBRARIES Deflect Mock ${Boost_LIBRARIES})
+if(NOT DEFLECT_USE_LIBJPEGTURBO)
+  set(EXCLUDE_FROM_TESTS PixelStreamSegmentDecoderTests.cpp)
+endif()
 include(CommonCTest)
