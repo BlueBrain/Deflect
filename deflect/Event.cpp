@@ -44,8 +44,8 @@
 namespace deflect
 {
 
-const size_t Event::serializedSize = 3*sizeof(quint32) + 4*sizeof(double) +
-                                     3*sizeof(bool) + UNICODE_TEXT_SIZE;
+const uint32_t Event::serializedSize = 3*sizeof(quint32) + 4*sizeof(double) +
+                                       3*sizeof(bool) + UNICODE_TEXT_SIZE;
 
 QDataStream& operator<<(QDataStream& out, const deflect::Event& event)
 {

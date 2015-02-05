@@ -50,16 +50,18 @@ namespace ut = boost::unit_test;
 #include <deflect/PixelStreamSegmentDecoder.h>
 
 #include <boost/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/thread.hpp>
 
 void fillTestImage(std::vector<char>& data)
 {
     data.reserve(8*8*4);
     for (size_t i = 0; i<8*8; ++i)
     {
-        data.push_back(192); // R
-        data.push_back(128); // G
-        data.push_back(64);  // B
-        data.push_back(255); // A
+        data.push_back(92); // R
+        data.push_back(28); // G
+        data.push_back(0);  // B
+        data.push_back(-1); // A
     }
 }
 
@@ -69,6 +71,7 @@ BOOST_AUTO_TEST_CASE( testImageCompressionAndDecompression )
     std::vector<char> data;
     fillTestImage(data);
     deflect::ImageWrapper imageWrapper(data.data(), 8, 8, deflect::RGBA);
+    imageWrapper.compressionQuality = 100;
 
     // Compress image
     deflect::ImageJpegCompressor compressor;
@@ -128,7 +131,7 @@ BOOST_AUTO_TEST_CASE( testImageSegmentationWithCompressionAndDecompression )
     size_t timeout = 0;
     while(decoder.isRunning())
     {
-        usleep(10);
+        boost::this_thread::sleep( boost::posix_time::microseconds( 10 ));
         if (++timeout >= 10)
             break;
     }

@@ -41,6 +41,8 @@
 #ifndef DEFLECT_STREAMPRIVATE_H
 #define DEFLECT_STREAMPRIVATE_H
 
+#include <deflect/api.h>
+
 #include "Event.h"
 #include "MessageHeader.h"
 #include "ImageSegmenter.h"
@@ -116,7 +118,7 @@ public:
      * @param senderName Used to identifiy the sender on the receiver side
      * @return true if the message could be sent
      */
-    bool sendPixelStreamSegment(const PixelStreamSegment& segment);
+    DEFLECT_API bool sendPixelStreamSegment(const PixelStreamSegment& segment);
 
     /**
      * Send a command to the wall

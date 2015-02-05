@@ -317,7 +317,7 @@ int main(int argc, char **argv)
     while(streamOpen && (options.nframes_ == 0 || counter < options.nframes_))
     {
         if (options.framerate_)
-            usleep(MICROSEC / options.framerate_);
+            boost::this_thread::sleep( boost::posix_time::microseconds( MICROSEC / options.framerate_ ));
         streamOpen = benchmarkStreamer.send();
         ++counter;
     }
