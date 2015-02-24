@@ -53,8 +53,8 @@ macro(COMMON_PACKAGE Name)
 endmacro()
 
 common_package(Boost 1.41.0  REQUIRED COMPONENTS date_time program_options unit_test_framework serialization system thread)
-common_package(LibJpegTurbo 1.2.1)
-common_package(Qt4 4.6  REQUIRED COMPONENTS QtCore QtGui QtNetwork)
+common_package(LibJpegTurbo 1.2.1  REQUIRED )
+common_package(Qt4 4.8  REQUIRED COMPONENTS QtCore QtGui QtNetwork)
 common_package(GLUT    )
 common_package(OpenGL    )
 
