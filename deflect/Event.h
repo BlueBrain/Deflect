@@ -40,7 +40,9 @@
 #ifndef DEFLECT_EVENT_H
 #define DEFLECT_EVENT_H
 
-#include <cstdint>
+#ifdef _MSC_VER
+#  include <stdint.h>
+#endif
 
 #include <deflect/api.h>
 #include <deflect/types.h>
