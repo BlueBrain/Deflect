@@ -1,5 +1,5 @@
 
-# Copyright (c) 2013-2014, EPFL/Blue Brain Project
+# Copyright (c) 2013-2015, EPFL/Blue Brain Project
 #                     Raphael Dumusc <raphael.dumusc@epfl.ch>
 
 set(DESKTOPSTREAMER_MOC_HEADERS
@@ -39,8 +39,12 @@ if(APPLE)
     ${DESKTOPSTREAMER_SOURCES} ${MOC_OUTFILES} ${QRC_SOURCES}
     ${DESKTOPSTREAMER_ICON_FILE}) # include the icns file in the target
 
+  # Configure the bundle property file using current version and year
+  string(TIMESTAMP CURRENT_YEAR "%Y")
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Info.plist @ONLY)
   set_target_properties(${DESKTOPSTREAMER_APP_NAME} PROPERTIES
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_BINARY_DIR}/Info.plist)
 
 elseif(WIN32)
   set(DESKTOPSTREAMER_APP_NAME desktopstreamer)
@@ -60,6 +64,7 @@ target_link_libraries(${DESKTOPSTREAMER_APP_NAME} ${DESKTOPSTREAMER_LINK_LIBRARI
 
 install(TARGETS ${DESKTOPSTREAMER_APP_NAME}
   RUNTIME DESTINATION bin COMPONENT desktopstreamer
-  BUNDLE DESTINATION . COMPONENT desktopstreamer)
+  BUNDLE DESTINATION . COMPONENT desktopstreamer
+)
 
 include(CPackConfig)

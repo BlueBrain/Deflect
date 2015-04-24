@@ -57,7 +57,7 @@
 #define SHARE_DESKTOP_UPDATE_DELAY      1
 #define FRAME_RATE_AVERAGE_NUM_FRAMES  10
 
-#define DEFAULT_HOST_ADDRESS  "bbplxviz03.epfl.ch"
+#define DEFAULT_HOST_ADDRESS  "bbpav02.epfl.ch"
 #define CURSOR_IMAGE_FILE     ":/cursor.png"
 
 MainWindow::MainWindow()
