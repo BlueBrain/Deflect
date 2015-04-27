@@ -18,7 +18,7 @@ set(CPACK_COMPONENT_DESKTOPSTREAMER_DEPENDS Deflect)
 set(CPACK_COMPONENTS_ALL desktopstreamer lib)
 
 # Linux Debian specific settings
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt4-core, libqt4-gui, libqt4-network, libturbojpeg" )
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "qtbase5-dev, libturbojpeg" )
 set(CPACK_DEB_COMPONENT_INSTALL ON) # Set this to package only components in CPACK_COMPONENTS_ALL
 set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1) # Don't make a separate package for each component
 
