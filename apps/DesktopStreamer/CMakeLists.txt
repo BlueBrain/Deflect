@@ -3,17 +3,17 @@
 #                     Raphael Dumusc <raphael.dumusc@epfl.ch>
 
 set(DESKTOPSTREAMER_MOC_HEADERS
-  src/MainWindow.h
-  src/DesktopSelectionWindow.h
-  src/DesktopSelectionRectangle.h
+  MainWindow.h
+  DesktopSelectionWindow.h
+  DesktopSelectionRectangle.h
 )
 
 set(DESKTOPSTREAMER_SOURCES
-  src/DesktopSelectionRectangle.cpp
-  src/DesktopSelectionWindow.cpp
-  src/DesktopSelectionView.cpp
-  src/main.cpp
-  src/MainWindow.cpp
+  DesktopSelectionRectangle.cpp
+  DesktopSelectionWindow.cpp
+  DesktopSelectionView.cpp
+  main.cpp
+  MainWindow.cpp
 )
 
 set(DESKTOPSTREAMER_LINK_LIBRARIES Deflect ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
@@ -29,7 +29,7 @@ if(APPLE)
 
   # Required to control AppNap on OSX >= 10.9
   list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES "-framework Foundation")
-  list(APPEND DESKTOPSTREAMER_SOURCES src/AppNapSuspender.mm)
+  list(APPEND DESKTOPSTREAMER_SOURCES AppNapSuspender.mm)
 
   # set where in the bundle to put the icns file
   set_source_files_properties(${DESKTOPSTREAMER_ICON_FILE}
