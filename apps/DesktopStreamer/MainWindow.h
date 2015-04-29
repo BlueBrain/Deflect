@@ -69,7 +69,7 @@ private slots:
     void shareDesktop(bool set);
     void showDesktopSelectionWindow(bool set);
 
-    void shareDesktopUpdate();
+    void update();
 
     void setCoordinates(const QRect coordinates);
     void updateCoordinates();
@@ -89,6 +89,7 @@ private:
     QSpinBox heightSpinBox_;
     QSpinBox frameRateSpinBox_;
     QLabel frameRateLabel_;
+    QCheckBox eventsBox_;
 
     QAction* shareDesktopAction_;
     QAction* showDesktopSelectionWindowAction_;
@@ -104,7 +105,7 @@ private:
 
     QImage cursor_;
 
-    QTimer shareDesktopUpdateTimer_;
+    QTimer updateTimer_;
 
     // used for frame rate calculations
     std::vector<QTime> frameSentTimes_;
@@ -119,6 +120,13 @@ private:
     void startStreaming();
     void stopStreaming();
     void handleStreamingError(const QString& errorMessage);
+    void processStreamEvents();
+    void shareDesktopUpdate();
+
+    void sendMousePressEvent( const float x, const float y );
+    void sendMouseMoveEvent( const float x, const float y );
+    void sendMouseReleaseEvent( const float x, const float y );
+    void sendMouseDoubleClickEvent( const float, const float );
 
     void regulateFrameRate(const int elapsedFrameTime);
 };
