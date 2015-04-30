@@ -261,31 +261,31 @@ void MainWindow::processStreamEvents()
 
     while( stream_->hasEvent( ))
     {
-        const deflect::Event& event = stream_->getEvent();
-        switch( event.type )
+        const deflect::Event& wallEvent = stream_->getEvent();
+        switch( wallEvent.type )
         {
         case deflect::Event::EVT_CLOSE:
             stopStreaming();
             break;
         case deflect::Event::EVT_PRESS:
-            sendMouseMoveEvent( event.mouseX, event.mouseY );
-            sendMousePressEvent( event.mouseX, event.mouseY );
+            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
+            sendMousePressEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
         case deflect::Event::EVT_RELEASE:
-            sendMouseMoveEvent( event.mouseX, event.mouseY );
-            sendMouseReleaseEvent( event.mouseX, event.mouseY );
+            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
+            sendMouseReleaseEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
         case deflect::Event::EVT_CLICK:
-            sendMouseMoveEvent( event.mouseX, event.mouseY );
-            sendMousePressEvent( event.mouseX, event.mouseY );
-            sendMouseReleaseEvent( event.mouseX, event.mouseY );
+            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
+            sendMousePressEvent( wallEvent.mouseX, wallEvent.mouseY );
+            sendMouseReleaseEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
         case deflect::Event::EVT_DOUBLECLICK:
-            sendMouseDoubleClickEvent( event.mouseX, event.mouseY );
+            sendMouseDoubleClickEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
 
         case deflect::Event::EVT_MOVE:
-            sendMouseMoveEvent( event.mouseX, event.mouseY );
+            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
         case deflect::Event::EVT_WHEEL:
         case deflect::Event::EVT_SWIPE_LEFT:
