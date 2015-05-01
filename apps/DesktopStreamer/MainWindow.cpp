@@ -262,6 +262,9 @@ void MainWindow::processStreamEvents()
     while( stream_->hasEvent( ))
     {
         const deflect::Event& wallEvent = stream_->getEvent();
+#ifndef NDEBUG
+        std::cout << "----------" << std::endl;
+#endif
         switch( wallEvent.type )
         {
         case deflect::Event::EVT_CLOSE:
@@ -402,6 +405,10 @@ void MainWindow::sendMousePressEvent( const float x, const float y )
     CGPoint point;
     point.x = x_ + x * width_;
     point.y = y_ + y * height_;
+#ifndef NDEBUG
+    std::cout << "Press " << point.x << ", " << point.y << " ("
+              << x << ", " << y << ")"<< std::endl;
+#endif
     sendMouseEvent( kCGEventLeftMouseDown, kCGMouseButtonLeft, point );
 }
 void MainWindow::sendMouseMoveEvent( const float x, const float y )
@@ -409,6 +416,10 @@ void MainWindow::sendMouseMoveEvent( const float x, const float y )
     CGPoint point;
     point.x = x_ + x * width_;
     point.y = y_ + y * height_;
+#ifndef NDEBUG
+    std::cout << "Move " << point.x << ", " << point.y << " ("
+              << x << ", " << y << ")"<< std::endl;
+#endif
     sendMouseEvent( kCGEventMouseMoved, kCGMouseButtonLeft, point );
 }
 void MainWindow::sendMouseReleaseEvent( const float x, const float y )
@@ -416,6 +427,10 @@ void MainWindow::sendMouseReleaseEvent( const float x, const float y )
     CGPoint point;
     point.x = x_ + x * width_;
     point.y = y_ + y * height_;
+#ifndef NDEBUG
+    std::cout << "Release " << point.x << ", " << point.y << " ("
+              << x << ", " << y << ")"<< std::endl;
+#endif
     sendMouseEvent( kCGEventLeftMouseUp, kCGMouseButtonLeft, point );
 }
 void MainWindow::sendMouseDoubleClickEvent( const float x, const float y )
@@ -425,6 +440,10 @@ void MainWindow::sendMouseDoubleClickEvent( const float x, const float y )
     point.y = y_ + y * height_;
     CGEventRef event = CGEventCreateMouseEvent( 0, kCGEventLeftMouseDown,
                                                 point, kCGMouseButtonLeft );
+#ifndef NDEBUG
+    std::cout << "Double click " << point.x << ", " << point.y << " ("
+              << x << ", " << y << ")"<< std::endl;
+#endif
 
     CGEventSetIntegerValueField( event, kCGMouseEventClickState, 2 );
     CGEventPost( kCGHIDEventTap, event );
