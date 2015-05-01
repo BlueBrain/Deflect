@@ -42,7 +42,10 @@
 #include <QtGui>
 
 #ifdef __APPLE__
-#include "AppNapSuspender.h"
+#  include "AppNapSuspender.h"
+#endif
+#ifdef DEFLECT_USE_LUNCHBOX
+#  include <lunchbox/servus.h>
 #endif
 
 namespace deflect
@@ -70,6 +73,7 @@ private slots:
     void showDesktopSelectionWindow(bool set);
 
     void update();
+    void updateServus();
 
     void setCoordinates(const QRect coordinates);
     void updateCoordinates();
@@ -106,12 +110,16 @@ private:
     QImage cursor_;
 
     QTimer updateTimer_;
+    QTimer browseTimer_;
 
     // used for frame rate calculations
     std::vector<QTime> frameSentTimes_;
 
 #ifdef __APPLE__
     AppNapSuspender napSuspender_;
+#endif
+#ifdef DEFLECT_USE_LUNCHBOX
+    lunchbox::Servus servus_;
 #endif
 
     void setupUI();

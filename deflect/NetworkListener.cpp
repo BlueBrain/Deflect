@@ -40,48 +40,72 @@
 
 #include "NetworkListenerWorker.h"
 #include "PixelStreamDispatcher.h"
-
 #include "CommandHandler.h"
+
+#ifdef DEFLECT_USE_LUNCHBOX
+#  include <lunchbox/servus.h>
+#  include <boost/lexical_cast.hpp>
+#endif
 
 #include <QThread>
 #include <stdexcept>
 
 namespace deflect
 {
-
 const int NetworkListener::defaultPortNumber_ = 1701;
 
-NetworkListener::NetworkListener( int port)
-    : pixelStreamDispatcher_(new PixelStreamDispatcher())
-    , commandHandler_(new CommandHandler())
+namespace detail
 {
-    if( !listen(QHostAddress::Any, port) )
+class NetworkListener
+{
+public:
+    NetworkListener()
+#ifdef DEFLECT_USE_LUNCHBOX
+        : servus( "_displaycluster._tcp" )
+#endif
+    {}
+
+    PixelStreamDispatcher pixelStreamDispatcher;
+    CommandHandler commandHandler;
+#ifdef DEFLECT_USE_LUNCHBOX
+    lunchbox::Servus servus;
+#endif
+};
+}
+
+
+NetworkListener::NetworkListener( const int port )
+    : _impl( new detail::NetworkListener )
+{
+    if( !listen( QHostAddress::Any, port ))
     {
         const QString err = QString("could not listen on port: %1").arg(port);
         throw std::runtime_error(err.toStdString());
     }
+#ifdef DEFLECT_USE_LUNCHBOX
+    _impl->servus.announce( port, boost::lexical_cast< std::string >( port ));
+#endif
 }
 
 NetworkListener::~NetworkListener()
 {
-    delete pixelStreamDispatcher_;
-    delete commandHandler_;
+    delete _impl;
 }
 
 CommandHandler& NetworkListener::getCommandHandler()
 {
-    return *commandHandler_;
+    return _impl->commandHandler;
 }
 
 PixelStreamDispatcher& NetworkListener::getPixelStreamDispatcher()
 {
-    return *pixelStreamDispatcher_;
+    return _impl->pixelStreamDispatcher;
 }
 
 void NetworkListener::incomingConnection(int socketHandle)
 {
-    QThread * workerThread = new QThread(this);
-    NetworkListenerWorker * worker = new NetworkListenerWorker(socketHandle);
+    QThread* workerThread = new QThread(this);
+    NetworkListenerWorker* worker = new NetworkListenerWorker(socketHandle);
 
     worker->moveToThread(workerThread);
 
@@ -104,21 +128,23 @@ void NetworkListener::incomingConnection(int socketHandle)
 
     // Commands
     connect(worker, SIGNAL(receivedCommand(QString,QString)),
-            commandHandler_, SLOT(process(QString,QString)));
+            &_impl->commandHandler, SLOT(process(QString,QString)));
 
     // PixelStreamDispatcher
     connect(worker, SIGNAL(receivedAddPixelStreamSource(QString,size_t)),
-            pixelStreamDispatcher_, SLOT(addSource(QString,size_t)));
+            &_impl->pixelStreamDispatcher, SLOT(addSource(QString,size_t)));
     connect(worker,
             SIGNAL(receivedPixelStreamSegement(QString,size_t,
                                                PixelStreamSegment)),
-            pixelStreamDispatcher_,
+            &_impl->pixelStreamDispatcher,
             SLOT(processSegment(QString,size_t,PixelStreamSegment)));
     connect(worker,
             SIGNAL(receivedPixelStreamFinishFrame(QString,size_t)),
-            pixelStreamDispatcher_, SLOT(processFrameFinished(QString,size_t)));
+            &_impl->pixelStreamDispatcher,
+            SLOT(processFrameFinished(QString,size_t)));
     connect(worker, SIGNAL(receivedRemovePixelStreamSource(QString,size_t)),
-            pixelStreamDispatcher_, SLOT(removeSource(QString,size_t)));
+            &_impl->pixelStreamDispatcher,
+            SLOT(removeSource(QString,size_t)));
 
     workerThread->start();
 }

@@ -45,6 +45,7 @@
 
 namespace deflect
 {
+namespace detail{ class NetworkListener; }
 
 /**
  * Listen to incoming PixelStream connections from Stream clients.
@@ -82,11 +83,10 @@ public slots:
     void onEventRegistrationReply( QString uri, bool success );
 
 private:
+    detail::NetworkListener* _impl;
+
     /** Re-implemented handling of connections from QTCPSocket. */
     void incomingConnection( int socketHandle ) final;
-
-    PixelStreamDispatcher* pixelStreamDispatcher_;
-    CommandHandler* commandHandler_;
 
 signals:
     void pixelStreamerClosed( QString uri );
