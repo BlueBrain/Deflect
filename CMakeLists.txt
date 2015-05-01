@@ -11,11 +11,12 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
 include(GitExternal)
 
 set(VERSION_MAJOR "0")
-set(VERSION_MINOR "4")
-set(VERSION_PATCH "1")
+set(VERSION_MINOR "5")
+set(VERSION_PATCH "0")
 set(VERSION_ABI 1)
 
-set(DEFLECT_DESCRIPTION "The library to write applications for DisplayCluster")
+set(DEFLECT_DESCRIPTION
+  "The client library to write applications for DisplayCluster")
 set(DEFLECT_ISSUES_URL "https://github.com/BlueBrain/Deflect/issues")
 set(DEFLECT_PACKAGE_URL "https://github.com/BlueBrain/Deflect/releases")
 set(DEFLECT_DEPENDENT_LIBRARIES Boost)

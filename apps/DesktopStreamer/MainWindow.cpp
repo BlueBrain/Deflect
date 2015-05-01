@@ -51,6 +51,9 @@
     #include <stdint.h>
     #include <unistd.h>
 #endif
+#ifdef __APPLE__
+#  include <CoreGraphics/CoreGraphics.h>
+#endif
 
 #include <iostream>
 
@@ -131,8 +134,10 @@ void MainWindow::setupUI()
     formLayout->addRow("Y", &ySpinBox_);
     formLayout->addRow("Width", &widthSpinBox_);
     formLayout->addRow("Height", &heightSpinBox_);
+    formLayout->addRow("Allow desktop interaction", &eventsBox_);
     formLayout->addRow("Max frame rate", &frameRateSpinBox_);
     formLayout->addRow("Actual frame rate", &frameRateLabel_);
+    eventsBox_.setChecked( true );
 
     // share desktop action
     shareDesktopAction_ = new QAction("Share Desktop", this);
@@ -157,7 +162,7 @@ void MainWindow::setupUI()
     toolbar->addAction(showDesktopSelectionWindowAction_);
 
     // Update timer
-    connect(&shareDesktopUpdateTimer_, SIGNAL(timeout()), this, SLOT(shareDesktopUpdate()));
+    connect(&updateTimer_, SIGNAL(timeout()), this, SLOT(update()));
 }
 
 void MainWindow::startStreaming()
@@ -176,12 +181,12 @@ void MainWindow::startStreaming()
 #ifdef __APPLE__
     napSuspender_.suspend();
 #endif
-    shareDesktopUpdateTimer_.start(SHARE_DESKTOP_UPDATE_DELAY);
+    updateTimer_.start(SHARE_DESKTOP_UPDATE_DELAY);
 }
 
 void MainWindow::stopStreaming()
 {
-    shareDesktopUpdateTimer_.stop();
+    updateTimer_.stop();
     frameRateLabel_.setText("");
 
     delete stream_;
@@ -225,27 +230,77 @@ void MainWindow::setCoordinates(const QRect coordinates)
     height_ = heightSpinBox_.value();
 }
 
-void MainWindow::shareDesktop(bool set)
+void MainWindow::shareDesktop( const bool set )
 {
     if( set )
-    {
         startStreaming();
-    }
     else
-    {
         stopStreaming();
-    }
 }
 
-void MainWindow::showDesktopSelectionWindow(bool set)
+void MainWindow::showDesktopSelectionWindow( const bool set )
 {
     if( set )
-    {
         desktopSelectionWindow_->showFullScreen();
-    }
     else
-    {
         desktopSelectionWindow_->hide();
+}
+
+void MainWindow::update()
+{
+    processStreamEvents();
+    shareDesktopUpdate();
+}
+
+void MainWindow::processStreamEvents()
+{
+    if( !eventsBox_.checkState( ))
+        return;
+    if( !stream_->isRegisteredForEvents() && !stream_->registerForEvents( ))
+        return;
+
+    while( stream_->hasEvent( ))
+    {
+        const deflect::Event& wallEvent = stream_->getEvent();
+#ifndef NDEBUG
+        std::cout << "----------" << std::endl;
+#endif
+        switch( wallEvent.type )
+        {
+        case deflect::Event::EVT_CLOSE:
+            stopStreaming();
+            break;
+        case deflect::Event::EVT_PRESS:
+            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
+            sendMousePressEvent( wallEvent.mouseX, wallEvent.mouseY );
+            break;
+        case deflect::Event::EVT_RELEASE:
+            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
+            sendMouseReleaseEvent( wallEvent.mouseX, wallEvent.mouseY );
+            break;
+        case deflect::Event::EVT_CLICK:
+            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
+            sendMousePressEvent( wallEvent.mouseX, wallEvent.mouseY );
+            sendMouseReleaseEvent( wallEvent.mouseX, wallEvent.mouseY );
+            break;
+        case deflect::Event::EVT_DOUBLECLICK:
+            sendMouseDoubleClickEvent( wallEvent.mouseX, wallEvent.mouseY );
+            break;
+
+        case deflect::Event::EVT_MOVE:
+            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
+            break;
+        case deflect::Event::EVT_WHEEL:
+        case deflect::Event::EVT_SWIPE_LEFT:
+        case deflect::Event::EVT_SWIPE_RIGHT:
+        case deflect::Event::EVT_SWIPE_UP:
+        case deflect::Event::EVT_SWIPE_DOWN:
+        case deflect::Event::EVT_KEY_PRESS:
+        case deflect::Event::EVT_KEY_RELEASE:
+        case deflect::Event::EVT_VIEW_SIZE_CHANGED:
+        default:
+            break;
+        }
     }
 }
 
@@ -334,3 +389,78 @@ void MainWindow::updateCoordinates()
     const QRect coordinates(x_, y_, width_, height_);
     desktopSelectionWindow_->getDesktopSelectionView()->getDesktopSelectionRectangle()->setCoordinates(coordinates);
 }
+
+#ifdef __APPLE__
+void sendMouseEvent( const CGEventType type, const CGMouseButton button,
+                     const CGPoint point )
+{
+    CGEventRef event = CGEventCreateMouseEvent( 0, type, point, button );
+    CGEventSetType( event, type );
+    CGEventPost( kCGHIDEventTap, event );
+    CFRelease( event );
+}
+
+void MainWindow::sendMousePressEvent( const float x, const float y )
+{
+    CGPoint point;
+    point.x = x_ + x * width_;
+    point.y = y_ + y * height_;
+#ifndef NDEBUG
+    std::cout << "Press " << point.x << ", " << point.y << " ("
+              << x << ", " << y << ")"<< std::endl;
+#endif
+    sendMouseEvent( kCGEventLeftMouseDown, kCGMouseButtonLeft, point );
+}
+void MainWindow::sendMouseMoveEvent( const float x, const float y )
+{
+    CGPoint point;
+    point.x = x_ + x * width_;
+    point.y = y_ + y * height_;
+#ifndef NDEBUG
+    std::cout << "Move " << point.x << ", " << point.y << " ("
+              << x << ", " << y << ")"<< std::endl;
+#endif
+    sendMouseEvent( kCGEventMouseMoved, kCGMouseButtonLeft, point );
+}
+void MainWindow::sendMouseReleaseEvent( const float x, const float y )
+{
+    CGPoint point;
+    point.x = x_ + x * width_;
+    point.y = y_ + y * height_;
+#ifndef NDEBUG
+    std::cout << "Release " << point.x << ", " << point.y << " ("
+              << x << ", " << y << ")"<< std::endl;
+#endif
+    sendMouseEvent( kCGEventLeftMouseUp, kCGMouseButtonLeft, point );
+}
+void MainWindow::sendMouseDoubleClickEvent( const float x, const float y )
+{
+    CGPoint point;
+    point.x = x_ + x * width_;
+    point.y = y_ + y * height_;
+    CGEventRef event = CGEventCreateMouseEvent( 0, kCGEventLeftMouseDown,
+                                                point, kCGMouseButtonLeft );
+#ifndef NDEBUG
+    std::cout << "Double click " << point.x << ", " << point.y << " ("
+              << x << ", " << y << ")"<< std::endl;
+#endif
+
+    CGEventSetIntegerValueField( event, kCGMouseEventClickState, 2 );
+    CGEventPost( kCGHIDEventTap, event );
+
+    CGEventSetType( event, kCGEventLeftMouseUp );
+    CGEventPost( kCGHIDEventTap, event );
+
+    CGEventSetType( event, kCGEventLeftMouseDown );
+    CGEventPost( kCGHIDEventTap, event );
+
+    CGEventSetType( event, kCGEventLeftMouseUp );
+    CGEventPost( kCGHIDEventTap, event );
+    CFRelease( event );
+}
+#else
+void MainWindow::sendMousePressEvent( const float, const float ) {}
+void MainWindow::sendMouseMoveEvent( const float, const float ) {}
+void MainWindow::sendMouseReleaseEvent( const float, const float ) {}
+void MainWindow::sendMouseDoubleClickEvent( const float, const float ) {}
+#endif
