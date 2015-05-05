@@ -58,6 +58,9 @@ public:
     /** The default port number used for Stream connections. */
     DEFLECT_API static const int defaultPortNumber_;
 
+    /** The zeroconf service name for announcing stream connections. */
+    DEFLECT_API static const std::string serviceName_;
+
     /**
      * Create a new server listening for Stream connections.
      * @param port The port to listen on. Must be available.
