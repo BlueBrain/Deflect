@@ -73,7 +73,7 @@ MainWindow::MainWindow()
     , width_(0)
     , height_(0)
 #ifdef DEFLECT_USE_LUNCHBOX
-    , servus_( deflect::NetworkListener::serviceName_ )
+    , servus_( deflect::NetworkListener::serviceName )
 #endif
 {
     generateCursorImage();
@@ -191,8 +191,8 @@ void MainWindow::startStreaming()
 
 #ifdef __APPLE__
     napSuspender_.suspend();
-#endif
     browseTimer_.stop();
+#endif
     updateTimer_.start(SHARE_DESKTOP_UPDATE_DELAY);
 }
 
@@ -316,10 +316,10 @@ void MainWindow::processStreamEvents()
     }
 }
 
+#ifdef DEFLECT_USE_LUNCHBOX
 void MainWindow::updateServus()
 {
-#ifdef DEFLECT_USE_LUNCHBOX
-    if( hostnameLineEdit_.text() == DEFAULT_HOST_ADDRESS )
+    if( hostnameLineEdit_.text() != DEFAULT_HOST_ADDRESS )
     {
         browseTimer_.stop();
         return;
@@ -332,8 +332,8 @@ void MainWindow::updateServus()
 
     browseTimer_.stop();
     hostnameLineEdit_.setText( hosts.front().c_str( ));
-#endif
 }
+#endif
 
 void MainWindow::shareDesktopUpdate()
 {

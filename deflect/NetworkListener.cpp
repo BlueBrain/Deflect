@@ -52,8 +52,8 @@
 
 namespace deflect
 {
-const int NetworkListener::defaultPortNumber_ = 1701;
-const std::string NetworkListener::serviceName_ = "_displaycluster._tcp";
+const int NetworkListener::defaultPortNumber = 1701;
+const std::string NetworkListener::serviceName = "_displaycluster._tcp";
 
 namespace detail
 {
@@ -62,7 +62,7 @@ class NetworkListener
 public:
     NetworkListener()
 #ifdef DEFLECT_USE_LUNCHBOX
-        : servus( deflect::NetworkListener::serviceName_ )
+        : servus( deflect::NetworkListener::serviceName )
 #endif
     {}
 

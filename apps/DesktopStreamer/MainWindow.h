@@ -73,7 +73,9 @@ private slots:
     void showDesktopSelectionWindow(bool set);
 
     void update();
+#ifdef DEFLECT_USE_LUNCHBOX
     void updateServus();
+#endif
 
     void setCoordinates(const QRect coordinates);
     void updateCoordinates();
@@ -110,7 +112,6 @@ private:
     QImage cursor_;
 
     QTimer updateTimer_;
-    QTimer browseTimer_;
 
     // used for frame rate calculations
     std::vector<QTime> frameSentTimes_;
@@ -119,6 +120,7 @@ private:
     AppNapSuspender napSuspender_;
 #endif
 #ifdef DEFLECT_USE_LUNCHBOX
+    QTimer browseTimer_;
     lunchbox::Servus servus_;
 #endif
 

@@ -56,17 +56,17 @@ class NetworkListener : public QTcpServer
 
 public:
     /** The default port number used for Stream connections. */
-    DEFLECT_API static const int defaultPortNumber_;
+    DEFLECT_API static const int defaultPortNumber;
 
     /** The zeroconf service name for announcing stream connections. */
-    DEFLECT_API static const std::string serviceName_;
+    DEFLECT_API static const std::string serviceName;
 
     /**
      * Create a new server listening for Stream connections.
      * @param port The port to listen on. Must be available.
      * @throw std::runtime_error if the server could not be started.
      */
-    DEFLECT_API explicit NetworkListener(int port = defaultPortNumber_);
+    DEFLECT_API explicit NetworkListener( int port = defaultPortNumber );
 
     /** Destructor */
     DEFLECT_API ~NetworkListener();
