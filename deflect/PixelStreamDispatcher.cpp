@@ -40,8 +40,6 @@
 #include "PixelStreamDispatcher.h"
 #include "PixelStreamFrame.h"
 
-#define STREAM_WINDOW_DEFAULT_SIZE 100
-
 namespace deflect
 {
 
@@ -49,87 +47,85 @@ PixelStreamDispatcher::PixelStreamDispatcher()
 {
 }
 
-void PixelStreamDispatcher::addSource(const QString uri, const size_t sourceIndex)
+void PixelStreamDispatcher::addSource( const QString uri,
+                                       const size_t sourceIndex )
 {
-    streamBuffers_[uri].addSource(sourceIndex);
+    streamBuffers_[uri].addSource( sourceIndex );
+
+    if( streamBuffers_[uri].getSourceCount() == 1 )
+        emit openPixelStream( uri );
 }
 
-void PixelStreamDispatcher::removeSource(const QString uri, const size_t sourceIndex)
+void PixelStreamDispatcher::removeSource( const QString uri,
+                                          const size_t sourceIndex )
 {
-    if(!streamBuffers_.count(uri))
+    if( !streamBuffers_.count( uri ))
         return;
 
-    streamBuffers_[uri].removeSource(sourceIndex);
+    streamBuffers_[uri].removeSource( sourceIndex );
 
-    if (streamBuffers_[uri].getSourceCount() == 0)
-    {
-        deleteStream(uri);
-    }
+    if( streamBuffers_[uri].getSourceCount() == 0 )
+        deleteStream( uri );
 }
 
-void PixelStreamDispatcher::processSegment(const QString uri, const size_t sourceIndex, PixelStreamSegment segment)
+void PixelStreamDispatcher::processSegment( const QString uri,
+                                            const size_t sourceIndex,
+                                            PixelStreamSegment segment )
 {
-    if (streamBuffers_.count(uri))
-        streamBuffers_[uri].insertSegment(segment, sourceIndex);
+    if( streamBuffers_.count( uri ))
+        streamBuffers_[uri].insertSegment( segment, sourceIndex );
 }
 
-void PixelStreamDispatcher::processFrameFinished(const QString uri, const size_t sourceIndex)
+void PixelStreamDispatcher::processFrameFinished( const QString uri,
+                                                  const size_t sourceIndex )
 {
-    if (!streamBuffers_.count(uri))
-        return;
-
-    PixelStreamBuffer& buffer = streamBuffers_[uri];
-    buffer.finishFrameForSource(sourceIndex);
-
-    // When the first frame is complete, notify that the stream is now open
-    if (buffer.isFirstCompleteFrame())
-    {
-        QSize size = buffer.getFrameSize();
-        emit openPixelStream(uri, size);
-        buffer.setAllowedToSend(true);
-    }
-
-    if (buffer.isAllowedToSend())
-        sendLatestFrame(uri);
-}
-
-void PixelStreamDispatcher::deleteStream(const QString uri)
-{
-    if (streamBuffers_.count(uri))
-    {
-        streamBuffers_.erase(uri);
-        emit deletePixelStream(uri);
-    }
-}
-
-void PixelStreamDispatcher::requestFrame(const QString uri)
-{
-    if (!streamBuffers_.count(uri))
+    if( !streamBuffers_.count( uri ))
         return;
 
     PixelStreamBuffer& buffer = streamBuffers_[uri];
-    buffer.setAllowedToSend(true);
-    sendLatestFrame(uri);
+    buffer.finishFrameForSource( sourceIndex );
+
+    if( buffer.isAllowedToSend( ))
+        sendLatestFrame( uri );
 }
 
-void PixelStreamDispatcher::sendLatestFrame(const QString uri)
+void PixelStreamDispatcher::deleteStream( const QString uri )
 {
-    PixelStreamFramePtr frame(new PixelStreamFrame);
+    if( streamBuffers_.count( uri ))
+    {
+        streamBuffers_.erase( uri );
+        emit deletePixelStream( uri );
+    }
+}
+
+void PixelStreamDispatcher::requestFrame( const QString uri )
+{
+    if( !streamBuffers_.count( uri ))
+        return;
+
+    PixelStreamBuffer& buffer = streamBuffers_[uri];
+    buffer.setAllowedToSend( true );
+    sendLatestFrame( uri );
+}
+
+void PixelStreamDispatcher::sendLatestFrame( const QString uri )
+{
+    PixelStreamFramePtr frame( new PixelStreamFrame );
     frame->uri = uri;
 
     PixelStreamBuffer& buffer = streamBuffers_[uri];
 
-    // Only send the lastest frame
-    while (buffer.hasCompleteFrame())
+    // Only send the latest frame
+    while( buffer.hasCompleteFrame( ))
         frame->segments = buffer.popFrame();
 
-    if (frame->segments.empty())
+    if( frame->segments.empty( ))
         return;
 
     // receiver will request a new frame once this frame was consumed
-    buffer.setAllowedToSend(false);
+    buffer.setAllowedToSend( false );
 
-    emit sendFrame(frame);
+    emit sendFrame( frame );
 }
 
 }

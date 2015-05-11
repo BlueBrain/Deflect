@@ -46,7 +46,7 @@ namespace deflect
 
 PixelStreamBuffer::PixelStreamBuffer()
     : lastFrameComplete_(0)
-    , allowedToSend_(false)
+    , allowedToSend_(true)
 {
 }
 

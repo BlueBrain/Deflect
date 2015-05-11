@@ -118,10 +118,17 @@ void initGLWindow(int argc, char **argv)
 void initDeflectStream()
 {
     // connect to DisplayCluster
-    deflectStream = new deflect::Stream(deflectStreamName, deflectHostname);
-    if (!deflectStream->isConnected())
+    deflectStream = new deflect::Stream( deflectStreamName, deflectHostname );
+    if( !deflectStream->isConnected( ))
     {
         std::cerr << "Could not connect to host!" << std::endl;
+        delete deflectStream;
+        exit(1);
+    }
+
+    if( deflectInteraction && !deflectStream->registerForEvents( ))
+    {
+        std::cerr << "Could not register for events!" << std::endl;
         delete deflectStream;
         exit(1);
     }
@@ -183,7 +190,7 @@ void display()
     deflectImage.compressionPolicy = deflectCompressImage ? deflect::COMPRESSION_ON : deflect::COMPRESSION_OFF;
     deflectImage.compressionQuality = deflectCompressionQuality;
     deflect::ImageWrapper::swapYAxis((void*)imageData, windowWidth, windowHeight, 4);
-    bool success = deflectStream->send(deflectImage);
+    const bool success = deflectStream->send(deflectImage);
     deflectStream->finishFrame();
 
     // and free the allocated image data
@@ -191,43 +198,40 @@ void display()
 
     glutSwapBuffers();
 
-    // increment rotation angle according to interaction, or by a constant rate if interaction is not enabled
-    // note that mouse position is in normalized window coordinates: (0,0) to (1,1)
-    if(deflectInteraction)
+    // increment rotation angle according to interaction, or by a constant rate
+    // if interaction is not enabled. Note that mouse position is in normalized
+    // window coordinates: (0,0) to (1,1).
+    if( deflectStream->isRegisteredForEvents( ))
     {
-        if (deflectStream->isRegisteredForEvents() || deflectStream->registerForEvents())
+        static float mouseX = 0.;
+        static float mouseY = 0.;
+
+        // Note: there is a risk of missing events since we only process the
+        // latest state available. For more advanced applications, event
+        // processing should be done in a separate thread.
+        while( deflectStream->hasEvent( ))
         {
-            static float mouseX = 0.;
-            static float mouseY = 0.;
+            const deflect::Event& event = deflectStream->getEvent();
 
-            // Note: there is a risk of missing events since we only process the latest state available.
-            // For more advanced applications, event processing should be done in a separate thread.
-            while (deflectStream->hasEvent())
+            if( event.type == deflect::Event::EVT_CLOSE )
             {
-                const deflect::Event& event = deflectStream->getEvent();
-
-                if (event.type == deflect::Event::EVT_CLOSE)
-                {
-                    std::cout << "Received close..." << std::endl;
-                    exit(0);
-                }
-
-                const float newMouseX = event.mouseX;
-                const float newMouseY = event.mouseY;
-
-                if(event.mouseLeft)
-                {
-                    angleX += (newMouseX - mouseX) * 360.;
-                    angleY += (newMouseY - mouseY) * 360.;
-                }
-                else if(event.mouseRight)
-                {
-                    zoom += (newMouseY - mouseY);
-                }
-
-                mouseX = newMouseX;
-                mouseY = newMouseY;
+                std::cout << "Received close..." << std::endl;
+                exit(0);
             }
+
+            const float newMouseX = event.mouseX;
+            const float newMouseY = event.mouseY;
+
+            if( event.mouseLeft )
+            {
+                angleX += (newMouseX - mouseX) * 360.;
+                angleY += (newMouseY - mouseY) * 360.;
+            }
+            else if( event.mouseRight )
+                zoom += (newMouseY - mouseY);
+
+            mouseX = newMouseX;
+            mouseY = newMouseY;
         }
     }
     else
@@ -235,6 +239,7 @@ void display()
         angleX += 1.;
         angleY += 1.;
     }
+
     if(!success)
     {
         if (!deflectStream->isConnected())

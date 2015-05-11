@@ -12,7 +12,7 @@ include(GitExternal)
 
 set(VERSION_MAJOR "0")
 set(VERSION_MINOR "5")
-set(VERSION_PATCH "0")
+set(VERSION_PATCH "1")
 set(VERSION_ABI 1)
 
 set(DEFLECT_DESCRIPTION

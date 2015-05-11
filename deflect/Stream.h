@@ -159,11 +159,6 @@ public:
      * After registering, the DisplayCluster master application will send Events
      * whenever a user is interacting with this Stream's window.
      *
-     * Registation is only possible after a window for the stream has been
-     * created on the DisplayWall. A window is first created when all Streams
-     * that use the same identifier have sent the first frame and called
-     * finishFrame().
-     *
      * Events can be retrieved using hasEvent() and getEvent().
      *
      * The current registration status can be checked with

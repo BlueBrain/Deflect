@@ -188,6 +188,7 @@ void MainWindow::startStreaming()
         handleStreamingError("Could not connect to host!");
         return;
     }
+    stream_->registerForEvents();
 
 #ifdef __APPLE__
     napSuspender_.suspend();
@@ -268,7 +269,7 @@ void MainWindow::processStreamEvents()
 {
     if( !eventsBox_.checkState( ))
         return;
-    if( !stream_->isRegisteredForEvents() && !stream_->registerForEvents( ))
+    if( !stream_->isRegisteredForEvents( ))
         return;
 
     while( stream_->hasEvent( ))
