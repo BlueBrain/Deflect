@@ -42,6 +42,7 @@
 #include "DesktopSelectionView.h"
 #include "DesktopSelectionRectangle.h"
 
+#include <deflect/NetworkListener.h>
 #include <deflect/Stream.h>
 
 #ifdef _WIN32
@@ -58,6 +59,7 @@
 #include <iostream>
 
 #define SHARE_DESKTOP_UPDATE_DELAY      1
+#define SERVUS_BROWSE_DELAY           100
 #define FRAME_RATE_AVERAGE_NUM_FRAMES  10
 
 #define DEFAULT_HOST_ADDRESS  "bbpav02.epfl.ch"
@@ -70,6 +72,9 @@ MainWindow::MainWindow()
     , y_(0)
     , width_(0)
     , height_(0)
+#ifdef DEFLECT_USE_LUNCHBOX
+    , servus_( deflect::NetworkListener::serviceName )
+#endif
 {
     generateCursorImage();
     setupUI();
@@ -163,6 +168,12 @@ void MainWindow::setupUI()
 
     // Update timer
     connect(&updateTimer_, SIGNAL(timeout()), this, SLOT(update()));
+
+#ifdef DEFLECT_USE_LUNCHBOX
+    servus_.beginBrowsing( lunchbox::Servus::IF_ALL );
+    connect( &browseTimer_, SIGNAL( timeout( )), this, SLOT( updateServus( )));
+    browseTimer_.start( SERVUS_BROWSE_DELAY );
+#endif
 }
 
 void MainWindow::startStreaming()
@@ -180,6 +191,7 @@ void MainWindow::startStreaming()
 
 #ifdef __APPLE__
     napSuspender_.suspend();
+    browseTimer_.stop();
 #endif
     updateTimer_.start(SHARE_DESKTOP_UPDATE_DELAY);
 }
@@ -303,6 +315,25 @@ void MainWindow::processStreamEvents()
         }
     }
 }
+
+#ifdef DEFLECT_USE_LUNCHBOX
+void MainWindow::updateServus()
+{
+    if( hostnameLineEdit_.text() != DEFAULT_HOST_ADDRESS )
+    {
+        browseTimer_.stop();
+        return;
+    }
+
+    servus_.browse( 0 );
+    const lunchbox::Strings& hosts = servus_.getInstances();
+    if( hosts.empty( ))
+        return;
+
+    browseTimer_.stop();
+    hostnameLineEdit_.setText( hosts.front().c_str( ));
+}
+#endif
 
 void MainWindow::shareDesktopUpdate()
 {
