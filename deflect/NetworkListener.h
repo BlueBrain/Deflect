@@ -89,7 +89,7 @@ private:
     detail::NetworkListener* _impl;
 
     /** Re-implemented handling of connections from QTCPSocket. */
-    void incomingConnection( int socketHandle ) final;
+    void incomingConnection( qintptr socketHandle ) final;
 
 signals:
     void pixelStreamerClosed( QString uri );

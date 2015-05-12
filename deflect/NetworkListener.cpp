@@ -103,7 +103,7 @@ PixelStreamDispatcher& NetworkListener::getPixelStreamDispatcher()
     return _impl->pixelStreamDispatcher;
 }
 
-void NetworkListener::incomingConnection(int socketHandle)
+void NetworkListener::incomingConnection(qintptr socketHandle)
 {
     QThread* workerThread = new QThread(this);
     NetworkListenerWorker* worker = new NetworkListenerWorker(socketHandle);

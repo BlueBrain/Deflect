@@ -52,7 +52,7 @@ MockNetworkListener::~MockNetworkListener()
 {
 }
 
-void MockNetworkListener::incomingConnection(int handle)
+void MockNetworkListener::incomingConnection(qintptr handle)
 {
     QTcpSocket tcpSocket;
     tcpSocket.setSocketDescriptor(handle);

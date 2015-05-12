@@ -60,7 +60,7 @@ public:
     DEFLECT_API virtual ~MockNetworkListener();
 
 protected:
-    void incomingConnection(int handle) final;
+    void incomingConnection(qintptr handle) final;
 
 private:
     int32_t protocolVersion_;

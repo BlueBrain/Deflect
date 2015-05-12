@@ -18,7 +18,7 @@ if(NOT WIN32) # tests want to be with DLLs on Windows - no rpath
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
-set(TEST_LIBRARIES Deflect ${Boost_LIBRARIES} ${QT_QTGUI_LIBRARY})
+set(TEST_LIBRARIES Deflect ${Boost_LIBRARIES} ${Qt5Widgets_LIBRARIES})
 set(PERF_TEST_SOURCES benchmarkStreamer.cpp streamTests.cpp)
 
 # Create executables but do not add them to the tests target
