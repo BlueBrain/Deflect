@@ -116,9 +116,8 @@ signals:
      * Notify that a PixelStream has been opened
      *
      * @param uri Identifier for the Stream
-     * @param size Size in pixels of the stream
      */
-    void openPixelStream(QString uri, QSize size);
+    void openPixelStream(QString uri);
 
     /**
      * Notify that a pixel stream has been deleted

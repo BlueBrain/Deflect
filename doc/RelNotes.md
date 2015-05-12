@@ -22,6 +22,9 @@ if you find any other issue with this release.
 
 ## git master
 
+* Streamers can register for events immediately, without waiting for the
+  DisplayCluster host to have opened a window
+* Desktopstreamer supports autodiscovery of DisplayCluster hosts using Zeroconf
 * Add interaction from the Wall with the DesktopStreamer host (Mac OS X
   only)
 
