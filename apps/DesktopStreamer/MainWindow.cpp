@@ -344,8 +344,8 @@ void MainWindow::shareDesktopUpdate()
 
     // take screenshot
     const QPixmap desktopPixmap =
-        QPixmap::grabWindow( QApplication::desktop()->winId(), x_, y_,
-                             width_, height_ );
+        QApplication::primaryScreen()->grabWindow( 0, x_, y_,
+                                                   width_, height_ );
 
     if( desktopPixmap.isNull( ))
     {
