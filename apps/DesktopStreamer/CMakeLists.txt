@@ -67,4 +67,5 @@ install(TARGETS ${DESKTOPSTREAMER_APP_NAME}
   BUNDLE DESTINATION . COMPONENT desktopstreamer
 )
 
+set(CPACK_PACKAGE_LICENSE "LGPL")
 include(CPackConfig)

@@ -44,8 +44,8 @@
 #ifdef __APPLE__
 #  include "AppNapSuspender.h"
 #endif
-#ifdef DEFLECT_USE_LUNCHBOX
-#  include <lunchbox/servus.h>
+#ifdef DEFLECT_USE_SERVUS
+#  include <servus/servus.h>
 #endif
 
 namespace deflect
@@ -73,7 +73,7 @@ private slots:
     void showDesktopSelectionWindow(bool set);
 
     void update();
-#ifdef DEFLECT_USE_LUNCHBOX
+#ifdef DEFLECT_USE_SERVUS
     void updateServus();
 #endif
 
@@ -119,9 +119,9 @@ private:
 #ifdef __APPLE__
     AppNapSuspender napSuspender_;
 #endif
-#ifdef DEFLECT_USE_LUNCHBOX
+#ifdef DEFLECT_USE_SERVUS
     QTimer browseTimer_;
-    lunchbox::Servus servus_;
+    servus::Servus servus_;
 #endif
 
     void setupUI();

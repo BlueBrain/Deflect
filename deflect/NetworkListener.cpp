@@ -42,8 +42,8 @@
 #include "PixelStreamDispatcher.h"
 #include "CommandHandler.h"
 
-#ifdef DEFLECT_USE_LUNCHBOX
-#  include <lunchbox/servus.h>
+#ifdef DEFLECT_USE_SERVUS
+#  include <servus/servus.h>
 #  include <boost/lexical_cast.hpp>
 #endif
 
@@ -61,15 +61,15 @@ class NetworkListener
 {
 public:
     NetworkListener()
-#ifdef DEFLECT_USE_LUNCHBOX
+#ifdef DEFLECT_USE_SERVUS
         : servus( deflect::NetworkListener::serviceName )
 #endif
     {}
 
     PixelStreamDispatcher pixelStreamDispatcher;
     CommandHandler commandHandler;
-#ifdef DEFLECT_USE_LUNCHBOX
-    lunchbox::Servus servus;
+#ifdef DEFLECT_USE_SERVUS
+    servus::Servus servus;
 #endif
 };
 }
@@ -83,7 +83,7 @@ NetworkListener::NetworkListener( const int port )
         const QString err = QString("could not listen on port: %1").arg(port);
         throw std::runtime_error(err.toStdString());
     }
-#ifdef DEFLECT_USE_LUNCHBOX
+#ifdef DEFLECT_USE_SERVUS
     _impl->servus.announce( port, boost::lexical_cast< std::string >( port ));
 #endif
 }
