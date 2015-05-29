@@ -72,7 +72,7 @@ MainWindow::MainWindow()
     , y_(0)
     , width_(0)
     , height_(0)
-#ifdef DEFLECT_USE_LUNCHBOX
+#ifdef DEFLECT_USE_SERVUS
     , servus_( deflect::NetworkListener::serviceName )
 #endif
 {
@@ -169,8 +169,8 @@ void MainWindow::setupUI()
     // Update timer
     connect(&updateTimer_, SIGNAL(timeout()), this, SLOT(update()));
 
-#ifdef DEFLECT_USE_LUNCHBOX
-    servus_.beginBrowsing( lunchbox::Servus::IF_ALL );
+#ifdef DEFLECT_USE_SERVUS
+    servus_.beginBrowsing( servus::Servus::IF_ALL );
     connect( &browseTimer_, SIGNAL( timeout( )), this, SLOT( updateServus( )));
     browseTimer_.start( SERVUS_BROWSE_DELAY );
 #endif
@@ -317,7 +317,7 @@ void MainWindow::processStreamEvents()
     }
 }
 
-#ifdef DEFLECT_USE_LUNCHBOX
+#ifdef DEFLECT_USE_SERVUS
 void MainWindow::updateServus()
 {
     if( hostnameLineEdit_.text() != DEFAULT_HOST_ADDRESS )
@@ -327,7 +327,7 @@ void MainWindow::updateServus()
     }
 
     servus_.browse( 0 );
-    const lunchbox::Strings& hosts = servus_.getInstances();
+    const servus::Strings& hosts = servus_.getInstances();
     if( hosts.empty( ))
         return;
 

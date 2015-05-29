@@ -17,8 +17,6 @@ set(VERSION_ABI 1)
 
 set(DEFLECT_DESCRIPTION
   "The client library to write applications for DisplayCluster")
-set(DEFLECT_ISSUES_URL "https://github.com/BlueBrain/Deflect/issues")
-set(DEFLECT_PACKAGE_URL "https://github.com/BlueBrain/Deflect/releases")
 set(DEFLECT_DEPENDENT_LIBRARIES Boost)
 
 include(Common)
