@@ -8,24 +8,25 @@ set(DEFLECT_PUBLIC_HEADERS
   AbstractCommandHandler.h
   config.h
   Command.h
-  CommandHandler.h
   CommandType.h
   Event.h
-  EventReceiver.h
   ImageWrapper.h
-  NetworkListener.h
   PixelStreamBuffer.h
   PixelStreamFrame.h
-  PixelStreamDispatcher.h
   PixelStreamSegment.h
   PixelStreamSegmentParameters.h
-  Socket.h
   Stream.h
   types.h
 )
 
+set(DEFLECT_MOC_PUBLIC_HEADERS
+  CommandHandler.h
+  EventReceiver.h
+  NetworkListener.h
+  PixelStreamDispatcher.h
+)
+
 set(DEFLECT_HEADERS
-  ${COMMON_INCLUDES}
   ImageJpegCompressor.h
   ImageJpegDecompressor.h
   ImageSegmenter.h
@@ -36,19 +37,12 @@ set(DEFLECT_HEADERS
 )
 
 set(DEFLECT_MOC_HEADERS
-  CommandHandler.h
-  EventReceiver.h
-  NetworkListener.h
   NetworkListenerWorker.h
-  PixelStreamDispatcher.h
   Socket.h
   StreamPrivate.h
 )
 
-qt5_wrap_cpp(MOC_OUTFILES ${DEFLECT_MOC_HEADERS})
-
 set(DEFLECT_SOURCES
-  ${MOC_OUTFILES}
   Command.cpp
   CommandHandler.cpp
   CommandType.cpp

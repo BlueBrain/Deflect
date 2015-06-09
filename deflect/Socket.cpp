@@ -44,25 +44,26 @@
 #include <QtNetwork/QTcpSocket>
 #include <iostream>
 
+#define INVALID_NETWORK_PROTOCOL_VERSION   -1
 #define RECEIVE_TIMEOUT_MS                 1000
 #define WAIT_FOR_BYTES_WRITTEN_TIMEOUT_MS  1000
 
 namespace deflect
 {
 
-const unsigned short Socket::defaultPortNumber_ = 1701;
+const unsigned short Socket::defaultPortNumber = DEFAULT_PORT_NUMBER;
 
-Socket::Socket(const std::string &hostname, const unsigned short port)
-    : socket_(new QTcpSocket())
-    , remoteProtocolVersion_(-1)
+Socket::Socket( const std::string &hostname, const unsigned short port )
+    : socket_( new QTcpSocket( ))
+    , remoteProtocolVersion_( INVALID_NETWORK_PROTOCOL_VERSION )
 {
     if( !connect( hostname, port ))
     {
         std::cerr << "could not connect to host " << hostname << ":" <<  port
                   << std::endl;
     }
-    // Forward disconnection events
-    QObject::connect(socket_, SIGNAL(disconnected()), this, SIGNAL(disconnected()));
+    QObject::connect( socket_, SIGNAL( disconnected( )),
+                      this, SIGNAL( disconnected( )));
 }
 
 Socket::~Socket()

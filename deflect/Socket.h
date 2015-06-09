@@ -43,11 +43,13 @@
 typedef __int32 int32_t;
 #endif
 
-#include <string>
-#include <QByteArray>
-#include <QObject>
 #include <deflect/api.h>
 #include <deflect/types.h>
+
+#include <string>
+
+#include <QObject>
+#include <QByteArray>
 
 class QTcpSocket;
 
@@ -63,14 +65,15 @@ class Socket : public QObject
 
 public:
     /** The default communication port */
-    static const unsigned short defaultPortNumber_;
+    static const unsigned short defaultPortNumber;
 
     /**
      * Construct a Socket and connect to host.
      * @param hostname The target host (IP address or hostname)
      * @param port The target port
      */
-    DEFLECT_API Socket(const std::string& hostname, const unsigned short port = defaultPortNumber_);
+    DEFLECT_API Socket( const std::string& hostname,
+                        unsigned short port = defaultPortNumber );
 
     /** Destruct a Socket, disconnecting from host. */
     DEFLECT_API ~Socket();
@@ -82,7 +85,7 @@ public:
      * Is there a pending message
      * @param messageSize Minimum size of the message
      */
-    bool hasMessage(const size_t messageSize = 0) const;
+    bool hasMessage( const size_t messageSize = 0 ) const;
 
     /**
      * Get the FileDescriptor for the Socket (for use by poll())
@@ -96,7 +99,7 @@ public:
      * @param message The message data
      * @return true if the message could be sent, false otherwise
      */
-    bool send(const MessageHeader& messageHeader, const QByteArray& message);
+    bool send( const MessageHeader& messageHeader, const QByteArray& message );
 
     /**
      * Receive a message.
@@ -104,7 +107,7 @@ public:
      * @param message The received message data
      * @return true if a message could be received, false otherwise
      */
-    bool receive(MessageHeader & messageHeader, QByteArray & message);
+    bool receive( MessageHeader& messageHeader, QByteArray& message );
 
     /** Get the protocol version of the remote host */
     int32_t getRemoteProtocolVersion() const;
@@ -117,11 +120,11 @@ private:
     QTcpSocket* socket_;
     int32_t remoteProtocolVersion_;
 
-    bool connect(const std::string &hostname, const unsigned short port);
+    bool connect( const std::string &hostname, const unsigned short port );
     bool checkProtocolVersion();
 
-    bool send(const MessageHeader& messageHeader);
-    bool receive(MessageHeader& messageHeader);
+    bool send( const MessageHeader& messageHeader );
+    bool receive( MessageHeader& messageHeader );
 };
 
 }

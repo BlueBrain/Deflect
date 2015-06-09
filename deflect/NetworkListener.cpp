@@ -38,9 +38,10 @@
 
 #include "NetworkListener.h"
 
-#include "NetworkListenerWorker.h"
-#include "PixelStreamDispatcher.h"
 #include "CommandHandler.h"
+#include "NetworkListenerWorker.h"
+#include "NetworkProtocol.h"
+#include "PixelStreamDispatcher.h"
 
 #ifdef DEFLECT_USE_SERVUS
 #  include <servus/servus.h>
@@ -52,17 +53,15 @@
 
 namespace deflect
 {
-const int NetworkListener::defaultPortNumber = 1701;
-const std::string NetworkListener::serviceName = "_displaycluster._tcp";
+const int NetworkListener::defaultPortNumber = DEFAULT_PORT_NUMBER;
+const std::string NetworkListener::serviceName = SERVUS_SERVICE_NAME;
 
-namespace detail
-{
-class NetworkListener
+class NetworkListener::Impl
 {
 public:
-    NetworkListener()
+    Impl()
 #ifdef DEFLECT_USE_SERVUS
-        : servus( deflect::NetworkListener::serviceName )
+        : servus( NetworkListener::serviceName )
 #endif
     {}
 
@@ -72,11 +71,9 @@ public:
     servus::Servus servus;
 #endif
 };
-}
-
 
 NetworkListener::NetworkListener( const int port )
-    : _impl( new detail::NetworkListener )
+    : _impl( new Impl )
 {
     if( !listen( QHostAddress::Any, port ))
     {
