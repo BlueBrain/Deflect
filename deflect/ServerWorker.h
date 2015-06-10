@@ -36,64 +36,79 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_NETWORK_LISTENER_H
-#define DEFLECT_NETWORK_LISTENER_H
+#ifndef DEFLECT_SERVER_WORKER_H
+#define DEFLECT_SERVER_WORKER_H
 
-#include <deflect/api.h>
-#include <deflect/types.h>
-#include <QtNetwork/QTcpServer>
+#include <deflect/MessageHeader.h>
+#include <deflect/Event.h>
+#include <deflect/PixelStreamSegment.h>
+#include <deflect/EventReceiver.h>
+
+#include <QtNetwork/QTcpSocket>
+#include <QQueue>
 
 namespace deflect
 {
 
-/**
- * Listen to incoming PixelStream connections from Stream clients.
- */
-class NetworkListener : public QTcpServer
+class ServerWorker : public EventReceiver
 {
     Q_OBJECT
 
 public:
-    /** The default port number used for Stream connections. */
-    DEFLECT_API static const int defaultPortNumber;
-
-    /** The zeroconf service name for announcing stream connections. */
-    DEFLECT_API static const std::string serviceName;
-
-    /**
-     * Create a new server listening for Stream connections.
-     * @param port The port to listen on. Must be available.
-     * @throw std::runtime_error if the server could not be started.
-     */
-    DEFLECT_API explicit NetworkListener( int port = defaultPortNumber );
-
-    /** Destructor */
-    DEFLECT_API ~NetworkListener();
-
-    /** Get the command handler. */
-    DEFLECT_API CommandHandler& getCommandHandler();
-
-    /** Get the PixelStreamDispatcher. */
-    DEFLECT_API PixelStreamDispatcher& getPixelStreamDispatcher();
-
-signals:
-    void registerToEvents( QString uri, bool exclusive,
-                           deflect::EventReceiver* receiver );
+    ServerWorker( int socketDescriptor );
+    ~ServerWorker();
 
 public slots:
-    void onPixelStreamerClosed( QString uri);
-    void onEventRegistrationReply( QString uri, bool success );
+    void processEvent( Event evt ) final;
+    void pixelStreamerClosed( QString uri );
 
-private:
-    class Impl;
-    Impl* _impl;
-
-    /** Re-implemented handling of connections from QTCPSocket. */
-    void incomingConnection( qintptr socketHandle ) final;
+    void eventRegistrationReply( QString uri, bool success );
 
 signals:
-    void pixelStreamerClosed( QString uri );
-    void eventRegistrationReply( QString uri, bool success );
+    void finished();
+
+    void receivedAddPixelStreamSource( QString uri, size_t sourceIndex );
+    void receivedPixelStreamSegement( QString uri, size_t SourceIndex,
+                                      PixelStreamSegment segment );
+    void receivedPixelStreamFinishFrame( QString uri, size_t SourceIndex );
+    void receivedRemovePixelStreamSource( QString uri, size_t sourceIndex );
+
+    void registerToEvents( QString uri, bool exclusive,
+                           deflect::EventReceiver* receiver);
+
+    void receivedCommand( QString command, QString senderUri );
+
+    /** @internal */
+    void dataAvailable();
+
+private slots:
+    void initialize();
+    void process();
+    void socketReceiveMessage();
+
+private:
+    int socketDescriptor_;
+    QTcpSocket* tcpSocket_;
+
+    QString pixelStreamUri_;
+
+    bool registeredToEvents_;
+    QQueue<Event> events_;
+
+    MessageHeader receiveMessageHeader();
+    QByteArray receiveMessageBody( const int size );
+
+    void handleMessage( const MessageHeader& messageHeader,
+                        const QByteArray& byteArray );
+    void handlePixelStreamMessage( const QString& uri,
+                                   const QByteArray& byteArray );
+
+    void sendProtocolVersion();
+    void sendBindReply( bool successful );
+    void send( const Event &evt );
+    void sendQuit();
+    bool send( const MessageHeader& messageHeader );
+    void flushSocket();
 };
 
 }

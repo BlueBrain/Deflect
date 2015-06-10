@@ -1,6 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,27 +36,66 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "MockNetworkListener.h"
+#ifndef DEFLECT_SERVER_H
+#define DEFLECT_SERVER_H
 
-#include <QTcpSocket>
+#include <deflect/api.h>
+#include <deflect/types.h>
+#include <QtNetwork/QTcpServer>
 
-MockNetworkListener::MockNetworkListener(const int32_t protocolVersion)
-    : protocolVersion_(protocolVersion)
+namespace deflect
 {
-    if ( !listen() )
-        qDebug("MockNetworkListener could not start listening!!");
+
+/**
+ * Listen to incoming PixelStream connections from Stream clients.
+ */
+class Server : public QTcpServer
+{
+    Q_OBJECT
+
+public:
+    /** The default port number used for Stream connections. */
+    DEFLECT_API static const int defaultPortNumber;
+
+    /** The zeroconf service name for announcing stream connections. */
+    DEFLECT_API static const std::string serviceName;
+
+    /**
+     * Create a new server listening for Stream connections.
+     * @param port The port to listen on. Must be available.
+     * @throw std::runtime_error if the server could not be started.
+     */
+    DEFLECT_API explicit Server( int port = defaultPortNumber );
+
+    /** Destructor */
+    DEFLECT_API ~Server();
+
+    /** Get the command handler. */
+    DEFLECT_API CommandHandler& getCommandHandler();
+
+    /** Get the PixelStreamDispatcher. */
+    DEFLECT_API PixelStreamDispatcher& getPixelStreamDispatcher();
+
+signals:
+    void registerToEvents( QString uri, bool exclusive,
+                           deflect::EventReceiver* receiver );
+
+public slots:
+    void onPixelStreamerClosed( QString uri );
+    void onEventRegistrationReply( QString uri, bool success );
+
+private:
+    class Impl;
+    Impl* _impl;
+
+    /** Re-implemented handling of connections from QTCPSocket. */
+    void incomingConnection( qintptr socketHandle ) final;
+
+signals:
+    void pixelStreamerClosed( QString uri );
+    void eventRegistrationReply( QString uri, bool success );
+};
+
 }
 
-MockNetworkListener::~MockNetworkListener()
-{
-}
-
-void MockNetworkListener::incomingConnection(qintptr handle)
-{
-    QTcpSocket tcpSocket;
-    tcpSocket.setSocketDescriptor(handle);
-
-    // Handshake -> send network protocol version
-    tcpSocket.write((char *)&protocolVersion_, sizeof(int32_t));
-    tcpSocket.flush();
-}
+#endif

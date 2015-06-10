@@ -36,7 +36,7 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "NetworkListenerWorker.h"
+#include "ServerWorker.h"
 
 #include "NetworkProtocol.h"
 
@@ -48,7 +48,7 @@
 namespace deflect
 {
 
-NetworkListenerWorker::NetworkListenerWorker(int socketDescriptor)
+ServerWorker::ServerWorker(int socketDescriptor)
     : socketDescriptor_(socketDescriptor)
     , tcpSocket_(new QTcpSocket(this)) // Make sure that tcpSocket_ parent is *this* so it also gets moved to thread!
     , registeredToEvents_(false)
@@ -66,7 +66,7 @@ NetworkListenerWorker::NetworkListenerWorker(int socketDescriptor)
     connect(this, SIGNAL(dataAvailable()), this, SLOT(process()), Qt::QueuedConnection);
 }
 
-NetworkListenerWorker::~NetworkListenerWorker()
+ServerWorker::~ServerWorker()
 {
     // If the sender crashed, we may not recieve the quit message.
     // We still want to remove this source so that the stream does not get stuck if other
@@ -80,12 +80,12 @@ NetworkListenerWorker::~NetworkListenerWorker()
     delete tcpSocket_;
 }
 
-void NetworkListenerWorker::initialize()
+void ServerWorker::initialize()
 {
     sendProtocolVersion();
 }
 
-void NetworkListenerWorker::process()
+void ServerWorker::process()
 {
     if(tcpSocket_->bytesAvailable() >= qint64(MessageHeader::serializedSize))
     {
@@ -117,14 +117,14 @@ void NetworkListenerWorker::process()
     }
 }
 
-void NetworkListenerWorker::socketReceiveMessage()
+void ServerWorker::socketReceiveMessage()
 {
     const MessageHeader mh = receiveMessageHeader();
     const QByteArray messageByteArray = receiveMessageBody(mh.size);
     handleMessage(mh, messageByteArray);
 }
 
-MessageHeader NetworkListenerWorker::receiveMessageHeader()
+MessageHeader ServerWorker::receiveMessageHeader()
 {
     MessageHeader messageHeader;
 
@@ -134,7 +134,7 @@ MessageHeader NetworkListenerWorker::receiveMessageHeader()
     return messageHeader;
 }
 
-QByteArray NetworkListenerWorker::receiveMessageBody(const int size)
+QByteArray ServerWorker::receiveMessageBody(const int size)
 {
     // next, read the actual message
     QByteArray messageByteArray;
@@ -158,13 +158,13 @@ QByteArray NetworkListenerWorker::receiveMessageBody(const int size)
     return messageByteArray;
 }
 
-void NetworkListenerWorker::processEvent(Event evt)
+void ServerWorker::processEvent(Event evt)
 {
     events_.enqueue(evt);
     emit dataAvailable();
 }
 
-void NetworkListenerWorker::handleMessage(const MessageHeader& messageHeader,
+void ServerWorker::handleMessage(const MessageHeader& messageHeader,
                                           const QByteArray& byteArray)
 {
     const QString uri(messageHeader.uri);
@@ -221,7 +221,7 @@ void NetworkListenerWorker::handleMessage(const MessageHeader& messageHeader,
 
 }
 
-void NetworkListenerWorker::handlePixelStreamMessage(const QString& uri, const QByteArray& byteArray)
+void ServerWorker::handlePixelStreamMessage(const QString& uri, const QByteArray& byteArray)
 {
     const PixelStreamSegmentParameters* parameters =
             reinterpret_cast< const PixelStreamSegmentParameters* >( byteArray.data( ));
@@ -244,7 +244,7 @@ void NetworkListenerWorker::handlePixelStreamMessage(const QString& uri, const Q
     }
 }
 
-void NetworkListenerWorker::pixelStreamerClosed(QString uri)
+void ServerWorker::pixelStreamerClosed(QString uri)
 {
     if (uri == pixelStreamUri_)
     {
@@ -256,7 +256,7 @@ void NetworkListenerWorker::pixelStreamerClosed(QString uri)
     }
 }
 
-void NetworkListenerWorker::eventRegistrationReply(QString uri, bool success)
+void ServerWorker::eventRegistrationReply(QString uri, bool success)
 {
     if (uri == pixelStreamUri_)
     {
@@ -266,14 +266,14 @@ void NetworkListenerWorker::eventRegistrationReply(QString uri, bool success)
     }
 }
 
-void NetworkListenerWorker::sendProtocolVersion()
+void ServerWorker::sendProtocolVersion()
 {
     const int32_t protocolVersion = NETWORK_PROTOCOL_VERSION;
     tcpSocket_->write((char *)&protocolVersion, sizeof(int32_t));
     flushSocket();
 }
 
-void NetworkListenerWorker::sendBindReply(const bool successful)
+void ServerWorker::sendBindReply(const bool successful)
 {
     MessageHeader mh(MESSAGE_TYPE_BIND_EVENTS_REPLY, sizeof(bool));
     send(mh);
@@ -282,7 +282,7 @@ void NetworkListenerWorker::sendBindReply(const bool successful)
     flushSocket();
 }
 
-void NetworkListenerWorker::send(const Event& evt)
+void ServerWorker::send(const Event& evt)
 {
     // send message header
     MessageHeader mh(MESSAGE_TYPE_EVENT, Event::serializedSize);
@@ -295,14 +295,14 @@ void NetworkListenerWorker::send(const Event& evt)
     flushSocket();
 }
 
-void NetworkListenerWorker::sendQuit()
+void ServerWorker::sendQuit()
 {
     MessageHeader mh(MESSAGE_TYPE_QUIT, 0);
     send(mh);
     flushSocket();
 }
 
-bool NetworkListenerWorker::send(const MessageHeader& messageHeader)
+bool ServerWorker::send(const MessageHeader& messageHeader)
 {
     QDataStream stream(tcpSocket_);
     stream << messageHeader;
@@ -310,7 +310,7 @@ bool NetworkListenerWorker::send(const MessageHeader& messageHeader)
     return stream.status() == QDataStream::Ok;
 }
 
-void NetworkListenerWorker::flushSocket()
+void ServerWorker::flushSocket()
 {
     tcpSocket_->flush();
     while(tcpSocket_->bytesToWrite() > 0)

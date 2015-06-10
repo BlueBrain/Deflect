@@ -42,7 +42,7 @@
 #include "DesktopSelectionView.h"
 #include "DesktopSelectionRectangle.h"
 
-#include <deflect/NetworkListener.h>
+#include <deflect/Server.h>
 #include <deflect/Stream.h>
 
 #ifdef _WIN32
@@ -73,7 +73,7 @@ MainWindow::MainWindow()
     , width_(0)
     , height_(0)
 #ifdef DEFLECT_USE_SERVUS
-    , servus_( deflect::NetworkListener::serviceName )
+    , servus_( deflect::Server::serviceName )
 #endif
 {
     generateCursorImage();

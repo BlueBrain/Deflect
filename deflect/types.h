@@ -54,10 +54,10 @@ namespace deflect
     class EventReceiver;
     class ImageJpegCompressor;
     class ImageJpegDecompressor;
-    class NetworkListener;
-    class NetworkListenerWorker;
     class PixelStreamDispatcher;
     class PixelStreamSegmentDecoder;
+    class Server;
+    class ServerWorker;
     class Stream;
 
     struct Event;

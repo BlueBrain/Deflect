@@ -37,30 +37,29 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_MOCKNETWORKLISTENER_H
-#define DEFLECT_MOCKNETWORKLISTENER_H
+#ifndef DEFLECT_MOCKSERVER_H
+#define DEFLECT_MOCKSERVER_H
 
 #ifdef _WIN32
 typedef __int32 int32_t;
 #endif
 
-#include <QtNetwork/QTcpServer>
-#include <QThread>
-
-#include <deflect/NetworkProtocol.h>
 #include <deflect/api.h>
 #include <deflect/config.h>
+#include <deflect/NetworkProtocol.h>
 
-class MockNetworkListener : public QTcpServer
+#include <QtNetwork/QTcpServer>
+
+class MockServer : public QTcpServer
 {
     Q_OBJECT
 
 public:
-    DEFLECT_API MockNetworkListener(const int32_t protocolVersion = NETWORK_PROTOCOL_VERSION);
-    DEFLECT_API virtual ~MockNetworkListener();
+    DEFLECT_API MockServer( int32_t protocolVersion = NETWORK_PROTOCOL_VERSION );
+    DEFLECT_API virtual ~MockServer();
 
 protected:
-    void incomingConnection(qintptr handle) final;
+    void incomingConnection( qintptr handle ) final;
 
 private:
     int32_t protocolVersion_;

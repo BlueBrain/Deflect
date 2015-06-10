@@ -22,8 +22,8 @@ set(DEFLECT_PUBLIC_HEADERS
 set(DEFLECT_MOC_PUBLIC_HEADERS
   CommandHandler.h
   EventReceiver.h
-  NetworkListener.h
   PixelStreamDispatcher.h
+  Server.h
 )
 
 set(DEFLECT_HEADERS
@@ -31,15 +31,14 @@ set(DEFLECT_HEADERS
   ImageJpegDecompressor.h
   ImageSegmenter.h
   MessageHeader.h
-  NetworkListenerWorker.h
   NetworkProtocol.h
   PixelStreamFrame.h
 )
 
 set(DEFLECT_MOC_HEADERS
-  NetworkListenerWorker.h
   Socket.h
   StreamPrivate.h
+  ServerWorker.h
 )
 
 set(DEFLECT_SOURCES
@@ -51,10 +50,10 @@ set(DEFLECT_SOURCES
   ImageWrapper.cpp
   MessageHeader.cpp
   MetaTypeRegistration.cpp
-  NetworkListener.cpp
-  NetworkListenerWorker.cpp
   PixelStreamBuffer.cpp
   PixelStreamDispatcher.cpp
+  Server.cpp
+  ServerWorker.cpp
   Socket.cpp
   Stream.cpp
   StreamPrivate.cpp

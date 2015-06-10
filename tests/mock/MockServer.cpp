@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,84 +37,27 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_NETWORK_LISTENER_WORKER_H
-#define DEFLECT_NETWORK_LISTENER_WORKER_H
+#include "MockServer.h"
 
-#include <deflect/MessageHeader.h>
-#include <deflect/Event.h>
-#include <deflect/PixelStreamSegment.h>
-#include <deflect/EventReceiver.h>
+#include <QTcpSocket>
 
-#include <QtNetwork/QTcpSocket>
-#include <QQueue>
-
-namespace deflect
+MockServer::MockServer( const int32_t protocolVersion )
+    : protocolVersion_( protocolVersion )
 {
-
-class NetworkListenerWorker : public EventReceiver
-{
-    Q_OBJECT
-
-public:
-
-    NetworkListenerWorker(int socketDescriptor);
-    ~NetworkListenerWorker();
-
-public slots:
-
-    void processEvent(Event evt) final;
-    void pixelStreamerClosed(QString uri);
-
-    void eventRegistrationReply(QString uri, bool success);
-
-signals:
-
-    void finished();
-
-    void receivedAddPixelStreamSource(QString uri, size_t sourceIndex);
-    void receivedPixelStreamSegement(QString uri, size_t SourceIndex,
-                                     PixelStreamSegment segment);
-    void receivedPixelStreamFinishFrame(QString uri, size_t SourceIndex);
-    void receivedRemovePixelStreamSource(QString uri, size_t sourceIndex);
-
-    void registerToEvents(QString uri, bool exclusive, deflect::EventReceiver* receiver);
-
-    void receivedCommand(QString command, QString senderUri);
-
-    /** @internal */
-    void dataAvailable();
-
-private slots:
-
-    void initialize();
-    void process();
-    void socketReceiveMessage();
-
-private:
-
-    int socketDescriptor_;
-    QTcpSocket* tcpSocket_;
-
-    QString pixelStreamUri_;
-
-    bool registeredToEvents_;
-    QQueue<Event> events_;
-
-    MessageHeader receiveMessageHeader();
-    QByteArray receiveMessageBody(const int size);
-
-    void handleMessage(const MessageHeader& messageHeader,
-                       const QByteArray& byteArray);
-    void handlePixelStreamMessage(const QString& uri, const QByteArray& byteArray);
-
-    void sendProtocolVersion();
-    void sendBindReply(const bool successful);
-    void send(const Event &evt);
-    void sendQuit();
-    bool send(const MessageHeader& messageHeader);
-    void flushSocket();
-};
-
+    if( !listen() )
+        qDebug( "MockServer could not start listening!!" );
 }
 
-#endif
+MockServer::~MockServer()
+{
+}
+
+void MockServer::incomingConnection( qintptr handle )
+{
+    QTcpSocket tcpSocket;
+    tcpSocket.setSocketDescriptor( handle );
+
+    // Handshake -> send network protocol version
+    tcpSocket.write( (char*)&protocolVersion_, sizeof( int32_t ));
+    tcpSocket.flush();
+}
