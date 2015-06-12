@@ -40,10 +40,10 @@
 
 #include "StreamPrivate.h"
 
+#include "Segment.h"
+#include "SegmentParameters.h"
 #include "Stream.h"
 #include "StreamSendWorker.h"
-#include "PixelStreamSegment.h"
-#include "PixelStreamSegmentParameters.h"
 
 #include <iostream>
 
@@ -117,10 +117,10 @@ bool StreamPrivate::finishFrame()
     return socket_.send(mh, QByteArray());
 }
 
-bool StreamPrivate::sendPixelStreamSegment(const PixelStreamSegment &segment)
+bool StreamPrivate::sendPixelStreamSegment(const Segment &segment)
 {
     // Create message header
-    const uint32_t segmentSize(sizeof(PixelStreamSegmentParameters) +
+    const uint32_t segmentSize(sizeof(SegmentParameters) +
                                segment.imageData.size());
     MessageHeader mh(MESSAGE_TYPE_PIXELSTREAM, segmentSize, name_);
 
@@ -129,7 +129,7 @@ bool StreamPrivate::sendPixelStreamSegment(const PixelStreamSegment &segment)
 
     // Message payload part 1: segment parameters
     message.append( (const char *)(&segment.parameters),
-                    sizeof(PixelStreamSegmentParameters));
+                    sizeof(SegmentParameters));
 
     // Message payload part 2: image data
     message.append(segment.imageData);

@@ -223,14 +223,14 @@ void ServerWorker::handleMessage(const MessageHeader& messageHeader,
 
 void ServerWorker::handlePixelStreamMessage(const QString& uri, const QByteArray& byteArray)
 {
-    const PixelStreamSegmentParameters* parameters =
-            reinterpret_cast< const PixelStreamSegmentParameters* >( byteArray.data( ));
+    const SegmentParameters* parameters =
+            reinterpret_cast< const SegmentParameters* >( byteArray.data( ));
 
-    PixelStreamSegment segment;
+    Segment segment;
     segment.parameters = *parameters;
 
     // read image data
-    QByteArray imageData = byteArray.right(byteArray.size() - sizeof(PixelStreamSegmentParameters));
+    QByteArray imageData = byteArray.right(byteArray.size() - sizeof(SegmentParameters));
     segment.imageData = imageData;
 
     if (pixelStreamUri_ == uri)

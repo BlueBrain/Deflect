@@ -41,7 +41,7 @@
 
 #include <deflect/MessageHeader.h>
 #include <deflect/Event.h>
-#include <deflect/PixelStreamSegment.h>
+#include <deflect/Segment.h>
 #include <deflect/EventReceiver.h>
 
 #include <QtNetwork/QTcpSocket>
@@ -69,7 +69,7 @@ signals:
 
     void receivedAddPixelStreamSource( QString uri, size_t sourceIndex );
     void receivedPixelStreamSegement( QString uri, size_t SourceIndex,
-                                      PixelStreamSegment segment );
+                                      Segment segment );
     void receivedPixelStreamFinishFrame( QString uri, size_t SourceIndex );
     void receivedRemovePixelStreamSource( QString uri, size_t sourceIndex );
 

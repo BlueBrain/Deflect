@@ -54,22 +54,22 @@ namespace deflect
     class EventReceiver;
     class ImageJpegCompressor;
     class ImageJpegDecompressor;
-    class PixelStreamDispatcher;
-    class PixelStreamSegmentDecoder;
+    class FrameDispatcher;
+    class SegmentDecoder;
     class Server;
     class ServerWorker;
     class Stream;
 
     struct Event;
+    struct Frame;
     struct ImageWrapper;
     struct MessageHeader;
-    struct PixelStreamFrame;
-    struct PixelStreamSegment;
-    struct PixelStreamSegmentParameters;
+    struct Segment;
+    struct SegmentParameters;
 
-    typedef boost::shared_ptr< PixelStreamFrame > PixelStreamFramePtr;
-    typedef std::vector< PixelStreamSegment > PixelStreamSegments;
-    typedef std::vector< PixelStreamSegmentParameters > SegmentParameters;
+    typedef boost::shared_ptr< Frame > FramePtr;
+    typedef std::vector< Segment > Segments;
+    typedef std::vector< SegmentParameters > SegmentParametersList;
 }
 
 #endif

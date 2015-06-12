@@ -37,17 +37,16 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#define BOOST_TEST_MODULE PixelStreamSegmentDecoderTests
+#define BOOST_TEST_MODULE SegmentDecoderTests
 #include <boost/test/unit_test.hpp>
 namespace ut = boost::unit_test;
 
 #include <deflect/ImageWrapper.h>
 #include <deflect/ImageJpegCompressor.h>
 #include <deflect/ImageJpegDecompressor.h>
-
 #include <deflect/ImageSegmenter.h>
-#include <deflect/PixelStreamSegment.h>
-#include <deflect/PixelStreamSegmentDecoder.h>
+#include <deflect/Segment.h>
+#include <deflect/SegmentDecoder.h>
 
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -93,8 +92,8 @@ BOOST_AUTO_TEST_CASE( testImageCompressionAndDecompression )
                                    dataOut, dataOut+data.size() );
 }
 
-static bool append( deflect::PixelStreamSegments& segments,
-                    const deflect::PixelStreamSegment& segment )
+static bool append( deflect::Segments& segments,
+                    const deflect::Segment& segment )
 {
     static QMutex lock_;
     QMutexLocker locker( &lock_ );
@@ -112,7 +111,7 @@ BOOST_AUTO_TEST_CASE( testImageSegmentationWithCompressionAndDecompression )
     deflect::ImageWrapper imageWrapper(data.data(), 8, 8, deflect::RGBA);
     imageWrapper.compressionPolicy = deflect::COMPRESSION_ON;
 
-    deflect::PixelStreamSegments segments;
+    deflect::Segments segments;
     deflect::ImageSegmenter segmenter;
     const deflect::ImageSegmenter::Handler appendFunc =
         boost::bind( &append, boost::ref( segments ), _1 );
@@ -120,12 +119,12 @@ BOOST_AUTO_TEST_CASE( testImageSegmentationWithCompressionAndDecompression )
     segmenter.generate( imageWrapper, appendFunc );
     BOOST_REQUIRE_EQUAL( segments.size(), 1 );
 
-    deflect::PixelStreamSegment& segment = segments.front();
+    deflect::Segment& segment = segments.front();
     BOOST_REQUIRE( segment.parameters.compressed );
     BOOST_REQUIRE( segment.imageData.size() != (int)data.size() );
 
     // Decompress image
-    deflect::PixelStreamSegmentDecoder decoder;
+    deflect::SegmentDecoder decoder;
     decoder.startDecoding(segment);
 
     size_t timeout = 0;

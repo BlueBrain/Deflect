@@ -37,95 +37,53 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "PixelStreamDispatcher.h"
-#include "PixelStreamFrame.h"
+#ifndef DEFLECT_SEGMENTDECODER_H
+#define DEFLECT_SEGMENTDECODER_H
+
+#include <deflect/api.h>
+#include <deflect/types.h>
+
+#include <QFuture>
+#include <boost/noncopyable.hpp>
 
 namespace deflect
 {
 
-PixelStreamDispatcher::PixelStreamDispatcher()
+/**
+ * Decode a Segment's image asynchronously.
+ */
+class SegmentDecoder : public boost::noncopyable
 {
-}
+public:
+    /** Construct a Decoder */
+    DEFLECT_API SegmentDecoder();
 
-void PixelStreamDispatcher::addSource( const QString uri,
-                                       const size_t sourceIndex )
-{
-    streamBuffers_[uri].addSource( sourceIndex );
+    /** Destruct a Decoder */
+    DEFLECT_API ~SegmentDecoder();
 
-    if( streamBuffers_[uri].getSourceCount() == 1 )
-        emit openPixelStream( uri );
-}
+    /**
+     * Start decoding a segment.
+     *
+     * This function will silently ignore the request if a decoding is already
+     * in progress.
+     * @param segment The segement to decode. The segment is will be modified by
+     *        this function. It must remain valid and should not be accessed
+     *        until the decoding procedure has completed.
+     * @see isRunning()
+     */
+    DEFLECT_API void startDecoding( Segment& segment );
 
-void PixelStreamDispatcher::removeSource( const QString uri,
-                                          const size_t sourceIndex )
-{
-    if( !streamBuffers_.count( uri ))
-        return;
+    /** Check if the decoding thread is running. */
+    DEFLECT_API bool isRunning() const;
 
-    streamBuffers_[uri].removeSource( sourceIndex );
+private:
+    /** The decompressor instance */
+    ImageJpegDecompressor* decompressor_;
 
-    if( streamBuffers_[uri].getSourceCount() == 0 )
-        deleteStream( uri );
-}
-
-void PixelStreamDispatcher::processSegment( const QString uri,
-                                            const size_t sourceIndex,
-                                            PixelStreamSegment segment )
-{
-    if( streamBuffers_.count( uri ))
-        streamBuffers_[uri].insertSegment( segment, sourceIndex );
-}
-
-void PixelStreamDispatcher::processFrameFinished( const QString uri,
-                                                  const size_t sourceIndex )
-{
-    if( !streamBuffers_.count( uri ))
-        return;
-
-    PixelStreamBuffer& buffer = streamBuffers_[uri];
-    buffer.finishFrameForSource( sourceIndex );
-
-    if( buffer.isAllowedToSend( ))
-        sendLatestFrame( uri );
-}
-
-void PixelStreamDispatcher::deleteStream( const QString uri )
-{
-    if( streamBuffers_.count( uri ))
-    {
-        streamBuffers_.erase( uri );
-        emit deletePixelStream( uri );
-    }
-}
-
-void PixelStreamDispatcher::requestFrame( const QString uri )
-{
-    if( !streamBuffers_.count( uri ))
-        return;
-
-    PixelStreamBuffer& buffer = streamBuffers_[uri];
-    buffer.setAllowedToSend( true );
-    sendLatestFrame( uri );
-}
-
-void PixelStreamDispatcher::sendLatestFrame( const QString uri )
-{
-    PixelStreamFramePtr frame( new PixelStreamFrame );
-    frame->uri = uri;
-
-    PixelStreamBuffer& buffer = streamBuffers_[uri];
-
-    // Only send the latest frame
-    while( buffer.hasCompleteFrame( ))
-        frame->segments = buffer.popFrame();
-
-    if( frame->segments.empty( ))
-        return;
-
-    // receiver will request a new frame once this frame was consumed
-    buffer.setAllowedToSend( false );
-
-    emit sendFrame( frame );
-}
+    /** Async image decoding future */
+    QFuture<void> decodingFuture_;
+};
 
 }
+
+#endif

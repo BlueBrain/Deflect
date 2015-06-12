@@ -37,122 +37,130 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "PixelStreamBuffer.h"
+#include "ReceiveBuffer.h"
 
 #define FIRST_FRAME_INDEX 0
 
 namespace deflect
 {
 
-PixelStreamBuffer::PixelStreamBuffer()
-    : lastFrameComplete_(0)
-    , allowedToSend_(true)
+ReceiveBuffer::ReceiveBuffer()
+    : lastFrameComplete_( 0 )
+    , allowedToSend_( true )
 {
 }
 
-bool PixelStreamBuffer::addSource(const size_t sourceIndex)
+bool ReceiveBuffer::addSource( const size_t sourceIndex )
 {
-    assert(!sourceBuffers_.count(sourceIndex));
+    assert( !sourceBuffers_.count( sourceIndex ));
 
     // TODO: This function must return false if the stream was already started!
     // This requires an full adaptation of the Stream library (DISCL-241)
-    if (sourceBuffers_.count(sourceIndex))
+    if ( sourceBuffers_.count( sourceIndex ))
         return false;
 
     sourceBuffers_[sourceIndex] = SourceBuffer();
-    sourceBuffers_[sourceIndex].segments.push(PixelStreamSegments());
+    sourceBuffers_[sourceIndex].segments.push( Segments( ));
     return true;
 }
 
-void PixelStreamBuffer::removeSource(const size_t sourceIndex)
+void ReceiveBuffer::removeSource( const size_t sourceIndex )
 {
-    sourceBuffers_.erase(sourceIndex);
+    sourceBuffers_.erase( sourceIndex );
 }
 
-size_t PixelStreamBuffer::getSourceCount() const
+size_t ReceiveBuffer::getSourceCount() const
 {
     return sourceBuffers_.size();
 }
 
-void PixelStreamBuffer::insertSegment(const PixelStreamSegment& segment, const size_t sourceIndex)
+void ReceiveBuffer::insertSegment( const Segment& segment,
+                                   const size_t sourceIndex )
 {
-    assert(sourceBuffers_.count(sourceIndex));
+    assert( sourceBuffers_.count( sourceIndex ));
 
-    sourceBuffers_[sourceIndex].segments.back().push_back(segment);
+    sourceBuffers_[sourceIndex].segments.back().push_back( segment );
 }
 
-void PixelStreamBuffer::finishFrameForSource(const size_t sourceIndex)
+void ReceiveBuffer::finishFrameForSource( const size_t sourceIndex )
 {
-    assert(sourceBuffers_.count(sourceIndex));
+    assert( sourceBuffers_.count( sourceIndex ));
 
     sourceBuffers_[sourceIndex].push();
 }
 
-bool PixelStreamBuffer::hasCompleteFrame() const
+bool ReceiveBuffer::hasCompleteFrame() const
 {
-    assert(!sourceBuffers_.empty());
+    assert( !sourceBuffers_.empty( ));
 
     // Check if all sources for Stream have reached the same index
-    for(SourceBufferMap::const_iterator it = sourceBuffers_.begin(); it != sourceBuffers_.end(); ++it)
+    for( SourceBufferMap::const_iterator it = sourceBuffers_.begin();
+         it != sourceBuffers_.end(); ++it )
     {
         const SourceBuffer& buffer = it->second;
-        if (buffer.backFrameIndex <= lastFrameComplete_)
+        if( buffer.backFrameIndex <= lastFrameComplete_ )
             return false;
     }
     return true;
 }
 
-bool PixelStreamBuffer::isFirstCompleteFrame() const
+bool ReceiveBuffer::isFirstCompleteFrame() const
 {
-    for(SourceBufferMap::const_iterator it = sourceBuffers_.begin(); it != sourceBuffers_.end(); ++it)
+    for( SourceBufferMap::const_iterator it = sourceBuffers_.begin();
+         it != sourceBuffers_.end(); ++it )
     {
         const SourceBuffer& buffer = it->second;
-        if (buffer.frontFrameIndex != FIRST_FRAME_INDEX ||
-            buffer.backFrameIndex == FIRST_FRAME_INDEX)
+        if( buffer.frontFrameIndex != FIRST_FRAME_INDEX ||
+            buffer.backFrameIndex == FIRST_FRAME_INDEX )
             return false;
     }
     return true;
 }
 
-PixelStreamSegments PixelStreamBuffer::popFrame()
+Segments ReceiveBuffer::popFrame()
 {
-    PixelStreamSegments frame;
-    for(SourceBufferMap::iterator it = sourceBuffers_.begin(); it != sourceBuffers_.end(); ++it)
+    Segments frame;
+    for( SourceBufferMap::iterator it = sourceBuffers_.begin();
+         it != sourceBuffers_.end(); ++it )
     {
         SourceBuffer& buffer = it->second;
-        frame.insert(frame.end(), buffer.segments.front().begin(), buffer.segments.front().end());
+        frame.insert( frame.end(), buffer.segments.front().begin(),
+                      buffer.segments.front().end( ));
         buffer.pop();
     }
     ++lastFrameComplete_;
     return frame;
 }
 
-void PixelStreamBuffer::setAllowedToSend(const bool enable)
+void ReceiveBuffer::setAllowedToSend( const bool enable )
 {
     allowedToSend_ = enable;
 }
 
-bool PixelStreamBuffer::isAllowedToSend() const
+bool ReceiveBuffer::isAllowedToSend() const
 {
     return allowedToSend_;
 }
 
-QSize PixelStreamBuffer::getFrameSize() const
+QSize ReceiveBuffer::getFrameSize() const
 {
-    QSize size(0,0);
+    QSize size( 0, 0 );
 
-    for(SourceBufferMap::const_iterator it = sourceBuffers_.begin(); it != sourceBuffers_.end(); ++it)
+    for( SourceBufferMap::const_iterator it = sourceBuffers_.begin();
+         it != sourceBuffers_.end(); ++it )
     {
         const SourceBuffer& buffer = it->second;
-        if (!buffer.segments.empty())
+        if( !buffer.segments.empty( ))
         {
-            const PixelStreamSegments& segments = buffer.segments.front();
+            const Segments& segments = buffer.segments.front();
 
-            for(size_t i=0; i<segments.size(); i++)
+            for( size_t i=0; i<segments.size(); i++ )
             {
-                const PixelStreamSegmentParameters& params = segments[i].parameters;
-                size.setWidth(std::max(size.width(), (int)(params.width+params.x)));
-                size.setHeight(std::max(size.height(), (int)(params.height+params.y)));
+                const SegmentParameters& params = segments[i].parameters;
+                size.setWidth( std::max( size.width(),
+                                         (int)( params.width + params.x )));
+                size.setHeight( std::max( size.height(),
+                                          (int)( params.height + params.y )));
             }
         }
     }
@@ -160,15 +168,17 @@ QSize PixelStreamBuffer::getFrameSize() const
     return size;
 }
 
-QSize PixelStreamBuffer::computeFrameDimensions(const PixelStreamSegments &segments)
+QSize ReceiveBuffer::computeFrameDimensions( const Segments& segments )
 {
-    QSize size(0,0);
+    QSize size( 0, 0 );
 
-    for(size_t i=0; i<segments.size(); i++)
+    for( size_t i = 0; i < segments.size(); ++i )
     {
-        const PixelStreamSegmentParameters& params = segments[i].parameters;
-        size.setWidth(std::max(size.width(), (int)(params.width+params.x)));
-        size.setHeight(std::max(size.height(), (int)(params.height+params.y)));
+        const SegmentParameters& params = segments[i].parameters;
+        size.setWidth( std::max( size.width(),
+                                 (int)( params.width + params.x )));
+        size.setHeight( std::max( size.height(),
+                                  (int)( params.height + params.y )));
     }
 
     return size;

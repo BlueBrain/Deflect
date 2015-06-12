@@ -5,6 +5,6 @@
 
 set(TEST_LIBRARIES Deflect Mock ${Boost_LIBRARIES})
 if(NOT DEFLECT_USE_LIBJPEGTURBO)
-  set(EXCLUDE_FROM_TESTS PixelStreamSegmentDecoderTests.cpp)
+  set(EXCLUDE_FROM_TESTS SegmentDecoderTests.cpp)
 endif()
 include(CommonCTest)

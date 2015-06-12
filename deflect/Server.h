@@ -74,7 +74,7 @@ public:
     DEFLECT_API CommandHandler& getCommandHandler();
 
     /** Get the PixelStreamDispatcher. */
-    DEFLECT_API PixelStreamDispatcher& getPixelStreamDispatcher();
+    DEFLECT_API FrameDispatcher& getPixelStreamDispatcher();
 
 signals:
     void registerToEvents( QString uri, bool exclusive,

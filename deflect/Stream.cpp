@@ -39,12 +39,12 @@
 /*********************************************************************/
 
 #include "Stream.h"
-
 #include "StreamPrivate.h"
+
+#include "Segment.h"
+#include "SegmentParameters.h"
 #include "Socket.h"
 #include "ImageWrapper.h"
-#include "PixelStreamSegment.h"
-#include "PixelStreamSegmentParameters.h"
 
 #include <QDataStream>
 #include <boost/bind.hpp>

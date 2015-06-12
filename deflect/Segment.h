@@ -37,55 +37,61 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "PixelStreamSegmentDecoder.h"
+#ifndef DEFLECT_SEGMENT_H
+#define DEFLECT_SEGMENT_H
 
-#include "PixelStreamSegment.h"
-#include "ImageJpegDecompressor.h"
+#include <deflect/SegmentParameters.h>
 
-#include <QtConcurrentRun>
-#include <iostream>
+#include <boost/serialization/binary_object.hpp>
+#include <boost/serialization/split_member.hpp>
+
+#include <QByteArray>
 
 namespace deflect
 {
 
-PixelStreamSegmentDecoder::PixelStreamSegmentDecoder()
-    : decompressor_( new ImageJpegDecompressor )
+/**
+ * Image data and parameters for a single segment of a PixelStream.
+ */
+struct Segment
 {
-}
+    /** Parameters of the segment. */
+    SegmentParameters parameters;
 
-PixelStreamSegmentDecoder::~PixelStreamSegmentDecoder()
-{
-    delete decompressor_;
-}
+    /** Image data of the segment. */
+    QByteArray imageData;
 
-void decodeSegment( ImageJpegDecompressor* decompressor,
-                    PixelStreamSegment* segment )
-{
-    QByteArray decodedData = decompressor->decompress(segment->imageData);
+private:
+    friend class boost::serialization::access;
 
-    if ( !decodedData.isEmpty() )
+    template<class Archive>
+    void save( Archive & ar, const unsigned int ) const
     {
-        segment->imageData = decodedData;
-        segment->parameters.compressed = false;
-    }
-}
+        ar & parameters;
 
-void PixelStreamSegmentDecoder::startDecoding(PixelStreamSegment& segment)
-{
-    // drop frames if we're currently processing
-    if( isRunning( ))
-    {
-        std::cerr << "Decoding in process, Frame dropped. See if we need to "
-                     "change this..." << std::endl;
-        return;
+        int size = imageData.size();
+        ar & size;
+
+        ar & boost::serialization::make_binary_object( (void *)imageData.data(),
+                                                       imageData.size( ));
     }
 
-    decodingFuture_ = QtConcurrent::run(decodeSegment, decompressor_, &segment);
+    template<class Archive>
+    void load( Archive & ar, const unsigned int )
+    {
+        ar & parameters;
+
+        int size = 0;
+        ar & size;
+        imageData.resize( size );
+
+        ar & boost::serialization::make_binary_object( (void *)imageData.data(),
+                                                       size );
+    }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
+};
+
 }
 
-bool PixelStreamSegmentDecoder::isRunning() const
-{
-    return decodingFuture_.isRunning();
-}
-
-}
+#endif

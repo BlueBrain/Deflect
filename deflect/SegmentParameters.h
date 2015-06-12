@@ -36,8 +36,8 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENTPARAMETERS_H
-#define DEFLECT_PIXELSTREAMSEGMENTPARAMETERS_H
+#ifndef DEFLECT_SEGMENTPARAMETERS_H
+#define DEFLECT_SEGMENTPARAMETERS_H
 
 #ifdef _WIN32
     typedef unsigned __int32 uint32_t;
@@ -51,9 +51,9 @@ namespace deflect
 {
 
 /**
- * Parameters for a PixelStream Segment
+ * Parameters for a Frame Segment.
  */
-struct PixelStreamSegmentParameters
+struct SegmentParameters
 {
     /** @name Coordinates */
     //@{
@@ -71,12 +71,12 @@ struct PixelStreamSegmentParameters
     bool compressed;
 
     /** Default constructor */
-    PixelStreamSegmentParameters()
-        : x(0)
-        , y(0)
-        , width(0)
-        , height(0)
-        , compressed(true)
+    SegmentParameters()
+        : x( 0 )
+        , y( 0 )
+        , width( 0 )
+        , height( 0 )
+        , compressed( true )
     {
     }
 
@@ -85,7 +85,7 @@ private:
 
     /** Serialization method */
     template<class Archive>
-    void serialize(Archive & ar, const unsigned int)
+    void serialize( Archive & ar, const unsigned int )
     {
         ar & x;
         ar & y;

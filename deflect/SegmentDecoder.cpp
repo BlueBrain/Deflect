@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,41 +37,56 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMFRAME_H
-#define DEFLECT_PIXELSTREAMFRAME_H
+#include "SegmentDecoder.h"
 
-#include <deflect/types.h>
-#include <deflect/PixelStreamSegment.h>
+#include "ImageJpegDecompressor.h"
+#include "Segment.h"
 
-#include <QString>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/vector.hpp>
+#include <QtConcurrentRun>
+#include <iostream>
 
 namespace deflect
 {
 
-/**
- * A frame for a PixelStream.
- */
-struct PixelStreamFrame
+SegmentDecoder::SegmentDecoder()
+    : decompressor_( new ImageJpegDecompressor )
 {
-    /** The full set of segments for this frame. */
-    PixelStreamSegments segments;
-
-    /** The PixelStream uri to which this frame is associated. */
-    QString uri;
-
-private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int)
-    {
-        ar & segments;
-        ar & uri;
-    }
-};
-
 }
 
-#endif
+SegmentDecoder::~SegmentDecoder()
+{
+    delete decompressor_;
+}
+
+void decodeSegment( ImageJpegDecompressor* decompressor,
+                    Segment* segment )
+{
+    QByteArray decodedData = decompressor->decompress( segment->imageData );
+
+    if( !decodedData.isEmpty() )
+    {
+        segment->imageData = decodedData;
+        segment->parameters.compressed = false;
+    }
+}
+
+void SegmentDecoder::startDecoding( Segment& segment )
+{
+    // drop frames if we're currently processing
+    if( isRunning( ))
+    {
+        std::cerr << "Decoding in process, Frame dropped. See if we need to "
+                     "change this..." << std::endl;
+        return;
+    }
+
+    decodingFuture_ = QtConcurrent::run( decodeSegment, decompressor_,
+                                         &segment );
+}
+
+bool SegmentDecoder::isRunning() const
+{
+    return decodingFuture_.isRunning();
+}
+
+}

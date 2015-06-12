@@ -10,11 +10,11 @@ set(DEFLECT_PUBLIC_HEADERS
   Command.h
   CommandType.h
   Event.h
+  Frame.h
   ImageWrapper.h
-  PixelStreamBuffer.h
-  PixelStreamFrame.h
-  PixelStreamSegment.h
-  PixelStreamSegmentParameters.h
+  ReceiveBuffer.h
+  Segment.h
+  SegmentParameters.h
   Stream.h
   types.h
 )
@@ -22,7 +22,7 @@ set(DEFLECT_PUBLIC_HEADERS
 set(DEFLECT_MOC_PUBLIC_HEADERS
   CommandHandler.h
   EventReceiver.h
-  PixelStreamDispatcher.h
+  FrameDispatcher.h
   Server.h
 )
 
@@ -32,7 +32,6 @@ set(DEFLECT_HEADERS
   ImageSegmenter.h
   MessageHeader.h
   NetworkProtocol.h
-  PixelStreamFrame.h
 )
 
 set(DEFLECT_MOC_HEADERS
@@ -46,12 +45,12 @@ set(DEFLECT_SOURCES
   CommandHandler.cpp
   CommandType.cpp
   Event.cpp
+  FrameDispatcher.cpp
   ImageSegmenter.cpp
   ImageWrapper.cpp
   MessageHeader.cpp
   MetaTypeRegistration.cpp
-  PixelStreamBuffer.cpp
-  PixelStreamDispatcher.cpp
+  ReceiveBuffer.cpp
   Server.cpp
   ServerWorker.cpp
   Socket.cpp
@@ -69,11 +68,13 @@ set(DEFLECT_LINK_LIBRARIES
 )
 
 if(DEFLECT_USE_LIBJPEGTURBO)
-  list(APPEND DEFLECT_PUBLIC_HEADERS PixelStreamSegmentDecoder.h)
+  list(APPEND DEFLECT_PUBLIC_HEADERS
+    SegmentDecoder.h
+  )
   list(APPEND DEFLECT_SOURCES
     ImageJpegCompressor.cpp
     ImageJpegDecompressor.cpp
-    PixelStreamSegmentDecoder.cpp
+    SegmentDecoder.cpp
   )
   list(APPEND DEFLECT_LINK_LIBRARIES ${LibJpegTurbo_LIBRARIES})
 endif()

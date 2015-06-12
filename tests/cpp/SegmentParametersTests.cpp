@@ -37,51 +37,44 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENTDECODER_H
-#define DEFLECT_PIXELSTREAMSEGMENTDECODER_H
+#define BOOST_TEST_MODULE SegmentParametersTests
+#include <boost/test/unit_test.hpp>
+namespace ut = boost::unit_test;
 
-#include <deflect/api.h>
-#include <deflect/types.h>
+#include <deflect/SegmentParameters.h>
 
-#include <QFuture>
-#include <boost/noncopyable.hpp>
+#include <iostream>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 
-namespace deflect
+BOOST_AUTO_TEST_CASE( testSegementParametersSerialization )
 {
+    deflect::SegmentParameters params;
+    params.x = 212;
+    params.y = 365;
+    params.height = 32;
+    params.width = 78;
+    params.compressed = false;
 
-/**
- * Decode a PixelStreamSegment image data asynchronously.
- */
-class PixelStreamSegmentDecoder : public boost::noncopyable
-{
-public:
-    /** Construct a Decoder */
-    DEFLECT_API PixelStreamSegmentDecoder();
 
-    /** Destruct a Decoder */
-    DEFLECT_API ~PixelStreamSegmentDecoder();
+    // serialize
+    std::stringstream stream;
+    {
+        boost::archive::binary_oarchive oa(stream);
+        oa << params;
+    }
 
-    /**
-     * Start decoding a segment.
-     *
-     * This function will silently ignore the request if a decoding is already in progress.
-     * @param segment The segement to decode. The segment is NOT copied internally and is modified by this
-     * function. It must remain valid and should not be accessed until the decoding procedure has completed.
-     * @see isRunning()
-     */
-    DEFLECT_API void startDecoding(PixelStreamSegment& segment);
+    // deserialize
+    deflect::SegmentParameters paramsDeserialized;
+    {
+        boost::archive::binary_iarchive ia(stream);
+        ia >> paramsDeserialized;
+    }
 
-    /** Check if the decoding thread is running. */
-    DEFLECT_API bool isRunning() const;
-
-private:
-    /** The decompressor instance */
-    ImageJpegDecompressor* decompressor_;
-
-    /** Async image decoding future */
-    QFuture<void> decodingFuture_;
-};
-
+    BOOST_CHECK_EQUAL( params.x, paramsDeserialized.x );
+    BOOST_CHECK_EQUAL( params.y, paramsDeserialized.y );
+    BOOST_CHECK_EQUAL( params.height, paramsDeserialized.height );
+    BOOST_CHECK_EQUAL( params.width, paramsDeserialized.width );
+    BOOST_CHECK_EQUAL( params.compressed, paramsDeserialized.compressed );
 }
 
-#endif

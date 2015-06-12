@@ -37,44 +37,108 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#define BOOST_TEST_MODULE PixelStreamSegmentParametersTests
-#include <boost/test/unit_test.hpp>
-namespace ut = boost::unit_test;
+#ifndef DEFLECT_FRAMEDISPATCHER_H
+#define DEFLECT_FRAMEDISPATCHER_H
 
-#include <deflect/PixelStreamSegmentParameters.h>
+#include <deflect/types.h>
+#include <deflect/ReceiveBuffer.h>
+#include <deflect/Segment.h>
 
-#include <iostream>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
+#include <QObject>
+#include <map>
 
-BOOST_AUTO_TEST_CASE( testSegementParametersSerialization )
+namespace deflect
 {
-    deflect::PixelStreamSegmentParameters params;
-    params.x = 212;
-    params.y = 365;
-    params.height = 32;
-    params.width = 78;
-    params.compressed = false;
 
+/**
+ * Gather segments from multiple sources and dispatch full frames.
+ */
+class FrameDispatcher : public QObject
+{
+    Q_OBJECT
 
-    // serialize
-    std::stringstream stream;
-    {
-        boost::archive::binary_oarchive oa(stream);
-        oa << params;
-    }
+public:
+    /** Construct a dispatcher */
+    FrameDispatcher();
 
-    // deserialize
-    deflect::PixelStreamSegmentParameters paramsDeserialized;
-    {
-        boost::archive::binary_iarchive ia(stream);
-        ia >> paramsDeserialized;
-    }
+public slots:
+    /**
+     * Add a source of Segments for a Stream
+     *
+     * @param uri Identifier for the Stream
+     * @param sourceIndex Identifier for the source in this stream
+     */
+    void addSource( QString uri, size_t sourceIndex );
 
-    BOOST_CHECK_EQUAL( params.x, paramsDeserialized.x );
-    BOOST_CHECK_EQUAL( params.y, paramsDeserialized.y );
-    BOOST_CHECK_EQUAL( params.height, paramsDeserialized.height );
-    BOOST_CHECK_EQUAL( params.width, paramsDeserialized.width );
-    BOOST_CHECK_EQUAL( params.compressed, paramsDeserialized.compressed );
+    /**
+     * Add a source of Segments for a Stream
+     *
+     * @param uri Identifier for the Stream
+     * @param sourceIndex Identifier for the source in this stream
+     */
+    void removeSource( QString uri, size_t sourceIndex );
+
+    /**
+     * Process a new Segement
+     *
+     * @param uri Identifier for the Stream
+     * @param sourceIndex Identifier for the source in this stream
+     * @param segment The segment to process
+     */
+    void processSegment( QString uri, size_t sourceIndex, Segment segment );
+
+    /**
+     * The given source has finished sending segments for the current frame
+     *
+     * @param uri Identifier for the Stream
+     * @param sourceIndex Identifier for the source in this stream
+     */
+    void processFrameFinished( QString uri, size_t sourceIndex );
+
+    /**
+     * Delete an entire stream
+     *
+     * @param uri Identifier for the Stream
+     */
+    void deleteStream( QString uri );
+
+    /**
+     * Is called when the wall processes are ready to receive new frames
+     *
+     * @param uri Identifier for the stream
+     */
+    void requestFrame( QString uri );
+
+signals:
+    /**
+     * Notify that a PixelStream has been opened
+     *
+     * @param uri Identifier for the Stream
+     */
+    void openPixelStream( QString uri );
+
+    /**
+     * Notify that a pixel stream has been deleted
+     *
+     * @param uri Identifier for the Stream
+     */
+    void deletePixelStream( QString uri );
+
+    /**
+     * Dispatch a full frame
+     *
+     * @param frame The frame to dispatch
+     */
+    void sendFrame( deflect::FramePtr frame );
+
+private:
+    void sendLatestFrame( const QString& uri );
+
+    // The buffers for each URI
+    typedef std::map<QString, ReceiveBuffer> StreamBuffers;
+    StreamBuffers streamBuffers_;
+};
+
 }
 
+#endif

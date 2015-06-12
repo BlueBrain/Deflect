@@ -41,10 +41,10 @@
 #include <iostream>
 #include <QImage>
 
+#include <deflect/Segment.h>
 #include <deflect/Stream.h>
 #include <deflect/StreamPrivate.h>
 #include <deflect/ImageSegmenter.h>
-#include <deflect/PixelStreamSegment.h>
 
 #include <boost/smart_ptr/scoped_ptr.hpp>
 #include <boost/program_options.hpp>
@@ -168,8 +168,8 @@ struct BenchmarkOptions
     unsigned int quality_;
 };
 
-static bool append( deflect::PixelStreamSegments& segments,
-                    const deflect::PixelStreamSegment& segment )
+static bool append( deflect::Segments& segments,
+                    const deflect::Segment& segment )
 {
     static QMutex lock_;
     QMutexLocker locker( &lock_ );
@@ -205,7 +205,7 @@ public:
     {
         size_t size = 0;
 
-        for(deflect::PixelStreamSegments::const_iterator it = jpegSegments_.begin();
+        for(deflect::Segments::const_iterator it = jpegSegments_.begin();
             it != jpegSegments_.end(); ++it)
         {
             size += it->imageData.size();
@@ -279,7 +279,7 @@ public:
 
     bool sendPrecompressedJpeg()
     {
-        for(deflect::PixelStreamSegments::const_iterator it = jpegSegments_.begin();
+        for(deflect::Segments::const_iterator it = jpegSegments_.begin();
             it != jpegSegments_.end(); ++it)
         {
             if (!dcStream_->impl_->sendPixelStreamSegment(*it))
@@ -293,7 +293,7 @@ private:
     const BenchmarkOptions& options_;
     QImage noiseImage_;
     boost::scoped_ptr<deflect::Stream> dcStream_;
-    deflect::PixelStreamSegments jpegSegments_;
+    deflect::Segments jpegSegments_;
 };
 
 int main(int argc, char **argv)

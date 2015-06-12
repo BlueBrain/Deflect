@@ -41,7 +41,7 @@
 #include "ImageSegmenter.h"
 
 #include "ImageWrapper.h"
-#include "PixelStreamSegment.h"
+#include "Segment.h"
 #ifdef DEFLECT_USE_LIBJPEGTURBO
 #  include "ImageJpegCompressor.h"
 #endif
@@ -53,8 +53,8 @@ namespace deflect
 {
 
 ImageSegmenter::ImageSegmenter()
-    : nominalSegmentWidth_(0)
-    , nominalSegmentHeight_(0)
+    : nominalSegmentWidth_( 0 )
+    , nominalSegmentHeight_( 0 )
 {
 }
 
@@ -74,7 +74,7 @@ bool ImageSegmenter::generate( const ImageWrapper& image,
  */
 struct SegmentCompressionWrapper
 {
-    PixelStreamSegment segment;
+    Segment segment;
     ImageSegmenter::Handler handler;
     const ImageWrapper* image;
     bool* result;
@@ -108,12 +108,12 @@ bool ImageSegmenter::generateJpeg( const ImageWrapper& image,
                                    const Handler& handler ) const
 {
 #ifdef DEFLECT_USE_LIBJPEGTURBO
-    const SegmentParameters& segmentParams = generateSegmentParameters( image );
+    const SegmentParametersList& segmentParams = generateSegmentParameters( image );
 
     // The resulting Jpeg segments
     bool result = true;
     std::vector<SegmentCompressionWrapper> tasks;
-    for( SegmentParameters::const_iterator it = segmentParams.begin();
+    for( SegmentParametersList::const_iterator it = segmentParams.begin();
          it != segmentParams.end(); ++it )
     {
         SegmentCompressionWrapper task( image, handler, result );
@@ -136,16 +136,16 @@ bool ImageSegmenter::generateJpeg( const ImageWrapper& image,
 #endif
 }
 
-bool ImageSegmenter::generateRaw( const ImageWrapper &image,
+bool ImageSegmenter::generateRaw( const ImageWrapper& image,
                                   const Handler& handler ) const
 {
-    const SegmentParameters& segmentParams = generateSegmentParameters( image );
+    const SegmentParametersList& segmentParams = generateSegmentParameters( image );
 
     // resulting Raw segments
-    for( SegmentParameters::const_iterator it = segmentParams.begin();
+    for( SegmentParametersList::const_iterator it = segmentParams.begin();
          it != segmentParams.end(); ++it )
     {
-        PixelStreamSegment segment;
+        Segment segment;
         segment.parameters = *it;
         segment.imageData.reserve( segment.parameters.width *
                                    segment.parameters.height *
@@ -180,14 +180,16 @@ bool ImageSegmenter::generateRaw( const ImageWrapper &image,
     return true;
 }
 
-void ImageSegmenter::setNominalSegmentDimensions(const unsigned int nominalSegmentWidth, const unsigned int nominalSegmentHeight)
+void ImageSegmenter::setNominalSegmentDimensions( const unsigned int width,
+                                                  const unsigned int height )
 {
-    nominalSegmentWidth_ = nominalSegmentWidth;
-    nominalSegmentHeight_ = nominalSegmentHeight;
+    nominalSegmentWidth_ = width;
+    nominalSegmentHeight_ = height;
 }
 
 #ifdef UNIORM_SEGMENT_WIDTH
-SegmentParameters ImageSegmenter::generateSegmentParameters(const ImageWrapper &image) const
+SegmentParametersList
+ImageSegmenter::generateSegmentParameters( const ImageWrapper& image ) const
 {
     unsigned int numSubdivisionsX = 1;
     unsigned int numSubdivisionsY = 1;
@@ -206,13 +208,13 @@ SegmentParameters ImageSegmenter::generateSegmentParameters(const ImageWrapper &
     }
 
     // now, create parameters for each segment
-    SegmentParameters parameters;
+    SegmentParametersList parameters;
 
     for(unsigned int i=0; i<numSubdivisionsX; i++)
     {
         for(unsigned int j=0; j<numSubdivisionsY; j++)
         {
-            PixelStreamSegmentParameters p;
+            SegmentParameters p;
 
             p.x = image.x + i * uniformSegmentWidth;
             p.y = image.y + j * uniformSegmentHeight;
@@ -228,7 +230,8 @@ SegmentParameters ImageSegmenter::generateSegmentParameters(const ImageWrapper &
     return parameters;
 }
 #else
-SegmentParameters ImageSegmenter::generateSegmentParameters(const ImageWrapper &image) const
+SegmentParametersList
+ImageSegmenter::generateSegmentParameters( const ImageWrapper& image ) const
 {
     unsigned int numSubdivisionsX = 1;
     unsigned int numSubdivisionsY = 1;
@@ -258,13 +261,13 @@ SegmentParameters ImageSegmenter::generateSegmentParameters(const ImageWrapper &
     }
 
     // now, create parameters for each segment
-    SegmentParameters parameters;
+    SegmentParametersList parameters;
 
     for(unsigned int j=0; j<numSubdivisionsY; j++)
     {
         for(unsigned int i=0; i<numSubdivisionsX; i++)
         {
-            PixelStreamSegmentParameters p;
+            SegmentParameters p;
 
             p.x = image.x + i * nominalSegmentWidth_;
             p.y = image.y + j * nominalSegmentHeight_;

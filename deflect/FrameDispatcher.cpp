@@ -37,110 +37,95 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMDISPATCHER_H
-#define DEFLECT_PIXELSTREAMDISPATCHER_H
+#include "FrameDispatcher.h"
 
-#include <deflect/types.h>
-#include <deflect/PixelStreamBuffer.h>
-#include <deflect/PixelStreamSegment.h>
-
-#include <QObject>
-#include <map>
+#include "Frame.h"
 
 namespace deflect
 {
 
-/**
- * Gather PixelStream Segments from multiple sources and dispatch the resulting
- * full frames.
- */
-class PixelStreamDispatcher : public QObject
+FrameDispatcher::FrameDispatcher()
 {
-    Q_OBJECT
-
-public:
-    /** Construct a dispatcher */
-    PixelStreamDispatcher();
-
-public slots:
-    /**
-     * Add a source of Segments for a Stream
-     *
-     * @param uri Identifier for the Stream
-     * @param sourceIndex Identifier for the source in this stream
-     */
-    void addSource(const QString uri, const size_t sourceIndex);
-
-    /**
-     * Add a source of Segments for a Stream
-     *
-     * @param uri Identifier for the Stream
-     * @param sourceIndex Identifier for the source in this stream
-     */
-    void removeSource(const QString uri, const size_t sourceIndex);
-
-    /**
-     * Process a new Segement
-     *
-     * @param uri Identifier for the Stream
-     * @param sourceIndex Identifier for the source in this stream
-     * @param segment The segment to process
-     */
-    void processSegment(const QString uri, const size_t sourceIndex,
-                        PixelStreamSegment segment);
-
-    /**
-     * The given source has finished sending segments for the current frame
-     *
-     * @param uri Identifier for the Stream
-     * @param sourceIndex Identifier for the source in this stream
-     */
-    void processFrameFinished(const QString uri, const size_t sourceIndex);
-
-    /**
-     * Delete an entire stream
-     *
-     * @param uri Identifier for the Stream
-     */
-    void deleteStream(const QString uri);
-
-    /**
-     * Is called when the wall processes are ready to receive new frames
-     *
-     * @param uri Identifier for the stream
-     */
-    void requestFrame(const QString uri);
-
-signals:
-    /**
-     * Notify that a PixelStream has been opened
-     *
-     * @param uri Identifier for the Stream
-     */
-    void openPixelStream(QString uri);
-
-    /**
-     * Notify that a pixel stream has been deleted
-     *
-     * @param uri Identifier for the Stream
-     */
-    void deletePixelStream(QString uri);
-
-    /**
-     * Dispatch a full frame
-     *
-     * @param frame The frame to dispatch
-     */
-    void sendFrame(deflect::PixelStreamFramePtr frame);
-
-private:
-    void sendLatestFrame(const QString uri);
-
-    // The buffers for each URI
-    typedef std::map<QString, PixelStreamBuffer> StreamBuffers;
-    StreamBuffers streamBuffers_;
-};
-
 }
 
-#endif
+void FrameDispatcher::addSource( const QString uri, const size_t sourceIndex )
+{
+    streamBuffers_[uri].addSource( sourceIndex );
+
+    if( streamBuffers_[uri].getSourceCount() == 1 )
+        emit openPixelStream( uri );
+}
+
+void FrameDispatcher::removeSource( const QString uri,
+                                    const size_t sourceIndex )
+{
+    if( !streamBuffers_.count( uri ))
+        return;
+
+    streamBuffers_[uri].removeSource( sourceIndex );
+
+    if( streamBuffers_[uri].getSourceCount() == 0 )
+        deleteStream( uri );
+}
+
+void FrameDispatcher::processSegment( const QString uri,
+                                      const size_t sourceIndex,
+                                      Segment segment )
+{
+    if( streamBuffers_.count( uri ))
+        streamBuffers_[uri].insertSegment( segment, sourceIndex );
+}
+
+void FrameDispatcher::processFrameFinished( const QString uri,
+                                            const size_t sourceIndex )
+{
+    if( !streamBuffers_.count( uri ))
+        return;
+
+    ReceiveBuffer& buffer = streamBuffers_[uri];
+    buffer.finishFrameForSource( sourceIndex );
+
+    if( buffer.isAllowedToSend( ))
+        sendLatestFrame( uri );
+}
+
+void FrameDispatcher::deleteStream( const QString uri )
+{
+    if( streamBuffers_.count( uri ))
+    {
+        streamBuffers_.erase( uri );
+        emit deletePixelStream( uri );
+    }
+}
+
+void FrameDispatcher::requestFrame( const QString uri )
+{
+    if( !streamBuffers_.count( uri ))
+        return;
+
+    ReceiveBuffer& buffer = streamBuffers_[uri];
+    buffer.setAllowedToSend( true );
+    sendLatestFrame( uri );
+}
+
+void FrameDispatcher::sendLatestFrame( const QString& uri )
+{
+    FramePtr frame( new Frame );
+    frame->uri = uri;
+
+    ReceiveBuffer& buffer = streamBuffers_[uri];
+
+    // Only send the latest frame
+    while( buffer.hasCompleteFrame( ))
+        frame->segments = buffer.popFrame();
+
+    if( frame->segments.empty( ))
+        return;
+
+    // receiver will request a new frame once this frame was consumed
+    buffer.setAllowedToSend( false );
+
+    emit sendFrame( frame );
+}
+
+}

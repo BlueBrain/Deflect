@@ -39,8 +39,8 @@
 #include "Server.h"
 
 #include "CommandHandler.h"
+#include "FrameDispatcher.h"
 #include "NetworkProtocol.h"
-#include "PixelStreamDispatcher.h"
 #include "ServerWorker.h"
 
 #ifdef DEFLECT_USE_SERVUS
@@ -65,7 +65,7 @@ public:
 #endif
     {}
 
-    PixelStreamDispatcher pixelStreamDispatcher;
+    FrameDispatcher pixelStreamDispatcher;
     CommandHandler commandHandler;
 #ifdef DEFLECT_USE_SERVUS
     servus::Servus servus;
@@ -95,7 +95,7 @@ CommandHandler& Server::getCommandHandler()
     return _impl->commandHandler;
 }
 
-PixelStreamDispatcher& Server::getPixelStreamDispatcher()
+FrameDispatcher& Server::getPixelStreamDispatcher()
 {
     return _impl->pixelStreamDispatcher;
 }
@@ -143,9 +143,9 @@ void Server::incomingConnection( qintptr socketHandle )
     connect( worker, SIGNAL( receivedAddPixelStreamSource( QString, size_t )),
              &_impl->pixelStreamDispatcher, SLOT(addSource( QString, size_t )));
     connect( worker, SIGNAL( receivedPixelStreamSegement( QString, size_t,
-                                                          PixelStreamSegment )),
+                                                          Segment )),
              &_impl->pixelStreamDispatcher,
-             SLOT( processSegment( QString, size_t, PixelStreamSegment )));
+             SLOT( processSegment( QString, size_t, Segment )));
     connect( worker,
              SIGNAL( receivedPixelStreamFinishFrame( QString, size_t )),
              &_impl->pixelStreamDispatcher,
