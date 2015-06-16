@@ -71,21 +71,21 @@ public:
 
 private:
     /** Starts asynchronous sending of queued images. */
-    void run_();
+    void _run();
 
     /** Stop the worker and clear any pending image send requests. */
-    void stop_();
+    void _stop();
 
     typedef boost::promise< bool > Promise;
     typedef boost::shared_ptr< Promise > PromisePtr;
     typedef std::pair< PromisePtr, ImageWrapper > Request;
 
-    StreamPrivate& stream_;
-    std::deque< Request > requests_;
-    boost::mutex mutex_;
-    boost::condition condition_;
-    bool running_;
-    boost::thread thread_;
+    StreamPrivate& _stream;
+    std::deque< Request > _requests;
+    boost::mutex _mutex;
+    boost::condition _condition;
+    bool _running;
+    boost::thread _thread;
 };
 
 }

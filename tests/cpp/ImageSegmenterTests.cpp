@@ -51,8 +51,8 @@ namespace ut = boost::unit_test;
 static bool append( deflect::Segments& segments,
                     const deflect::Segment& segment )
 {
-    static QMutex _lock;
-    QMutexLocker locker( &_lock );
+    static QMutex lock;
+    QMutexLocker locker( &lock );
     segments.push_back( segment );
     return true;
 }
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterSegmentParameters )
         1,1,1, 2,2,2, 3,3,3, 4,4,4,
         5,5,5, 6,6,6, 7,7,7, 8,8,8
     };
-    deflect::ImageWrapper imageWrapper(data, 4, 8, deflect::RGB);
+    deflect::ImageWrapper imageWrapper( data, 4, 8, deflect::RGB );
 
     deflect::Segments segments;
     const deflect::ImageSegmenter::Handler appendFunc =
@@ -92,18 +92,19 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterSegmentParameters )
 
     {
         deflect::ImageSegmenter segmenter;
-        segmenter.setNominalSegmentDimensions(2,2);
+        segmenter.setNominalSegmentDimensions( 2, 2 );
 
         segments.clear();
         segmenter.generate( imageWrapper, appendFunc );
         BOOST_REQUIRE_EQUAL( segments.size(), 8 );
 
         unsigned int i = 0;
-        for(deflect::Segments::const_iterator it = segments.begin(); it != segments.end(); ++it, ++i)
+        for( deflect::Segments::const_iterator it = segments.begin();
+             it != segments.end(); ++it, ++i )
         {
             const deflect::Segment& segment = *it;
             BOOST_CHECK_EQUAL( segment.parameters.x, i%4 );
-            BOOST_CHECK_EQUAL( segment.parameters.y, 2*(i/4) );
+            BOOST_CHECK_EQUAL( segment.parameters.y, 2 * ( i/4 ));
             BOOST_CHECK_EQUAL( segment.parameters.width, 2 );
             BOOST_CHECK_EQUAL( segment.parameters.height, 2 );
             ++i;
@@ -112,7 +113,7 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterSegmentParameters )
 
     {
         deflect::ImageSegmenter segmenter;
-        segmenter.setNominalSegmentDimensions(3,5);
+        segmenter.setNominalSegmentDimensions( 3, 5 );
 
         segments.clear();
         segmenter.generate( imageWrapper, appendFunc );
@@ -158,7 +159,7 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterSingleSegmentData )
         1,1,1, 2,2,2, 3,3,3, 4,4,4,
         5,5,5, 6,6,6, 7,7,7, 8,8,8
     };
-    deflect::ImageWrapper imageWrapper(dataIn, 4, 8, deflect::RGB);
+    deflect::ImageWrapper imageWrapper( dataIn, 4, 8, deflect::RGB );
     imageWrapper.compressionPolicy = deflect::COMPRESSION_OFF;
 
     deflect::ImageSegmenter segmenter;
@@ -172,7 +173,8 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterSingleSegmentData )
     deflect::Segment& segment = segments.front();
     const char* dataOut = segment.imageData.constData();
     BOOST_CHECK_EQUAL_COLLECTIONS( dataIn, dataIn+imageWrapper.getBufferSize(),
-                                   dataOut, dataOut+imageWrapper.getBufferSize() );
+                                   dataOut,
+                                   dataOut+imageWrapper.getBufferSize( ));
 }
 
 
@@ -219,7 +221,7 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterUniformSegmentationData )
         }
     };
 
-    deflect::ImageWrapper imageWrapper(dataIn, 4, 8, deflect::RGB);
+    deflect::ImageWrapper imageWrapper( dataIn, 4, 8, deflect::RGB );
     imageWrapper.compressionPolicy = deflect::COMPRESSION_OFF;
 
     deflect::ImageSegmenter segmenter;
@@ -227,17 +229,19 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterUniformSegmentationData )
     const deflect::ImageSegmenter::Handler appendFunc =
         boost::bind( &append, boost::ref( segments ), _1 );
 
-    segmenter.setNominalSegmentDimensions(2,4);
+    segmenter.setNominalSegmentDimensions( 2, 4 );
     segmenter.generate( imageWrapper, appendFunc );
     BOOST_REQUIRE_EQUAL( segments.size(), 4 );
 
     size_t i = 0;
-    for(deflect::Segments::const_iterator it = segments.begin(); it != segments.end(); ++it, ++i)
+    for( deflect::Segments::const_iterator it = segments.begin();
+         it != segments.end(); ++it, ++i )
     {
         const deflect::Segment& segment = *it;
         const char* dataOut = segment.imageData.constData();
-        BOOST_CHECK_EQUAL_COLLECTIONS( dataSegmented[i], dataSegmented[i]+24,
-                                       dataOut, dataOut+segment.imageData.size() );
+        BOOST_CHECK_EQUAL_COLLECTIONS( dataSegmented[i], dataSegmented[i] + 24,
+                                       dataOut,
+                                       dataOut+segment.imageData.size( ));
     }
 }
 
@@ -292,7 +296,7 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterNonUniformSegmentationData )
     dataSegmented[3] = dataSegmented3;
 
 
-    deflect::ImageWrapper imageWrapper(dataIn, 4, 8, deflect::RGB);
+    deflect::ImageWrapper imageWrapper( dataIn, 4, 8, deflect::RGB );
     imageWrapper.compressionPolicy = deflect::COMPRESSION_OFF;
 
     deflect::ImageSegmenter segmenter;
@@ -300,16 +304,19 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterNonUniformSegmentationData )
     const deflect::ImageSegmenter::Handler appendFunc =
         boost::bind( &append, boost::ref( segments ), _1 );
 
-    segmenter.setNominalSegmentDimensions(3,5);
+    segmenter.setNominalSegmentDimensions( 3, 5 );
     segmenter.generate( imageWrapper, appendFunc );
     BOOST_REQUIRE_EQUAL( segments.size(), 4 );
 
     size_t i = 0;
-    for(deflect::Segments::const_iterator it = segments.begin(); it != segments.end(); ++it, ++i)
+    for( deflect::Segments::const_iterator it = segments.begin();
+         it != segments.end(); ++it, ++i )
     {
         const deflect::Segment& segment = *it;
         const char* dataOut = segment.imageData.constData();
-        BOOST_CHECK_EQUAL_COLLECTIONS( dataSegmented[i], dataSegmented[i]+segment.imageData.size(),
-                                       dataOut, dataOut+segment.imageData.size() );
+        BOOST_CHECK_EQUAL_COLLECTIONS( dataSegmented[i],
+                                       dataSegmented[i] + segment.imageData.size(),
+                                       dataOut,
+                                       dataOut + segment.imageData.size( ));
     }
 }

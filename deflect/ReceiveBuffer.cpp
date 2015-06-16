@@ -45,60 +45,59 @@ namespace deflect
 {
 
 ReceiveBuffer::ReceiveBuffer()
-    : lastFrameComplete_( 0 )
-    , allowedToSend_( true )
+    : _lastFrameComplete( 0 )
+    , _allowedToSend( true )
 {
 }
 
 bool ReceiveBuffer::addSource( const size_t sourceIndex )
 {
-    assert( !sourceBuffers_.count( sourceIndex ));
+    assert( !_sourceBuffers.count( sourceIndex ));
 
     // TODO: This function must return false if the stream was already started!
     // This requires an full adaptation of the Stream library (DISCL-241)
-    if ( sourceBuffers_.count( sourceIndex ))
+    if ( _sourceBuffers.count( sourceIndex ))
         return false;
 
-    sourceBuffers_[sourceIndex] = SourceBuffer();
-    sourceBuffers_[sourceIndex].segments.push( Segments( ));
+    _sourceBuffers[sourceIndex] = SourceBuffer();
+    _sourceBuffers[sourceIndex].segments.push( Segments( ));
     return true;
 }
 
 void ReceiveBuffer::removeSource( const size_t sourceIndex )
 {
-    sourceBuffers_.erase( sourceIndex );
+    _sourceBuffers.erase( sourceIndex );
 }
 
 size_t ReceiveBuffer::getSourceCount() const
 {
-    return sourceBuffers_.size();
+    return _sourceBuffers.size();
 }
 
-void ReceiveBuffer::insertSegment( const Segment& segment,
-                                   const size_t sourceIndex )
+void ReceiveBuffer::insert( const Segment& segment, const size_t sourceIndex )
 {
-    assert( sourceBuffers_.count( sourceIndex ));
+    assert( _sourceBuffers.count( sourceIndex ));
 
-    sourceBuffers_[sourceIndex].segments.back().push_back( segment );
+    _sourceBuffers[sourceIndex].segments.back().push_back( segment );
 }
 
 void ReceiveBuffer::finishFrameForSource( const size_t sourceIndex )
 {
-    assert( sourceBuffers_.count( sourceIndex ));
+    assert( _sourceBuffers.count( sourceIndex ));
 
-    sourceBuffers_[sourceIndex].push();
+    _sourceBuffers[sourceIndex].push();
 }
 
 bool ReceiveBuffer::hasCompleteFrame() const
 {
-    assert( !sourceBuffers_.empty( ));
+    assert( !_sourceBuffers.empty( ));
 
     // Check if all sources for Stream have reached the same index
-    for( SourceBufferMap::const_iterator it = sourceBuffers_.begin();
-         it != sourceBuffers_.end(); ++it )
+    for( SourceBufferMap::const_iterator it = _sourceBuffers.begin();
+         it != _sourceBuffers.end(); ++it )
     {
         const SourceBuffer& buffer = it->second;
-        if( buffer.backFrameIndex <= lastFrameComplete_ )
+        if( buffer.backFrameIndex <= _lastFrameComplete )
             return false;
     }
     return true;
@@ -106,8 +105,8 @@ bool ReceiveBuffer::hasCompleteFrame() const
 
 bool ReceiveBuffer::isFirstCompleteFrame() const
 {
-    for( SourceBufferMap::const_iterator it = sourceBuffers_.begin();
-         it != sourceBuffers_.end(); ++it )
+    for( SourceBufferMap::const_iterator it = _sourceBuffers.begin();
+         it != _sourceBuffers.end(); ++it )
     {
         const SourceBuffer& buffer = it->second;
         if( buffer.frontFrameIndex != FIRST_FRAME_INDEX ||
@@ -120,34 +119,34 @@ bool ReceiveBuffer::isFirstCompleteFrame() const
 Segments ReceiveBuffer::popFrame()
 {
     Segments frame;
-    for( SourceBufferMap::iterator it = sourceBuffers_.begin();
-         it != sourceBuffers_.end(); ++it )
+    for( SourceBufferMap::iterator it = _sourceBuffers.begin();
+         it != _sourceBuffers.end(); ++it )
     {
         SourceBuffer& buffer = it->second;
         frame.insert( frame.end(), buffer.segments.front().begin(),
                       buffer.segments.front().end( ));
         buffer.pop();
     }
-    ++lastFrameComplete_;
+    ++_lastFrameComplete;
     return frame;
 }
 
 void ReceiveBuffer::setAllowedToSend( const bool enable )
 {
-    allowedToSend_ = enable;
+    _allowedToSend = enable;
 }
 
 bool ReceiveBuffer::isAllowedToSend() const
 {
-    return allowedToSend_;
+    return _allowedToSend;
 }
 
 QSize ReceiveBuffer::getFrameSize() const
 {
     QSize size( 0, 0 );
 
-    for( SourceBufferMap::const_iterator it = sourceBuffers_.begin();
-         it != sourceBuffers_.end(); ++it )
+    for( SourceBufferMap::const_iterator it = _sourceBuffers.begin();
+         it != _sourceBuffers.end(); ++it )
     {
         const SourceBuffer& buffer = it->second;
         if( !buffer.segments.empty( ))

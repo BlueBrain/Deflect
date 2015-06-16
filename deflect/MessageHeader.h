@@ -82,7 +82,7 @@ struct MessageHeader
 
     /**
      * Optional URI related to message.
-     * @note Needs to be of fixed size so that sizeof(MessageHeader) is constant.
+     * @note Needs to be of fixed size so that sizeof(MessageHeader) is constant
      */
     char uri[MESSAGE_HEADER_URI_LENGTH];
 
@@ -90,7 +90,8 @@ struct MessageHeader
     DEFLECT_API MessageHeader();
 
     /** Construct a message header with a uri */
-    DEFLECT_API MessageHeader(const MessageType type, const uint32_t size, const std::string& streamUri = "");
+    DEFLECT_API MessageHeader( const MessageType type, const uint32_t size,
+                               const std::string& streamUri = "" );
 
     /** The size of the QDataStream serialized output. */
     static const size_t serializedSize;
@@ -98,8 +99,13 @@ struct MessageHeader
 
 }
 
-/** Serialization for network, where sizeof(MessageHeader) can differ between compilers. */
-DEFLECT_API QDataStream& operator<<(QDataStream& out, const deflect::MessageHeader &header);
-DEFLECT_API QDataStream& operator>>(QDataStream& in, deflect::MessageHeader &header);
+/**
+ * Serialization for network, where sizeof(MessageHeader) can differ between
+ * compilers.
+ */
+DEFLECT_API QDataStream& operator<<( QDataStream& out,
+                                     const deflect::MessageHeader& header );
+DEFLECT_API QDataStream& operator>>( QDataStream& in,
+                                     deflect::MessageHeader& header );
 
 #endif

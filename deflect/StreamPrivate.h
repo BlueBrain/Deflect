@@ -84,21 +84,9 @@ public:
     /** Destructor, close the Stream. */
     ~StreamPrivate();
 
-    /** The stream identifier. */
-    const std::string name_;
-
-    /** The communication socket instance */
-    Socket socket_;
-
-    /** The image segmenter */
-    ImageSegmenter imageSegmenter_;
-
-    /** Has a successful event registration reply been received */
-    bool registeredForEvents_;
-
     /**
      * Close the stream.
-     * @return true if the connection could be terminated or the Stream was not connected, false otherwise
+     * @return true on success or if the Stream was not connected
      */
     bool close();
 
@@ -106,7 +94,7 @@ public:
     bool send( const ImageWrapper& image );
 
     /** @sa Stream::asyncSend */
-    Stream::Future asyncSend(const ImageWrapper& image);
+    Stream::Future asyncSend( const ImageWrapper& image );
 
     /** @sa Stream::finishFrame */
     bool finishFrame();
@@ -118,23 +106,35 @@ public:
      * @param senderName Used to identifiy the sender on the receiver side
      * @return true if the message could be sent
      */
-    DEFLECT_API bool sendPixelStreamSegment(const Segment& segment);
+    DEFLECT_API bool sendPixelStreamSegment( const Segment& segment );
 
     /**
      * Send a command to the wall
      * @param command A command string formatted by the Command class.
      * @return true if the request could be sent, false otherwise.
      */
-    bool sendCommand(const QString& command);
+    bool sendCommand( const QString& command );
 
-    QMutex sendLock_;
+    /** The stream identifier. */
+    const std::string name;
+
+    /** The communication socket instance */
+    Socket socket;
+
+    /** The image segmenter */
+    ImageSegmenter imageSegmenter;
+
+    /** Has a successful event registration reply been received */
+    bool registeredForEvents;
+
+    QMutex sendLock;
 
 private slots:
-    void onDisconnected();
+    void _onDisconnected();
 
 private:
-    Stream* parent_;
-    StreamSendWorker* sendWorker_;
+    Stream* _parent;
+    StreamSendWorker* _sendWorker;
 };
 
 }

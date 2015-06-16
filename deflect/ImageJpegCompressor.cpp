@@ -47,18 +47,18 @@ namespace deflect
 {
 
 ImageJpegCompressor::ImageJpegCompressor()
-    : tjHandle_(tjInitCompress())
+    : _tjHandle( tjInitCompress( ))
 {
 }
 
 ImageJpegCompressor::~ImageJpegCompressor()
 {
-    tjDestroy(tjHandle_);
+    tjDestroy( _tjHandle );
 }
 
-int getTurboJpegImageFormat(const PixelFormat pixelFormat)
+int getTurboJpegFormat( const PixelFormat pixelFormat )
 {
-    switch(pixelFormat)
+    switch( pixelFormat )
     {
         case RGB:
             return TJPF_RGB;
@@ -78,27 +78,32 @@ int getTurboJpegImageFormat(const PixelFormat pixelFormat)
     }
 }
 
-QByteArray ImageJpegCompressor::computeJpeg(const ImageWrapper& sourceImage, const QRect& imageRegion)
+QByteArray ImageJpegCompressor::computeJpeg( const ImageWrapper& sourceImage,
+                                             const QRect& imageRegion )
 {
-    // tjCompress API is incorrect and takes a non-const input buffer, even though it does not modify it.
-    // We can "safely" cast it to non-const pointer to comply to the incorrect API.
-    unsigned char* tjSrcBuffer = (unsigned char*) sourceImage.data;
-    tjSrcBuffer += imageRegion.y() * sourceImage.width * sourceImage.getBytesPerPixel();
+    // tjCompress API is incorrect and takes a non-const input buffer, even
+    // though it does not modify it. It can "safely" be cast to non-const
+    // pointer to comply to the incorrect API.
+    unsigned char* tjSrcBuffer = (unsigned char*)sourceImage.data;
+    tjSrcBuffer += imageRegion.y() * sourceImage.width *
+                   sourceImage.getBytesPerPixel();
     tjSrcBuffer += imageRegion.x() * sourceImage.getBytesPerPixel();
 
-    int tjWidth = imageRegion.width();
-    int tjPitch = sourceImage.width * sourceImage.getBytesPerPixel(); // assume imageBuffer isn't padded
-    int tjHeight = imageRegion.height();
-    int tjPixelFormat = getTurboJpegImageFormat(sourceImage.pixelFormat);
-    unsigned char * tjJpegBuf = 0;
+    const int tjWidth = imageRegion.width();
+    // assume imageBuffer isn't padded
+    const int tjPitch = sourceImage.width * sourceImage.getBytesPerPixel();
+    const int tjHeight = imageRegion.height();
+    const int tjPixelFormat = getTurboJpegFormat( sourceImage.pixelFormat );
+    unsigned char* tjJpegBuf = 0;
     unsigned long tjJpegSize = 0;
-    int tjJpegSubsamp = TJSAMP_444;
-    int tjJpegQual = sourceImage.compressionQuality;
-    int tjFlags = 0; // was TJFLAG_BOTTOMUP
+    const int tjJpegSubsamp = TJSAMP_444;
+    const int tjJpegQual = sourceImage.compressionQuality;
+    const int tjFlags = 0; // or: TJFLAG_BOTTOMUP
 
-    int success = tjCompress2(tjHandle_, tjSrcBuffer, tjWidth, tjPitch, tjHeight, tjPixelFormat, &tjJpegBuf, &tjJpegSize, tjJpegSubsamp, tjJpegQual, tjFlags);
-
-    if(success != 0)
+    int err = tjCompress2( _tjHandle, tjSrcBuffer, tjWidth, tjPitch, tjHeight,
+                           tjPixelFormat, &tjJpegBuf, &tjJpegSize,
+                           tjJpegSubsamp, tjJpegQual, tjFlags );
+    if( err != 0 )
     {
         std::cerr << "libjpeg-turbo image conversion failure" << std::endl;
         return QByteArray();
@@ -106,10 +111,10 @@ QByteArray ImageJpegCompressor::computeJpeg(const ImageWrapper& sourceImage, con
 
     // move the JPEG buffer to a byte array
     QByteArray jpegData;
-    jpegData.append((char *)tjJpegBuf, tjJpegSize);
+    jpegData.append( (char*)tjJpegBuf, tjJpegSize );
 
     // free the libjpeg-turbo allocated memory
-    free(tjJpegBuf);
+    free( tjJpegBuf );
 
     return jpegData;
 }

@@ -62,7 +62,7 @@ protected:
     void incomingConnection( qintptr handle ) final;
 
 private:
-    int32_t protocolVersion_;
+    int32_t _protocolVersion;
 };
 
 #endif

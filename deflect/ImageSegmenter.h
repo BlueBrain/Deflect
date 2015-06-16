@@ -41,10 +41,11 @@
 #ifndef DEFLECT_IMAGESEGMENTER_H
 #define DEFLECT_IMAGESEGMENTER_H
 
-#include <boost/function/function1.hpp>
-#include <vector>
 #include <deflect/api.h>
 #include <deflect/types.h>
+
+#include <boost/function/function1.hpp>
+#include <vector>
 
 namespace deflect
 {
@@ -92,13 +93,15 @@ public:
 
 private:
     SegmentParametersList
-    generateSegmentParameters( const ImageWrapper& image ) const;
+    _generateSegmentParameters( const ImageWrapper& image ) const;
 
-    bool generateJpeg( const ImageWrapper& image, const Handler& handler) const;
-    bool generateRaw( const ImageWrapper& image, const Handler& handler ) const;
+    bool _generateJpeg( const ImageWrapper& image,
+                        const Handler& handler) const;
+    bool _generateRaw( const ImageWrapper& image,
+                       const Handler& handler ) const;
 
-    unsigned int nominalSegmentWidth_;
-    unsigned int nominalSegmentHeight_;
+    unsigned int _nominalSegmentWidth;
+    unsigned int _nominalSegmentHeight;
 };
 
 }

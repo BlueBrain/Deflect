@@ -110,16 +110,16 @@ struct Event
 
     /** Construct a new event. @version 1.0 */
     Event()
-        : type(EVT_NONE)
-        , mouseX(0)
-        , mouseY(0)
-        , dx(0)
-        , dy(0)
-        , mouseLeft(false)
-        , mouseRight(false)
-        , mouseMiddle(false)
-        , key(0)
-        , modifiers(0)
+        : type( EVT_NONE )
+        , mouseX( 0 )
+        , mouseY( 0 )
+        , dx( 0 )
+        , dy( 0 )
+        , mouseLeft( false )
+        , mouseRight( false )
+        , mouseMiddle( false )
+        , key( 0 )
+        , modifiers( 0 )
         , text()
     {
     }
@@ -129,8 +129,8 @@ struct Event
 };
 
 /** Serialization for network, where sizeof(Event) can differ between compilers. */
-DEFLECT_API QDataStream& operator<<(QDataStream& out, const Event& event);
-DEFLECT_API QDataStream& operator>>(QDataStream& in, Event& event);
+DEFLECT_API QDataStream& operator<<( QDataStream& out, const Event& event );
+DEFLECT_API QDataStream& operator>>( QDataStream& in, Event& event );
 
 }
 

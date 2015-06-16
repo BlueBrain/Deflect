@@ -41,6 +41,13 @@
 #ifndef DEFLECT_STREAM_H
 #define DEFLECT_STREAM_H
 
+#include <deflect/api.h>
+
+#include "Event.h"
+#include "ImageWrapper.h"
+
+#include <string>
+
 #ifndef Q_MOC_RUN  // See: https://bugreports.qt-project.org/browse/QTBUG-22829
 // needed for future.hpp with Boost 1.41
 #  include <boost/thread/mutex.hpp>
@@ -49,11 +56,6 @@
 #  include <boost/thread/future.hpp>
 #  include <boost/signals2/signal.hpp>
 #endif
-#include <string>
-
-#include "Event.h"
-#include "ImageWrapper.h"
-#include <deflect/api.h>
 
 class Application;
 
@@ -65,7 +67,7 @@ class StreamPrivate;
 /**
  * Stream visual data to a DisplayCluster application.
  *
- * A Stream can be subdivided into one or more images.  This allows to have
+ * A Stream can be subdivided into one or more images. This allows to have
  * different applications each responsible for sending one part of the global
  * image.
  *
@@ -100,7 +102,7 @@ public:
     /** @return true if the stream is connected, false otherwise. @version 1.0*/
     DEFLECT_API bool isConnected() const;
 
-    /** Emitted after the stream was disconnected. @version 1.0*/
+    /** Emitted after the stream was disconnected. @version 1.0 */
     boost::signals2::signal< void() > disconnected;
 
     /** @name Asynchronous send API */
@@ -171,7 +173,7 @@ public:
      * @return true if the registration could be or was already established.
      * @version 1.0
      */
-    DEFLECT_API bool registerForEvents( const bool exclusive = false );
+    DEFLECT_API bool registerForEvents( bool exclusive = false );
 
     /**
      * Is this stream registered to receive events.
@@ -234,7 +236,7 @@ private:
     /** Disable assignment operator. */
     const Stream& operator = ( const Stream& );
 
-    StreamPrivate* impl_;
+    StreamPrivate* _impl;
 
     friend class ::Application;
 };

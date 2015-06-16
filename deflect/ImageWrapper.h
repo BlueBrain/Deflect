@@ -46,7 +46,7 @@
 namespace deflect
 {
 /**
- *  The PixelFormat enum describes the organisation of the bytes in the image buffer.
+ *  The PixelFormat describes the organisation of the bytes in the image buffer.
  *  Formats are 8 bits per channel unless specified otherwise.
  *  @version 1.0
  */
@@ -62,8 +62,9 @@ enum CompressionPolicy {
 /**
  * A simple wrapper around an image data buffer.
  *
- * It is used by the Stream library to represent images and send them to a DisplayCluster instance.
- * It also contains fields to indicate if the image should be compressed for sending (disabled by default).
+ * Used by the Stream class to send images to a remote Server instance. It also
+ * contains fields to indicate if the image should be compressed for sending
+ * (disabled by default).
  * @version 1.0
  */
 struct DEFLECT_API ImageWrapper
@@ -84,7 +85,7 @@ struct DEFLECT_API ImageWrapper
      * @param y The global position of the image in the stream
      * @version 1.0
      */
-    ImageWrapper( const void *data, const unsigned int width,
+    ImageWrapper( const void* data, const unsigned int width,
                   const unsigned int height, const PixelFormat format,
                   const unsigned int x = 0, const unsigned int y = 0 );
 
@@ -97,7 +98,10 @@ struct DEFLECT_API ImageWrapper
     const unsigned int height;  /**< The image height in pixels. @version 1.0 */
     //@}
 
-    /** The pixel format describing the arrangement of the data buffer. @version 1.0 */
+    /**
+     * The pixel format describing the arrangement of the data buffer.
+     * @version 1.0
+     */
     const PixelFormat pixelFormat;
 
     /** @name Position of the image in the stream */
@@ -108,29 +112,40 @@ struct DEFLECT_API ImageWrapper
 
     /** @name Compression parameters */
     //@{
-    CompressionPolicy compressionPolicy;  /**< Is the image to be compressed (default: auto). @version 1.0 */
-    unsigned int compressionQuality;      /**< Compression quality (0 worst, 100 best, default: 75). @version 1.0 */
+    CompressionPolicy compressionPolicy;  /**< Is the image to be compressed
+                                               (default: auto). @version 1.0 */
+    unsigned int compressionQuality;      /**< Compression quality (0 worst,
+                                               100 best, default: 75).
+                                               @version 1.0 */
     //@}
 
-    /** @return The number of bytes per pixel based on the pixelFormat. @version 1.0 */
+    /**
+     * Get the number of bytes per pixel based on the pixelFormat.
+     * @version 1.0
+     */
     unsigned int getBytesPerPixel() const;
 
-    /** @return The size of the data buffer in bytes: width * height * format.bpp. @version 1.0 */
+    /**
+     * Get the size of the data buffer in bytes: width*height*format.bpp.
+     * @version 1.0
+     */
     size_t getBufferSize() const;
 
     /**
      * Swap an image along the Y axis.
      *
-     * Used to switch between OpenGL convention (origin in bottom-left corner) and "standard" image
-     * format (origin in top-left corner).
-     * @param data The image buffer to be modified, containing width*height*bpp bytes
+     * Used to switch between OpenGL convention (origin in bottom-left corner)
+     * and "standard" image format (origin in top-left corner).
+     * @param data The image buffer to be modified, containing width*height*bpp
+     *        bytes
      * @param width The width of the image
      * @param height The height of the image
      * @param bpp The number of bytes per pixel (RGB=3, ARGB=4, etc.)
      * @version 1.0
      */
-    static void swapYAxis(void *data, const unsigned int width, const unsigned int height,
-                          const unsigned int bpp);
+    static void swapYAxis( void* data, const unsigned int width,
+                           const unsigned int height,
+                           const unsigned int bpp );
 };
 
 }

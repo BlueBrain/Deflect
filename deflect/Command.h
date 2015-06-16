@@ -58,30 +58,38 @@ public:
      * @param type The type of the command.
      * @param args The command arguments.
      */
-    DEFLECT_API Command(const CommandType type, const QString& args);
+    DEFLECT_API Command( CommandType type, const QString& args );
 
     /**
      * Constructor.
      * @param command A string-formatted command, as obtained by getCommand().
      */
-    DEFLECT_API Command(const QString& command);
+    DEFLECT_API Command( const QString& command );
+
+    /** Destructor. */
+    DEFLECT_API ~Command();
 
     /** Get the command type. */
     DEFLECT_API CommandType getType() const;
 
-    /** Get the command arguments */
+    /** Get the command arguments. */
     DEFLECT_API const QString& getArguments() const;
 
-    /** Get the command in string format, typically for sending over the network. */
+    /** Get the command in string format, typically for sending over network. */
     DEFLECT_API const QString& getCommand() const;
 
-    /** Check if the Command is valid (i.e. has a known type). */
+    /** Check if the Command is valid (i.e. it has a known type). */
     DEFLECT_API bool isValid() const;
 
 private:
-    CommandType type_;
-    QString args_;
-    QString command_;
+    class Impl;
+    Impl* _impl;
+
+    /** Disable copy constructor. */
+    Command( const Command& );
+
+    /** Disable assignment operator. */
+    const Command& operator = ( const Command& );
 };
 
 }

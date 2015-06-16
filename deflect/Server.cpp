@@ -77,8 +77,9 @@ Server::Server( const int port )
 {
     if( !listen( QHostAddress::Any, port ))
     {
-        const QString err = QString("could not listen on port: %1").arg(port);
-        throw std::runtime_error(err.toStdString());
+        const QString err =
+                QString( "could not listen on port: %1" ).arg( port );
+        throw std::runtime_error( err.toStdString( ));
     }
 #ifdef DEFLECT_USE_SERVUS
     _impl->servus.announce( port, boost::lexical_cast< std::string >( port ));
@@ -100,17 +101,17 @@ FrameDispatcher& Server::getPixelStreamDispatcher()
     return _impl->pixelStreamDispatcher;
 }
 
-void Server::onPixelStreamerClosed( QString uri )
+void Server::onPixelStreamerClosed( const QString uri )
 {
-    emit pixelStreamerClosed( uri );
+    emit _pixelStreamerClosed( uri );
 }
 
-void Server::onEventRegistrationReply( QString uri, bool success )
+void Server::onEventRegistrationReply( const QString uri, const bool success )
 {
-    emit eventRegistrationReply( uri, success );
+    emit _eventRegistrationReply( uri, success );
 }
 
-void Server::incomingConnection( qintptr socketHandle )
+void Server::incomingConnection( const qintptr socketHandle )
 {
     QThread* workerThread = new QThread( this );
     ServerWorker* worker = new ServerWorker( socketHandle );
@@ -130,10 +131,10 @@ void Server::incomingConnection( qintptr socketHandle )
                                                deflect::EventReceiver* )),
              this, SIGNAL( registerToEvents( QString, bool,
                                              deflect::EventReceiver* )));
-    connect( this, SIGNAL( pixelStreamerClosed( QString )),
-             worker, SLOT( pixelStreamerClosed( QString )));
-    connect( this, SIGNAL( eventRegistrationReply( QString, bool )),
-             worker, SLOT( eventRegistrationReply( QString, bool )));
+    connect( this, SIGNAL( _pixelStreamerClosed( QString )),
+             worker, SLOT( _pixelStreamerClosed( QString )));
+    connect( this, SIGNAL( _eventRegistrationReply( QString, bool )),
+             worker, SLOT( _eventRegistrationReply( QString, bool )));
 
     // Commands
     connect( worker, SIGNAL( receivedCommand( QString, QString )),
@@ -150,7 +151,8 @@ void Server::incomingConnection( qintptr socketHandle )
              SIGNAL( receivedPixelStreamFinishFrame( QString, size_t )),
              &_impl->pixelStreamDispatcher,
              SLOT( processFrameFinished( QString, size_t )));
-    connect( worker, SIGNAL( receivedRemovePixelStreamSource( QString, size_t )),
+    connect( worker,
+             SIGNAL( receivedRemovePixelStreamSource( QString, size_t )),
              &_impl->pixelStreamDispatcher,
              SLOT( removeSource( QString, size_t )));
 

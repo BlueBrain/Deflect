@@ -63,15 +63,15 @@ public:
     /**
      * Compute the JPEG imageData for a segment
      *
-     * @param sourceImage The source image containing the uncompressed image data.
-     * @param imageRegion The region of the image to be compressed. It must not
+     * @param sourceImage The source image containing uncompressed image data.
+     * @param imageRegion The region of the image to be compressed. Must not
      *        exceed image dimensions.
      */
-    DEFLECT_API QByteArray computeJpeg(const ImageWrapper& sourceImage,
-                                       const QRect& imageRegion);
+    DEFLECT_API QByteArray computeJpeg( const ImageWrapper& sourceImage,
+                                        const QRect& imageRegion );
 
 private:
-    tjhandle tjHandle_;
+    tjhandle _tjHandle;
 };
 
 }

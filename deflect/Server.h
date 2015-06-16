@@ -41,6 +41,7 @@
 
 #include <deflect/api.h>
 #include <deflect/types.h>
+
 #include <QtNetwork/QTcpServer>
 
 namespace deflect
@@ -92,8 +93,8 @@ private:
     void incomingConnection( qintptr socketHandle ) final;
 
 signals:
-    void pixelStreamerClosed( QString uri );
-    void eventRegistrationReply( QString uri, bool success );
+    void _pixelStreamerClosed( QString uri );
+    void _eventRegistrationReply( QString uri, bool success );
 };
 
 }

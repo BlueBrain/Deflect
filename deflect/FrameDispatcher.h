@@ -63,7 +63,7 @@ public:
 
 public slots:
     /**
-     * Add a source of Segments for a Stream
+     * Add a source of Segments for a Stream.
      *
      * @param uri Identifier for the Stream
      * @param sourceIndex Identifier for the source in this stream
@@ -71,7 +71,7 @@ public slots:
     void addSource( QString uri, size_t sourceIndex );
 
     /**
-     * Add a source of Segments for a Stream
+     * Add a source of Segments for a Stream.
      *
      * @param uri Identifier for the Stream
      * @param sourceIndex Identifier for the source in this stream
@@ -79,7 +79,7 @@ public slots:
     void removeSource( QString uri, size_t sourceIndex );
 
     /**
-     * Process a new Segement
+     * Process a new Segement.
      *
      * @param uri Identifier for the Stream
      * @param sourceIndex Identifier for the source in this stream
@@ -88,7 +88,7 @@ public slots:
     void processSegment( QString uri, size_t sourceIndex, Segment segment );
 
     /**
-     * The given source has finished sending segments for the current frame
+     * The given source has finished sending segments for the current frame.
      *
      * @param uri Identifier for the Stream
      * @param sourceIndex Identifier for the source in this stream
@@ -96,47 +96,48 @@ public slots:
     void processFrameFinished( QString uri, size_t sourceIndex );
 
     /**
-     * Delete an entire stream
+     * Delete an entire stream.
      *
      * @param uri Identifier for the Stream
      */
     void deleteStream( QString uri );
 
     /**
-     * Is called when the wall processes are ready to receive new frames
+     * Called by the user to request the dispatching of a new frame.
      *
+     * A sendFrame() signal will be emitted as soon as a frame is available.
      * @param uri Identifier for the stream
      */
     void requestFrame( QString uri );
 
 signals:
     /**
-     * Notify that a PixelStream has been opened
+     * Notify that a PixelStream has been opened.
      *
      * @param uri Identifier for the Stream
      */
     void openPixelStream( QString uri );
 
     /**
-     * Notify that a pixel stream has been deleted
+     * Notify that a pixel stream has been deleted.
      *
      * @param uri Identifier for the Stream
      */
     void deletePixelStream( QString uri );
 
     /**
-     * Dispatch a full frame
+     * Dispatch a full frame.
      *
      * @param frame The frame to dispatch
      */
     void sendFrame( deflect::FramePtr frame );
 
 private:
-    void sendLatestFrame( const QString& uri );
+    void _sendLatestFrame( const QString& uri );
 
     // The buffers for each URI
     typedef std::map<QString, ReceiveBuffer> StreamBuffers;
-    StreamBuffers streamBuffers_;
+    StreamBuffers _streamBuffers;
 };
 
 }

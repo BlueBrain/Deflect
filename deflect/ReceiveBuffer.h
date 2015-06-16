@@ -102,13 +102,13 @@ public:
      * @return false if the source was already added or if finishFrameForSource()
      *         has already been called for all existing source (TODO DISCL-241).
      */
-    DEFLECT_API bool addSource( const size_t sourceIndex );
+    DEFLECT_API bool addSource( size_t sourceIndex );
 
     /**
      * Remove a source of segments.
      * @param sourceIndex Unique source identifier
      */
-    DEFLECT_API void removeSource( const size_t sourceIndex );
+    DEFLECT_API void removeSource( size_t sourceIndex );
 
     /** Get the number of sources for this Stream */
     DEFLECT_API size_t getSourceCount() const;
@@ -118,14 +118,13 @@ public:
      * @param segment The segment to insert
      * @param sourceIndex Unique source identifier
      */
-    DEFLECT_API void insertSegment( const Segment& segment,
-                                    const size_t sourceIndex );
+    DEFLECT_API void insert( const Segment& segment, size_t sourceIndex );
 
     /**
      * Call when the source has finished sending segments for the current frame.
      * @param sourceIndex Unique source identifier
      */
-    DEFLECT_API void finishFrameForSource( const size_t sourceIndex );
+    DEFLECT_API void finishFrameForSource( size_t sourceIndex );
 
     /** Does the Buffer have a new complete frame (from all sources) */
     DEFLECT_API bool hasCompleteFrame() const;
@@ -149,16 +148,16 @@ public:
      */
     DEFLECT_API static QSize computeFrameDimensions( const Segments& segments );
 
-    /** Allow this buffer to be used by the next PixelStreamDispatcher::sendLatestFrame */
+    /** Allow this buffer to be used by the next FrameDispatcher::sendLatestFrame */
     DEFLECT_API void setAllowedToSend( bool enable );
 
-    /** @return true if this buffer can be sent by PixelStreamDispatcher, false otherwise */
+    /** @return true if this buffer can be sent by FrameDispatcher */
     DEFLECT_API bool isAllowedToSend() const;
 
 private:
-    FrameIndex lastFrameComplete_;
-    SourceBufferMap sourceBuffers_;
-    bool allowedToSend_;
+    FrameIndex _lastFrameComplete;
+    SourceBufferMap _sourceBuffers;
+    bool _allowedToSend;
 };
 
 }

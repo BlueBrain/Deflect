@@ -53,38 +53,39 @@
 namespace deflect
 {
 
-StreamPrivate::StreamPrivate( Stream* stream, const std::string &name,
+StreamPrivate::StreamPrivate( Stream* stream, const std::string &name_,
                               const std::string& address )
-    : name_(name)
-    , socket_( address )
-    , registeredForEvents_(false)
-    , parent_( stream )
-    , sendWorker_( 0 )
+    : name( name_ )
+    , socket( address )
+    , registeredForEvents( false )
+    , _parent( stream )
+    , _sendWorker( 0 )
 {
-    imageSegmenter_.setNominalSegmentDimensions(SEGMENT_SIZE, SEGMENT_SIZE);
+    imageSegmenter.setNominalSegmentDimensions( SEGMENT_SIZE, SEGMENT_SIZE );
 
     if( name.empty( ))
         std::cerr << "Invalid Stream name" << std::endl;
 
-    if( socket_.isConnected( ))
+    if( socket.isConnected( ))
     {
-        connect(&socket_, SIGNAL(disconnected()), this, SLOT(onDisconnected( )));
-        const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_OPEN, 0, name_ );
-        socket_.send( mh, QByteArray( ));
+        connect( &socket, SIGNAL( disconnected( )),
+                 this, SLOT( _onDisconnected( )));
+        const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_OPEN, 0, name );
+        socket.send( mh, QByteArray( ));
     }
 }
 
 StreamPrivate::~StreamPrivate()
 {
-    delete sendWorker_;
+    delete _sendWorker;
 
-    if( !socket_.isConnected( ))
+    if( !socket.isConnected( ))
         return;
 
-    MessageHeader mh(MESSAGE_TYPE_QUIT, 0, name_);
-    socket_.send(mh, QByteArray());
+    MessageHeader mh( MESSAGE_TYPE_QUIT, 0, name );
+    socket.send( mh, QByteArray( ));
 
-    registeredForEvents_ = false;
+    registeredForEvents = false;
 }
 
 bool StreamPrivate::send( const ImageWrapper& image )
@@ -99,59 +100,59 @@ bool StreamPrivate::send( const ImageWrapper& image )
 
     const ImageSegmenter::Handler sendFunc =
         boost::bind( &StreamPrivate::sendPixelStreamSegment, this, _1 );
-    return imageSegmenter_.generate( image, sendFunc );
+    return imageSegmenter.generate( image, sendFunc );
 }
 
 Stream::Future StreamPrivate::asyncSend( const ImageWrapper& image )
 {
-    if( !sendWorker_ )
-        sendWorker_ = new StreamSendWorker( *this );
+    if( !_sendWorker )
+        _sendWorker = new StreamSendWorker( *this );
 
-    return sendWorker_->enqueueImage( image );
+    return _sendWorker->enqueueImage( image );
 }
 
 bool StreamPrivate::finishFrame()
 {
     // Open a window for the PixelStream
-    MessageHeader mh(MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, name_);
-    return socket_.send(mh, QByteArray());
+    MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, name );
+    return socket.send( mh, QByteArray( ));
 }
 
-bool StreamPrivate::sendPixelStreamSegment(const Segment &segment)
+bool StreamPrivate::sendPixelStreamSegment( const Segment& segment )
 {
     // Create message header
-    const uint32_t segmentSize(sizeof(SegmentParameters) +
-                               segment.imageData.size());
-    MessageHeader mh(MESSAGE_TYPE_PIXELSTREAM, segmentSize, name_);
+    const uint32_t segmentSize( sizeof( SegmentParameters ) +
+                                segment.imageData.size( ));
+    MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM, segmentSize, name );
 
     // This byte array will hold the message to be sent over the socket
     QByteArray message;
 
     // Message payload part 1: segment parameters
-    message.append( (const char *)(&segment.parameters),
-                    sizeof(SegmentParameters));
+    message.append( (const char*)( &segment.parameters ),
+                    sizeof( SegmentParameters ) );
 
     // Message payload part 2: image data
-    message.append(segment.imageData);
+    message.append( segment.imageData );
 
-    QMutexLocker locker( &sendLock_ );
-    return socket_.send(mh, message);
+    QMutexLocker locker( &sendLock );
+    return socket.send( mh, message );
 }
 
-bool StreamPrivate::sendCommand(const QString& command)
+bool StreamPrivate::sendCommand( const QString& command )
 {
     QByteArray message;
-    message.append(command);
+    message.append( command );
 
-    MessageHeader mh(MESSAGE_TYPE_COMMAND, message.size(), name_);
+    MessageHeader mh( MESSAGE_TYPE_COMMAND, message.size(), name );
 
-    return socket_.send(mh, message);
+    return socket.send( mh, message );
 }
 
-void StreamPrivate::onDisconnected()
+void StreamPrivate::_onDisconnected()
 {
-    if( parent_ )
-        parent_->disconnected();
+    if( _parent )
+        _parent->disconnected();
 }
 
 }

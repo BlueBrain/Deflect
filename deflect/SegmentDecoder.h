@@ -78,10 +78,10 @@ public:
 
 private:
     /** The decompressor instance */
-    ImageJpegDecompressor* decompressor_;
+    ImageJpegDecompressor* _decompressor;
 
     /** Async image decoding future */
-    QFuture<void> decodingFuture_;
+    QFuture<void> _decodingFuture;
 };
 
 }

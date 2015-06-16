@@ -72,7 +72,7 @@ private:
         int size = imageData.size();
         ar & size;
 
-        ar & boost::serialization::make_binary_object( (void *)imageData.data(),
+        ar & boost::serialization::make_binary_object( (void*)imageData.data(),
                                                        imageData.size( ));
     }
 
@@ -85,7 +85,7 @@ private:
         ar & size;
         imageData.resize( size );
 
-        ar & boost::serialization::make_binary_object( (void *)imageData.data(),
+        ar & boost::serialization::make_binary_object( (void*)imageData.data(),
                                                        size );
     }
 

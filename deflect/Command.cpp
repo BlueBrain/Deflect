@@ -44,49 +44,65 @@
 namespace deflect
 {
 
-Command::Command(const CommandType type, const QString& args)
-    : type_(type)
-    , args_(args)
+class Command::Impl
 {
-    command_ = getCommandTypeString(type) + SEPARATOR_STRING + args;
+public:
+    Impl()
+        : type( COMMAND_TYPE_UNKNOWN )
+    {}
+
+    CommandType type;
+    QString args;
+    QString command;
+};
+
+Command::Command( const CommandType type, const QString& args )
+    : _impl( new Command::Impl )
+{
+    _impl->type = type;
+    _impl->args = args;
+    _impl->command = getCommandTypeString( type ) + SEPARATOR_STRING + args;
 }
 
-Command::Command(const QString& command)
-    : type_(COMMAND_TYPE_UNKNOWN)
-    , command_(command)
+Command::Command( const QString& command )
+    : _impl( new Command::Impl )
 {
-    const int separatorIndex = command.indexOf(SEPARATOR_STRING);
+    _impl->command = command;
+    const int separatorIndex = command.indexOf( SEPARATOR_STRING );
 
-    if(separatorIndex < 0)
+    if( separatorIndex < 0 )
         return;
 
-    const QString typeString = command.left(separatorIndex);
-    type_ = getCommandType(typeString);
+    const QString typeString = command.left( separatorIndex );
+    _impl->type = getCommandType( typeString );
 
-    if (type_ != COMMAND_TYPE_UNKNOWN)
-    {
-        args_ = command.mid(separatorIndex+SEPARATOR_STRING.length());
-    }
+    if( _impl->type != COMMAND_TYPE_UNKNOWN )
+        _impl->args = command.mid( separatorIndex + SEPARATOR_STRING.length( ));
+}
+
+Command::~Command()
+{
+    delete _impl;
 }
 
 CommandType Command::getType() const
 {
-    return type_;
+    return _impl->type;
 }
 
 const QString& Command::getArguments() const
 {
-    return args_;
+    return _impl->args;
 }
 
-const QString&Command::getCommand() const
+const QString& Command::getCommand() const
 {
-    return command_;
+    return _impl->command;
 }
 
 bool Command::isValid() const
 {
-    return type_ != COMMAND_TYPE_UNKNOWN;
+    return _impl->type != COMMAND_TYPE_UNKNOWN;
 }
 
 }

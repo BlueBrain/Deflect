@@ -49,13 +49,13 @@ namespace deflect
 {
 
 SegmentDecoder::SegmentDecoder()
-    : decompressor_( new ImageJpegDecompressor )
+    : _decompressor( new ImageJpegDecompressor )
 {
 }
 
 SegmentDecoder::~SegmentDecoder()
 {
-    delete decompressor_;
+    delete _decompressor;
 }
 
 void decodeSegment( ImageJpegDecompressor* decompressor,
@@ -63,7 +63,7 @@ void decodeSegment( ImageJpegDecompressor* decompressor,
 {
     QByteArray decodedData = decompressor->decompress( segment->imageData );
 
-    if( !decodedData.isEmpty() )
+    if( !decodedData.isEmpty( ))
     {
         segment->imageData = decodedData;
         segment->parameters.compressed = false;
@@ -80,13 +80,13 @@ void SegmentDecoder::startDecoding( Segment& segment )
         return;
     }
 
-    decodingFuture_ = QtConcurrent::run( decodeSegment, decompressor_,
+    _decodingFuture = QtConcurrent::run( decodeSegment, _decompressor,
                                          &segment );
 }
 
 bool SegmentDecoder::isRunning() const
 {
-    return decodingFuture_.isRunning();
+    return _decodingFuture.isRunning();
 }
 
 }

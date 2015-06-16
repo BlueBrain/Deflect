@@ -60,14 +60,14 @@ BOOST_AUTO_TEST_CASE( testSegementParametersSerialization )
     // serialize
     std::stringstream stream;
     {
-        boost::archive::binary_oarchive oa(stream);
+        boost::archive::binary_oarchive oa( stream );
         oa << params;
     }
 
     // deserialize
     deflect::SegmentParameters paramsDeserialized;
     {
-        boost::archive::binary_iarchive ia(stream);
+        boost::archive::binary_iarchive ia( stream );
         ia >> paramsDeserialized;
     }
 

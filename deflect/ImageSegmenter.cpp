@@ -53,17 +53,17 @@ namespace deflect
 {
 
 ImageSegmenter::ImageSegmenter()
-    : nominalSegmentWidth_( 0 )
-    , nominalSegmentHeight_( 0 )
+    : _nominalSegmentWidth( 0 )
+    , _nominalSegmentHeight( 0 )
 {
 }
 
 bool ImageSegmenter::generate( const ImageWrapper& image,
                                const Handler& handler ) const
 {
-    if (image.compressionPolicy == COMPRESSION_ON)
-        return generateJpeg( image, handler );
-    return generateRaw( image, handler );
+    if( image.compressionPolicy == COMPRESSION_ON )
+        return _generateJpeg( image, handler );
+    return _generateRaw( image, handler );
 }
 
 /**
@@ -95,7 +95,7 @@ void computeJpeg( SegmentCompressionWrapper& task )
     QRect imageRegion( task.segment.parameters.x - task.image->x,
                        task.segment.parameters.y - task.image->y,
                        task.segment.parameters.width,
-                       task.segment.parameters.height);
+                       task.segment.parameters.height );
     ImageJpegCompressor compressor;
 
     task.segment.imageData = compressor.computeJpeg( *task.image, imageRegion );
@@ -104,17 +104,17 @@ void computeJpeg( SegmentCompressionWrapper& task )
 }
 #endif
 
-bool ImageSegmenter::generateJpeg( const ImageWrapper& image,
+bool ImageSegmenter::_generateJpeg( const ImageWrapper& image,
                                    const Handler& handler ) const
 {
 #ifdef DEFLECT_USE_LIBJPEGTURBO
-    const SegmentParametersList& segmentParams = generateSegmentParameters( image );
+    const SegmentParametersList& params = _generateSegmentParameters( image );
 
     // The resulting Jpeg segments
     bool result = true;
     std::vector<SegmentCompressionWrapper> tasks;
-    for( SegmentParametersList::const_iterator it = segmentParams.begin();
-         it != segmentParams.end(); ++it )
+    for( SegmentParametersList::const_iterator it = params.begin();
+         it != params.end(); ++it )
     {
         SegmentCompressionWrapper task( image, handler, result );
         task.segment.parameters = *it;
@@ -136,14 +136,14 @@ bool ImageSegmenter::generateJpeg( const ImageWrapper& image,
 #endif
 }
 
-bool ImageSegmenter::generateRaw( const ImageWrapper& image,
-                                  const Handler& handler ) const
+bool ImageSegmenter::_generateRaw( const ImageWrapper& image,
+                                   const Handler& handler ) const
 {
-    const SegmentParametersList& segmentParams = generateSegmentParameters( image );
+    const SegmentParametersList& paramList = _generateSegmentParameters( image );
 
     // resulting Raw segments
-    for( SegmentParametersList::const_iterator it = segmentParams.begin();
-         it != segmentParams.end(); ++it )
+    for( SegmentParametersList::const_iterator it = paramList.begin();
+         it != paramList.end(); ++it )
     {
         Segment segment;
         segment.parameters = *it;
@@ -151,21 +151,21 @@ bool ImageSegmenter::generateRaw( const ImageWrapper& image,
                                    segment.parameters.height *
                                    image.getBytesPerPixel( ));
 
-        if (segmentParams.size() == 1)
+        if( paramList.size() == 1 )
         {
             // If we are not segmenting the image, just append the image data
-            segment.imageData.append((const char*)image.data,
-                                     int(image.getBufferSize()));
+            segment.imageData.append( (const char*)image.data,
+                                      int(image.getBufferSize( )));
         }
         else // Copy the image subregion
         {
             // assume imageBuffer isn't padded
             const size_t imagePitch = image.width * image.getBytesPerPixel();
-            const char* lineData = (const char*)image.data +
-                segment.parameters.y*imagePitch +
-                segment.parameters.x*image.getBytesPerPixel();
+            const size_t offset = segment.parameters.y * imagePitch +
+                                segment.parameters.x * image.getBytesPerPixel();
+            const char* lineData = (const char*)image.data + offset;
 
-            for (unsigned int i=0; i < segment.parameters.height; ++i)
+            for( unsigned int i = 0; i < segment.parameters.height; ++i )
             {
                 segment.imageData.append( lineData, segment.parameters.width *
                                                     image.getBytesPerPixel( ));
@@ -183,8 +183,8 @@ bool ImageSegmenter::generateRaw( const ImageWrapper& image,
 void ImageSegmenter::setNominalSegmentDimensions( const unsigned int width,
                                                   const unsigned int height )
 {
-    nominalSegmentWidth_ = width;
-    nominalSegmentHeight_ = height;
+    _nominalSegmentWidth = width;
+    _nominalSegmentHeight = height;
 }
 
 #ifdef UNIORM_SEGMENT_WIDTH
@@ -198,21 +198,25 @@ ImageSegmenter::generateSegmentParameters( const ImageWrapper& image ) const
     unsigned int uniformSegmentHeight = image.height;
 
     bool segmentImage = (nominalSegmentWidth_ > 0 && nominalSegmentHeight_ > 0);
-    if (segmentImage)
+    if( segmentImage )
     {
-        numSubdivisionsX = (unsigned int)floor((float)image.width / (float)nominalSegmentWidth_ + 0.5);
-        numSubdivisionsY = (unsigned int)floor((float)image.height / (float)nominalSegmentHeight_ + 0.5);
+        numSubdivisionsX = (unsigned int)floor(
+                    (float)image.width / (float)nominalSegmentWidth_ + 0.5 );
+        numSubdivisionsY = (unsigned int)floor(
+                    (float)image.height / (float)nominalSegmentHeight_ + 0.5 );
 
-        uniformSegmentWidth = (unsigned int)((float)image.width / (float)numSubdivisionsX);
-        uniformSegmentHeight = (unsigned int)((float)image.height / (float)numSubdivisionsY);
+        uniformSegmentWidth = (unsigned int)( (float)image.width /
+                                              (float)numSubdivisionsX );
+        uniformSegmentHeight = (unsigned int)( (float)image.height /
+                                                (float)numSubdivisionsY );
     }
 
     // now, create parameters for each segment
     SegmentParametersList parameters;
 
-    for(unsigned int i=0; i<numSubdivisionsX; i++)
+    for( unsigned int i = 0; i < numSubdivisionsX; ++i )
     {
-        for(unsigned int j=0; j<numSubdivisionsY; j++)
+        for( unsigned int j = 0; j < numSubdivisionsY; ++j )
         {
             SegmentParameters p;
 
@@ -221,9 +225,9 @@ ImageSegmenter::generateSegmentParameters( const ImageWrapper& image ) const
             p.width = uniformSegmentWidth;
             p.height = uniformSegmentHeight;
 
-            p.compressed = (image.compressionPolicy == COMPRESSION_ON);
+            p.compressed = ( image.compressionPolicy == COMPRESSION_ON );
 
-            parameters.push_back(p);
+            parameters.push_back( p );
         }
     }
 
@@ -231,7 +235,7 @@ ImageSegmenter::generateSegmentParameters( const ImageWrapper& image ) const
 }
 #else
 SegmentParametersList
-ImageSegmenter::generateSegmentParameters( const ImageWrapper& image ) const
+ImageSegmenter::_generateSegmentParameters( const ImageWrapper& image ) const
 {
     unsigned int numSubdivisionsX = 1;
     unsigned int numSubdivisionsY = 1;
@@ -239,23 +243,23 @@ ImageSegmenter::generateSegmentParameters( const ImageWrapper& image ) const
     unsigned int lastSegmentWidth = image.width;
     unsigned int lastSegmentHeight = image.height;
 
-    bool segmentImage = (nominalSegmentWidth_ > 0 && nominalSegmentHeight_ > 0);
-    if (segmentImage)
+    bool segmentImage = (_nominalSegmentWidth > 0 && _nominalSegmentHeight > 0);
+    if( segmentImage )
     {
-        numSubdivisionsX = image.width / nominalSegmentWidth_ + 1;
-        numSubdivisionsY = image.height / nominalSegmentHeight_ + 1;
+        numSubdivisionsX = image.width / _nominalSegmentWidth + 1;
+        numSubdivisionsY = image.height / _nominalSegmentHeight + 1;
 
-        lastSegmentWidth = image.width % nominalSegmentWidth_;
-        lastSegmentHeight = image.height % nominalSegmentHeight_;
+        lastSegmentWidth = image.width % _nominalSegmentWidth;
+        lastSegmentHeight = image.height % _nominalSegmentHeight;
 
-        if (lastSegmentWidth == 0)
+        if( lastSegmentWidth == 0 )
         {
-            lastSegmentWidth = nominalSegmentWidth_;
+            lastSegmentWidth = _nominalSegmentWidth;
             --numSubdivisionsX;
         }
-        if (lastSegmentHeight == 0)
+        if( lastSegmentHeight == 0 )
         {
-            lastSegmentHeight = nominalSegmentHeight_;
+            lastSegmentHeight = _nominalSegmentHeight;
             --numSubdivisionsY;
         }
     }
@@ -263,20 +267,22 @@ ImageSegmenter::generateSegmentParameters( const ImageWrapper& image ) const
     // now, create parameters for each segment
     SegmentParametersList parameters;
 
-    for(unsigned int j=0; j<numSubdivisionsY; j++)
+    for( unsigned int j = 0; j < numSubdivisionsY; ++j )
     {
-        for(unsigned int i=0; i<numSubdivisionsX; i++)
+        for( unsigned int i = 0; i < numSubdivisionsX; ++i )
         {
             SegmentParameters p;
 
-            p.x = image.x + i * nominalSegmentWidth_;
-            p.y = image.y + j * nominalSegmentHeight_;
-            p.width = (i < numSubdivisionsX-1) ? nominalSegmentWidth_ : lastSegmentWidth;
-            p.height = (j < numSubdivisionsY-1) ? nominalSegmentHeight_ : lastSegmentHeight;
+            p.x = image.x + i * _nominalSegmentWidth;
+            p.y = image.y + j * _nominalSegmentHeight;
+            p.width = (i < numSubdivisionsX-1) ?
+                        _nominalSegmentWidth : lastSegmentWidth;
+            p.height = (j < numSubdivisionsY-1) ?
+                        _nominalSegmentHeight : lastSegmentHeight;
 
             p.compressed = (image.compressionPolicy == COMPRESSION_ON);
 
-            parameters.push_back(p);
+            parameters.push_back( p );
         }
     }
 

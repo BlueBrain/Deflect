@@ -50,21 +50,21 @@ FrameDispatcher::FrameDispatcher()
 
 void FrameDispatcher::addSource( const QString uri, const size_t sourceIndex )
 {
-    streamBuffers_[uri].addSource( sourceIndex );
+    _streamBuffers[uri].addSource( sourceIndex );
 
-    if( streamBuffers_[uri].getSourceCount() == 1 )
+    if( _streamBuffers[uri].getSourceCount() == 1 )
         emit openPixelStream( uri );
 }
 
 void FrameDispatcher::removeSource( const QString uri,
                                     const size_t sourceIndex )
 {
-    if( !streamBuffers_.count( uri ))
+    if( !_streamBuffers.count( uri ))
         return;
 
-    streamBuffers_[uri].removeSource( sourceIndex );
+    _streamBuffers[uri].removeSource( sourceIndex );
 
-    if( streamBuffers_[uri].getSourceCount() == 0 )
+    if( _streamBuffers[uri].getSourceCount() == 0 )
         deleteStream( uri );
 }
 
@@ -72,48 +72,48 @@ void FrameDispatcher::processSegment( const QString uri,
                                       const size_t sourceIndex,
                                       Segment segment )
 {
-    if( streamBuffers_.count( uri ))
-        streamBuffers_[uri].insertSegment( segment, sourceIndex );
+    if( _streamBuffers.count( uri ))
+        _streamBuffers[uri].insert( segment, sourceIndex );
 }
 
 void FrameDispatcher::processFrameFinished( const QString uri,
                                             const size_t sourceIndex )
 {
-    if( !streamBuffers_.count( uri ))
+    if( !_streamBuffers.count( uri ))
         return;
 
-    ReceiveBuffer& buffer = streamBuffers_[uri];
+    ReceiveBuffer& buffer = _streamBuffers[uri];
     buffer.finishFrameForSource( sourceIndex );
 
     if( buffer.isAllowedToSend( ))
-        sendLatestFrame( uri );
+        _sendLatestFrame( uri );
 }
 
 void FrameDispatcher::deleteStream( const QString uri )
 {
-    if( streamBuffers_.count( uri ))
+    if( _streamBuffers.count( uri ))
     {
-        streamBuffers_.erase( uri );
+        _streamBuffers.erase( uri );
         emit deletePixelStream( uri );
     }
 }
 
 void FrameDispatcher::requestFrame( const QString uri )
 {
-    if( !streamBuffers_.count( uri ))
+    if( !_streamBuffers.count( uri ))
         return;
 
-    ReceiveBuffer& buffer = streamBuffers_[uri];
+    ReceiveBuffer& buffer = _streamBuffers[uri];
     buffer.setAllowedToSend( true );
-    sendLatestFrame( uri );
+    _sendLatestFrame( uri );
 }
 
-void FrameDispatcher::sendLatestFrame( const QString& uri )
+void FrameDispatcher::_sendLatestFrame( const QString& uri )
 {
     FramePtr frame( new Frame );
     frame->uri = uri;
 
-    ReceiveBuffer& buffer = streamBuffers_[uri];
+    ReceiveBuffer& buffer = _streamBuffers[uri];
 
     // Only send the latest frame
     while( buffer.hasCompleteFrame( ))

@@ -39,8 +39,8 @@
 
 #include "CommandHandler.h"
 
-#include "Command.h"
 #include "AbstractCommandHandler.h"
+#include "Command.h"
 
 #include <iostream>
 
@@ -53,38 +53,36 @@ CommandHandler::CommandHandler()
 
 CommandHandler::~CommandHandler()
 {
-    for(CommandHandlerMap::iterator it = handlers_.begin(); it != handlers_.end(); ++it)
+    for( CommandHandlerMap::iterator it = _handlers.begin();
+         it != _handlers.end(); ++it )
         delete it->second;
 }
 
-void CommandHandler::registerCommandHandler(AbstractCommandHandler* handler)
+void CommandHandler::registerCommandHandler( AbstractCommandHandler* handler )
 {
-    unregisterCommandHandler(handler->getType());
-    handlers_[handler->getType()] = handler;
+    unregisterCommandHandler( handler->getType( ));
+    _handlers[handler->getType()] = handler;
 }
 
-void CommandHandler::unregisterCommandHandler(CommandType type)
+void CommandHandler::unregisterCommandHandler( const CommandType type )
 {
-    if (handlers_.count(type))
+    if( _handlers.count( type ))
     {
-        delete handlers_[type];
-        handlers_.erase(type);
+        delete _handlers[type];
+        _handlers.erase( type );
     }
 }
 
-void CommandHandler::process(const QString command, const QString parentWindowUri)
+void CommandHandler::process( const QString command,
+                              const QString parentWindowUri )
 {
-    Command commandObject(command);
+    Command commandObject( command );
 
-    if (handlers_.count(commandObject.getType()))
-    {
-        handlers_[commandObject.getType()]->handle(command, parentWindowUri);
-    }
+    if( _handlers.count( commandObject.getType( )))
+        _handlers[commandObject.getType()]->handle( command, parentWindowUri );
     else
-    {
         std::cerr << "No handler for command: " << command.toStdString()
                   << std::endl;
-    }
 }
 
 }

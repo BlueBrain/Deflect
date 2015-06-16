@@ -39,10 +39,10 @@
 #ifndef DEFLECT_SERVER_WORKER_H
 #define DEFLECT_SERVER_WORKER_H
 
-#include <deflect/MessageHeader.h>
 #include <deflect/Event.h>
-#include <deflect/Segment.h>
 #include <deflect/EventReceiver.h>
+#include <deflect/MessageHeader.h>
+#include <deflect/Segment.h>
 
 #include <QtNetwork/QTcpSocket>
 #include <QQueue>
@@ -79,36 +79,36 @@ signals:
     void receivedCommand( QString command, QString senderUri );
 
     /** @internal */
-    void dataAvailable();
+    void _dataAvailable();
 
 private slots:
-    void initialize();
-    void process();
-    void socketReceiveMessage();
+    void _initialize();
+    void _process();
+    void _socketReceiveMessage();
 
 private:
-    int socketDescriptor_;
-    QTcpSocket* tcpSocket_;
+    int _socketDescriptor;
+    QTcpSocket* _tcpSocket;
 
-    QString pixelStreamUri_;
+    QString _pixelStreamUri;
 
-    bool registeredToEvents_;
-    QQueue<Event> events_;
+    bool _registeredToEvents;
+    QQueue<Event> _events;
 
-    MessageHeader receiveMessageHeader();
-    QByteArray receiveMessageBody( const int size );
+    MessageHeader _receiveMessageHeader();
+    QByteArray _receiveMessageBody( int size );
 
-    void handleMessage( const MessageHeader& messageHeader,
-                        const QByteArray& byteArray );
-    void handlePixelStreamMessage( const QString& uri,
-                                   const QByteArray& byteArray );
+    void _handleMessage( const MessageHeader& messageHeader,
+                         const QByteArray& byteArray );
+    void _handlePixelStreamMessage( const QString& uri,
+                                    const QByteArray& byteArray );
 
-    void sendProtocolVersion();
-    void sendBindReply( bool successful );
-    void send( const Event &evt );
-    void sendQuit();
-    bool send( const MessageHeader& messageHeader );
-    void flushSocket();
+    void _sendProtocolVersion();
+    void _sendBindReply( bool successful );
+    void _send( const Event &evt );
+    void _sendQuit();
+    bool _send( const MessageHeader& messageHeader );
+    void _flushSocket();
 };
 
 }

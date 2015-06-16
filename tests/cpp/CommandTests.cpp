@@ -47,52 +47,52 @@ namespace ut = boost::unit_test;
 
 BOOST_AUTO_TEST_CASE( testCommandTypeToStringConversion )
 {
-    BOOST_CHECK_EQUAL( deflect::getCommandTypeString(deflect::COMMAND_TYPE_UNKNOWN).toStdString(), "unknown" );
-    BOOST_CHECK_EQUAL( deflect::getCommandTypeString(deflect::COMMAND_TYPE_FILE).toStdString(), "file" );
-    BOOST_CHECK_EQUAL( deflect::getCommandTypeString(deflect::COMMAND_TYPE_SESSION).toStdString(), "session" );
-    BOOST_CHECK_EQUAL( deflect::getCommandTypeString(deflect::COMMAND_TYPE_WEBBROWSER).toStdString(), "webbrowser" );
+    BOOST_CHECK_EQUAL( deflect::getCommandTypeString( deflect::COMMAND_TYPE_UNKNOWN ).toStdString(), "unknown" );
+    BOOST_CHECK_EQUAL( deflect::getCommandTypeString( deflect::COMMAND_TYPE_FILE ).toStdString(), "file" );
+    BOOST_CHECK_EQUAL( deflect::getCommandTypeString( deflect::COMMAND_TYPE_SESSION ).toStdString(), "session" );
+    BOOST_CHECK_EQUAL( deflect::getCommandTypeString( deflect::COMMAND_TYPE_WEBBROWSER ).toStdString(), "webbrowser" );
 
-    BOOST_CHECK_EQUAL( deflect::getCommandType(""), deflect::COMMAND_TYPE_UNKNOWN );
-    BOOST_CHECK_EQUAL( deflect::getCommandType("zorglump"), deflect::COMMAND_TYPE_UNKNOWN );
-    BOOST_CHECK_EQUAL( deflect::getCommandType("unknown"), deflect::COMMAND_TYPE_UNKNOWN );
-    BOOST_CHECK_EQUAL( deflect::getCommandType("file"), deflect::COMMAND_TYPE_FILE );
-    BOOST_CHECK_EQUAL( deflect::getCommandType("session"), deflect::COMMAND_TYPE_SESSION );
-    BOOST_CHECK_EQUAL( deflect::getCommandType("webbrowser"), deflect::COMMAND_TYPE_WEBBROWSER );
+    BOOST_CHECK_EQUAL( deflect::getCommandType( "" ), deflect::COMMAND_TYPE_UNKNOWN );
+    BOOST_CHECK_EQUAL( deflect::getCommandType( "zorglump" ), deflect::COMMAND_TYPE_UNKNOWN );
+    BOOST_CHECK_EQUAL( deflect::getCommandType( "unknown" ), deflect::COMMAND_TYPE_UNKNOWN );
+    BOOST_CHECK_EQUAL( deflect::getCommandType( "file" ), deflect::COMMAND_TYPE_FILE );
+    BOOST_CHECK_EQUAL( deflect::getCommandType( "session" ), deflect::COMMAND_TYPE_SESSION );
+    BOOST_CHECK_EQUAL( deflect::getCommandType( "webbrowser" ), deflect::COMMAND_TYPE_WEBBROWSER );
 }
 
 BOOST_AUTO_TEST_CASE( testCommandConstruction )
 {
-    deflect::Command command(deflect::COMMAND_TYPE_WEBBROWSER, "http://www.google.com");
+    deflect::Command command( deflect::COMMAND_TYPE_WEBBROWSER, "http://www.google.com" );
 
     BOOST_CHECK_EQUAL( command.getType(), deflect::COMMAND_TYPE_WEBBROWSER );
-    BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "http://www.google.com");
-    BOOST_CHECK_EQUAL( command.getCommand().toStdString(), "webbrowser::http://www.google.com");
+    BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "http://www.google.com" );
+    BOOST_CHECK_EQUAL( command.getCommand().toStdString(), "webbrowser::http://www.google.com" );
     BOOST_CHECK( command.isValid( ));
 }
 
 BOOST_AUTO_TEST_CASE( testCommandValidDeconstruction )
 {
-    deflect::Command command("webbrowser::http://www.google.com");
+    deflect::Command command( "webbrowser::http://www.google.com" );
 
     BOOST_CHECK_EQUAL( command.getType(), deflect::COMMAND_TYPE_WEBBROWSER );
-    BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "http://www.google.com");
+    BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "http://www.google.com" );
     BOOST_CHECK( command.isValid( ));
 }
 
 BOOST_AUTO_TEST_CASE( testCommandInvalidDeconstruction )
 {
     {
-        deflect::Command command("iruegfn09::83r(*RY$r4//froif");
+        deflect::Command command( "iruegfn09::83r(*RY$r4//froif" );
 
         BOOST_CHECK_EQUAL( command.getType(), deflect::COMMAND_TYPE_UNKNOWN );
-        BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "");
+        BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "" );
         BOOST_CHECK( !command.isValid( ));
     }
     {
-        deflect::Command command("otgninh");
+        deflect::Command command( "otgninh" );
 
         BOOST_CHECK_EQUAL( command.getType(), deflect::COMMAND_TYPE_UNKNOWN );
-        BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "");
+        BOOST_CHECK_EQUAL( command.getArguments().toStdString(), "" );
         BOOST_CHECK( !command.isValid( ));
     }
 }
