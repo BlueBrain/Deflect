@@ -40,6 +40,7 @@
 #ifndef DEFLECT_COMMANDHANDLER_H
 #define DEFLECT_COMMANDHANDLER_H
 
+#include <deflect/api.h>
 #include <deflect/types.h>
 #include <deflect/CommandType.h>
 

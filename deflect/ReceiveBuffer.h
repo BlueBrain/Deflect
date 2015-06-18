@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -129,24 +129,11 @@ public:
     /** Does the Buffer have a new complete frame (from all sources) */
     DEFLECT_API bool hasCompleteFrame() const;
 
-    /** Is this the first frame to be finished by all sources */
-    DEFLECT_API bool isFirstCompleteFrame() const;
-
-    /** Get the size of the frame. Only meaningful if hasCompleteFrame() is true */
-    DEFLECT_API QSize getFrameSize() const;
-
     /**
      * Get the finished frame.
      * @return A collection of segments that form a frame
      */
     DEFLECT_API Segments popFrame();
-
-    /**
-     * Compute the overall dimensions of a frame
-     * @param segments A collection of segments that form a frame
-     * @return The dimensions of the frame
-     */
-    DEFLECT_API static QSize computeFrameDimensions( const Segments& segments );
 
     /** Allow this buffer to be used by the next FrameDispatcher::sendLatestFrame */
     DEFLECT_API void setAllowedToSend( bool enable );

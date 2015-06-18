@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -40,8 +40,8 @@
 #ifndef DEFLECT_FRAMEDISPATCHER_H
 #define DEFLECT_FRAMEDISPATCHER_H
 
+#include <deflect/api.h>
 #include <deflect/types.h>
-#include <deflect/ReceiveBuffer.h>
 #include <deflect/Segment.h>
 
 #include <QObject>
@@ -59,7 +59,10 @@ class FrameDispatcher : public QObject
 
 public:
     /** Construct a dispatcher */
-    FrameDispatcher();
+    DEFLECT_API FrameDispatcher();
+
+    /** Destructor. */
+    DEFLECT_API ~FrameDispatcher();
 
 public slots:
     /**
@@ -68,7 +71,7 @@ public slots:
      * @param uri Identifier for the Stream
      * @param sourceIndex Identifier for the source in this stream
      */
-    void addSource( QString uri, size_t sourceIndex );
+    DEFLECT_API void addSource( QString uri, size_t sourceIndex );
 
     /**
      * Add a source of Segments for a Stream.
@@ -76,7 +79,7 @@ public slots:
      * @param uri Identifier for the Stream
      * @param sourceIndex Identifier for the source in this stream
      */
-    void removeSource( QString uri, size_t sourceIndex );
+    DEFLECT_API void removeSource( QString uri, size_t sourceIndex );
 
     /**
      * Process a new Segement.
@@ -85,7 +88,8 @@ public slots:
      * @param sourceIndex Identifier for the source in this stream
      * @param segment The segment to process
      */
-    void processSegment( QString uri, size_t sourceIndex, Segment segment );
+    DEFLECT_API void processSegment( QString uri, size_t sourceIndex,
+                                     Segment segment );
 
     /**
      * The given source has finished sending segments for the current frame.
@@ -93,14 +97,14 @@ public slots:
      * @param uri Identifier for the Stream
      * @param sourceIndex Identifier for the source in this stream
      */
-    void processFrameFinished( QString uri, size_t sourceIndex );
+    DEFLECT_API void processFrameFinished( QString uri, size_t sourceIndex );
 
     /**
      * Delete an entire stream.
      *
      * @param uri Identifier for the Stream
      */
-    void deleteStream( QString uri );
+    DEFLECT_API void deleteStream( QString uri );
 
     /**
      * Called by the user to request the dispatching of a new frame.
@@ -108,7 +112,7 @@ public slots:
      * A sendFrame() signal will be emitted as soon as a frame is available.
      * @param uri Identifier for the stream
      */
-    void requestFrame( QString uri );
+    DEFLECT_API void requestFrame( QString uri );
 
 signals:
     /**
@@ -116,28 +120,25 @@ signals:
      *
      * @param uri Identifier for the Stream
      */
-    void openPixelStream( QString uri );
+    DEFLECT_API void openPixelStream( QString uri );
 
     /**
      * Notify that a pixel stream has been deleted.
      *
      * @param uri Identifier for the Stream
      */
-    void deletePixelStream( QString uri );
+    DEFLECT_API void deletePixelStream( QString uri );
 
     /**
      * Dispatch a full frame.
      *
      * @param frame The frame to dispatch
      */
-    void sendFrame( deflect::FramePtr frame );
+    DEFLECT_API void sendFrame( deflect::FramePtr frame );
 
 private:
-    void _sendLatestFrame( const QString& uri );
-
-    // The buffers for each URI
-    typedef std::map<QString, ReceiveBuffer> StreamBuffers;
-    StreamBuffers _streamBuffers;
+    class Impl;
+    Impl* _impl;
 };
 
 }

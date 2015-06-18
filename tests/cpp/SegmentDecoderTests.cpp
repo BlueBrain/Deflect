@@ -41,16 +41,18 @@
 #include <boost/test/unit_test.hpp>
 namespace ut = boost::unit_test;
 
-#include <deflect/ImageWrapper.h>
 #include <deflect/ImageJpegCompressor.h>
 #include <deflect/ImageJpegDecompressor.h>
 #include <deflect/ImageSegmenter.h>
+#include <deflect/ImageWrapper.h>
 #include <deflect/Segment.h>
 #include <deflect/SegmentDecoder.h>
 
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
+
+#include <QMutex>
 
 void fillTestImage( std::vector<char>& data )
 {

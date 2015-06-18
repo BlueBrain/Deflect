@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2014-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -44,13 +44,15 @@
 #include <deflect/types.h>
 #include <deflect/CommandType.h>
 
+#include <boost/noncopyable.hpp>
+
 namespace deflect
 {
 
 /**
  * String format, prefix-base network command.
  */
-class Command
+class Command : public boost::noncopyable
 {
 public:
     /**
@@ -84,12 +86,6 @@ public:
 private:
     class Impl;
     Impl* _impl;
-
-    /** Disable copy constructor. */
-    Command( const Command& );
-
-    /** Disable assignment operator. */
-    const Command& operator = ( const Command& );
 };
 
 }

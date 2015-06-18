@@ -12,7 +12,6 @@ set(DEFLECT_PUBLIC_HEADERS
   Event.h
   Frame.h
   ImageWrapper.h
-  ReceiveBuffer.h
   Segment.h
   SegmentParameters.h
   Stream.h
@@ -27,11 +26,10 @@ set(DEFLECT_MOC_PUBLIC_HEADERS
 )
 
 set(DEFLECT_HEADERS
-  ImageJpegCompressor.h
-  ImageJpegDecompressor.h
   ImageSegmenter.h
   MessageHeader.h
   NetworkProtocol.h
+  ReceiveBuffer.h
 )
 
 set(DEFLECT_MOC_HEADERS
@@ -45,6 +43,7 @@ set(DEFLECT_SOURCES
   CommandHandler.cpp
   CommandType.cpp
   Event.cpp
+  Frame.cpp
   FrameDispatcher.cpp
   ImageSegmenter.cpp
   ImageWrapper.cpp
@@ -70,6 +69,10 @@ set(DEFLECT_LINK_LIBRARIES
 if(DEFLECT_USE_LIBJPEGTURBO)
   list(APPEND DEFLECT_PUBLIC_HEADERS
     SegmentDecoder.h
+  )
+  list(APPEND DEFLECT_HEADERS
+    ImageJpegCompressor.h
+    ImageJpegDecompressor.h
   )
   list(APPEND DEFLECT_SOURCES
     ImageJpegCompressor.cpp

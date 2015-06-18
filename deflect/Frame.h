@@ -40,10 +40,12 @@
 #ifndef DEFLECT_FRAME_H
 #define DEFLECT_FRAME_H
 
+#include <deflect/api.h>
 #include <deflect/types.h>
 #include <deflect/Segment.h>
 
 #include <QString>
+#include <QSize>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
 
@@ -53,13 +55,17 @@ namespace deflect
 /**
  * A frame for a PixelStream.
  */
-struct Frame
+class Frame
 {
+public:
     /** The full set of segments for this frame. */
     Segments segments;
 
     /** The PixelStream uri to which this frame is associated. */
     QString uri;
+
+    /** Get the total dimensions of this frame. */
+    DEFLECT_API QSize computeDimensions() const;
 
 private:
     friend class boost::serialization::access;

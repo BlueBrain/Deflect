@@ -42,24 +42,38 @@
 #include "ImageJpegDecompressor.h"
 #include "Segment.h"
 
-#include <QtConcurrentRun>
 #include <iostream>
+
+#include <QFuture>
+#include <QtConcurrentRun>
 
 namespace deflect
 {
 
+class SegmentDecoder::Impl
+{
+public:
+    Impl()
+    {}
+
+    /** The decompressor instance */
+    ImageJpegDecompressor decompressor;
+
+    /** Async image decoding future */
+    QFuture<void> decodingFuture;
+};
+
 SegmentDecoder::SegmentDecoder()
-    : _decompressor( new ImageJpegDecompressor )
+    : _impl( new Impl )
 {
 }
 
 SegmentDecoder::~SegmentDecoder()
 {
-    delete _decompressor;
+    delete _impl;
 }
 
-void decodeSegment( ImageJpegDecompressor* decompressor,
-                    Segment* segment )
+void decodeSegment( ImageJpegDecompressor* decompressor, Segment* segment )
 {
     QByteArray decodedData = decompressor->decompress( segment->imageData );
 
@@ -80,13 +94,14 @@ void SegmentDecoder::startDecoding( Segment& segment )
         return;
     }
 
-    _decodingFuture = QtConcurrent::run( decodeSegment, _decompressor,
-                                         &segment );
+    _impl->decodingFuture = QtConcurrent::run( decodeSegment,
+                                               &_impl->decompressor,
+                                               &segment );
 }
 
 bool SegmentDecoder::isRunning() const
 {
-    return _decodingFuture.isRunning();
+    return _impl->decodingFuture.isRunning();
 }
 
 }

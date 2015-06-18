@@ -85,6 +85,7 @@ struct DEFLECT_API ImageWrapper
      * @param y The global position of the image in the stream
      * @version 1.0
      */
+    DEFLECT_API
     ImageWrapper( const void* data, const unsigned int width,
                   const unsigned int height, const PixelFormat format,
                   const unsigned int x = 0, const unsigned int y = 0 );
@@ -123,13 +124,13 @@ struct DEFLECT_API ImageWrapper
      * Get the number of bytes per pixel based on the pixelFormat.
      * @version 1.0
      */
-    unsigned int getBytesPerPixel() const;
+    DEFLECT_API unsigned int getBytesPerPixel() const;
 
     /**
      * Get the size of the data buffer in bytes: width*height*format.bpp.
      * @version 1.0
      */
-    size_t getBufferSize() const;
+    DEFLECT_API size_t getBufferSize() const;
 
     /**
      * Swap an image along the Y axis.
@@ -143,9 +144,9 @@ struct DEFLECT_API ImageWrapper
      * @param bpp The number of bytes per pixel (RGB=3, ARGB=4, etc.)
      * @version 1.0
      */
-    static void swapYAxis( void* data, const unsigned int width,
-                           const unsigned int height,
-                           const unsigned int bpp );
+    DEFLECT_API static void swapYAxis( void* data, const unsigned int width,
+                                       const unsigned int height,
+                                       const unsigned int bpp );
 };
 
 }

@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -41,6 +41,7 @@
 #include <boost/test/unit_test.hpp>
 namespace ut = boost::unit_test;
 
+#include <deflect/Frame.h>
 #include <deflect/ReceiveBuffer.h>
 #include <deflect/Segment.h>
 
@@ -65,7 +66,6 @@ BOOST_AUTO_TEST_CASE( TestAddAndRemoveSources )
     BOOST_CHECK_EQUAL( buffer.getSourceCount(), 0 );
 }
 
-
 BOOST_AUTO_TEST_CASE( TestCompleteAFrame )
 {
     const size_t sourceIndex = 46;
@@ -81,23 +81,21 @@ BOOST_AUTO_TEST_CASE( TestCompleteAFrame )
 
     buffer.insert( segment, sourceIndex );
     BOOST_CHECK( !buffer.hasCompleteFrame( ));
-    BOOST_CHECK( !buffer.isFirstCompleteFrame( ));
 
     buffer.finishFrameForSource( sourceIndex );
     BOOST_CHECK( buffer.hasCompleteFrame( ));
-    BOOST_CHECK( buffer.isFirstCompleteFrame( ));
-
-    QSize frameSize = buffer.getFrameSize();
-    BOOST_CHECK_EQUAL( frameSize.width(), segment.parameters.width );
-    BOOST_CHECK_EQUAL( frameSize.height(), segment.parameters.height );
 
     deflect::Segments segments = buffer.popFrame();
 
     BOOST_CHECK_EQUAL( segments.size(), 1 );
     BOOST_CHECK( !buffer.hasCompleteFrame( ));
-    BOOST_CHECK( !buffer.isFirstCompleteFrame( ));
-}
 
+    deflect::Frame frame;
+    frame.segments = segments;
+    const QSize frameSize = frame.computeDimensions();
+    BOOST_CHECK_EQUAL( frameSize.width(), segment.parameters.width );
+    BOOST_CHECK_EQUAL( frameSize.height(), segment.parameters.height );
+}
 
 deflect::Segments generateTestSegments()
 {
@@ -153,23 +151,16 @@ BOOST_AUTO_TEST_CASE( TestCompleteACompositeFrameSingleSource )
     buffer.finishFrameForSource( sourceIndex );
     BOOST_CHECK( buffer.hasCompleteFrame( ));
 
-    QSize frameSize = buffer.getFrameSize();
-    BOOST_CHECK( buffer.hasCompleteFrame( ));
-    BOOST_CHECK( buffer.isFirstCompleteFrame( ));
-    BOOST_CHECK_EQUAL( frameSize.width(), 192 );
-    BOOST_CHECK_EQUAL( frameSize.height(), 768 );
-
     deflect::Segments segments = buffer.popFrame();
-    frameSize = buffer.getFrameSize();
-    BOOST_CHECK_EQUAL( frameSize.width(), 0 );
-    BOOST_CHECK_EQUAL( frameSize.height(), 0 );
-
     BOOST_CHECK_EQUAL( segments.size(), 4 );
     BOOST_CHECK( !buffer.hasCompleteFrame( ));
-    BOOST_CHECK( !buffer.isFirstCompleteFrame( ));
+
+    deflect::Frame frame;
+    frame.segments = segments;
+    const QSize frameSize = frame.computeDimensions();
+    BOOST_CHECK_EQUAL( frameSize.width(), 192 );
+    BOOST_CHECK_EQUAL( frameSize.height(), 768 );
 }
-
-
 
 BOOST_AUTO_TEST_CASE( TestCompleteACompositeFrameMultipleSources )
 {
@@ -199,19 +190,16 @@ BOOST_AUTO_TEST_CASE( TestCompleteACompositeFrameMultipleSources )
     buffer.finishFrameForSource( sourceIndex3 );
     BOOST_CHECK( buffer.hasCompleteFrame( ));
 
-    BOOST_CHECK( buffer.hasCompleteFrame( ));
-    BOOST_CHECK( buffer.isFirstCompleteFrame( ));
-    QSize frameSize = buffer.getFrameSize();
-    BOOST_CHECK_EQUAL( frameSize.width(), 192 );
-    BOOST_CHECK_EQUAL( frameSize.height(), 768 );
-
     deflect::Segments segments = buffer.popFrame();
-
     BOOST_CHECK_EQUAL( segments.size(), 4 );
     BOOST_CHECK( !buffer.hasCompleteFrame( ));
-    BOOST_CHECK( !buffer.isFirstCompleteFrame( ));
-}
 
+    deflect::Frame frame;
+    frame.segments = segments;
+    const QSize frameSize = frame.computeDimensions();
+    BOOST_CHECK_EQUAL( frameSize.width(), 192 );
+    BOOST_CHECK_EQUAL( frameSize.height(), 768 );
+}
 
 BOOST_AUTO_TEST_CASE( TestRemoveSourceWhileStreaming )
 {
@@ -230,13 +218,10 @@ BOOST_AUTO_TEST_CASE( TestRemoveSourceWhileStreaming )
     buffer.insert( testSegments[2], sourceIndex2 );
     buffer.insert( testSegments[3], sourceIndex2 );
     BOOST_CHECK( !buffer.hasCompleteFrame( ));
-    BOOST_CHECK( !buffer.isFirstCompleteFrame( ));
     buffer.finishFrameForSource(sourceIndex1);
     BOOST_CHECK( !buffer.hasCompleteFrame( ));
-    BOOST_CHECK( !buffer.isFirstCompleteFrame( ));
     buffer.finishFrameForSource( sourceIndex2 );
     BOOST_CHECK( buffer.hasCompleteFrame( ));
-    BOOST_CHECK( buffer.isFirstCompleteFrame( ));
 
     deflect::Segments segments = buffer.popFrame();
 
@@ -252,12 +237,13 @@ BOOST_AUTO_TEST_CASE( TestRemoveSourceWhileStreaming )
     buffer.finishFrameForSource( sourceIndex1 );
     BOOST_CHECK( buffer.hasCompleteFrame( ));
 
-    QSize frameSize = buffer.getFrameSize();
-    BOOST_CHECK_EQUAL( frameSize.width(), 192 );
-    BOOST_CHECK_EQUAL( frameSize.height(), 256 );
-
     segments = buffer.popFrame();
     BOOST_CHECK_EQUAL( segments.size(), 2 );
     BOOST_CHECK( !buffer.hasCompleteFrame( ));
-    BOOST_CHECK( !buffer.isFirstCompleteFrame( ));
+
+    deflect::Frame frame;
+    frame.segments = segments;
+    const QSize frameSize = frame.computeDimensions();
+    BOOST_CHECK_EQUAL( frameSize.width(), 192 );
+    BOOST_CHECK_EQUAL( frameSize.height(), 256 );
 }

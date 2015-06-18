@@ -43,7 +43,6 @@
 #include <deflect/api.h>
 #include <deflect/types.h>
 
-#include <QFuture>
 #include <boost/noncopyable.hpp>
 
 namespace deflect
@@ -77,11 +76,8 @@ public:
     DEFLECT_API bool isRunning() const;
 
 private:
-    /** The decompressor instance */
-    ImageJpegDecompressor* _decompressor;
-
-    /** Async image decoding future */
-    QFuture<void> _decodingFuture;
+    class Impl;
+    Impl* _impl;
 };
 
 }

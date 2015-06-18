@@ -38,20 +38,18 @@
 
 #include "DesktopSelectionRectangle.h"
 
+#include <cmath>
+
 #define PEN_WIDTH 10 // should be even
-#define CORNER_RESIZE_THRESHHOLD 50
+#define CORNER_RESIZE_THRESHOLD 50
 #define DEFAULT_SIZE 100
 
 DesktopSelectionRectangle::DesktopSelectionRectangle()
     : _resizing( false )
-    , _coordinates( 0, 0, DEFAULT_SIZE, DEFAULT_SIZE )
 {
     setFlag( QGraphicsItem::ItemIsMovable, true );
     setPen( QPen( QBrush( QColor( 255, 0, 0 )), PEN_WIDTH ));
-    setRect( _coordinates.x() - PEN_WIDTH/2,
-             _coordinates.y() - PEN_WIDTH/2,
-             _coordinates.width() + PEN_WIDTH,
-             _coordinates.height() + PEN_WIDTH );
+    setCoordinates( QRect( 0, 0, DEFAULT_SIZE, DEFAULT_SIZE ));
 }
 
 void DesktopSelectionRectangle::paint( QPainter* painter,
@@ -97,12 +95,12 @@ void DesktopSelectionRectangle::mousePressEvent( QGraphicsSceneMouseEvent*
                                                  mouseEvent )
 {
     // item rectangle and event position
-    const QRectF r = rect();
+    const QPointF cornerPos = rect().bottomRight();
     const QPointF eventPos = mouseEvent->pos();
 
     // check to see if user clicked on the resize button
-    if( fabs((r.x() + r.width()) - eventPos.x()) <= CORNER_RESIZE_THRESHHOLD &&
-        fabs((r.y() + r.height()) - eventPos.y()) <= CORNER_RESIZE_THRESHHOLD )
+    if( std::abs( cornerPos.x() - eventPos.x( )) <= CORNER_RESIZE_THRESHOLD &&
+        std::abs( cornerPos.y() - eventPos.y( )) <= CORNER_RESIZE_THRESHOLD )
     {
         _resizing = true;
     }

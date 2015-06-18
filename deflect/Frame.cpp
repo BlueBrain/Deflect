@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2015, EPFL/Blue Brain Project                  */
-/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/* Copyright (c) 2015, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,37 +37,25 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_TYPES_H
-#define DEFLECT_TYPES_H
-
-#include <deflect/config.h>
-
-#include <boost/shared_ptr.hpp>
-#include <vector>
+#include "Frame.h"
 
 namespace deflect
 {
 
-class AbstractCommandHandler;
-class Command;
-class CommandHandler;
-class EventReceiver;
-class Frame;
-class FrameDispatcher;
-class SegmentDecoder;
-class Server;
-class Stream;
+QSize Frame::computeDimensions() const
+{
+    QSize size( 0, 0 );
 
-struct Event;
-struct ImageWrapper;
-struct MessageHeader;
-struct Segment;
-struct SegmentParameters;
+    for( size_t i = 0; i < segments.size(); ++i )
+    {
+        const deflect::SegmentParameters& params = segments[i].parameters;
+        size.setWidth( std::max( size.width(),
+                                 (int)( params.width + params.x )));
+        size.setHeight( std::max( size.height(),
+                                  (int)( params.height + params.y )));
+    }
 
-typedef boost::shared_ptr< Frame > FramePtr;
-typedef std::vector< Segment > Segments;
-typedef std::vector< SegmentParameters > SegmentParametersList;
-
+    return size;
 }
 
-#endif
+}

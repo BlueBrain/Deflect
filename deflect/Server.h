@@ -78,12 +78,12 @@ public:
     DEFLECT_API FrameDispatcher& getPixelStreamDispatcher();
 
 signals:
-    void registerToEvents( QString uri, bool exclusive,
-                           deflect::EventReceiver* receiver );
+    DEFLECT_API void registerToEvents( QString uri, bool exclusive,
+                                       deflect::EventReceiver* receiver );
 
 public slots:
-    void onPixelStreamerClosed( QString uri );
-    void onEventRegistrationReply( QString uri, bool success );
+    DEFLECT_API void onPixelStreamerClosed( QString uri );
+    DEFLECT_API void onEventRegistrationReply( QString uri, bool success );
 
 private:
     class Impl;

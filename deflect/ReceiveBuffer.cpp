@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -38,8 +38,6 @@
 /*********************************************************************/
 
 #include "ReceiveBuffer.h"
-
-#define FIRST_FRAME_INDEX 0
 
 namespace deflect
 {
@@ -103,19 +101,6 @@ bool ReceiveBuffer::hasCompleteFrame() const
     return true;
 }
 
-bool ReceiveBuffer::isFirstCompleteFrame() const
-{
-    for( SourceBufferMap::const_iterator it = _sourceBuffers.begin();
-         it != _sourceBuffers.end(); ++it )
-    {
-        const SourceBuffer& buffer = it->second;
-        if( buffer.frontFrameIndex != FIRST_FRAME_INDEX ||
-            buffer.backFrameIndex == FIRST_FRAME_INDEX )
-            return false;
-    }
-    return true;
-}
-
 Segments ReceiveBuffer::popFrame()
 {
     Segments frame;
@@ -139,48 +124,6 @@ void ReceiveBuffer::setAllowedToSend( const bool enable )
 bool ReceiveBuffer::isAllowedToSend() const
 {
     return _allowedToSend;
-}
-
-QSize ReceiveBuffer::getFrameSize() const
-{
-    QSize size( 0, 0 );
-
-    for( SourceBufferMap::const_iterator it = _sourceBuffers.begin();
-         it != _sourceBuffers.end(); ++it )
-    {
-        const SourceBuffer& buffer = it->second;
-        if( !buffer.segments.empty( ))
-        {
-            const Segments& segments = buffer.segments.front();
-
-            for( size_t i=0; i<segments.size(); i++ )
-            {
-                const SegmentParameters& params = segments[i].parameters;
-                size.setWidth( std::max( size.width(),
-                                         (int)( params.width + params.x )));
-                size.setHeight( std::max( size.height(),
-                                          (int)( params.height + params.y )));
-            }
-        }
-    }
-
-    return size;
-}
-
-QSize ReceiveBuffer::computeFrameDimensions( const Segments& segments )
-{
-    QSize size( 0, 0 );
-
-    for( size_t i = 0; i < segments.size(); ++i )
-    {
-        const SegmentParameters& params = segments[i].parameters;
-        size.setWidth( std::max( size.width(),
-                                 (int)( params.width + params.x )));
-        size.setHeight( std::max( size.height(),
-                                  (int)( params.height + params.y )));
-    }
-
-    return size;
 }
 
 }
