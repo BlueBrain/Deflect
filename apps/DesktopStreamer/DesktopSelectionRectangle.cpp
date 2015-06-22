@@ -43,86 +43,86 @@
 #define DEFAULT_SIZE 100
 
 DesktopSelectionRectangle::DesktopSelectionRectangle()
-    : resizing_(false)
-    , coordinates_(0, 0, DEFAULT_SIZE, DEFAULT_SIZE)
+    : _resizing( false )
+    , _coordinates( 0, 0, DEFAULT_SIZE, DEFAULT_SIZE )
 {
-    // graphics items are movable
-    setFlag(QGraphicsItem::ItemIsMovable, true);
-
-    // default pen
-    setPen(QPen(QBrush(QColor(255, 0, 0)), PEN_WIDTH));
-
-    // current coordinates, accounting for width of the pen outline
-    setRect(coordinates_.x()-PEN_WIDTH/2, coordinates_.y()-PEN_WIDTH/2,
-            coordinates_.width()+PEN_WIDTH, coordinates_.height()+PEN_WIDTH);
+    setFlag( QGraphicsItem::ItemIsMovable, true );
+    setPen( QPen( QBrush( QColor( 255, 0, 0 )), PEN_WIDTH ));
+    setRect( _coordinates.x() - PEN_WIDTH/2,
+             _coordinates.y() - PEN_WIDTH/2,
+             _coordinates.width() + PEN_WIDTH,
+             _coordinates.height() + PEN_WIDTH );
 }
 
-void DesktopSelectionRectangle::paint(QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget)
+void DesktopSelectionRectangle::paint( QPainter* painter,
+                                       const QStyleOptionGraphicsItem* option,
+                                       QWidget* widget )
 {
-    QGraphicsRectItem::paint(painter, option, widget);
+    QGraphicsRectItem::paint( painter, option, widget );
 }
 
-void DesktopSelectionRectangle::setCoordinates(QRect coordinates)
+void DesktopSelectionRectangle::setCoordinates( const QRect& coordinates )
 {
-    coordinates_ = coordinates;
+    _coordinates = coordinates;
 
-    setRect(mapRectFromScene(coordinates_.x()-PEN_WIDTH/2, coordinates_.y()-PEN_WIDTH/2,
-                             coordinates_.width()+PEN_WIDTH, coordinates_.height()+PEN_WIDTH));
+    setRect( mapRectFromScene( _coordinates.x() - PEN_WIDTH/2,
+                               _coordinates.y() - PEN_WIDTH/2,
+                               _coordinates.width() + PEN_WIDTH,
+                               _coordinates.height() + PEN_WIDTH ));
 }
 
-void DesktopSelectionRectangle::mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent)
+void DesktopSelectionRectangle::mouseMoveEvent( QGraphicsSceneMouseEvent*
+                                                mouseEvent )
 {
-    if(mouseEvent->buttons().testFlag(Qt::LeftButton))
+    if( mouseEvent->buttons().testFlag( Qt::LeftButton ))
     {
-        if(resizing_)
+        if( _resizing )
         {
             QRectF r = rect();
-
-            r.setBottomRight(mouseEvent->pos());
-
-            setRect(r);
+            r.setBottomRight( mouseEvent->pos( ));
+            setRect( r );
         }
         else
         {
             QPointF delta = mouseEvent->pos() - mouseEvent->lastPos();
-
-            moveBy(delta.x(), delta.y());
+            moveBy( delta.x(), delta.y( ));
         }
 
-        updateCoordinates();
-        emit coordinatesChanged(coordinates_);
+        _updateCoordinates();
+        emit coordinatesChanged( _coordinates );
     }
 }
 
-void DesktopSelectionRectangle::mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent)
+void DesktopSelectionRectangle::mousePressEvent( QGraphicsSceneMouseEvent*
+                                                 mouseEvent )
 {
     // item rectangle and event position
     const QRectF r = rect();
     const QPointF eventPos = mouseEvent->pos();
 
     // check to see if user clicked on the resize button
-    if(fabs((r.x()+r.width()) - eventPos.x()) <= CORNER_RESIZE_THRESHHOLD &&
-       fabs((r.y()+r.height()) - eventPos.y()) <= CORNER_RESIZE_THRESHHOLD)
+    if( fabs((r.x() + r.width()) - eventPos.x()) <= CORNER_RESIZE_THRESHHOLD &&
+        fabs((r.y() + r.height()) - eventPos.y()) <= CORNER_RESIZE_THRESHHOLD )
     {
-        resizing_ = true;
+        _resizing = true;
     }
 
-    QGraphicsItem::mousePressEvent(mouseEvent);
+    QGraphicsItem::mousePressEvent( mouseEvent );
 }
 
-void DesktopSelectionRectangle::mouseReleaseEvent(QGraphicsSceneMouseEvent * mouseEvent)
+void DesktopSelectionRectangle::mouseReleaseEvent( QGraphicsSceneMouseEvent*
+                                                   mouseEvent )
 {
-    resizing_ = false;
-
-    QGraphicsItem::mouseReleaseEvent(mouseEvent);
+    _resizing = false;
+    QGraphicsItem::mouseReleaseEvent( mouseEvent );
 }
 
-void DesktopSelectionRectangle::updateCoordinates()
+void DesktopSelectionRectangle::_updateCoordinates()
 {
-    const QRectF sceneRect = mapRectToScene(rect());
+    const QRectF sceneRect = mapRectToScene( rect( ));
 
-    coordinates_.setX( (int)sceneRect.x() + PEN_WIDTH/2 );
-    coordinates_.setY( (int)sceneRect.y() + PEN_WIDTH/2 );
-    coordinates_.setWidth( (int)sceneRect.width() - PEN_WIDTH );
-    coordinates_.setHeight( (int)sceneRect.height() - PEN_WIDTH );
+    _coordinates.setX( (int)sceneRect.x() + PEN_WIDTH/2 );
+    _coordinates.setY( (int)sceneRect.y() + PEN_WIDTH/2 );
+    _coordinates.setWidth( (int)sceneRect.width() - PEN_WIDTH );
+    _coordinates.setHeight( (int)sceneRect.height() - PEN_WIDTH );
 }

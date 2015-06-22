@@ -37,44 +37,38 @@
 /*********************************************************************/
 
 #include "DesktopSelectionView.h"
+
 #include "DesktopSelectionRectangle.h"
 
-DesktopSelectionView::DesktopSelectionView(QWidget* widget_)
-    : QGraphicsView(widget_)
-    , desktopSelectionRectangle_(0)
+DesktopSelectionView::DesktopSelectionView( QWidget* widget_ )
+    : QGraphicsView( widget_ )
+    , _desktopSelectionRectangle( 0 )
 {
-    // create and set scene for the view
-    setScene(new QGraphicsScene());
+    setScene( new QGraphicsScene( ));
 
-    // force scene to be anchored at top left
-    setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    setAlignment( Qt::AlignLeft | Qt::AlignTop );
+    setInteractive( true );
 
-    // set attributes of the view
-    setInteractive(true);
+    setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 
-    // disable scrollbars
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    // create and add the rectangle for the selection area
-    desktopSelectionRectangle_ = new DesktopSelectionRectangle();
-    scene()->addItem(desktopSelectionRectangle_);
+    _desktopSelectionRectangle = new DesktopSelectionRectangle();
+    scene()->addItem( _desktopSelectionRectangle );
 }
 
 DesktopSelectionView::~DesktopSelectionView()
 {
-    delete desktopSelectionRectangle_;
+    delete _desktopSelectionRectangle;
 }
 
-DesktopSelectionRectangle* DesktopSelectionView::getDesktopSelectionRectangle()
+DesktopSelectionRectangle* DesktopSelectionView::getSelectionRectangle()
 {
-    return desktopSelectionRectangle_;
+    return _desktopSelectionRectangle;
 }
 
-void DesktopSelectionView::resizeEvent(QResizeEvent * resizeEvt)
+void DesktopSelectionView::resizeEvent( QResizeEvent* resizeEvt )
 {
-    // scene rectangle matches viewport rectangle
-    setSceneRect(rect());
+    setSceneRect( rect( )); // scene rectangle matches viewport rectangle
 
-    QGraphicsView::resizeEvent(resizeEvt);
+    QGraphicsView::resizeEvent( resizeEvt );
 }

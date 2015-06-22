@@ -39,19 +39,17 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
-#include <QtWidgets>
+#include <deflect/types.h>
 
 #ifdef __APPLE__
 #  include "AppNapSuspender.h"
 #endif
+
 #ifdef DEFLECT_USE_SERVUS
 #  include <servus/servus.h>
 #endif
 
-namespace deflect
-{
-class Stream;
-}
+#include <QtWidgets>
 
 class DesktopSelectionWindow;
 
@@ -63,82 +61,82 @@ public:
     MainWindow();
 
 signals:
-    void streaming(bool);
+    void streaming( bool enabled );
 
 protected:
-    virtual void closeEvent( QCloseEvent* event );
+    void closeEvent( QCloseEvent* event ) final;
 
 private slots:
-    void shareDesktop(bool set);
-    void showDesktopSelectionWindow(bool set);
+    void _shareDesktop( bool set );
+    void _showDesktopSelectionWindow( bool set );
 
-    void update();
+    void _update();
 #ifdef DEFLECT_USE_SERVUS
-    void updateServus();
+    void _updateServus();
 #endif
 
-    void setCoordinates(const QRect coordinates);
-    void updateCoordinates();
+    void _setCoordinates( QRect coordinates );
+    void _updateCoordinates();
 
 private:
-    deflect::Stream* stream_;
+    deflect::Stream* _stream;
 
-    DesktopSelectionWindow* desktopSelectionWindow_;
+    DesktopSelectionWindow* _desktopSelectionWindow;
 
     /** @name User Interface Elements */
     //@{
-    QLineEdit hostnameLineEdit_;
-    QLineEdit uriLineEdit_;
-    QSpinBox xSpinBox_;
-    QSpinBox ySpinBox_;
-    QSpinBox widthSpinBox_;
-    QSpinBox heightSpinBox_;
-    QSpinBox frameRateSpinBox_;
-    QLabel frameRateLabel_;
-    QCheckBox eventsBox_;
+    QLineEdit _hostnameLineEdit;
+    QLineEdit _uriLineEdit;
+    QSpinBox _xSpinBox;
+    QSpinBox _ySpinBox;
+    QSpinBox _widthSpinBox;
+    QSpinBox _heightSpinBox;
+    QSpinBox _frameRateSpinBox;
+    QLabel _frameRateLabel;
+    QCheckBox _eventsBox;
 
-    QAction* shareDesktopAction_;
-    QAction* showDesktopSelectionWindowAction_;
+    QAction* _shareDesktopAction;
+    QAction* _showDesktopSelectionWindowAction;
     //@}
 
     /** @name Status */
     //@{
-    int x_;
-    int y_;
-    int width_;
-    int height_;
+    int _x;
+    int _y;
+    int _width;
+    int _height;
     //@}
 
-    QImage cursor_;
+    QImage _cursor;
 
-    QTimer updateTimer_;
+    QTimer _updateTimer;
 
     // used for frame rate calculations
-    std::vector<QTime> frameSentTimes_;
+    std::vector<QTime> _frameSentTimes;
 
 #ifdef __APPLE__
-    AppNapSuspender napSuspender_;
+    AppNapSuspender _napSuspender;
 #endif
 #ifdef DEFLECT_USE_SERVUS
-    QTimer browseTimer_;
-    servus::Servus servus_;
+    QTimer _browseTimer;
+    servus::Servus _servus;
 #endif
 
-    void setupUI();
-    void generateCursorImage();
+    void _setupUI();
+    void _generateCursorImage();
 
-    void startStreaming();
-    void stopStreaming();
-    void handleStreamingError(const QString& errorMessage);
-    void processStreamEvents();
-    void shareDesktopUpdate();
+    void _startStreaming();
+    void _stopStreaming();
+    void _handleStreamingError( const QString& errorMessage );
+    void _processStreamEvents();
+    void _shareDesktopUpdate();
 
-    void sendMousePressEvent( const float x, const float y );
-    void sendMouseMoveEvent( const float x, const float y );
-    void sendMouseReleaseEvent( const float x, const float y );
-    void sendMouseDoubleClickEvent( const float, const float );
+    void _sendMousePressEvent( float x, float y );
+    void _sendMouseMoveEvent( float x, float y );
+    void _sendMouseReleaseEvent( float x, float y );
+    void _sendMouseDoubleClickEvent( float x, float y );
 
-    void regulateFrameRate(const int elapsedFrameTime);
+    void _regulateFrameRate( int elapsedFrameTime );
 };
 
 #endif

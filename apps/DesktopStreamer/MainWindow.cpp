@@ -39,24 +39,24 @@
 #include "MainWindow.h"
 
 #include "DesktopSelectionWindow.h"
-#include "DesktopSelectionView.h"
 #include "DesktopSelectionRectangle.h"
 
 #include <deflect/Server.h>
 #include <deflect/Stream.h>
 
+#include <iostream>
+
 #ifdef _WIN32
-    typedef __int32 int32_t;
-    #include <windows.h>
+typedef __int32 int32_t;
+#  include <windows.h>
 #else
-    #include <stdint.h>
-    #include <unistd.h>
+#  include <stdint.h>
+#  include <unistd.h>
 #endif
+
 #ifdef __APPLE__
 #  include <CoreGraphics/CoreGraphics.h>
 #endif
-
-#include <iostream>
 
 #define SHARE_DESKTOP_UPDATE_DELAY      1
 #define SERVUS_BROWSE_DELAY           100
@@ -66,242 +66,249 @@
 #define CURSOR_IMAGE_FILE     ":/cursor.png"
 
 MainWindow::MainWindow()
-    : stream_(0)
-    , desktopSelectionWindow_(new DesktopSelectionWindow())
-    , x_(0)
-    , y_(0)
-    , width_(0)
-    , height_(0)
+    : _stream( 0 )
+    , _desktopSelectionWindow( new DesktopSelectionWindow( ))
+    , _x( 0 )
+    , _y( 0 )
+    , _width( 0 )
+    , _height( 0 )
 #ifdef DEFLECT_USE_SERVUS
-    , servus_( deflect::Server::serviceName )
+    , _servus( deflect::Server::serviceName )
 #endif
 {
-    generateCursorImage();
-    setupUI();
+    _generateCursorImage();
+    _setupUI();
 
     // Receive changes from the selection rectangle
-    connect(desktopSelectionWindow_->getDesktopSelectionView()->getDesktopSelectionRectangle(),
-            SIGNAL(coordinatesChanged(QRect)), this, SLOT(setCoordinates(QRect)));
+    connect( _desktopSelectionWindow->getSelectionRectangle(),
+             SIGNAL( coordinatesChanged( QRect )),
+             this, SLOT( _setCoordinates( QRect )));
 
-    connect(desktopSelectionWindow_, SIGNAL(windowVisible(bool)), showDesktopSelectionWindowAction_, SLOT(setChecked(bool)));
+    connect( _desktopSelectionWindow, SIGNAL( windowVisible( bool )),
+             _showDesktopSelectionWindowAction, SLOT( setChecked( bool )));
 }
 
-void MainWindow::generateCursorImage()
+void MainWindow::_generateCursorImage()
 {
-    cursor_ = QImage( CURSOR_IMAGE_FILE ).scaled( 20, 20, Qt::KeepAspectRatio );
+    _cursor = QImage( CURSOR_IMAGE_FILE ).scaled( 20, 20, Qt::KeepAspectRatio );
 }
 
-void MainWindow::setupUI()
+void MainWindow::_setupUI()
 {
-    QWidget * widget = new QWidget();
-    QFormLayout * formLayout = new QFormLayout();
-    widget->setLayout(formLayout);
+    QWidget* widget = new QWidget();
+    QFormLayout* formLayout = new QFormLayout();
+    widget->setLayout( formLayout );
 
-    setCentralWidget(widget);
+    setCentralWidget( widget );
 
-    // connect widget signals / slots
-    connect(&xSpinBox_, SIGNAL(editingFinished()), this, SLOT(updateCoordinates()));
-    connect(&ySpinBox_, SIGNAL(editingFinished()), this, SLOT(updateCoordinates()));
-    connect(&widthSpinBox_, SIGNAL(editingFinished()), this, SLOT(updateCoordinates()));
-    connect(&heightSpinBox_, SIGNAL(editingFinished()), this, SLOT(updateCoordinates()));
+    connect( &_xSpinBox, SIGNAL( editingFinished( )),
+             this, SLOT( _updateCoordinates( )));
+    connect( &_ySpinBox, SIGNAL( editingFinished( )),
+             this, SLOT( _updateCoordinates( )));
+    connect( &_widthSpinBox, SIGNAL( editingFinished( )),
+             this, SLOT( _updateCoordinates( )));
+    connect( &_heightSpinBox, SIGNAL( editingFinished( )),
+             this, SLOT( _updateCoordinates( )));
 
-    hostnameLineEdit_.setText( DEFAULT_HOST_ADDRESS );
+    _hostnameLineEdit.setText( DEFAULT_HOST_ADDRESS );
 
-    char hostname[256] = {0};
+    char hostname[256] = { 0 };
     gethostname( hostname, 256 );
-    uriLineEdit_.setText( hostname );
+    _uriLineEdit.setText( hostname );
 
     const int screen = -1;
     QRect desktopRect = QApplication::desktop()->screenGeometry( screen );
 
-    xSpinBox_.setRange(0, desktopRect.width());
-    ySpinBox_.setRange(0, desktopRect.height());
-    widthSpinBox_.setRange(1, desktopRect.width());
-    heightSpinBox_.setRange(1, desktopRect.height());
+    _xSpinBox.setRange( 0, desktopRect.width( ));
+    _ySpinBox.setRange( 0, desktopRect.height( ));
+    _widthSpinBox.setRange( 1, desktopRect.width( ));
+    _heightSpinBox.setRange( 1, desktopRect.height( ));
 
     // default to full screen
-    xSpinBox_.setValue(0);
-    ySpinBox_.setValue(0);
-    widthSpinBox_.setValue( desktopRect.width( ));
-    heightSpinBox_.setValue( desktopRect.height( ));
+    _xSpinBox.setValue( 0 );
+    _ySpinBox.setValue( 0 );
+    _widthSpinBox.setValue( desktopRect.width( ));
+    _heightSpinBox.setValue( desktopRect.height( ));
 
     // call updateCoordinates() to commit coordinates from the UI
-    updateCoordinates();
+    _updateCoordinates();
 
     // frame rate limiting
-    frameRateSpinBox_.setRange(1, 60);
-    frameRateSpinBox_.setValue(24);
+    _frameRateSpinBox.setRange( 1, 60 );
+    _frameRateSpinBox.setValue( 24 );
 
     // add widgets to UI
-    formLayout->addRow("Hostname", &hostnameLineEdit_);
-    formLayout->addRow("Stream name", &uriLineEdit_);
-    formLayout->addRow("X", &xSpinBox_);
-    formLayout->addRow("Y", &ySpinBox_);
-    formLayout->addRow("Width", &widthSpinBox_);
-    formLayout->addRow("Height", &heightSpinBox_);
-    formLayout->addRow("Allow desktop interaction", &eventsBox_);
-    formLayout->addRow("Max frame rate", &frameRateSpinBox_);
-    formLayout->addRow("Actual frame rate", &frameRateLabel_);
-    eventsBox_.setChecked( true );
+    formLayout->addRow( "Hostname", &_hostnameLineEdit );
+    formLayout->addRow( "Stream name", &_uriLineEdit );
+    formLayout->addRow( "X", &_xSpinBox );
+    formLayout->addRow( "Y", &_ySpinBox );
+    formLayout->addRow( "Width", &_widthSpinBox );
+    formLayout->addRow( "Height", &_heightSpinBox );
+    formLayout->addRow( "Allow desktop interaction", &_eventsBox );
+    formLayout->addRow( "Max frame rate", &_frameRateSpinBox );
+    formLayout->addRow( "Actual frame rate", &_frameRateLabel );
+    _eventsBox.setChecked( true );
 
     // share desktop action
-    shareDesktopAction_ = new QAction("Share Desktop", this);
-    shareDesktopAction_->setStatusTip("Share desktop");
-    shareDesktopAction_->setCheckable(true);
-    shareDesktopAction_->setChecked(false);
-    connect(shareDesktopAction_, SIGNAL(triggered(bool)), this, SLOT(shareDesktop(bool))); // Only user actions
-    connect(this, SIGNAL(streaming(bool)), shareDesktopAction_, SLOT(setChecked(bool)));
+    _shareDesktopAction = new QAction( "Share Desktop", this );
+    _shareDesktopAction->setStatusTip( "Share desktop" );
+    _shareDesktopAction->setCheckable( true );
+    _shareDesktopAction->setChecked( false );
+    connect( _shareDesktopAction, SIGNAL( triggered( bool )), this,
+             SLOT( _shareDesktop( bool )));
+    connect( this, SIGNAL( streaming( bool )), _shareDesktopAction,
+             SLOT( setChecked( bool )));
 
     // show desktop selection window action
-    showDesktopSelectionWindowAction_ = new QAction("Show Rectangle", this);
-    showDesktopSelectionWindowAction_->setStatusTip("Show desktop selection rectangle");
-    showDesktopSelectionWindowAction_->setCheckable(true);
-    showDesktopSelectionWindowAction_->setChecked(false);
-    connect(showDesktopSelectionWindowAction_, SIGNAL(triggered(bool)), this, SLOT(showDesktopSelectionWindow(bool))); // Only user actions
+    _showDesktopSelectionWindowAction = new QAction( "Show Rectangle", this );
+    _showDesktopSelectionWindowAction->setStatusTip(
+                "Show desktop selection rectangle" );
+    _showDesktopSelectionWindowAction->setCheckable( true );
+    _showDesktopSelectionWindowAction->setChecked( false );
+    connect( _showDesktopSelectionWindowAction, SIGNAL( triggered( bool )),
+             this, SLOT( _showDesktopSelectionWindow( bool )));
 
-    // create toolbar
-    QToolBar * toolbar = addToolBar("toolbar");
-
-    // add buttons to toolbar
-    toolbar->addAction(shareDesktopAction_);
-    toolbar->addAction(showDesktopSelectionWindowAction_);
+    QToolBar* toolbar = addToolBar( "toolbar" );
+    toolbar->addAction( _shareDesktopAction );
+    toolbar->addAction( _showDesktopSelectionWindowAction );
 
     // Update timer
-    connect(&updateTimer_, SIGNAL(timeout()), this, SLOT(update()));
+    connect( &_updateTimer, SIGNAL( timeout( )), this, SLOT( _update( )));
 
 #ifdef DEFLECT_USE_SERVUS
-    servus_.beginBrowsing( servus::Servus::IF_ALL );
-    connect( &browseTimer_, SIGNAL( timeout( )), this, SLOT( updateServus( )));
-    browseTimer_.start( SERVUS_BROWSE_DELAY );
+    _servus.beginBrowsing( servus::Servus::IF_ALL );
+    connect( &_browseTimer, SIGNAL( timeout( )), this, SLOT( _updateServus( )));
+    _browseTimer.start( SERVUS_BROWSE_DELAY );
 #endif
 }
 
-void MainWindow::startStreaming()
+void MainWindow::_startStreaming()
 {
-    if( stream_ )
+    if( _stream )
         return;
 
-    stream_ = new deflect::Stream( uriLineEdit_.text().toStdString(),
-                                   hostnameLineEdit_.text().toStdString( ));
-    if (!stream_->isConnected())
+    _stream = new deflect::Stream( _uriLineEdit.text().toStdString(),
+                                   _hostnameLineEdit.text().toStdString( ));
+    if( !_stream->isConnected( ))
     {
-        handleStreamingError("Could not connect to host!");
+        _handleStreamingError( "Could not connect to host!" );
         return;
     }
-    stream_->registerForEvents();
+    _stream->registerForEvents();
 
 #ifdef __APPLE__
-    napSuspender_.suspend();
-    browseTimer_.stop();
+    _napSuspender.suspend();
+    _browseTimer.stop();
 #endif
-    updateTimer_.start(SHARE_DESKTOP_UPDATE_DELAY);
+    _updateTimer.start( SHARE_DESKTOP_UPDATE_DELAY );
 }
 
-void MainWindow::stopStreaming()
+void MainWindow::_stopStreaming()
 {
-    updateTimer_.stop();
-    frameRateLabel_.setText("");
+    _updateTimer.stop();
+    _frameRateLabel.setText( "" );
 
-    delete stream_;
-    stream_ = 0;
+    delete _stream;
+    _stream = 0;
 
 #ifdef __APPLE__
-    napSuspender_.resume();
+    _napSuspender.resume();
 #endif
-    emit streaming(false);
+    emit streaming( false );
 }
 
-void MainWindow::handleStreamingError(const QString& errorMessage)
+void MainWindow::_handleStreamingError( const QString& errorMessage )
 {
     std::cerr << errorMessage.toStdString() << std::endl;
-    QMessageBox::warning(this, "Error", errorMessage, QMessageBox::Ok, QMessageBox::Ok);
+    QMessageBox::warning( this, "Error", errorMessage, QMessageBox::Ok,
+                          QMessageBox::Ok );
 
-    stopStreaming();
+    _stopStreaming();
 }
 
 void MainWindow::closeEvent( QCloseEvent* closeEvt )
 {
-    delete desktopSelectionWindow_;
-    desktopSelectionWindow_ = 0;
+    delete _desktopSelectionWindow;
+    _desktopSelectionWindow = 0;
 
-    stopStreaming();
+    _stopStreaming();
 
     QMainWindow::closeEvent( closeEvt );
 }
 
-void MainWindow::setCoordinates(const QRect coordinates)
+void MainWindow::_setCoordinates( const QRect coordinates )
 {
-    xSpinBox_.setValue(coordinates.x());
-    ySpinBox_.setValue(coordinates.y());
-    widthSpinBox_.setValue(coordinates.width());
-    heightSpinBox_.setValue(coordinates.height());
+    _xSpinBox.setValue( coordinates.x( ));
+    _ySpinBox.setValue( coordinates.y( ));
+    _widthSpinBox.setValue( coordinates.width( ));
+    _heightSpinBox.setValue( coordinates.height( ));
 
     // the spinboxes only update the UI; we must update the actual values too
-    x_ = xSpinBox_.value();
-    y_ = ySpinBox_.value();
-    width_ = widthSpinBox_.value();
-    height_ = heightSpinBox_.value();
+    _x = _xSpinBox.value();
+    _y = _ySpinBox.value();
+    _width = _widthSpinBox.value();
+    _height = _heightSpinBox.value();
 }
 
-void MainWindow::shareDesktop( const bool set )
+void MainWindow::_shareDesktop( const bool set )
 {
     if( set )
-        startStreaming();
+        _startStreaming();
     else
-        stopStreaming();
+        _stopStreaming();
 }
 
-void MainWindow::showDesktopSelectionWindow( const bool set )
+void MainWindow::_showDesktopSelectionWindow( const bool set )
 {
     if( set )
-        desktopSelectionWindow_->showFullScreen();
+        _desktopSelectionWindow->showFullScreen();
     else
-        desktopSelectionWindow_->hide();
+        _desktopSelectionWindow->hide();
 }
 
-void MainWindow::update()
+void MainWindow::_update()
 {
-    processStreamEvents();
-    shareDesktopUpdate();
+    _processStreamEvents();
+    _shareDesktopUpdate();
 }
 
-void MainWindow::processStreamEvents()
+void MainWindow::_processStreamEvents()
 {
-    if( !eventsBox_.checkState( ))
+    if( !_eventsBox.checkState( ))
         return;
-    if( !stream_->isRegisteredForEvents( ))
+    if( !_stream->isRegisteredForEvents( ))
         return;
 
-    while( stream_->hasEvent( ))
+    while( _stream->hasEvent( ))
     {
-        const deflect::Event& wallEvent = stream_->getEvent();
+        const deflect::Event& wallEvent = _stream->getEvent();
 #ifndef NDEBUG
         std::cout << "----------" << std::endl;
 #endif
         switch( wallEvent.type )
         {
         case deflect::Event::EVT_CLOSE:
-            stopStreaming();
+            _stopStreaming();
             break;
         case deflect::Event::EVT_PRESS:
-            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
-            sendMousePressEvent( wallEvent.mouseX, wallEvent.mouseY );
+            _sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
+            _sendMousePressEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
         case deflect::Event::EVT_RELEASE:
-            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
-            sendMouseReleaseEvent( wallEvent.mouseX, wallEvent.mouseY );
+            _sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
+            _sendMouseReleaseEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
         case deflect::Event::EVT_CLICK:
-            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
-            sendMousePressEvent( wallEvent.mouseX, wallEvent.mouseY );
-            sendMouseReleaseEvent( wallEvent.mouseX, wallEvent.mouseY );
+            _sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
+            _sendMousePressEvent( wallEvent.mouseX, wallEvent.mouseY );
+            _sendMouseReleaseEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
         case deflect::Event::EVT_DOUBLECLICK:
-            sendMouseDoubleClickEvent( wallEvent.mouseX, wallEvent.mouseY );
+            _sendMouseDoubleClickEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
 
         case deflect::Event::EVT_MOVE:
-            sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
+            _sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
         case deflect::Event::EVT_WHEEL:
         case deflect::Event::EVT_SWIPE_LEFT:
@@ -318,108 +325,106 @@ void MainWindow::processStreamEvents()
 }
 
 #ifdef DEFLECT_USE_SERVUS
-void MainWindow::updateServus()
+void MainWindow::_updateServus()
 {
-    if( hostnameLineEdit_.text() != DEFAULT_HOST_ADDRESS )
+    if( _hostnameLineEdit.text() != DEFAULT_HOST_ADDRESS )
     {
-        browseTimer_.stop();
+        _browseTimer.stop();
         return;
     }
 
-    servus_.browse( 0 );
-    const servus::Strings& hosts = servus_.getInstances();
+    _servus.browse( 0 );
+    const servus::Strings& hosts = _servus.getInstances();
     if( hosts.empty( ))
         return;
 
-    browseTimer_.stop();
-    hostnameLineEdit_.setText( hosts.front().c_str( ));
+    _browseTimer.stop();
+    _hostnameLineEdit.setText( hosts.front().c_str( ));
 }
 #endif
 
-void MainWindow::shareDesktopUpdate()
+void MainWindow::_shareDesktopUpdate()
 {
-    // time the frame
     QTime frameTime;
     frameTime.start();
 
-    // take screenshot
     const QPixmap desktopPixmap =
-        QApplication::primaryScreen()->grabWindow( 0, x_, y_,
-                                                   width_, height_ );
+        QApplication::primaryScreen()->grabWindow( 0, _x, _y, _width, _height );
 
     if( desktopPixmap.isNull( ))
     {
-        handleStreamingError("Got NULL desktop pixmap");
+        _handleStreamingError( "Got NULL desktop pixmap" );
         return;
     }
-
     QImage image = desktopPixmap.toImage();
 
     // render mouse cursor
-    QPoint mousePos = ( QCursor::pos() - QPoint( x_, y_ )) -
-                        QPoint( cursor_.width()/2, cursor_.height()/2);
-
+    QPoint mousePos = ( QCursor::pos() - QPoint( _x, _y )) -
+                        QPoint( _cursor.width() / 2, _cursor.height() / 2 );
     QPainter painter( &image );
-    painter.drawImage( mousePos, cursor_ );
-    painter.end(); // Make sure to release the QImage before using it to update the segements
+    painter.drawImage( mousePos, _cursor );
+    painter.end(); // Make sure to release the QImage before using it
 
-    // QImage Format_RGB32 (0xffRRGGBB) corresponds in fact to GL_BGRA == deflect::BGRA
-    deflect::ImageWrapper deflectImage((const void*)image.bits(), image.width(), image.height(), deflect::BGRA);
+    // QImage Format_RGB32 (0xffRRGGBB) corresponds to GL_BGRA == deflect::BGRA
+    deflect::ImageWrapper deflectImage( (const void*)image.bits(),
+                                        image.width(), image.height(),
+                                        deflect::BGRA );
     deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
 
-    bool success = stream_->send(deflectImage) && stream_->finishFrame();
-
+    bool success = _stream->send( deflectImage ) && _stream->finishFrame();
     if( !success )
     {
-        handleStreamingError("Streaming failure, connection closed.");
+        _handleStreamingError( "Streaming failure, connection closed." );
         return;
     }
 
-    regulateFrameRate(frameTime.elapsed());
+    _regulateFrameRate( frameTime.elapsed( ));
 }
 
-void MainWindow::regulateFrameRate(const int elapsedFrameTime)
+void MainWindow::_regulateFrameRate( const int elapsedFrameTime )
 {
     // frame rate limiting
-    const int maxFrameRate = frameRateSpinBox_.value();
-    const int desiredFrameTime = (int)(1000. * 1. / (float)maxFrameRate);
+    const int maxFrameRate = _frameRateSpinBox.value();
+    const int desiredFrameTime = (int)( 1000.f * 1.f / (float)maxFrameRate );
     const int sleepTime = desiredFrameTime - elapsedFrameTime;
 
-    if(sleepTime > 0)
+    if( sleepTime > 0 )
     {
 #ifdef _WIN32
-        Sleep(sleepTime);
+        Sleep( sleepTime );
 #else
-        usleep(1000 * sleepTime);
+        usleep( 1000 * sleepTime );
 #endif
     }
 
-    // frame rate is calculated for every FRAME_RATE_AVERAGE_NUM_FRAMES sequential frames
-    frameSentTimes_.push_back(QTime::currentTime());
+    // frame rate is calculated for every FRAME_RATE_AVERAGE_NUM_FRAMES
+    // sequential frames
+    _frameSentTimes.push_back( QTime::currentTime( ));
 
-    if(frameSentTimes_.size() > FRAME_RATE_AVERAGE_NUM_FRAMES)
+    if( _frameSentTimes.size() > FRAME_RATE_AVERAGE_NUM_FRAMES )
     {
-        frameSentTimes_.clear();
+        _frameSentTimes.clear();
     }
-    else if(frameSentTimes_.size() == FRAME_RATE_AVERAGE_NUM_FRAMES)
+    else if( _frameSentTimes.size() == FRAME_RATE_AVERAGE_NUM_FRAMES )
     {
-        const float fps = (float)frameSentTimes_.size() / (float)frameSentTimes_.front().msecsTo(frameSentTimes_.back()) * 1000.;
+        const float fps = (float)_frameSentTimes.size() * 1000.f /
+               (float)_frameSentTimes.front().msecsTo( _frameSentTimes.back( ));
 
-        frameRateLabel_.setText(QString::number(fps) + QString(" fps"));
+        _frameRateLabel.setText( QString::number( fps ) + QString( " fps" ));
     }
 }
 
-void MainWindow::updateCoordinates()
+void MainWindow::_updateCoordinates()
 {
-    x_ = xSpinBox_.value();
-    y_ = ySpinBox_.value();
-    width_ = widthSpinBox_.value();
-    height_ = heightSpinBox_.value();
+    _x = _xSpinBox.value();
+    _y = _ySpinBox.value();
+    _width = _widthSpinBox.value();
+    _height = _heightSpinBox.value();
 
-    generateCursorImage();
+    _generateCursorImage();
 
-    const QRect coordinates(x_, y_, width_, height_);
-    desktopSelectionWindow_->getDesktopSelectionView()->getDesktopSelectionRectangle()->setCoordinates(coordinates);
+    const QRect coord( _x, _y, _width, _height );
+    _desktopSelectionWindow->getSelectionRectangle()->setCoordinates( coord );
 }
 
 #ifdef __APPLE__
@@ -432,44 +437,47 @@ void sendMouseEvent( const CGEventType type, const CGMouseButton button,
     CFRelease( event );
 }
 
-void MainWindow::sendMousePressEvent( const float x, const float y )
+void MainWindow::_sendMousePressEvent( const float x, const float y )
 {
     CGPoint point;
-    point.x = x_ + x * width_;
-    point.y = y_ + y * height_;
+    point.x = _x + x * _width;
+    point.y = _y + y * _height;
 #ifndef NDEBUG
     std::cout << "Press " << point.x << ", " << point.y << " ("
               << x << ", " << y << ")"<< std::endl;
 #endif
     sendMouseEvent( kCGEventLeftMouseDown, kCGMouseButtonLeft, point );
 }
-void MainWindow::sendMouseMoveEvent( const float x, const float y )
+
+void MainWindow::_sendMouseMoveEvent( const float x, const float y )
 {
     CGPoint point;
-    point.x = x_ + x * width_;
-    point.y = y_ + y * height_;
+    point.x = _x + x * _width;
+    point.y = _y + y * _height;
 #ifndef NDEBUG
     std::cout << "Move " << point.x << ", " << point.y << " ("
               << x << ", " << y << ")"<< std::endl;
 #endif
     sendMouseEvent( kCGEventMouseMoved, kCGMouseButtonLeft, point );
 }
-void MainWindow::sendMouseReleaseEvent( const float x, const float y )
+
+void MainWindow::_sendMouseReleaseEvent( const float x, const float y )
 {
     CGPoint point;
-    point.x = x_ + x * width_;
-    point.y = y_ + y * height_;
+    point.x = _x + x * _width;
+    point.y = _y + y * _height;
 #ifndef NDEBUG
     std::cout << "Release " << point.x << ", " << point.y << " ("
               << x << ", " << y << ")"<< std::endl;
 #endif
     sendMouseEvent( kCGEventLeftMouseUp, kCGMouseButtonLeft, point );
 }
-void MainWindow::sendMouseDoubleClickEvent( const float x, const float y )
+
+void MainWindow::_sendMouseDoubleClickEvent( const float x, const float y )
 {
     CGPoint point;
-    point.x = x_ + x * width_;
-    point.y = y_ + y * height_;
+    point.x = _x + x * _width;
+    point.y = _y + y * _height;
     CGEventRef event = CGEventCreateMouseEvent( 0, kCGEventLeftMouseDown,
                                                 point, kCGMouseButtonLeft );
 #ifndef NDEBUG
@@ -491,8 +499,8 @@ void MainWindow::sendMouseDoubleClickEvent( const float x, const float y )
     CFRelease( event );
 }
 #else
-void MainWindow::sendMousePressEvent( const float, const float ) {}
-void MainWindow::sendMouseMoveEvent( const float, const float ) {}
-void MainWindow::sendMouseReleaseEvent( const float, const float ) {}
-void MainWindow::sendMouseDoubleClickEvent( const float, const float ) {}
+void MainWindow::_sendMousePressEvent( const float, const float ) {}
+void MainWindow::_sendMouseMoveEvent( const float, const float ) {}
+void MainWindow::_sendMouseReleaseEvent( const float, const float ) {}
+void MainWindow::_sendMouseDoubleClickEvent( const float, const float ) {}
 #endif
