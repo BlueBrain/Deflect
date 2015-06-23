@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,84 +37,44 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_NETWORK_LISTENER_WORKER_H
-#define DEFLECT_NETWORK_LISTENER_WORKER_H
+#define BOOST_TEST_MODULE SegmentParametersTests
+#include <boost/test/unit_test.hpp>
+namespace ut = boost::unit_test;
 
-#include <deflect/MessageHeader.h>
-#include <deflect/Event.h>
-#include <deflect/PixelStreamSegment.h>
-#include <deflect/EventReceiver.h>
+#include <deflect/SegmentParameters.h>
 
-#include <QtNetwork/QTcpSocket>
-#include <QQueue>
+#include <iostream>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 
-namespace deflect
+BOOST_AUTO_TEST_CASE( testSegementParametersSerialization )
 {
+    deflect::SegmentParameters params;
+    params.x = 212;
+    params.y = 365;
+    params.height = 32;
+    params.width = 78;
+    params.compressed = false;
 
-class NetworkListenerWorker : public EventReceiver
-{
-    Q_OBJECT
 
-public:
+    // serialize
+    std::stringstream stream;
+    {
+        boost::archive::binary_oarchive oa( stream );
+        oa << params;
+    }
 
-    NetworkListenerWorker(int socketDescriptor);
-    ~NetworkListenerWorker();
+    // deserialize
+    deflect::SegmentParameters paramsDeserialized;
+    {
+        boost::archive::binary_iarchive ia( stream );
+        ia >> paramsDeserialized;
+    }
 
-public slots:
-
-    void processEvent(Event evt) final;
-    void pixelStreamerClosed(QString uri);
-
-    void eventRegistrationReply(QString uri, bool success);
-
-signals:
-
-    void finished();
-
-    void receivedAddPixelStreamSource(QString uri, size_t sourceIndex);
-    void receivedPixelStreamSegement(QString uri, size_t SourceIndex,
-                                     PixelStreamSegment segment);
-    void receivedPixelStreamFinishFrame(QString uri, size_t SourceIndex);
-    void receivedRemovePixelStreamSource(QString uri, size_t sourceIndex);
-
-    void registerToEvents(QString uri, bool exclusive, deflect::EventReceiver* receiver);
-
-    void receivedCommand(QString command, QString senderUri);
-
-    /** @internal */
-    void dataAvailable();
-
-private slots:
-
-    void initialize();
-    void process();
-    void socketReceiveMessage();
-
-private:
-
-    int socketDescriptor_;
-    QTcpSocket* tcpSocket_;
-
-    QString pixelStreamUri_;
-
-    bool registeredToEvents_;
-    QQueue<Event> events_;
-
-    MessageHeader receiveMessageHeader();
-    QByteArray receiveMessageBody(const int size);
-
-    void handleMessage(const MessageHeader& messageHeader,
-                       const QByteArray& byteArray);
-    void handlePixelStreamMessage(const QString& uri, const QByteArray& byteArray);
-
-    void sendProtocolVersion();
-    void sendBindReply(const bool successful);
-    void send(const Event &evt);
-    void sendQuit();
-    bool send(const MessageHeader& messageHeader);
-    void flushSocket();
-};
-
+    BOOST_CHECK_EQUAL( params.x, paramsDeserialized.x );
+    BOOST_CHECK_EQUAL( params.y, paramsDeserialized.y );
+    BOOST_CHECK_EQUAL( params.height, paramsDeserialized.height );
+    BOOST_CHECK_EQUAL( params.width, paramsDeserialized.width );
+    BOOST_CHECK_EQUAL( params.compressed, paramsDeserialized.compressed );
 }
 
-#endif

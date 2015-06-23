@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,41 +37,32 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMFRAME_H
-#define DEFLECT_PIXELSTREAMFRAME_H
+#ifndef DEFLECT_MOCKSERVER_H
+#define DEFLECT_MOCKSERVER_H
 
-#include <deflect/types.h>
-#include <deflect/PixelStreamSegment.h>
+#ifdef _WIN32
+typedef __int32 int32_t;
+#endif
 
-#include <QString>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/vector.hpp>
+#include <deflect/api.h>
+#include <deflect/config.h>
+#include <deflect/NetworkProtocol.h>
 
-namespace deflect
+#include <QtNetwork/QTcpServer>
+
+class MockServer : public QTcpServer
 {
+    Q_OBJECT
 
-/**
- * A frame for a PixelStream.
- */
-struct PixelStreamFrame
-{
-    /** The full set of segments for this frame. */
-    PixelStreamSegments segments;
+public:
+    DEFLECT_API MockServer( int32_t protocolVersion = NETWORK_PROTOCOL_VERSION );
+    DEFLECT_API virtual ~MockServer();
 
-    /** The PixelStream uri to which this frame is associated. */
-    QString uri;
+protected:
+    void incomingConnection( qintptr handle ) final;
 
 private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int)
-    {
-        ar & segments;
-        ar & uri;
-    }
+    int32_t _protocolVersion;
 };
-
-}
 
 #endif

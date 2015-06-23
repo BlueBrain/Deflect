@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2014-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,8 +37,8 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "PixelStreamSegment.h"
 #include "Event.h"
+#include "Segment.h"
 
 #include <QMetaType>
 
@@ -53,9 +53,9 @@ struct MetaTypeRegistration
     MetaTypeRegistration()
     {
         qRegisterMetaType< size_t >( "size_t" );
-        qRegisterMetaType< deflect::PixelStreamSegment >( "PixelStreamSegment" );
+        qRegisterMetaType< deflect::Segment >( "deflect::Segment" );
         qRegisterMetaType< deflect::Event >( "deflect::Event" );
-        qRegisterMetaType< deflect::PixelStreamFramePtr >( "deflect::PixelStreamFramePtr" );
+        qRegisterMetaType< deflect::FramePtr >( "deflect::FramePtr" );
     }
 };
 

@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,49 +37,108 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENTDECODER_H
-#define DEFLECT_PIXELSTREAMSEGMENTDECODER_H
+#ifndef DEFLECT_FRAMEDISPATCHER_H
+#define DEFLECT_FRAMEDISPATCHER_H
 
 #include <deflect/api.h>
 #include <deflect/types.h>
+#include <deflect/Segment.h>
 
-#include <QFuture>
-#include <boost/noncopyable.hpp>
+#include <QObject>
+#include <map>
 
 namespace deflect
 {
 
 /**
- * Decode a PixelStreamSegment image data asynchronously.
+ * Gather segments from multiple sources and dispatch full frames.
  */
-class PixelStreamSegmentDecoder : public boost::noncopyable
+class FrameDispatcher : public QObject
 {
-public:
-    /** Construct a Decoder */
-    DEFLECT_API PixelStreamSegmentDecoder();
+    Q_OBJECT
 
-    /** Destruct a Decoder */
-    DEFLECT_API ~PixelStreamSegmentDecoder();
+public:
+    /** Construct a dispatcher */
+    DEFLECT_API FrameDispatcher();
+
+    /** Destructor. */
+    DEFLECT_API ~FrameDispatcher();
+
+public slots:
+    /**
+     * Add a source of Segments for a Stream.
+     *
+     * @param uri Identifier for the Stream
+     * @param sourceIndex Identifier for the source in this stream
+     */
+    DEFLECT_API void addSource( QString uri, size_t sourceIndex );
 
     /**
-     * Start decoding a segment.
+     * Add a source of Segments for a Stream.
      *
-     * This function will silently ignore the request if a decoding is already in progress.
-     * @param segment The segement to decode. The segment is NOT copied internally and is modified by this
-     * function. It must remain valid and should not be accessed until the decoding procedure has completed.
-     * @see isRunning()
+     * @param uri Identifier for the Stream
+     * @param sourceIndex Identifier for the source in this stream
      */
-    DEFLECT_API void startDecoding(PixelStreamSegment& segment);
+    DEFLECT_API void removeSource( QString uri, size_t sourceIndex );
 
-    /** Check if the decoding thread is running. */
-    DEFLECT_API bool isRunning() const;
+    /**
+     * Process a new Segement.
+     *
+     * @param uri Identifier for the Stream
+     * @param sourceIndex Identifier for the source in this stream
+     * @param segment The segment to process
+     */
+    DEFLECT_API void processSegment( QString uri, size_t sourceIndex,
+                                     Segment segment );
+
+    /**
+     * The given source has finished sending segments for the current frame.
+     *
+     * @param uri Identifier for the Stream
+     * @param sourceIndex Identifier for the source in this stream
+     */
+    DEFLECT_API void processFrameFinished( QString uri, size_t sourceIndex );
+
+    /**
+     * Delete an entire stream.
+     *
+     * @param uri Identifier for the Stream
+     */
+    DEFLECT_API void deleteStream( QString uri );
+
+    /**
+     * Called by the user to request the dispatching of a new frame.
+     *
+     * A sendFrame() signal will be emitted as soon as a frame is available.
+     * @param uri Identifier for the stream
+     */
+    DEFLECT_API void requestFrame( QString uri );
+
+signals:
+    /**
+     * Notify that a PixelStream has been opened.
+     *
+     * @param uri Identifier for the Stream
+     */
+    DEFLECT_API void openPixelStream( QString uri );
+
+    /**
+     * Notify that a pixel stream has been deleted.
+     *
+     * @param uri Identifier for the Stream
+     */
+    DEFLECT_API void deletePixelStream( QString uri );
+
+    /**
+     * Dispatch a full frame.
+     *
+     * @param frame The frame to dispatch
+     */
+    DEFLECT_API void sendFrame( deflect::FramePtr frame );
 
 private:
-    /** The decompressor instance */
-    ImageJpegDecompressor* decompressor_;
-
-    /** Async image decoding future */
-    QFuture<void> decodingFuture_;
+    class Impl;
+    Impl* _impl;
 };
 
 }

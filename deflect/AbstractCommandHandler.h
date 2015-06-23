@@ -65,7 +65,7 @@ public:
      * @param command The Command to handle.
      * @param senderUri The identifier of the sender (optional).
      */
-    virtual void handle(const Command& command, const QString& senderUri) = 0;
+    virtual void handle( const Command& command, const QString& senderUri ) = 0;
 };
 
 }

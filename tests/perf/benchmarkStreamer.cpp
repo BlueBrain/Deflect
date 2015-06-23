@@ -37,21 +37,20 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
+#include <deflect/ImageSegmenter.h>
+#include <deflect/Segment.h>
+#include <deflect/Stream.h>
+#include <deflect/StreamPrivate.h>
+
 #include <string>
 #include <iostream>
 #include <QImage>
-
-#include <deflect/Stream.h>
-#include <deflect/StreamPrivate.h>
-#include <deflect/ImageSegmenter.h>
-#include <deflect/PixelStreamSegment.h>
+#include <QMutexLocker>
 
 #include <boost/smart_ptr/scoped_ptr.hpp>
 #include <boost/program_options.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-
-#include <QMutexLocker>
 
 #define MEGABYTE 1000000
 #define MICROSEC 1000000
@@ -63,7 +62,7 @@ class Timer
 public:
     void start()
     {
-        lastTime_ = boost::posix_time::microsec_clock::universal_time();
+        _lastTime = boost::posix_time::microsec_clock::universal_time();
     }
 
     void restart()
@@ -73,106 +72,111 @@ public:
 
     float elapsed()
     {
-        const boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time();
-        return (float)(now - lastTime_).total_milliseconds();
+        const boost::posix_time::ptime now =
+                boost::posix_time::microsec_clock::universal_time();
+        return (float)(now - _lastTime).total_milliseconds();
     }
+
 private:
-    boost::posix_time::ptime lastTime_;
+    boost::posix_time::ptime _lastTime;
 };
 }
 
 struct BenchmarkOptions
 {
-    BenchmarkOptions(int &argc, char **argv)
-        : desc_("Allowed options")
-        , getHelp_(true)
-        , width_(0)
-        , height_(0)
-        , nframes_(0)
-        , framerate_(0)
-        , compress_(false)
-        , precompute_(false)
-        , quality_(0)
+    BenchmarkOptions( int& argc, char** argv )
+        : desc( "Allowed options" )
+        , getHelp( true )
+        , width( 0 )
+        , height( 0 )
+        , nframes( 0 )
+        , framerate( 0 )
+        , compress( false )
+        , precompute( false )
+        , quality( 0 )
     {
         initDesc();
-        parseCommandLineArguments(argc, argv);
+        parseCommandLineArguments( argc, argv );
     }
 
     void showSyntax() const
     {
-        std::cout << desc_;
+        std::cout << desc;
     }
+
 
     void initDesc()
     {
-        desc_.add_options()
+        using namespace boost::program_options;
+        desc.add_options()
             ("help", "produce help message")
-            ("name", boost::program_options::value<std::string>()->default_value("BenchmarkStreamer"),
+            ("name", value<std::string>()->default_value( "BenchmarkStreamer" ),
                      "identifier for the stream")
-            ("width", boost::program_options::value<unsigned int>()->default_value(0),
+            ("width", value<unsigned int>()->default_value( 0 ),
                      "width of the stream in pixel")
-            ("height", boost::program_options::value<unsigned int>()->default_value(0),
+            ("height", value<unsigned int>()->default_value( 0 ),
                      "height of the stream in pixel")
-            ("nframes", boost::program_options::value<unsigned int>()->default_value(0),
+            ("nframes", value<unsigned int>()->default_value( 0 ),
                      "number of frames")
-            ("framerate", boost::program_options::value<unsigned int>()->default_value(0),
-                     "the framerate at which to send frame (defaults to unlimited)")
-            ("hostname", boost::program_options::value<std::string>()->default_value("localhost"),
+            ("framerate", value<unsigned int>()->default_value( 0 ),
+                     "framerate at which to send frames (default: unlimited)")
+            ("hostname", value<std::string>()->default_value( "localhost" ),
                      "DisplayCluster host name")
             ("compress", "compress segments using jpeg")
             ("precompute", "send precomputed segments (no encoding time)")
-            ("quality", boost::program_options::value<unsigned int>()->default_value(80),
+            ("quality", value<unsigned int>()->default_value( 80 ),
                      "quality of the jpeg compression. Only used if combined with --compress")
         ;
     }
 
-    void parseCommandLineArguments(int &argc, char **argv)
+    void parseCommandLineArguments( int& argc, char** argv )
     {
-        if (argc <= 1)
+        if( argc <= 1 )
             return;
 
         boost::program_options::variables_map vm;
         try
         {
-            boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc_), vm);
-            boost::program_options::notify(vm);
+            using namespace boost::program_options;
+            store( parse_command_line( argc, argv, desc ), vm );
+            notify( vm );
         }
-        catch (const std::exception& e)
+        catch( const std::exception& e )
         {
             std::cerr << e.what() << std::endl;
             return;
         }
 
-        getHelp_ = vm.count("help");
-        name_ = vm["name"].as<std::string>();
-        width_ = vm["width"].as<unsigned int>();
-        height_ = vm["height"].as<unsigned int>();
-        nframes_ = vm["nframes"].as<unsigned int>();
-        framerate_ = vm["framerate"].as<unsigned int>();
-        hostname_ = vm["hostname"].as<std::string>();
-        compress_ = vm.count("compress");
-        precompute_ = vm.count("precompute");
-        quality_ = vm["quality"].as<unsigned int>();
+        getHelp = vm.count("help");
+        name = vm["name"].as<std::string>();
+        width = vm["width"].as<unsigned int>();
+        height = vm["height"].as<unsigned int>();
+        nframes = vm["nframes"].as<unsigned int>();
+        framerate = vm["framerate"].as<unsigned int>();
+        hostname = vm["hostname"].as<std::string>();
+        compress = vm.count("compress");
+        precompute = vm.count("precompute");
+        quality = vm["quality"].as<unsigned int>();
     }
 
-    boost::program_options::options_description desc_;
+    boost::program_options::options_description desc;
 
-    bool getHelp_;
-    std::string name_;
-    unsigned int width_, height_;
-    unsigned int nframes_;
-    unsigned int framerate_;
-    std::string hostname_;
-    bool compress_;
-    bool precompute_;
-    unsigned int quality_;
+    bool getHelp;
+    std::string name;
+    unsigned int width, height;
+    unsigned int nframes;
+    unsigned int framerate;
+    std::string hostname;
+    bool compress;
+    bool precompute;
+    unsigned int quality;
 };
 
-static bool append( deflect::PixelStreamSegments& segments,
-                    const deflect::PixelStreamSegment& segment )
+static bool append( deflect::Segments& segments,
+                    const deflect::Segment& segment )
 {
-    static QMutex lock_;
-    QMutexLocker locker( &lock_ );
+    static QMutex lock;
+    QMutexLocker locker( &lock );
     segments.push_back( segment );
     return true;
 }
@@ -183,30 +187,34 @@ static bool append( deflect::PixelStreamSegments& segments,
 class Application
 {
 public:
-    Application(const BenchmarkOptions& options)
-        : options_(options)
-        , dcStream_(new deflect::Stream(options.name_, options.hostname_))
+    Application( const BenchmarkOptions& options )
+        : _options( options )
+        , _stream( new deflect::Stream( options.name, options.hostname ))
     {
-        generateNoiseImage(options_.width_, options_.height_);
+        generateNoiseImage( _options.width, _options.height );
         generateJpegSegments();
 
-        std::cout << "Image dimensions :        " << noiseImage_.width() << " x " << noiseImage_.height() << std::endl;
-        std::cout << "Raw image size [Mbytes]:  " << (float)imageDataSize() / MEGABYTE << std::endl;
-        std::cout << "Jpeg image size [Mbytes]: " << (float)jpegSegmentsSize() / MEGABYTE << std::endl;
-        std::cout << "#segments per image :     " << jpegSegments_.size() << std::endl;
+        std::cout << "Image dimensions :        " << _noiseImage.width() <<
+                     " x " << _noiseImage.height() << std::endl;
+        std::cout << "Raw image size [Mbytes]:  " <<
+                     (float)imageDataSize() / MEGABYTE << std::endl;
+        std::cout << "Jpeg image size [Mbytes]: " <<
+                     (float)jpegSegmentsSize() / MEGABYTE << std::endl;
+        std::cout << "#segments per image :     " <<
+                     _jpegSegments.size() << std::endl;
     }
 
     size_t imageDataSize() const
     {
-        return 4 * noiseImage_.width() * noiseImage_.height();
+        return 4 * _noiseImage.width() * _noiseImage.height();
     }
 
     size_t jpegSegmentsSize() const
     {
         size_t size = 0;
 
-        for(deflect::PixelStreamSegments::const_iterator it = jpegSegments_.begin();
-            it != jpegSegments_.end(); ++it)
+        for( deflect::Segments::const_iterator it = _jpegSegments.begin();
+             it != _jpegSegments.end(); ++it )
         {
             size += it->imageData.size();
         }
@@ -214,38 +222,39 @@ public:
         return size;
     }
 
-    void generateNoiseImage(const int width, const int height)
+    void generateNoiseImage( const int width, const int height )
     {
-        noiseImage_ = QImage(width, height, QImage::Format_RGB32);
+        _noiseImage = QImage( width, height, QImage::Format_RGB32 );
 
-        uchar* data = noiseImage_.bits();
+        uchar* data = _noiseImage.bits();
         const size_t dataSize = imageDataSize();
 
-        for (size_t i = 0; i < dataSize; ++i)
+        for( size_t i = 0; i < dataSize; ++i )
             data[i] = rand();
     }
 
     bool generateJpegSegments()
     {
-        deflect::ImageWrapper deflectImage((const void*)noiseImage_.bits(),
-                                            noiseImage_.width(),
-                                            noiseImage_.height(),
-                                            deflect::RGBA);
+        deflect::ImageWrapper deflectImage( (const void*)_noiseImage.bits(),
+                                            _noiseImage.width(),
+                                            _noiseImage.height(),
+                                            deflect::RGBA );
 
         deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
-        deflectImage.compressionQuality = options_.quality_;
+        deflectImage.compressionQuality = _options.quality;
 
         const deflect::ImageSegmenter::Handler appendHandler =
-            boost::bind( &append, boost::ref( jpegSegments_ ), _1 );
+            boost::bind( &append, boost::ref( _jpegSegments ), _1 );
 
-        return dcStream_->impl_->imageSegmenter_.generate(deflectImage, appendHandler);
+        return _stream->_impl->imageSegmenter.generate( deflectImage,
+                                                        appendHandler );
     }
 
     bool send()
     {
-        if (options_.compress_)
+        if( _options.compress )
         {
-            if (options_.precompute_)
+            if( _options.precompute )
                 return sendPrecompressedJpeg();
             else
                 return sendJpeg();
@@ -256,57 +265,57 @@ public:
 
     bool sendRaw()
     {
-        deflect::ImageWrapper deflectImage((const void*)noiseImage_.bits(),
-                                            noiseImage_.width(),
-                                            noiseImage_.height(),
-                                            deflect::RGBA);
+        deflect::ImageWrapper deflectImage( (const void*)_noiseImage.bits(),
+                                            _noiseImage.width(),
+                                            _noiseImage.height(),
+                                            deflect::RGBA );
         deflectImage.compressionPolicy = deflect::COMPRESSION_OFF;
 
-        return dcStream_->send(deflectImage) && dcStream_->finishFrame();
+        return _stream->send( deflectImage ) && _stream->finishFrame();
     }
 
     bool sendJpeg()
     {
-        deflect::ImageWrapper deflectImage((const void*)noiseImage_.bits(),
-                                            noiseImage_.width(),
-                                            noiseImage_.height(),
-                                            deflect::RGBA);
+        deflect::ImageWrapper deflectImage( (const void*)_noiseImage.bits(),
+                                            _noiseImage.width(),
+                                            _noiseImage.height(),
+                                            deflect::RGBA );
         deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
-        deflectImage.compressionQuality = options_.quality_;
+        deflectImage.compressionQuality = _options.quality;
 
-        return dcStream_->send(deflectImage) && dcStream_->finishFrame();
+        return _stream->send( deflectImage ) && _stream->finishFrame();
     }
 
     bool sendPrecompressedJpeg()
     {
-        for(deflect::PixelStreamSegments::const_iterator it = jpegSegments_.begin();
-            it != jpegSegments_.end(); ++it)
+        for( deflect::Segments::const_iterator it = _jpegSegments.begin();
+             it != _jpegSegments.end(); ++it )
         {
-            if (!dcStream_->impl_->sendPixelStreamSegment(*it))
+            if( !_stream->_impl->sendPixelStreamSegment( *it ))
                 return false;
         }
 
-        return dcStream_->finishFrame();
+        return _stream->finishFrame();
     }
 
 private:
-    const BenchmarkOptions& options_;
-    QImage noiseImage_;
-    boost::scoped_ptr<deflect::Stream> dcStream_;
-    deflect::PixelStreamSegments jpegSegments_;
+    const BenchmarkOptions& _options;
+    QImage _noiseImage;
+    boost::scoped_ptr<deflect::Stream> _stream;
+    deflect::Segments _jpegSegments;
 };
 
-int main(int argc, char **argv)
+int main( int argc, char** argv )
 {
-    const BenchmarkOptions options(argc, argv);
+    const BenchmarkOptions options( argc, argv );
 
-    if (options.getHelp_)
+    if( options.getHelp )
     {
         options.showSyntax();
         return 0;
     }
 
-    Application benchmarkStreamer(options);
+    Application benchmarkStreamer( options );
 
     Timer timer;
     timer.start();
@@ -314,24 +323,26 @@ int main(int argc, char **argv)
     size_t counter = 0;
 
     bool streamOpen = true;
-    while(streamOpen && (options.nframes_ == 0 || counter < options.nframes_))
+    while( streamOpen && ( options.nframes == 0 || counter < options.nframes ))
     {
-        if (options.framerate_)
-            boost::this_thread::sleep( boost::posix_time::microseconds( MICROSEC / options.framerate_ ));
+        if( options.framerate )
+            boost::this_thread::sleep(
+               boost::posix_time::microseconds( MICROSEC / options.framerate ));
         streamOpen = benchmarkStreamer.send();
         ++counter;
     }
 
     float time = timer.elapsed() / 1000.f;
 
-    const size_t frameSize = options.compress_ ?
+    const size_t frameSize = options.compress ?
                              benchmarkStreamer.jpegSegmentsSize() :
                              benchmarkStreamer.imageDataSize();
 
-    std::cout << "Target framerate: " << options.framerate_ << std::endl;
+    std::cout << "Target framerate: " << options.framerate << std::endl;
     std::cout << "Time to send " << counter << " frames: " << time << std::endl;
     std::cout << "Time per frame: " << time / counter << std::endl;
-    std::cout << "Throughput [Mbytes/sec]: " << counter * frameSize / time / MEGABYTE << std::endl;
+    std::cout << "Throughput [Mbytes/sec]: " <<
+                 counter * frameSize / time / MEGABYTE << std::endl;
 
     return 0;
 }

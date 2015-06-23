@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,27 +37,93 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "MockNetworkListener.h"
+#include "ReceiveBuffer.h"
 
-#include <QTcpSocket>
-
-MockNetworkListener::MockNetworkListener(const int32_t protocolVersion)
-    : protocolVersion_(protocolVersion)
+namespace deflect
 {
-    if ( !listen() )
-        qDebug("MockNetworkListener could not start listening!!");
-}
 
-MockNetworkListener::~MockNetworkListener()
+ReceiveBuffer::ReceiveBuffer()
+    : _lastFrameComplete( 0 )
+    , _allowedToSend( true )
 {
 }
 
-void MockNetworkListener::incomingConnection(qintptr handle)
+bool ReceiveBuffer::addSource( const size_t sourceIndex )
 {
-    QTcpSocket tcpSocket;
-    tcpSocket.setSocketDescriptor(handle);
+    assert( !_sourceBuffers.count( sourceIndex ));
 
-    // Handshake -> send network protocol version
-    tcpSocket.write((char *)&protocolVersion_, sizeof(int32_t));
-    tcpSocket.flush();
+    // TODO: This function must return false if the stream was already started!
+    // This requires an full adaptation of the Stream library (DISCL-241)
+    if ( _sourceBuffers.count( sourceIndex ))
+        return false;
+
+    _sourceBuffers[sourceIndex] = SourceBuffer();
+    _sourceBuffers[sourceIndex].segments.push( Segments( ));
+    return true;
+}
+
+void ReceiveBuffer::removeSource( const size_t sourceIndex )
+{
+    _sourceBuffers.erase( sourceIndex );
+}
+
+size_t ReceiveBuffer::getSourceCount() const
+{
+    return _sourceBuffers.size();
+}
+
+void ReceiveBuffer::insert( const Segment& segment, const size_t sourceIndex )
+{
+    assert( _sourceBuffers.count( sourceIndex ));
+
+    _sourceBuffers[sourceIndex].segments.back().push_back( segment );
+}
+
+void ReceiveBuffer::finishFrameForSource( const size_t sourceIndex )
+{
+    assert( _sourceBuffers.count( sourceIndex ));
+
+    _sourceBuffers[sourceIndex].push();
+}
+
+bool ReceiveBuffer::hasCompleteFrame() const
+{
+    assert( !_sourceBuffers.empty( ));
+
+    // Check if all sources for Stream have reached the same index
+    for( SourceBufferMap::const_iterator it = _sourceBuffers.begin();
+         it != _sourceBuffers.end(); ++it )
+    {
+        const SourceBuffer& buffer = it->second;
+        if( buffer.backFrameIndex <= _lastFrameComplete )
+            return false;
+    }
+    return true;
+}
+
+Segments ReceiveBuffer::popFrame()
+{
+    Segments frame;
+    for( SourceBufferMap::iterator it = _sourceBuffers.begin();
+         it != _sourceBuffers.end(); ++it )
+    {
+        SourceBuffer& buffer = it->second;
+        frame.insert( frame.end(), buffer.segments.front().begin(),
+                      buffer.segments.front().end( ));
+        buffer.pop();
+    }
+    ++_lastFrameComplete;
+    return frame;
+}
+
+void ReceiveBuffer::setAllowedToSend( const bool enable )
+{
+    _allowedToSend = enable;
+}
+
+bool ReceiveBuffer::isAllowedToSend() const
+{
+    return _allowedToSend;
+}
+
 }

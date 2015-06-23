@@ -37,108 +37,59 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMDISPATCHER_H
-#define DEFLECT_PIXELSTREAMDISPATCHER_H
+#ifndef DEFLECT_SEGMENT_H
+#define DEFLECT_SEGMENT_H
 
-#include <deflect/types.h>
-#include <deflect/PixelStreamBuffer.h>
-#include <deflect/PixelStreamSegment.h>
+#include <deflect/SegmentParameters.h>
 
-#include <QObject>
-#include <map>
+#include <boost/serialization/binary_object.hpp>
+#include <boost/serialization/split_member.hpp>
+
+#include <QByteArray>
 
 namespace deflect
 {
 
 /**
- * Gather PixelStream Segments from multiple sources and dispatch the resulting
- * full frames.
+ * Image data and parameters for a single segment of a PixelStream.
  */
-class PixelStreamDispatcher : public QObject
+struct Segment
 {
-    Q_OBJECT
+    /** Parameters of the segment. */
+    SegmentParameters parameters;
 
-public:
-    /** Construct a dispatcher */
-    PixelStreamDispatcher();
-
-public slots:
-    /**
-     * Add a source of Segments for a Stream
-     *
-     * @param uri Identifier for the Stream
-     * @param sourceIndex Identifier for the source in this stream
-     */
-    void addSource(const QString uri, const size_t sourceIndex);
-
-    /**
-     * Add a source of Segments for a Stream
-     *
-     * @param uri Identifier for the Stream
-     * @param sourceIndex Identifier for the source in this stream
-     */
-    void removeSource(const QString uri, const size_t sourceIndex);
-
-    /**
-     * Process a new Segement
-     *
-     * @param uri Identifier for the Stream
-     * @param sourceIndex Identifier for the source in this stream
-     * @param segment The segment to process
-     */
-    void processSegment(const QString uri, const size_t sourceIndex,
-                        PixelStreamSegment segment);
-
-    /**
-     * The given source has finished sending segments for the current frame
-     *
-     * @param uri Identifier for the Stream
-     * @param sourceIndex Identifier for the source in this stream
-     */
-    void processFrameFinished(const QString uri, const size_t sourceIndex);
-
-    /**
-     * Delete an entire stream
-     *
-     * @param uri Identifier for the Stream
-     */
-    void deleteStream(const QString uri);
-
-    /**
-     * Is called when the wall processes are ready to receive new frames
-     *
-     * @param uri Identifier for the stream
-     */
-    void requestFrame(const QString uri);
-
-signals:
-    /**
-     * Notify that a PixelStream has been opened
-     *
-     * @param uri Identifier for the Stream
-     */
-    void openPixelStream(QString uri);
-
-    /**
-     * Notify that a pixel stream has been deleted
-     *
-     * @param uri Identifier for the Stream
-     */
-    void deletePixelStream(QString uri);
-
-    /**
-     * Dispatch a full frame
-     *
-     * @param frame The frame to dispatch
-     */
-    void sendFrame(deflect::PixelStreamFramePtr frame);
+    /** Image data of the segment. */
+    QByteArray imageData;
 
 private:
-    void sendLatestFrame(const QString uri);
+    friend class boost::serialization::access;
 
-    // The buffers for each URI
-    typedef std::map<QString, PixelStreamBuffer> StreamBuffers;
-    StreamBuffers streamBuffers_;
+    template<class Archive>
+    void save( Archive & ar, const unsigned int ) const
+    {
+        ar & parameters;
+
+        int size = imageData.size();
+        ar & size;
+
+        ar & boost::serialization::make_binary_object( (void*)imageData.data(),
+                                                       imageData.size( ));
+    }
+
+    template<class Archive>
+    void load( Archive & ar, const unsigned int )
+    {
+        ar & parameters;
+
+        int size = 0;
+        ar & size;
+        imageData.resize( size );
+
+        ar & boost::serialization::make_binary_object( (void*)imageData.data(),
+                                                       size );
+    }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 }

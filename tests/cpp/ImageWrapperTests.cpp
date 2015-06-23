@@ -48,15 +48,15 @@ BOOST_AUTO_TEST_CASE( testImageBufferSize )
     char* data = 0;
 
     {
-        deflect::ImageWrapper imageWrapper(data, 7, 5, deflect::ARGB);
+        deflect::ImageWrapper imageWrapper( data, 7, 5, deflect::ARGB );
         BOOST_CHECK_EQUAL( imageWrapper.getBufferSize(), 7*5*4 );
     }
     {
-        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::ARGB);
+        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::ARGB );
         BOOST_CHECK_EQUAL( imageWrapper.getBufferSize(), 256*512*4 );
     }
     {
-        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::RGB);
+        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::RGB );
         BOOST_CHECK_EQUAL( imageWrapper.getBufferSize(), 256*512*3 );
     }
 }
@@ -67,27 +67,27 @@ BOOST_AUTO_TEST_CASE( testImageBytesPerPixel )
     char* data = 0;
 
     {
-        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::RGB);
+        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::RGB );
         BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 3 );
     }
     {
-        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::RGBA);
+        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::RGBA );
         BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 4 );
     }
     {
-        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::ARGB);
+        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::ARGB );
         BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 4 );
     }
     {
-        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::BGR);
+        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::BGR );
         BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 3 );
     }
     {
-        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::BGRA);
+        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::BGRA );
         BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 4 );
     }
     {
-        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::ABGR);
+        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::ABGR );
         BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 4 );
     }
 }

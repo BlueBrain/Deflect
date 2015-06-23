@@ -39,9 +39,12 @@
 #ifndef DESKTOP_SELECTION_WINDOW_H
 #define DESKTOP_SELECTION_WINDOW_H
 
+#include <deflect/config.h>
+
 #include <QtWidgets>
 
 class DesktopSelectionView;
+class DesktopSelectionRectangle;
 
 class DesktopSelectionWindow : public QMainWindow
 {
@@ -50,16 +53,15 @@ class DesktopSelectionWindow : public QMainWindow
 public:
     DesktopSelectionWindow();
 
-    DesktopSelectionView* getDesktopSelectionView();
+    DesktopSelectionRectangle* getSelectionRectangle();
 
 signals:
-    void windowVisible(bool);
-
-protected:
-    virtual void hideEvent(QHideEvent * event);
+    void windowVisible( bool visible );
 
 private:
-    DesktopSelectionView* desktopSelectionView_;
+    void hideEvent( QHideEvent* event ) final;
+
+    DesktopSelectionView* _desktopSelectionView;
 };
 
 #endif

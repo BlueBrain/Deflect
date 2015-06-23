@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2014, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -41,18 +41,17 @@
 #ifndef DEFLECT_IMAGESEGMENTER_H
 #define DEFLECT_IMAGESEGMENTER_H
 
-#include <boost/function/function1.hpp>
-#include <vector>
 #include <deflect/api.h>
 #include <deflect/types.h>
+
+#include <boost/function/function1.hpp>
+#include <vector>
 
 namespace deflect
 {
 
 /**
- * Transform images into PixelStreamSegments.
- *
- * Used by the Stream library to transmit images over a Socket.
+ * Transform images into Segments.
  */
 class ImageSegmenter
 {
@@ -61,7 +60,7 @@ public:
     DEFLECT_API ImageSegmenter();
 
     /** Function called on each segment. */
-    typedef boost::function< bool( const PixelStreamSegment& ) > Handler;
+    typedef boost::function< bool( const Segment& ) > Handler;
 
     /**
      * Generate segments.
@@ -76,7 +75,7 @@ public:
      * @see setNominalSegmentDimensions()
      */
     DEFLECT_API bool generate( const ImageWrapper& image,
-                          const Handler& handler ) const;
+                               const Handler& handler ) const;
 
     /**
      * Set the nominal segment dimensions.
@@ -86,22 +85,23 @@ public:
      * an exact multiple of the segement size, the remaining segments will be of
      * size: image.size % nominalSize.
      *
-     * @param nominalSegmentWidth The nominal width of the segments to generate
-     *                            (default: 0).
-     * @param nominalSegmentHeight The nominal height of the segments to
-     *                             generate (default: 0).
+     * @param width The nominal width of the segments to generate (default: 0)
+     * @param height The nominal height of the segments to generate (default: 0)
      */
-    DEFLECT_API void setNominalSegmentDimensions( const unsigned int nominalSegmentWidth,
-                                             const unsigned int nominalSegmentHeight );
+    DEFLECT_API void setNominalSegmentDimensions( unsigned int width,
+                                                  unsigned int height );
 
 private:
-    SegmentParameters generateSegmentParameters(const ImageWrapper &image) const;
+    SegmentParametersList
+    _generateSegmentParameters( const ImageWrapper& image ) const;
 
-    bool generateJpeg( const ImageWrapper& image, const Handler& handler) const;
-    bool generateRaw( const ImageWrapper& image, const Handler& handler ) const;
+    bool _generateJpeg( const ImageWrapper& image,
+                        const Handler& handler) const;
+    bool _generateRaw( const ImageWrapper& image,
+                       const Handler& handler ) const;
 
-    unsigned int nominalSegmentWidth_;
-    unsigned int nominalSegmentHeight_;
+    unsigned int _nominalSegmentWidth;
+    unsigned int _nominalSegmentHeight;
 };
 
 }

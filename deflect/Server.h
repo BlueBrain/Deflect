@@ -36,11 +36,12 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_NETWORK_LISTENER_H
-#define DEFLECT_NETWORK_LISTENER_H
+#ifndef DEFLECT_SERVER_H
+#define DEFLECT_SERVER_H
 
 #include <deflect/api.h>
 #include <deflect/types.h>
+
 #include <QtNetwork/QTcpServer>
 
 namespace deflect
@@ -49,7 +50,7 @@ namespace deflect
 /**
  * Listen to incoming PixelStream connections from Stream clients.
  */
-class NetworkListener : public QTcpServer
+class Server : public QTcpServer
 {
     Q_OBJECT
 
@@ -65,24 +66,24 @@ public:
      * @param port The port to listen on. Must be available.
      * @throw std::runtime_error if the server could not be started.
      */
-    DEFLECT_API explicit NetworkListener( int port = defaultPortNumber );
+    DEFLECT_API explicit Server( int port = defaultPortNumber );
 
     /** Destructor */
-    DEFLECT_API ~NetworkListener();
+    DEFLECT_API ~Server();
 
     /** Get the command handler. */
     DEFLECT_API CommandHandler& getCommandHandler();
 
     /** Get the PixelStreamDispatcher. */
-    DEFLECT_API PixelStreamDispatcher& getPixelStreamDispatcher();
+    DEFLECT_API FrameDispatcher& getPixelStreamDispatcher();
 
 signals:
-    void registerToEvents( QString uri, bool exclusive,
-                           deflect::EventReceiver* receiver );
+    DEFLECT_API void registerToEvents( QString uri, bool exclusive,
+                                       deflect::EventReceiver* receiver );
 
 public slots:
-    void onPixelStreamerClosed( QString uri);
-    void onEventRegistrationReply( QString uri, bool success );
+    DEFLECT_API void onPixelStreamerClosed( QString uri );
+    DEFLECT_API void onEventRegistrationReply( QString uri, bool success );
 
 private:
     class Impl;
@@ -92,8 +93,8 @@ private:
     void incomingConnection( qintptr socketHandle ) final;
 
 signals:
-    void pixelStreamerClosed( QString uri );
-    void eventRegistrationReply( QString uri, bool success );
+    void _pixelStreamerClosed( QString uri );
+    void _eventRegistrationReply( QString uri, bool success );
 };
 
 }

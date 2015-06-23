@@ -45,22 +45,23 @@ namespace deflect
 {
 
 ImageJpegDecompressor::ImageJpegDecompressor()
-    : tjHandle_(tjInitDecompress())
+    : _tjHandle( tjInitDecompress( ))
 {
 }
 
 ImageJpegDecompressor::~ImageJpegDecompressor()
 {
-    tjDestroy(tjHandle_);
+    tjDestroy( _tjHandle );
 }
 
-QByteArray ImageJpegDecompressor::decompress(const QByteArray& jpegData)
+QByteArray ImageJpegDecompressor::decompress( const QByteArray& jpegData )
 {
     // get information from header
     int width, height, jpegSubsamp;
-    int success = tjDecompressHeader2(tjHandle_, (unsigned char *)jpegData.data(), (unsigned long)jpegData.size(), &width, &height, &jpegSubsamp);
-
-    if(success != 0)
+    int err = tjDecompressHeader2( _tjHandle, (unsigned char*)jpegData.data(),
+                                   (unsigned long)jpegData.size(), &width,
+                                   &height, &jpegSubsamp );
+    if( err != 0 )
     {
         std::cerr << "libjpeg-turbo header decompression failure" << std::endl;
         return QByteArray();
@@ -70,13 +71,13 @@ QByteArray ImageJpegDecompressor::decompress(const QByteArray& jpegData)
     int pixelFormat = TJPF_RGBX; // Format for OpenGL texture (GL_RGBA)
     int pitch = width * tjPixelSize[pixelFormat];
     int flags = TJ_FASTUPSAMPLE;
+    QByteArray decodedData( height * pitch, Qt::Uninitialized );
 
-    QByteArray decodedData;
-    decodedData.resize(height*pitch);
-
-    success = tjDecompress2(tjHandle_, (unsigned char *)jpegData.data(), (unsigned long)jpegData.size(), (unsigned char *)decodedData.data(), width, pitch, height, pixelFormat, flags);
-
-    if(success != 0)
+    err = tjDecompress2( _tjHandle, (unsigned char*)jpegData.data(),
+                         (unsigned long)jpegData.size(),
+                         (unsigned char*)decodedData.data(),
+                         width, pitch, height, pixelFormat, flags );
+    if( err != 0 )
     {
         std::cerr << "libjpeg-turbo image decompression failure" << std::endl;
         return QByteArray();

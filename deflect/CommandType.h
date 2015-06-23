@@ -41,6 +41,7 @@
 #define DEFLECT_COMMANDTYPE_H
 
 #include <deflect/api.h>
+
 #include <QString>
 
 namespace deflect

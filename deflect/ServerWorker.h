@@ -36,63 +36,79 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMSEGMENTPARAMETERS_H
-#define DEFLECT_PIXELSTREAMSEGMENTPARAMETERS_H
+#ifndef DEFLECT_SERVER_WORKER_H
+#define DEFLECT_SERVER_WORKER_H
 
-#ifdef _WIN32
-    typedef unsigned __int32 uint32_t;
-#else
-    #include <stdint.h>
-#endif
+#include <deflect/Event.h>
+#include <deflect/EventReceiver.h>
+#include <deflect/MessageHeader.h>
+#include <deflect/Segment.h>
 
-#include <boost/serialization/access.hpp>
+#include <QtNetwork/QTcpSocket>
+#include <QQueue>
 
 namespace deflect
 {
 
-/**
- * Parameters for a PixelStream Segment
- */
-struct PixelStreamSegmentParameters
+class ServerWorker : public EventReceiver
 {
-    /** @name Coordinates */
-    //@{
-    uint32_t x;  /**< The x position in pixels. */
-    uint32_t y;  /**< The y position in pixels. */
-    //@}
+    Q_OBJECT
 
-    /** @name Dimensions */
-    //@{
-    uint32_t width;   /**< The width in pixels. */
-    uint32_t height;  /**< The height in pixels. */
-    //@}
+public:
+    ServerWorker( int socketDescriptor );
+    ~ServerWorker();
 
-    /** Is the image raw pixel data or compressed in jpeg format */
-    bool compressed;
+public slots:
+    void processEvent( Event evt ) final;
+    void pixelStreamerClosed( QString uri );
 
-    /** Default constructor */
-    PixelStreamSegmentParameters()
-        : x(0)
-        , y(0)
-        , width(0)
-        , height(0)
-        , compressed(true)
-    {
-    }
+    void eventRegistrationReply( QString uri, bool success );
+
+signals:
+    void finished();
+
+    void receivedAddPixelStreamSource( QString uri, size_t sourceIndex );
+    void receivedPixelStreamSegement( QString uri, size_t SourceIndex,
+                                      Segment segment );
+    void receivedPixelStreamFinishFrame( QString uri, size_t SourceIndex );
+    void receivedRemovePixelStreamSource( QString uri, size_t sourceIndex );
+
+    void registerToEvents( QString uri, bool exclusive,
+                           deflect::EventReceiver* receiver);
+
+    void receivedCommand( QString command, QString senderUri );
+
+    /** @internal */
+    void _dataAvailable();
+
+private slots:
+    void _initialize();
+    void _process();
+    void _socketReceiveMessage();
 
 private:
-    friend class boost::serialization::access;
+    int _socketDescriptor;
+    QTcpSocket* _tcpSocket;
 
-    /** Serialization method */
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int)
-    {
-        ar & x;
-        ar & y;
-        ar & width;
-        ar & height;
-        ar & compressed;
-    }
+    QString _pixelStreamUri;
+
+    bool _registeredToEvents;
+    QQueue<Event> _events;
+
+    MessageHeader _receiveMessageHeader();
+    QByteArray _receiveMessageBody( int size );
+
+    void _handleMessage( const MessageHeader& messageHeader,
+                         const QByteArray& byteArray );
+    void _handlePixelStreamMessage( const QString& uri,
+                                    const QByteArray& byteArray );
+
+    void _sendProtocolVersion();
+    void _sendBindReply( bool successful );
+    void _send( const Event &evt );
+    void _sendQuit();
+    bool _send( const MessageHeader& messageHeader );
+    void _flushSocket();
 };
 
 }

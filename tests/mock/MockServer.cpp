@@ -37,55 +37,27 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "PixelStreamSegmentDecoder.h"
+#include "MockServer.h"
 
-#include "PixelStreamSegment.h"
-#include "ImageJpegDecompressor.h"
+#include <QTcpSocket>
 
-#include <QtConcurrentRun>
-#include <iostream>
-
-namespace deflect
+MockServer::MockServer( const int32_t protocolVersion )
+    : _protocolVersion( protocolVersion )
 {
+    if( !listen() )
+        qDebug( "MockServer could not start listening!!" );
+}
 
-PixelStreamSegmentDecoder::PixelStreamSegmentDecoder()
-    : decompressor_( new ImageJpegDecompressor )
+MockServer::~MockServer()
 {
 }
 
-PixelStreamSegmentDecoder::~PixelStreamSegmentDecoder()
+void MockServer::incomingConnection( const qintptr handle )
 {
-    delete decompressor_;
-}
+    QTcpSocket tcpSocket;
+    tcpSocket.setSocketDescriptor( handle );
 
-void decodeSegment( ImageJpegDecompressor* decompressor,
-                    PixelStreamSegment* segment )
-{
-    QByteArray decodedData = decompressor->decompress(segment->imageData);
-
-    if ( !decodedData.isEmpty() )
-    {
-        segment->imageData = decodedData;
-        segment->parameters.compressed = false;
-    }
-}
-
-void PixelStreamSegmentDecoder::startDecoding(PixelStreamSegment& segment)
-{
-    // drop frames if we're currently processing
-    if( isRunning( ))
-    {
-        std::cerr << "Decoding in process, Frame dropped. See if we need to "
-                     "change this..." << std::endl;
-        return;
-    }
-
-    decodingFuture_ = QtConcurrent::run(decodeSegment, decompressor_, &segment);
-}
-
-bool PixelStreamSegmentDecoder::isRunning() const
-{
-    return decodingFuture_.isRunning();
-}
-
+    // Handshake -> send network protocol version
+    tcpSocket.write( (char*)&_protocolVersion, sizeof( int32_t ));
+    tcpSocket.flush();
 }

@@ -20,7 +20,13 @@ if you find any other issue with this release.
 
 # Changes {#Changes}
 
-## git master
+## git master (0.6)
+
+* Many classes of the Server part have been renamed
+* Various API fixes
+* Project-wide codestyle cleanup
+
+## Deflect 0.5
 
 * Streamers can register for events immediately, without waiting for the
   DisplayCluster host to have opened a window

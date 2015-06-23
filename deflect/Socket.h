@@ -117,14 +117,14 @@ signals:
     void disconnected();
 
 private:
-    QTcpSocket* socket_;
-    int32_t remoteProtocolVersion_;
+    QTcpSocket* _socket;
+    int32_t _remoteProtocolVersion;
 
-    bool connect( const std::string &hostname, const unsigned short port );
-    bool checkProtocolVersion();
+    bool _connect( const std::string &hostname, const unsigned short port );
+    bool _checkProtocolVersion();
 
-    bool send( const MessageHeader& messageHeader );
-    bool receive( MessageHeader& messageHeader );
+    bool _send( const MessageHeader& messageHeader );
+    bool _receive( MessageHeader& messageHeader );
 };
 
 }

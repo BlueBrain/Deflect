@@ -39,12 +39,12 @@
 /*********************************************************************/
 
 #include "Stream.h"
-
 #include "StreamPrivate.h"
+
+#include "Segment.h"
+#include "SegmentParameters.h"
 #include "Socket.h"
 #include "ImageWrapper.h"
-#include "PixelStreamSegment.h"
-#include "PixelStreamSegmentParameters.h"
 
 #include <QDataStream>
 #include <boost/bind.hpp>
@@ -54,55 +54,55 @@
 namespace deflect
 {
 
-Stream::Stream(const std::string& name, const std::string& address)
-    : impl_( new StreamPrivate( this, name, address ))
+Stream::Stream( const std::string& name, const std::string& address )
+    : _impl( new StreamPrivate( this, name, address ))
 {
 
 }
 
 Stream::~Stream()
 {
-    delete impl_;
+    delete _impl;
 }
 
 bool Stream::isConnected() const
 {
-    return impl_->socket_.isConnected();
+    return _impl->socket.isConnected();
 }
 
 bool Stream::send( const ImageWrapper& image )
 {
-    return impl_->send( image );
+    return _impl->send( image );
 }
 
 bool Stream::finishFrame()
 {
-    return impl_->finishFrame();
+    return _impl->finishFrame();
 }
 
 Stream::Future Stream::asyncSend( const ImageWrapper& image )
 {
-    return impl_->asyncSend( image );
+    return _impl->asyncSend( image );
 }
 
-bool Stream::registerForEvents(const bool exclusive)
+bool Stream::registerForEvents( const bool exclusive )
 {
-    if(!isConnected())
+    if( !isConnected( ))
     {
         std::cerr << "Stream is not connected, registerForEvents failed"
                   << std::endl;
         return false;
     }
 
-    if (isRegisteredForEvents())
+    if( isRegisteredForEvents( ))
         return true;
 
     MessageType type = exclusive ? MESSAGE_TYPE_BIND_EVENTS_EX :
                                     MESSAGE_TYPE_BIND_EVENTS;
-    MessageHeader mh(type, 0, impl_->name_);
+    MessageHeader mh( type, 0, _impl->name );
 
     // Send the bind message
-    if( !impl_->socket_.send(mh, QByteArray()) )
+    if( !_impl->socket.send( mh, QByteArray( )))
     {
         std::cerr << "Could not send bind message" << std::endl;
         return false;
@@ -110,32 +110,32 @@ bool Stream::registerForEvents(const bool exclusive)
 
     // Wait for bind reply
     QByteArray message;
-    bool success = impl_->socket_.receive(mh, message);
-    if(!success || mh.type != MESSAGE_TYPE_BIND_EVENTS_REPLY)
+    bool success = _impl->socket.receive( mh, message );
+    if( !success || mh.type != MESSAGE_TYPE_BIND_EVENTS_REPLY )
     {
         std::cerr << "Invalid reply from host" << std::endl;
         return false;
     }
 
-    impl_->registeredForEvents_= *(bool*)(message.data());
+    _impl->registeredForEvents= *(bool*)(message.data());
 
     return isRegisteredForEvents();
 }
 
 bool Stream::isRegisteredForEvents() const
 {
-    return impl_->registeredForEvents_;
+    return _impl->registeredForEvents;
 }
 
 int Stream::getDescriptor() const
 {
-    return impl_->socket_.getFileDescriptor();
+    return _impl->socket.getFileDescriptor();
 }
 
 bool Stream::hasEvent() const
 {
-    QMutexLocker locker( &impl_->sendLock_ );
-    return impl_->socket_.hasMessage(Event::serializedSize);
+    QMutexLocker locker( &_impl->sendLock );
+    return _impl->socket.hasMessage( Event::serializedSize );
 }
 
 Event Stream::getEvent()
@@ -143,20 +143,20 @@ Event Stream::getEvent()
     MessageHeader mh;
     QByteArray message;
 
-    QMutexLocker locker( &impl_->sendLock_ );
-    bool success = impl_->socket_.receive(mh, message);
+    QMutexLocker locker( &_impl->sendLock );
+    bool success = _impl->socket.receive( mh, message );
 
-    if(!success || mh.type != MESSAGE_TYPE_EVENT)
+    if( !success || mh.type != MESSAGE_TYPE_EVENT )
     {
         std::cerr << "Invalid reply from host" << std::endl;
         return Event();
     }
 
-    assert ((size_t)message.size() == Event::serializedSize);
+    assert( (size_t)message.size() == Event::serializedSize );
 
     Event event;
     {
-        QDataStream stream(message);
+        QDataStream stream( message );
         stream >> event;
     }
     return event;
@@ -164,7 +164,7 @@ Event Stream::getEvent()
 
 void Stream::sendCommand( const std::string& command )
 {
-    impl_->sendCommand( QString::fromStdString( command ));
+    _impl->sendCommand( QString::fromStdString( command ));
 }
 
 }

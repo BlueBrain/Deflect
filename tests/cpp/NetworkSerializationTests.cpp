@@ -41,29 +41,30 @@
 #include <boost/test/unit_test.hpp>
 namespace ut = boost::unit_test;
 
-#include <deflect/MessageHeader.h>
 #include <deflect/Event.h>
+#include <deflect/MessageHeader.h>
 
-#include <QDataStream>
 #include <QByteArray>
+#include <QDataStream>
 
 BOOST_AUTO_TEST_CASE( testMessageHeaderSerialization )
 {
     QByteArray storage;
 
-    deflect::MessageHeader messageHeader(deflect::MESSAGE_TYPE_PIXELSTREAM, 512, "MyUri");
-    QDataStream dataStreamOut(&storage, QIODevice::Append);
-    dataStreamOut << messageHeader;
+    deflect::MessageHeader header( deflect::MESSAGE_TYPE_PIXELSTREAM, 512,
+                                   std::string( "MyUri" ));
+    QDataStream dataStreamOut( &storage, QIODevice::Append );
+    dataStreamOut << header;
 
     deflect::MessageHeader messageHeaderDeserialized;
-    QDataStream dataStreamIn(storage);
+    QDataStream dataStreamIn( storage );
     dataStreamIn >> messageHeaderDeserialized;
 
-    BOOST_CHECK_EQUAL( messageHeaderDeserialized.type, messageHeader.type );
-    BOOST_CHECK_EQUAL( messageHeaderDeserialized.size, messageHeader.size );
-    BOOST_CHECK_EQUAL( std::string(messageHeaderDeserialized.uri), std::string(messageHeader.uri) );
+    BOOST_CHECK_EQUAL( messageHeaderDeserialized.type, header.type );
+    BOOST_CHECK_EQUAL( messageHeaderDeserialized.size, header.size );
+    BOOST_CHECK_EQUAL( std::string( messageHeaderDeserialized.uri ),
+                       std::string( header.uri ));
 }
-
 
 BOOST_AUTO_TEST_CASE( testEventSerialization )
 {
@@ -84,11 +85,11 @@ BOOST_AUTO_TEST_CASE( testEventSerialization )
     event.key = 'Y';
     event.modifiers = Qt::ControlModifier;
 
-    QDataStream dataStreamOut(&storage, QIODevice::Append);
+    QDataStream dataStreamOut( &storage, QIODevice::Append );
     dataStreamOut << event;
 
     deflect::Event eventDeserialized;
-    QDataStream dataStreamIn(storage);
+    QDataStream dataStreamIn( storage );
     dataStreamIn >> eventDeserialized;
 
     BOOST_CHECK_EQUAL( eventDeserialized.type, event.type );
@@ -98,9 +99,7 @@ BOOST_AUTO_TEST_CASE( testEventSerialization )
     BOOST_CHECK_EQUAL( eventDeserialized.dy, event.dy );
     BOOST_CHECK_EQUAL( eventDeserialized.mouseLeft, event.mouseLeft);
     BOOST_CHECK_EQUAL( eventDeserialized.mouseRight, event.mouseRight );
-    BOOST_CHECK_EQUAL( eventDeserialized.mouseMiddle, event.mouseMiddle);
-    BOOST_CHECK_EQUAL( eventDeserialized.key, event.key);
+    BOOST_CHECK_EQUAL( eventDeserialized.mouseMiddle, event.mouseMiddle );
+    BOOST_CHECK_EQUAL( eventDeserialized.key, event.key );
     BOOST_CHECK_EQUAL( eventDeserialized.modifiers, event.modifiers );
 }
-
-

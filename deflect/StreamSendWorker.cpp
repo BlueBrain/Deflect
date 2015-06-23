@@ -45,50 +45,51 @@ namespace deflect
 {
 
 StreamSendWorker::StreamSendWorker( StreamPrivate& stream )
-    : stream_( stream )
-    , running_( true )
-    , thread_( boost::bind( &StreamSendWorker::run_, this ))
+    : _stream( stream )
+    , _running( true )
+    , _thread( boost::bind( &StreamSendWorker::_run, this ))
 {}
 
 StreamSendWorker::~StreamSendWorker()
 {
-    stop_();
+    _stop();
 }
 
-void StreamSendWorker::run_()
+void StreamSendWorker::_run()
 {
-    boost::mutex::scoped_lock lock( mutex_ );
+    boost::mutex::scoped_lock lock( _mutex );
     while( true )
     {
-        while( requests_.empty() && running_ )
-            condition_.wait( lock );
-        if( !running_ )
+        while( _requests.empty() && _running )
+            _condition.wait( lock );
+        if( !_running )
             break;
 
-        const Request& request = requests_.back();
-        request.first->set_value( stream_.send( request.second ) && stream_.finishFrame( ));
-        requests_.pop_back();
+        const Request& request = _requests.back();
+        request.first->set_value( _stream.send( request.second ) &&
+                                  _stream.finishFrame( ));
+        _requests.pop_back();
     }
 }
 
-void StreamSendWorker::stop_()
+void StreamSendWorker::_stop()
 {
     {
-        boost::mutex::scoped_lock lock( mutex_ );
-        running_ = false;
-        condition_.notify_all();
+        boost::mutex::scoped_lock lock( _mutex );
+        _running = false;
+        _condition.notify_all();
     }
 
-    thread_.join();
-    requests_.clear();
+    _thread.join();
+    _requests.clear();
 }
 
 Stream::Future StreamSendWorker::enqueueImage( const ImageWrapper& image )
 {
-    boost::mutex::scoped_lock lock( mutex_ );
+    boost::mutex::scoped_lock lock( _mutex );
     PromisePtr promise( new Promise );
-    requests_.push_back( Request( promise, image ));
-    condition_.notify_all();
+    _requests.push_back( Request( promise, image ));
+    _condition.notify_all();
     return promise->get_future();
 }
 

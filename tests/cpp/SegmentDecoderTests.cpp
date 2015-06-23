@@ -37,31 +37,32 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#define BOOST_TEST_MODULE PixelStreamSegmentDecoderTests
+#define BOOST_TEST_MODULE SegmentDecoderTests
 #include <boost/test/unit_test.hpp>
 namespace ut = boost::unit_test;
 
-#include <deflect/ImageWrapper.h>
 #include <deflect/ImageJpegCompressor.h>
 #include <deflect/ImageJpegDecompressor.h>
-
 #include <deflect/ImageSegmenter.h>
-#include <deflect/PixelStreamSegment.h>
-#include <deflect/PixelStreamSegmentDecoder.h>
+#include <deflect/ImageWrapper.h>
+#include <deflect/Segment.h>
+#include <deflect/SegmentDecoder.h>
 
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
 
-void fillTestImage(std::vector<char>& data)
+#include <QMutex>
+
+void fillTestImage( std::vector<char>& data )
 {
-    data.reserve(8*8*4);
-    for (size_t i = 0; i<8*8; ++i)
+    data.reserve( 8 * 8 * 4 );
+    for( size_t i = 0; i < 8 * 8; ++i )
     {
-        data.push_back(92); // R
-        data.push_back(28); // G
-        data.push_back(0);  // B
-        data.push_back(-1); // A
+        data.push_back( 92 ); // R
+        data.push_back( 28 ); // G
+        data.push_back( 0 );  // B
+        data.push_back( -1 ); // A
     }
 }
 
@@ -69,35 +70,36 @@ BOOST_AUTO_TEST_CASE( testImageCompressionAndDecompression )
 {
     // Vector of RGBA data
     std::vector<char> data;
-    fillTestImage(data);
-    deflect::ImageWrapper imageWrapper(data.data(), 8, 8, deflect::RGBA);
+    fillTestImage( data );
+    deflect::ImageWrapper imageWrapper( data.data(), 8, 8, deflect::RGBA );
     imageWrapper.compressionQuality = 100;
 
     // Compress image
     deflect::ImageJpegCompressor compressor;
-    QByteArray jpegData = compressor.computeJpeg(imageWrapper, QRect(0,0,8,8));
+    QByteArray jpegData = compressor.computeJpeg( imageWrapper,
+                                                  QRect( 0, 0, 8, 8 ));
 
     BOOST_REQUIRE( jpegData.size() > 0 );
-    BOOST_REQUIRE( jpegData.size() != (int)data.size() );
+    BOOST_REQUIRE( jpegData.size() != (int)data.size( ));
 
     // Decompress image
     deflect::ImageJpegDecompressor decompressor;
-    QByteArray decodedData = decompressor.decompress(jpegData);
+    QByteArray decodedData = decompressor.decompress( jpegData );
 
     // Check decoded image in format RGBA
     BOOST_REQUIRE( !decodedData.isEmpty() );
-    BOOST_REQUIRE_EQUAL( decodedData.size(), data.size() );
+    BOOST_REQUIRE_EQUAL( decodedData.size(), data.size( ));
 
     const char* dataOut = decodedData.constData();
     BOOST_CHECK_EQUAL_COLLECTIONS( data.data(), data.data()+data.size(),
-                                   dataOut, dataOut+data.size() );
+                                   dataOut, dataOut+data.size( ));
 }
 
-static bool append( deflect::PixelStreamSegments& segments,
-                    const deflect::PixelStreamSegment& segment )
+static bool append( deflect::Segments& segments,
+                    const deflect::Segment& segment )
 {
-    static QMutex lock_;
-    QMutexLocker locker( &lock_ );
+    static QMutex lock;
+    QMutexLocker locker( &lock );
     segments.push_back( segment );
     return true;
 }
@@ -106,13 +108,13 @@ BOOST_AUTO_TEST_CASE( testImageSegmentationWithCompressionAndDecompression )
 {
     // Vector of rgba data
     std::vector<char> data;
-    fillTestImage(data);
+    fillTestImage( data );
 
     // Compress image
-    deflect::ImageWrapper imageWrapper(data.data(), 8, 8, deflect::RGBA);
+    deflect::ImageWrapper imageWrapper( data.data(), 8, 8, deflect::RGBA );
     imageWrapper.compressionPolicy = deflect::COMPRESSION_ON;
 
-    deflect::PixelStreamSegments segments;
+    deflect::Segments segments;
     deflect::ImageSegmenter segmenter;
     const deflect::ImageSegmenter::Handler appendFunc =
         boost::bind( &append, boost::ref( segments ), _1 );
@@ -120,19 +122,19 @@ BOOST_AUTO_TEST_CASE( testImageSegmentationWithCompressionAndDecompression )
     segmenter.generate( imageWrapper, appendFunc );
     BOOST_REQUIRE_EQUAL( segments.size(), 1 );
 
-    deflect::PixelStreamSegment& segment = segments.front();
+    deflect::Segment& segment = segments.front();
     BOOST_REQUIRE( segment.parameters.compressed );
-    BOOST_REQUIRE( segment.imageData.size() != (int)data.size() );
+    BOOST_REQUIRE( segment.imageData.size() != (int)data.size( ));
 
     // Decompress image
-    deflect::PixelStreamSegmentDecoder decoder;
+    deflect::SegmentDecoder decoder;
     decoder.startDecoding(segment);
 
     size_t timeout = 0;
-    while(decoder.isRunning())
+    while( decoder.isRunning( ))
     {
         boost::this_thread::sleep( boost::posix_time::microseconds( 10 ));
-        if (++timeout >= 10)
+        if( ++timeout >= 10 )
             break;
     }
     BOOST_REQUIRE( timeout < 10 );
@@ -142,6 +144,7 @@ BOOST_AUTO_TEST_CASE( testImageSegmentationWithCompressionAndDecompression )
     BOOST_REQUIRE_EQUAL( segment.imageData.size(), data.size() );
 
     const char* dataOut = segment.imageData.constData();
-    BOOST_CHECK_EQUAL_COLLECTIONS( data.data(), data.data()+segment.imageData.size(),
-                                   dataOut, dataOut+segment.imageData.size() );
+    BOOST_CHECK_EQUAL_COLLECTIONS( data.data(),
+                                   data.data() + segment.imageData.size(),
+                                   dataOut, dataOut+segment.imageData.size( ));
 }

@@ -43,7 +43,7 @@
 namespace ut = boost::unit_test;
 
 #include "MinimalGlobalQtApp.h"
-#include <deflect/NetworkListener.h>
+#include <deflect/Server.h>
 #include <deflect/Stream.h>
 
 #include <QThread>
@@ -68,7 +68,7 @@ class Timer
 public:
     void start()
     {
-        lastTime_ = boost::posix_time::microsec_clock::universal_time();
+        _lastTime = boost::posix_time::microsec_clock::universal_time();
     }
 
     void restart()
@@ -78,11 +78,12 @@ public:
 
     float elapsed()
     {
-        const boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time();
-        return (float)(now - lastTime_).total_milliseconds();
+        const boost::posix_time::ptime now =
+                boost::posix_time::microsec_clock::universal_time();
+        return (float)(now - _lastTime).total_milliseconds();
     }
 private:
-    boost::posix_time::ptime lastTime_;
+    boost::posix_time::ptime _lastTime;
 };
 }
 
@@ -91,7 +92,7 @@ class DCThread : public QThread
     void run()
     {
         Timer timer;
-        uint8_t* pixels = new uint8_t[ NBYTES ];
+        uint8_t* pixels = new uint8_t[NBYTES];
         ::memset( pixels, 0, NBYTES );
         deflect::ImageWrapper image( pixels, WIDTH, HEIGHT, deflect::RGBA );
 
@@ -146,7 +147,7 @@ class DCThread : public QThread
 
 BOOST_AUTO_TEST_CASE( testSocketConnection )
 {
-    deflect::NetworkListener listener;
+    deflect::Server server;
 #ifdef NTHREADS
     QThreadPool::globalInstance()->setMaxThreadCount( NTHREADS );
 #endif

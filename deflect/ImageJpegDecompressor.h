@@ -65,11 +65,11 @@ public:
      * @return The decompressed image data in (GL_)RGBA format, or an
      *         empty array if the image could not be decoded.
      */
-    DEFLECT_API QByteArray decompress(const QByteArray& jpegData);
+    DEFLECT_API QByteArray decompress( const QByteArray& jpegData );
 
 private:
     /** libjpeg-turbo handle for decompression */
-    tjhandle tjHandle_;
+    tjhandle _tjHandle;
 };
 
 }

@@ -36,12 +36,12 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "NetworkListener.h"
+#include "Server.h"
 
 #include "CommandHandler.h"
-#include "NetworkListenerWorker.h"
+#include "FrameDispatcher.h"
 #include "NetworkProtocol.h"
-#include "PixelStreamDispatcher.h"
+#include "ServerWorker.h"
 
 #ifdef DEFLECT_USE_SERVUS
 #  include <servus/servus.h>
@@ -53,108 +53,110 @@
 
 namespace deflect
 {
-const int NetworkListener::defaultPortNumber = DEFAULT_PORT_NUMBER;
-const std::string NetworkListener::serviceName = SERVUS_SERVICE_NAME;
+const int Server::defaultPortNumber = DEFAULT_PORT_NUMBER;
+const std::string Server::serviceName = SERVUS_SERVICE_NAME;
 
-class NetworkListener::Impl
+class Server::Impl
 {
 public:
     Impl()
 #ifdef DEFLECT_USE_SERVUS
-        : servus( NetworkListener::serviceName )
+        : servus( Server::serviceName )
 #endif
     {}
 
-    PixelStreamDispatcher pixelStreamDispatcher;
+    FrameDispatcher pixelStreamDispatcher;
     CommandHandler commandHandler;
 #ifdef DEFLECT_USE_SERVUS
     servus::Servus servus;
 #endif
 };
 
-NetworkListener::NetworkListener( const int port )
+Server::Server( const int port )
     : _impl( new Impl )
 {
     if( !listen( QHostAddress::Any, port ))
     {
-        const QString err = QString("could not listen on port: %1").arg(port);
-        throw std::runtime_error(err.toStdString());
+        const QString err =
+                QString( "could not listen on port: %1" ).arg( port );
+        throw std::runtime_error( err.toStdString( ));
     }
 #ifdef DEFLECT_USE_SERVUS
     _impl->servus.announce( port, boost::lexical_cast< std::string >( port ));
 #endif
 }
 
-NetworkListener::~NetworkListener()
+Server::~Server()
 {
     delete _impl;
 }
 
-CommandHandler& NetworkListener::getCommandHandler()
+CommandHandler& Server::getCommandHandler()
 {
     return _impl->commandHandler;
 }
 
-PixelStreamDispatcher& NetworkListener::getPixelStreamDispatcher()
+FrameDispatcher& Server::getPixelStreamDispatcher()
 {
     return _impl->pixelStreamDispatcher;
 }
 
-void NetworkListener::incomingConnection(qintptr socketHandle)
+void Server::onPixelStreamerClosed( const QString uri )
 {
-    QThread* workerThread = new QThread(this);
-    NetworkListenerWorker* worker = new NetworkListenerWorker(socketHandle);
+    emit _pixelStreamerClosed( uri );
+}
 
-    worker->moveToThread(workerThread);
+void Server::onEventRegistrationReply( const QString uri, const bool success )
+{
+    emit _eventRegistrationReply( uri, success );
+}
 
-    connect(workerThread, SIGNAL(started()), worker, SLOT(initialize()));
-    connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
+void Server::incomingConnection( const qintptr socketHandle )
+{
+    QThread* workerThread = new QThread( this );
+    ServerWorker* worker = new ServerWorker( socketHandle );
+
+    worker->moveToThread( workerThread );
+
+    connect( workerThread, SIGNAL( started( )), worker, SLOT( initialize( )));
+    connect( worker, SIGNAL( finished( )), workerThread, SLOT( quit( )));
 
     // Make sure the thread will be deleted
-    connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
-    connect(workerThread, SIGNAL(finished()), workerThread, SLOT(deleteLater()));
+    connect( workerThread, SIGNAL( finished( )), worker, SLOT( deleteLater( )));
+    connect( workerThread, SIGNAL( finished( )),
+             workerThread, SLOT( deleteLater( )));
 
     // public signals/slots, forwarding from/to worker
-    connect(worker,
-            SIGNAL(registerToEvents(QString, bool, deflect::EventReceiver*)),
-            this,
-            SIGNAL(registerToEvents(QString, bool, deflect::EventReceiver*)));
-    connect(this, SIGNAL(pixelStreamerClosed(QString)),
-            worker, SLOT(pixelStreamerClosed(QString)));
-    connect(this, SIGNAL(eventRegistrationReply(QString, bool)),
-            worker, SLOT(eventRegistrationReply(QString, bool)));
+    connect( worker, SIGNAL( registerToEvents( QString, bool,
+                                               deflect::EventReceiver* )),
+             this, SIGNAL( registerToEvents( QString, bool,
+                                             deflect::EventReceiver* )));
+    connect( this, SIGNAL( _pixelStreamerClosed( QString )),
+             worker, SLOT( _pixelStreamerClosed( QString )));
+    connect( this, SIGNAL( _eventRegistrationReply( QString, bool )),
+             worker, SLOT( _eventRegistrationReply( QString, bool )));
 
     // Commands
-    connect(worker, SIGNAL(receivedCommand(QString,QString)),
-            &_impl->commandHandler, SLOT(process(QString,QString)));
+    connect( worker, SIGNAL( receivedCommand( QString, QString )),
+             &_impl->commandHandler, SLOT( process( QString, QString )));
 
     // PixelStreamDispatcher
-    connect(worker, SIGNAL(receivedAddPixelStreamSource(QString,size_t)),
-            &_impl->pixelStreamDispatcher, SLOT(addSource(QString,size_t)));
-    connect(worker,
-            SIGNAL(receivedPixelStreamSegement(QString,size_t,
-                                               PixelStreamSegment)),
-            &_impl->pixelStreamDispatcher,
-            SLOT(processSegment(QString,size_t,PixelStreamSegment)));
-    connect(worker,
-            SIGNAL(receivedPixelStreamFinishFrame(QString,size_t)),
-            &_impl->pixelStreamDispatcher,
-            SLOT(processFrameFinished(QString,size_t)));
-    connect(worker, SIGNAL(receivedRemovePixelStreamSource(QString,size_t)),
-            &_impl->pixelStreamDispatcher,
-            SLOT(removeSource(QString,size_t)));
+    connect( worker, SIGNAL( receivedAddPixelStreamSource( QString, size_t )),
+             &_impl->pixelStreamDispatcher, SLOT(addSource( QString, size_t )));
+    connect( worker, SIGNAL( receivedPixelStreamSegement( QString, size_t,
+                                                          Segment )),
+             &_impl->pixelStreamDispatcher,
+             SLOT( processSegment( QString, size_t, Segment )));
+    connect( worker,
+             SIGNAL( receivedPixelStreamFinishFrame( QString, size_t )),
+             &_impl->pixelStreamDispatcher,
+             SLOT( processFrameFinished( QString, size_t )));
+    connect( worker,
+             SIGNAL( receivedRemovePixelStreamSource( QString, size_t )),
+             &_impl->pixelStreamDispatcher,
+             SLOT( removeSource( QString, size_t )));
 
     workerThread->start();
-}
-
-void NetworkListener::onPixelStreamerClosed( QString uri )
-{
-    emit pixelStreamerClosed( uri );
-}
-
-void NetworkListener::onEventRegistrationReply( QString uri, bool success )
-{
-    emit eventRegistrationReply( uri, success );
 }
 
 }

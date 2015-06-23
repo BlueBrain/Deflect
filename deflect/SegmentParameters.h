@@ -1,6 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2015, EPFL/Blue Brain Project                  */
-/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,36 +36,64 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_TYPES_H
-#define DEFLECT_TYPES_H
+#ifndef DEFLECT_SEGMENTPARAMETERS_H
+#define DEFLECT_SEGMENTPARAMETERS_H
 
-#include <deflect/config.h>
+#ifdef _WIN32
+    typedef unsigned __int32 uint32_t;
+#else
+    #include <stdint.h>
+#endif
 
-#include <boost/shared_ptr.hpp>
-#include <vector>
+#include <boost/serialization/access.hpp>
 
 namespace deflect
 {
 
-class AbstractCommandHandler;
-class Command;
-class CommandHandler;
-class EventReceiver;
-class Frame;
-class FrameDispatcher;
-class SegmentDecoder;
-class Server;
-class Stream;
+/**
+ * Parameters for a Frame Segment.
+ */
+struct SegmentParameters
+{
+    /** @name Coordinates */
+    //@{
+    uint32_t x;  /**< The x position in pixels. */
+    uint32_t y;  /**< The y position in pixels. */
+    //@}
 
-struct Event;
-struct ImageWrapper;
-struct MessageHeader;
-struct Segment;
-struct SegmentParameters;
+    /** @name Dimensions */
+    //@{
+    uint32_t width;   /**< The width in pixels. */
+    uint32_t height;  /**< The height in pixels. */
+    //@}
 
-typedef boost::shared_ptr< Frame > FramePtr;
-typedef std::vector< Segment > Segments;
-typedef std::vector< SegmentParameters > SegmentParametersList;
+    /** Is the image raw pixel data or compressed in jpeg format */
+    bool compressed;
+
+    /** Default constructor */
+    SegmentParameters()
+        : x( 0 )
+        , y( 0 )
+        , width( 0 )
+        , height( 0 )
+        , compressed( true )
+    {
+    }
+
+private:
+    friend class boost::serialization::access;
+
+    /** Serialization method */
+    template<class Archive>
+    void serialize( Archive & ar, const unsigned int )
+    {
+        ar & x;
+        ar & y;
+        ar & width;
+        ar & height;
+        ar & compressed;
+    }
+};
 
 }
 

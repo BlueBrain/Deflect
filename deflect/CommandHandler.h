@@ -40,8 +40,10 @@
 #ifndef DEFLECT_COMMANDHANDLER_H
 #define DEFLECT_COMMANDHANDLER_H
 
+#include <deflect/api.h>
 #include <deflect/types.h>
 #include <deflect/CommandType.h>
+
 #include <QObject>
 
 namespace deflect
@@ -56,10 +58,10 @@ class CommandHandler : public QObject
 
 public:
     /** Constructor */
-    CommandHandler();
+    DEFLECT_API CommandHandler();
 
     /** Destructor */
-    ~CommandHandler();
+    DEFLECT_API ~CommandHandler();
 
     /**
      * Register a command handler.
@@ -68,26 +70,26 @@ public:
      * CommandType was already registered, it will be replaced.
      * @param handler The handler to register.
      */
-    void registerCommandHandler(AbstractCommandHandler* handler);
+    DEFLECT_API void registerCommandHandler( AbstractCommandHandler* handler );
 
     /**
      * Unregister a command handler.
      *
      * @param type The type for which to unregister the command handler.
      */
-    void unregisterCommandHandler(CommandType type);
+    DEFLECT_API void unregisterCommandHandler( CommandType type );
 
 public slots:
     /**
      * Process a command.
      * @param command The command string, formatted by the Command class.
-     * @param parentWindowUri Optional identifier of the window issuing the command.
+     * @param parentWindowUri Identifier of the window issuing the command.
      */
-    void process(const QString command, const QString parentWindowUri);
+    DEFLECT_API void process( QString command, QString parentWindowUri );
 
 private:
     typedef std::map< CommandType, AbstractCommandHandler* > CommandHandlerMap;
-    CommandHandlerMap handlers_;
+    CommandHandlerMap _handlers;
 };
 
 }

@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,11 +37,11 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_PIXELSTREAMBUFFER_H
-#define DEFLECT_PIXELSTREAMBUFFER_H
+#ifndef DEFLECT_RECEIVEBUFFER_H
+#define DEFLECT_RECEIVEBUFFER_H
 
 #include <deflect/api.h>
-#include <deflect/PixelStreamSegment.h>
+#include <deflect/Segment.h>
 #include <deflect/types.h>
 
 #include <QSize>
@@ -59,13 +59,13 @@ typedef unsigned int FrameIndex;
  */
 struct SourceBuffer
 {
-    SourceBuffer() : frontFrameIndex(0), backFrameIndex(0) {}
+    SourceBuffer() : frontFrameIndex( 0 ), backFrameIndex( 0 ) {}
 
     /** The current indexes of the frame for this source */
     FrameIndex frontFrameIndex, backFrameIndex;
 
     /** The collection of segments */
-    std::queue<PixelStreamSegments> segments;
+    std::queue<Segments> segments;
 
     /** Pop the first element of the buffer */
     void pop()
@@ -77,7 +77,7 @@ struct SourceBuffer
     /** Push a new element to the back of the buffer */
     void push()
     {
-        segments.push(PixelStreamSegments());
+        segments.push( Segments( ));
         ++backFrameIndex;
     }
 };
@@ -85,15 +85,16 @@ struct SourceBuffer
 typedef std::map<size_t, SourceBuffer> SourceBufferMap;
 
 /**
- * Buffer PixelStreamSegments from (multiple) sources
+ * Buffer Segments from (multiple) sources.
  *
- * The buffer aggregates segments coming from different sources and delivers complete frames.
+ * The buffer aggregates segments coming from different sources and delivers
+ * complete frames.
  */
-class PixelStreamBuffer
+class ReceiveBuffer
 {
 public:
     /** Construct a Buffer */
-    DEFLECT_API PixelStreamBuffer();
+    DEFLECT_API ReceiveBuffer();
 
     /**
      * Add a source of segments.
@@ -101,13 +102,13 @@ public:
      * @return false if the source was already added or if finishFrameForSource()
      *         has already been called for all existing source (TODO DISCL-241).
      */
-    DEFLECT_API bool addSource(const size_t sourceIndex);
+    DEFLECT_API bool addSource( size_t sourceIndex );
 
     /**
      * Remove a source of segments.
      * @param sourceIndex Unique source identifier
      */
-    DEFLECT_API void removeSource(const size_t sourceIndex);
+    DEFLECT_API void removeSource( size_t sourceIndex );
 
     /** Get the number of sources for this Stream */
     DEFLECT_API size_t getSourceCount() const;
@@ -117,46 +118,33 @@ public:
      * @param segment The segment to insert
      * @param sourceIndex Unique source identifier
      */
-    DEFLECT_API void insertSegment(const PixelStreamSegment& segment, const size_t sourceIndex);
+    DEFLECT_API void insert( const Segment& segment, size_t sourceIndex );
 
     /**
-     * Notify that the given source has finished sending segment for the current frame.
+     * Call when the source has finished sending segments for the current frame.
      * @param sourceIndex Unique source identifier
      */
-    DEFLECT_API void finishFrameForSource(const size_t sourceIndex);
+    DEFLECT_API void finishFrameForSource( size_t sourceIndex );
 
     /** Does the Buffer have a new complete frame (from all sources) */
     DEFLECT_API bool hasCompleteFrame() const;
-
-    /** Is this the first frame to be finished by all sources */
-    DEFLECT_API bool isFirstCompleteFrame() const;
-
-    /** Get the size of the frame. Only meaningful if hasCompleteFrame() is true */
-    DEFLECT_API QSize getFrameSize() const;
 
     /**
      * Get the finished frame.
      * @return A collection of segments that form a frame
      */
-    DEFLECT_API PixelStreamSegments popFrame();
+    DEFLECT_API Segments popFrame();
 
-    /**
-     * Compute the overall dimensions of a frame
-     * @param segments A collection of segments that form a frame
-     * @return The dimensions of the frame
-     */
-    DEFLECT_API static QSize computeFrameDimensions(const PixelStreamSegments& segments);
+    /** Allow this buffer to be used by the next FrameDispatcher::sendLatestFrame */
+    DEFLECT_API void setAllowedToSend( bool enable );
 
-    /** Allow this buffer to be used by the next PixelStreamDispatcher::sendLatestFrame */
-    DEFLECT_API void setAllowedToSend(const bool enable);
-
-    /** @return true if this buffer can be sent by PixelStreamDispatcher, false otherwise */
+    /** @return true if this buffer can be sent by FrameDispatcher */
     DEFLECT_API bool isAllowedToSend() const;
 
 private:
-    FrameIndex lastFrameComplete_;
-    SourceBufferMap sourceBuffers_;
-    bool allowedToSend_;
+    FrameIndex _lastFrameComplete;
+    SourceBufferMap _sourceBuffers;
+    bool _allowedToSend;
 };
 
 }

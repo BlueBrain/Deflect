@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2015, EPFL/Blue Brain Project                  */
-/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,37 +37,71 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_TYPES_H
-#define DEFLECT_TYPES_H
+#include "SegmentDecoder.h"
 
-#include <deflect/config.h>
+#include "ImageJpegDecompressor.h"
+#include "Segment.h"
 
-#include <boost/shared_ptr.hpp>
-#include <vector>
+#include <iostream>
+
+#include <QFuture>
+#include <QtConcurrentRun>
 
 namespace deflect
 {
 
-class AbstractCommandHandler;
-class Command;
-class CommandHandler;
-class EventReceiver;
-class Frame;
-class FrameDispatcher;
-class SegmentDecoder;
-class Server;
-class Stream;
+class SegmentDecoder::Impl
+{
+public:
+    Impl()
+    {}
 
-struct Event;
-struct ImageWrapper;
-struct MessageHeader;
-struct Segment;
-struct SegmentParameters;
+    /** The decompressor instance */
+    ImageJpegDecompressor decompressor;
 
-typedef boost::shared_ptr< Frame > FramePtr;
-typedef std::vector< Segment > Segments;
-typedef std::vector< SegmentParameters > SegmentParametersList;
+    /** Async image decoding future */
+    QFuture<void> decodingFuture;
+};
 
+SegmentDecoder::SegmentDecoder()
+    : _impl( new Impl )
+{
 }
 
-#endif
+SegmentDecoder::~SegmentDecoder()
+{
+    delete _impl;
+}
+
+void decodeSegment( ImageJpegDecompressor* decompressor, Segment* segment )
+{
+    QByteArray decodedData = decompressor->decompress( segment->imageData );
+
+    if( !decodedData.isEmpty( ))
+    {
+        segment->imageData = decodedData;
+        segment->parameters.compressed = false;
+    }
+}
+
+void SegmentDecoder::startDecoding( Segment& segment )
+{
+    // drop frames if we're currently processing
+    if( isRunning( ))
+    {
+        std::cerr << "Decoding in process, Frame dropped. See if we need to "
+                     "change this..." << std::endl;
+        return;
+    }
+
+    _impl->decodingFuture = QtConcurrent::run( decodeSegment,
+                                               &_impl->decompressor,
+                                               &segment );
+}
+
+bool SegmentDecoder::isRunning() const
+{
+    return _impl->decodingFuture.isRunning();
+}
+
+}

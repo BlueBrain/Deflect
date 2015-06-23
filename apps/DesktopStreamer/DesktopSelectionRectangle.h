@@ -39,6 +39,8 @@
 #ifndef DESKTOP_SELECTION_RECTANGLE_H
 #define DESKTOP_SELECTION_RECTANGLE_H
 
+#include <deflect/config.h>
+
 #include <QtWidgets>
 
 class DesktopSelectionRectangle : public QObject, public QGraphicsRectItem
@@ -48,24 +50,23 @@ class DesktopSelectionRectangle : public QObject, public QGraphicsRectItem
 public:
     DesktopSelectionRectangle();
 
-    virtual void paint(QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget=0);
+    void paint( QPainter* painter, const QStyleOptionGraphicsItem* option,
+                QWidget* widget = 0 ) final;
 
-    void setCoordinates(QRect coordinates);
+    void setCoordinates( const QRect& coordinates );
 
 signals:
-    void coordinatesChanged(QRect coordinates);
-
-protected:
-    virtual void mouseMoveEvent(QGraphicsSceneMouseEvent * event);
-    virtual void mousePressEvent(QGraphicsSceneMouseEvent * event);
-    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent * event);
+    void coordinatesChanged( QRect coordinates );
 
 private:
-    void updateCoordinates();
+    void mouseMoveEvent( QGraphicsSceneMouseEvent* event ) final;
+    void mousePressEvent( QGraphicsSceneMouseEvent* event ) final;
+    void mouseReleaseEvent( QGraphicsSceneMouseEvent* event ) final;
 
-    bool resizing_;
+    void _updateCoordinates();
 
-    QRect coordinates_;
+    bool _resizing;
+    QRect _coordinates;
 };
 
 #endif

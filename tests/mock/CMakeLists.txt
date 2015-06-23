@@ -10,11 +10,11 @@ set(MOCK_HEADERS
 )
 
 set(MOCK_MOC_HEADERS
-  MockNetworkListener.h
+  MockServer.h
 )
 
 set(MOCK_SOURCES
-  MockNetworkListener.cpp
+  MockServer.cpp
 )
 
 qt5_wrap_cpp(MOC_OUTFILES ${MOCK_MOC_HEADERS})

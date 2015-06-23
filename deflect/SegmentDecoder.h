@@ -37,33 +37,49 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_MOCKNETWORKLISTENER_H
-#define DEFLECT_MOCKNETWORKLISTENER_H
+#ifndef DEFLECT_SEGMENTDECODER_H
+#define DEFLECT_SEGMENTDECODER_H
 
-#ifdef _WIN32
-typedef __int32 int32_t;
-#endif
-
-#include <QtNetwork/QTcpServer>
-#include <QThread>
-
-#include <deflect/NetworkProtocol.h>
 #include <deflect/api.h>
-#include <deflect/config.h>
+#include <deflect/types.h>
 
-class MockNetworkListener : public QTcpServer
+#include <boost/noncopyable.hpp>
+
+namespace deflect
 {
-    Q_OBJECT
 
+/**
+ * Decode a Segment's image asynchronously.
+ */
+class SegmentDecoder : public boost::noncopyable
+{
 public:
-    DEFLECT_API MockNetworkListener(const int32_t protocolVersion = NETWORK_PROTOCOL_VERSION);
-    DEFLECT_API virtual ~MockNetworkListener();
+    /** Construct a Decoder */
+    DEFLECT_API SegmentDecoder();
 
-protected:
-    void incomingConnection(qintptr handle) final;
+    /** Destruct a Decoder */
+    DEFLECT_API ~SegmentDecoder();
+
+    /**
+     * Start decoding a segment.
+     *
+     * This function will silently ignore the request if a decoding is already
+     * in progress.
+     * @param segment The segement to decode. The segment is will be modified by
+     *        this function. It must remain valid and should not be accessed
+     *        until the decoding procedure has completed.
+     * @see isRunning()
+     */
+    DEFLECT_API void startDecoding( Segment& segment );
+
+    /** Check if the decoding thread is running. */
+    DEFLECT_API bool isRunning() const;
 
 private:
-    int32_t protocolVersion_;
+    class Impl;
+    Impl* _impl;
 };
+
+}
 
 #endif

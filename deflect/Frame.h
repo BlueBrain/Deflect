@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,44 +37,47 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#define BOOST_TEST_MODULE PixelStreamSegmentParametersTests
-#include <boost/test/unit_test.hpp>
-namespace ut = boost::unit_test;
+#ifndef DEFLECT_FRAME_H
+#define DEFLECT_FRAME_H
 
-#include <deflect/PixelStreamSegmentParameters.h>
+#include <deflect/api.h>
+#include <deflect/types.h>
+#include <deflect/Segment.h>
 
-#include <iostream>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
+#include <QString>
+#include <QSize>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/vector.hpp>
 
-BOOST_AUTO_TEST_CASE( testSegementParametersSerialization )
+namespace deflect
 {
-    deflect::PixelStreamSegmentParameters params;
-    params.x = 212;
-    params.y = 365;
-    params.height = 32;
-    params.width = 78;
-    params.compressed = false;
 
+/**
+ * A frame for a PixelStream.
+ */
+class Frame
+{
+public:
+    /** The full set of segments for this frame. */
+    Segments segments;
 
-    // serialize
-    std::stringstream stream;
+    /** The PixelStream uri to which this frame is associated. */
+    QString uri;
+
+    /** Get the total dimensions of this frame. */
+    DEFLECT_API QSize computeDimensions() const;
+
+private:
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize( Archive & ar, const unsigned int )
     {
-        boost::archive::binary_oarchive oa(stream);
-        oa << params;
+        ar & segments;
+        ar & uri;
     }
+};
 
-    // deserialize
-    deflect::PixelStreamSegmentParameters paramsDeserialized;
-    {
-        boost::archive::binary_iarchive ia(stream);
-        ia >> paramsDeserialized;
-    }
-
-    BOOST_CHECK_EQUAL( params.x, paramsDeserialized.x );
-    BOOST_CHECK_EQUAL( params.y, paramsDeserialized.y );
-    BOOST_CHECK_EQUAL( params.height, paramsDeserialized.height );
-    BOOST_CHECK_EQUAL( params.width, paramsDeserialized.width );
-    BOOST_CHECK_EQUAL( params.compressed, paramsDeserialized.compressed );
 }
 
+#endif

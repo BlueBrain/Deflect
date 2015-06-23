@@ -41,39 +41,37 @@
 #include "DesktopSelectionView.h"
 
 DesktopSelectionWindow::DesktopSelectionWindow()
-    : desktopSelectionView_(new DesktopSelectionView(this))
+    : _desktopSelectionView( new DesktopSelectionView( this ))
 {
     // make window transparent
-    setStyleSheet("background:transparent;");
-    setAttribute(Qt::WA_TranslucentBackground);
-    setWindowFlags(Qt::FramelessWindowHint);
+    setStyleSheet( "background:transparent;" );
+    setAttribute( Qt::WA_TranslucentBackground );
+    setWindowFlags( Qt::FramelessWindowHint );
 
     // window stays on top
     Qt::WindowFlags flags = windowFlags();
-    setWindowFlags(flags | Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint);
+    setWindowFlags( flags | Qt::CustomizeWindowHint |
+                    Qt::WindowStaysOnTopHint );
 
     // add the view after showing the window to avoid shadow artifacts on Mac
-    setCentralWidget(desktopSelectionView_);
+    setCentralWidget( _desktopSelectionView );
 
-    // button to hide the window
-    QPushButton * hideWindowButton = new QPushButton("Exit selection mode");
-    connect(hideWindowButton, SIGNAL(pressed()), this, SLOT(hide()));
-
+    QPushButton* hideWindowButton = new QPushButton( "Exit selection mode" );
+    connect( hideWindowButton, SIGNAL( pressed( )), this, SLOT( hide( )));
     // makes the button square so the background doesn't look bad
-    hideWindowButton->setFlat(true);
+    hideWindowButton->setFlat( true );
 
-    // add it to the scene
-    desktopSelectionView_->scene()->addWidget(hideWindowButton);
+    _desktopSelectionView->scene()->addWidget( hideWindowButton );
 }
 
-DesktopSelectionView* DesktopSelectionWindow::getDesktopSelectionView()
+DesktopSelectionRectangle* DesktopSelectionWindow::getSelectionRectangle()
 {
-    return desktopSelectionView_;
+    return _desktopSelectionView->getSelectionRectangle();
 }
 
-void DesktopSelectionWindow::hideEvent(QHideEvent * hideEvt)
+void DesktopSelectionWindow::hideEvent( QHideEvent* hideEvt )
 {
-    QWidget::hideEvent(hideEvt);
+    QWidget::hideEvent( hideEvt );
 
-    emit windowVisible(false);
+    emit windowVisible( false );
 }
