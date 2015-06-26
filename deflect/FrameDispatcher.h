@@ -89,7 +89,7 @@ public slots:
      * @param segment The segment to process
      */
     DEFLECT_API void processSegment( QString uri, size_t sourceIndex,
-                                     Segment segment );
+                                     deflect::Segment segment );
 
     /**
      * The given source has finished sending segments for the current frame.

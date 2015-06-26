@@ -60,48 +60,48 @@ public:
 
 public slots:
     void processEvent( Event evt ) final;
-    void pixelStreamerClosed( QString uri );
 
-    void eventRegistrationReply( QString uri, bool success );
+    void initConnection();
+    void closeConnection( QString uri );
+    void replyToEventRegistration( QString uri, bool success );
 
 signals:
-    void finished();
+    void addStreamSource( QString uri, size_t sourceIndex );
+    void removeStreamSource( QString uri, size_t sourceIndex );
 
-    void receivedAddPixelStreamSource( QString uri, size_t sourceIndex );
-    void receivedPixelStreamSegement( QString uri, size_t SourceIndex,
-                                      Segment segment );
-    void receivedPixelStreamFinishFrame( QString uri, size_t SourceIndex );
-    void receivedRemovePixelStreamSource( QString uri, size_t sourceIndex );
+    void receivedSegement( QString uri, size_t sourceIndex,
+                           deflect::Segment segment );
+    void receivedFrameFinished( QString uri, size_t sourceIndex );
 
     void registerToEvents( QString uri, bool exclusive,
                            deflect::EventReceiver* receiver);
 
     void receivedCommand( QString command, QString senderUri );
 
+    void connectionClosed();
+
     /** @internal */
     void _dataAvailable();
 
 private slots:
-    void _initialize();
-    void _process();
-    void _socketReceiveMessage();
+    void _processMessages();
 
 private:
-    int _socketDescriptor;
     QTcpSocket* _tcpSocket;
 
-    QString _pixelStreamUri;
+    QString _streamUri;
+    int _sourceId;
 
     bool _registeredToEvents;
     QQueue<Event> _events;
 
+    void _receiveMessage();
     MessageHeader _receiveMessageHeader();
     QByteArray _receiveMessageBody( int size );
 
     void _handleMessage( const MessageHeader& messageHeader,
                          const QByteArray& byteArray );
-    void _handlePixelStreamMessage( const QString& uri,
-                                    const QByteArray& byteArray );
+    void _handlePixelStreamMessage( const QByteArray& byteArray );
 
     void _sendProtocolVersion();
     void _sendBindReply( bool successful );

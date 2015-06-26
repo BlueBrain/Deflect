@@ -118,8 +118,10 @@ void Server::incomingConnection( const qintptr socketHandle )
 
     worker->moveToThread( workerThread );
 
-    connect( workerThread, SIGNAL( started( )), worker, SLOT( initialize( )));
-    connect( worker, SIGNAL( finished( )), workerThread, SLOT( quit( )));
+    connect( workerThread, SIGNAL( started( )),
+             worker, SLOT( initConnection( )));
+    connect( worker, SIGNAL( connectionClosed( )),
+             workerThread, SLOT( quit( )));
 
     // Make sure the thread will be deleted
     connect( workerThread, SIGNAL( finished( )), worker, SLOT( deleteLater( )));
@@ -132,27 +134,27 @@ void Server::incomingConnection( const qintptr socketHandle )
              this, SIGNAL( registerToEvents( QString, bool,
                                              deflect::EventReceiver* )));
     connect( this, SIGNAL( _pixelStreamerClosed( QString )),
-             worker, SLOT( _pixelStreamerClosed( QString )));
+             worker, SLOT( closeConnection( QString )));
     connect( this, SIGNAL( _eventRegistrationReply( QString, bool )),
-             worker, SLOT( _eventRegistrationReply( QString, bool )));
+             worker, SLOT( replyToEventRegistration( QString, bool )));
 
     // Commands
     connect( worker, SIGNAL( receivedCommand( QString, QString )),
              &_impl->commandHandler, SLOT( process( QString, QString )));
 
     // PixelStreamDispatcher
-    connect( worker, SIGNAL( receivedAddPixelStreamSource( QString, size_t )),
+    connect( worker, SIGNAL( addStreamSource( QString, size_t )),
              &_impl->pixelStreamDispatcher, SLOT(addSource( QString, size_t )));
-    connect( worker, SIGNAL( receivedPixelStreamSegement( QString, size_t,
-                                                          Segment )),
-             &_impl->pixelStreamDispatcher,
-             SLOT( processSegment( QString, size_t, Segment )));
     connect( worker,
-             SIGNAL( receivedPixelStreamFinishFrame( QString, size_t )),
+             SIGNAL( receivedSegement( QString, size_t, deflect::Segment )),
+             &_impl->pixelStreamDispatcher,
+             SLOT( processSegment( QString, size_t, deflect::Segment )));
+    connect( worker,
+             SIGNAL( receivedFrameFinished( QString, size_t )),
              &_impl->pixelStreamDispatcher,
              SLOT( processFrameFinished( QString, size_t )));
     connect( worker,
-             SIGNAL( receivedRemovePixelStreamSource( QString, size_t )),
+             SIGNAL( removeStreamSource( QString, size_t )),
              &_impl->pixelStreamDispatcher,
              SLOT( removeSource( QString, size_t )));
 
