@@ -104,7 +104,7 @@ void FrameDispatcher::removeSource( const QString uri,
 
 void FrameDispatcher::processSegment( const QString uri,
                                       const size_t sourceIndex,
-                                      Segment segment )
+                                      deflect::Segment segment )
 {
     if( _impl->streamBuffers.count( uri ))
         _impl->streamBuffers[uri].insert( segment, sourceIndex );
