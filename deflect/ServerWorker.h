@@ -66,11 +66,12 @@ public slots:
     void replyToEventRegistration( QString uri, bool success );
 
 signals:
-    void receivedAddPixelStreamSource( QString uri, size_t sourceIndex );
-    void receivedPixelStreamSegement( QString uri, size_t sourceIndex,
-                                      deflect::Segment segment );
-    void receivedPixelStreamFinishFrame( QString uri, size_t sourceIndex );
-    void receivedRemovePixelStreamSource( QString uri, size_t sourceIndex );
+    void addStreamSource( QString uri, size_t sourceIndex );
+    void removeStreamSource( QString uri, size_t sourceIndex );
+
+    void receivedSegement( QString uri, size_t sourceIndex,
+                           deflect::Segment segment );
+    void receivedFrameFinished( QString uri, size_t sourceIndex );
 
     void registerToEvents( QString uri, bool exclusive,
                            deflect::EventReceiver* receiver);
@@ -86,10 +87,10 @@ private slots:
     void _processMessages();
 
 private:
-    int _socketDescriptor;
     QTcpSocket* _tcpSocket;
 
     QString _streamUri;
+    int _sourceId;
 
     bool _registeredToEvents;
     QQueue<Event> _events;
@@ -100,8 +101,7 @@ private:
 
     void _handleMessage( const MessageHeader& messageHeader,
                          const QByteArray& byteArray );
-    void _handlePixelStreamMessage( const QString& uri,
-                                    const QByteArray& byteArray );
+    void _handlePixelStreamMessage( const QByteArray& byteArray );
 
     void _sendProtocolVersion();
     void _sendBindReply( bool successful );

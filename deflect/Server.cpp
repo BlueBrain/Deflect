@@ -143,18 +143,18 @@ void Server::incomingConnection( const qintptr socketHandle )
              &_impl->commandHandler, SLOT( process( QString, QString )));
 
     // PixelStreamDispatcher
-    connect( worker, SIGNAL( receivedAddPixelStreamSource( QString, size_t )),
+    connect( worker, SIGNAL( addStreamSource( QString, size_t )),
              &_impl->pixelStreamDispatcher, SLOT(addSource( QString, size_t )));
-    connect( worker, SIGNAL( receivedPixelStreamSegement( QString, size_t,
-                                                          deflect::Segment )),
+    connect( worker,
+             SIGNAL( receivedSegement( QString, size_t, deflect::Segment )),
              &_impl->pixelStreamDispatcher,
              SLOT( processSegment( QString, size_t, deflect::Segment )));
     connect( worker,
-             SIGNAL( receivedPixelStreamFinishFrame( QString, size_t )),
+             SIGNAL( receivedFrameFinished( QString, size_t )),
              &_impl->pixelStreamDispatcher,
              SLOT( processFrameFinished( QString, size_t )));
     connect( worker,
-             SIGNAL( receivedRemovePixelStreamSource( QString, size_t )),
+             SIGNAL( removeStreamSource( QString, size_t )),
              &_impl->pixelStreamDispatcher,
              SLOT( removeSource( QString, size_t )));
 

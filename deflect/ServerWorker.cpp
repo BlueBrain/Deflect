@@ -49,12 +49,12 @@ namespace deflect
 {
 
 ServerWorker::ServerWorker( const int socketDescriptor )
-    : _socketDescriptor( socketDescriptor )
     // Ensure that tcpSocket_ parent is *this* so it gets moved to thread
-    , _tcpSocket( new QTcpSocket( this ))
+    : _tcpSocket( new QTcpSocket( this ))
+    , _sourceId( socketDescriptor )
     , _registeredToEvents( false )
 {
-    if( !_tcpSocket->setSocketDescriptor( _socketDescriptor ))
+    if( !_tcpSocket->setSocketDescriptor( socketDescriptor ))
     {
         std::cerr << "could not set socket descriptor: "
                   << _tcpSocket->errorString().toStdString() << std::endl;
@@ -64,9 +64,9 @@ ServerWorker::ServerWorker( const int socketDescriptor )
 
     connect( _tcpSocket, SIGNAL( disconnected( )),
              this, SIGNAL( connectionClosed( )));
+
     connect( _tcpSocket, SIGNAL( readyRead( )),
              this, SLOT( _processMessages( )), Qt::QueuedConnection );
-
     connect( this, SIGNAL( _dataAvailable( )),
              this, SLOT( _processMessages( )), Qt::QueuedConnection );
 }
@@ -78,7 +78,7 @@ ServerWorker::~ServerWorker()
     // if other senders are still active / resp. the window gets closed if no
     // more senders contribute to it.
     if( !_streamUri.isEmpty( ))
-        emit receivedRemovePixelStreamSource( _streamUri, _socketDescriptor );
+        emit removeStreamSource( _streamUri, _sourceId );
 
     if( _tcpSocket->state() == QAbstractSocket::ConnectedState )
         _sendQuit();
@@ -191,39 +191,48 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
 {
     const QString uri( messageHeader.uri );
     if( uri.isEmpty( ))
-        std::cerr << "Warning: received empty message uri!!" << std::endl;
+    {
+        std::cerr << "Warning: rejecting streamer with empty uri"
+                  << std::endl;
+        closeConnection( _streamUri );
+        return;
+    }
+    if( uri != _streamUri &&
+            messageHeader.type != MESSAGE_TYPE_PIXELSTREAM_OPEN )
+    {
+        std::cerr << "Warning: ingnoring message with incorrect stream uri: '"
+                  << messageHeader.uri << "', expected: '"
+                  << _streamUri.toStdString() << "'" <<  std::endl;
+        return;
+    }
 
     switch( messageHeader.type )
     {
     case MESSAGE_TYPE_QUIT:
-        if ( _streamUri == uri )
-        {
-            emit receivedRemovePixelStreamSource( uri, _socketDescriptor );
-            _streamUri = QString();
-        }
+        emit removeStreamSource( _streamUri, _sourceId );
+        _streamUri = QString();
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM_OPEN:
-        if( _streamUri.isEmpty( ))
+        if( !_streamUri.isEmpty( ))
         {
-            _streamUri = uri;
-            emit receivedAddPixelStreamSource( uri, _socketDescriptor );
+            std::cerr << "Warning: PixelStream already opened!" << std::endl;
+            return;
         }
-        else
-            std::cerr << "Error: PixelStream already opened!" << std::endl;
+        _streamUri = uri;
+        emit addStreamSource( _streamUri, _sourceId );
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME:
-        if( _streamUri == uri )
-            emit receivedPixelStreamFinishFrame( uri, _socketDescriptor );
+        emit receivedFrameFinished( _streamUri, _sourceId );
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM:
-        _handlePixelStreamMessage( uri, byteArray );
+        _handlePixelStreamMessage( byteArray );
         break;
 
     case MESSAGE_TYPE_COMMAND:
-        emit receivedCommand( QString( byteArray.data( )), uri );
+        emit receivedCommand( QString( byteArray.data( )), _streamUri );
         break;
 
     case MESSAGE_TYPE_BIND_EVENTS:
@@ -241,11 +250,9 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
     default:
         break;
     }
-
 }
 
-void ServerWorker::_handlePixelStreamMessage( const QString& uri,
-                                              const QByteArray& byteArray )
+void ServerWorker::_handlePixelStreamMessage( const QByteArray& byteArray )
 {
     const SegmentParameters* parameters =
             reinterpret_cast< const SegmentParameters* >( byteArray.data( ));
@@ -253,16 +260,11 @@ void ServerWorker::_handlePixelStreamMessage( const QString& uri,
     Segment segment;
     segment.parameters = *parameters;
 
-    // read image data
     QByteArray imageData =
             byteArray.right( byteArray.size() - sizeof( SegmentParameters ));
     segment.imageData = imageData;
 
-    if( _streamUri == uri )
-        emit( receivedPixelStreamSegement( uri, _socketDescriptor, segment ));
-    else
-        std::cerr << "received PixelStreamSegement from incorrect uri: "
-                  << uri.toStdString() << std::endl;
+    emit( receivedSegement( _streamUri, _sourceId, segment ));
 }
 
 void ServerWorker::_sendProtocolVersion()
