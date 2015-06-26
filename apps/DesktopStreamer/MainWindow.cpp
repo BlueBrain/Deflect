@@ -55,7 +55,11 @@ typedef __int32 int32_t;
 #endif
 
 #ifdef __APPLE__
-#  include <CoreGraphics/CoreGraphics.h>
+#  if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
+#    include <CoreGraphics/CoreGraphics.h>
+#  else
+#    include <ApplicationServices/ApplicationServices.h>
+#  endif
 #endif
 
 #define SHARE_DESKTOP_UPDATE_DELAY      1
@@ -198,6 +202,8 @@ void MainWindow::_startStreaming()
 
 #ifdef __APPLE__
     _napSuspender.suspend();
+#endif
+#ifdef DEFLECT_USE_SERVUS
     _browseTimer.stop();
 #endif
     _updateTimer.start( SHARE_DESKTOP_UPDATE_DELAY );
