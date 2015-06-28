@@ -39,6 +39,8 @@
 #ifndef DESKTOP_SELECTION_VIEW_H
 #define DESKTOP_SELECTION_VIEW_H
 
+#include <deflect/config.h>
+
 #include <QtWidgets>
 
 class DesktopSelectionRectangle;
