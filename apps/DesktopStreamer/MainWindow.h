@@ -78,6 +78,8 @@ private slots:
     void _setCoordinates( QRect coordinates );
     void _updateCoordinates();
 
+    void _onStreamEventsBoxClicked( bool checked );
+
 private:
     deflect::Stream* _stream;
 
@@ -93,7 +95,7 @@ private:
     QSpinBox _heightSpinBox;
     QSpinBox _frameRateSpinBox;
     QLabel _frameRateLabel;
-    QCheckBox _eventsBox;
+    QCheckBox _streamEventsBox;
 
     QAction* _shareDesktopAction;
     QAction* _showDesktopSelectionWindowAction;

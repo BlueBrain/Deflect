@@ -25,6 +25,8 @@ if you find any other issue with this release.
 * Many classes of the Server part have been renamed
 * Various API fixes
 * Project-wide codestyle cleanup
+* DesktopStreamer: Minor fixes for desktop interaction, only show checkbox on
+  supported platforms (OSX)
 
 ## Deflect 0.5
 

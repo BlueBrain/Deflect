@@ -55,6 +55,7 @@ typedef __int32 int32_t;
 #endif
 
 #ifdef __APPLE__
+#  define STREAM_EVENTS_SUPPORTED TRUE
 #  if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
 #    include <CoreGraphics/CoreGraphics.h>
 #  else
@@ -148,10 +149,14 @@ void MainWindow::_setupUI()
     formLayout->addRow( "Y", &_ySpinBox );
     formLayout->addRow( "Width", &_widthSpinBox );
     formLayout->addRow( "Height", &_heightSpinBox );
-    formLayout->addRow( "Allow desktop interaction", &_eventsBox );
+#ifdef STREAM_EVENTS_SUPPORTED
+    formLayout->addRow( "Allow desktop interaction", &_streamEventsBox );
+    _streamEventsBox.setChecked( true );
+    connect( &_streamEventsBox, SIGNAL( clicked( bool )),
+             this, SLOT( _onStreamEventsBoxClicked( bool )));
+#endif
     formLayout->addRow( "Max frame rate", &_frameRateSpinBox );
     formLayout->addRow( "Actual frame rate", &_frameRateLabel );
-    _eventsBox.setChecked( true );
 
     // share desktop action
     _shareDesktopAction = new QAction( "Share Desktop", this );
@@ -198,7 +203,10 @@ void MainWindow::_startStreaming()
         _handleStreamingError( "Could not connect to host!" );
         return;
     }
-    _stream->registerForEvents();
+#ifdef STREAM_EVENTS_SUPPORTED
+    if( _streamEventsBox.isChecked( ))
+        _stream->registerForEvents();
+#endif
 
 #ifdef __APPLE__
     _napSuspender.suspend();
@@ -274,20 +282,20 @@ void MainWindow::_showDesktopSelectionWindow( const bool set )
 
 void MainWindow::_update()
 {
-    _processStreamEvents();
+    if( _stream->isRegisteredForEvents( ))
+        _processStreamEvents();
     _shareDesktopUpdate();
 }
 
 void MainWindow::_processStreamEvents()
 {
-    if( !_eventsBox.checkState( ))
-        return;
-    if( !_stream->isRegisteredForEvents( ))
-        return;
-
     while( _stream->hasEvent( ))
     {
         const deflect::Event& wallEvent = _stream->getEvent();
+        // Once registered for events they must be consumed, otherwise they
+        // queue up. Until unregister is implemented, just ignore them.
+        if( !_streamEventsBox.checkState( ))
+            break;
 #ifndef NDEBUG
         std::cout << "----------" << std::endl;
 #endif
@@ -431,6 +439,16 @@ void MainWindow::_updateCoordinates()
 
     const QRect coord( _x, _y, _width, _height );
     _desktopSelectionWindow->getSelectionRectangle()->setCoordinates( coord );
+}
+
+void MainWindow::_onStreamEventsBoxClicked( const bool checked )
+{
+    if( !checked )
+        return;
+#ifdef STREAM_EVENTS_SUPPORTED
+    if( _stream && _stream->isConnected() && !_stream->isRegisteredForEvents( ))
+        _stream->registerForEvents();
+#endif
 }
 
 #ifdef __APPLE__
