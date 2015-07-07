@@ -38,7 +38,7 @@ if(APPLE)
   else()
     list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES "-framework CoreGraphics")
   endif()
-elseif(WIN32)
+elseif(MSVC)
   list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES Ws2_32)
 endif()
 
