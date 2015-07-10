@@ -20,13 +20,14 @@ if you find any other issue with this release.
 
 # Changes {#Changes}
 
-## git master (0.6)
+## Deflect 0.6
 
 * Many classes of the Server part have been renamed
 * Various API fixes
 * Project-wide codestyle cleanup
 * DesktopStreamer: Minor fixes for desktop interaction, only show checkbox on
   supported platforms (OSX)
+* DesktopStreamer OSX: zip the application for Puppet deployment
 
 ## Deflect 0.5
 

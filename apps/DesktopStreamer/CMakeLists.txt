@@ -44,5 +44,12 @@ endif()
 
 common_gui_application(${DESKTOPSTREAMER_APP_NAME})
 
+if(APPLE)
+  # create a zip for Puppet deployment
+  install(CODE "execute_process(COMMAND zip -r
+    ${DESKTOPSTREAMER_APP_NAME}-${VERSION}.zip ${DESKTOPSTREAMER_APP_NAME}.app
+    WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)" COMPONENT apps)
+endif()
+
 set(CPACK_PACKAGE_LICENSE "LGPL")
 include(CPackConfig)
