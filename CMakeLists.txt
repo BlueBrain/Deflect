@@ -15,8 +15,7 @@ set(VERSION_MINOR "6")
 set(VERSION_PATCH "1")
 set(VERSION_ABI 1)
 
-set(DEFLECT_DESCRIPTION
-  "The client library to write applications for DisplayCluster")
+set(DEFLECT_DESCRIPTION "A fast C++ library for streaming pixels and events")
 set(DEFLECT_DEPENDENT_LIBRARIES Boost)
 
 include(Common)
@@ -29,8 +28,9 @@ add_subdirectory(apps)
 add_subdirectory(tests)
 add_subdirectory(doc)
 
+set(DOXYGEN_MAINPAGE_MD README.md)
+set(DOXYGEN_EXTRA_INPUT ${PROJECT_SOURCE_DIR}/README.md)
 include(DoxygenRule) # must be after all targets
-include(PackageConfig)
 
 set(CTEST_CUSTOM_WARNING_EXCEPTION ${CTEST_CUSTOM_WARNING_EXCEPTION}
   # http://public.kitware.com/Bug/view.php?id=10179
