@@ -67,7 +67,7 @@ enum CompressionPolicy {
  * (disabled by default).
  * @version 1.0
  */
-struct DEFLECT_API ImageWrapper
+struct ImageWrapper
 {
     /**
      * ImageWrapper constructor
