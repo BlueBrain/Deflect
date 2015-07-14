@@ -4,7 +4,6 @@
 #                     Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 
 set(DEFLECT_PUBLIC_HEADERS
-  ${COMMON_INCLUDES}
   AbstractCommandHandler.h
   config.h
   Command.h

@@ -17,10 +17,9 @@ set(MOCK_SOURCES
   MockServer.cpp
 )
 
-qt5_wrap_cpp(MOC_OUTFILES ${MOCK_MOC_HEADERS})
-
 set(IGNORE_LIB_TARGETS Mock)
-add_library(Mock SHARED ${MOC_OUTFILES} ${MOCK_HEADERS} ${MOCK_SOURCES})
-set_target_properties(Mock PROPERTIES
-  COMPILE_DEFINITIONS "DEFLECT_SHARED")
-target_link_libraries(Mock ${Qt5Core_LIBRARIES} ${Qt5Network_LIBRARIES})
+
+set(MOCK_INCLUDE_NAME mock)
+set(MOCK_LINK_LIBRARIES ${Qt5Core_LIBRARIES} ${Qt5Network_LIBRARIES})
+common_library(Mock)
+
