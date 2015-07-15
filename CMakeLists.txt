@@ -38,6 +38,7 @@ add_subdirectory(apps)
 add_subdirectory(tests)
 add_subdirectory(doc)
 
+set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)
 set(DOXYGEN_MAINPAGE_MD README.md)
 set(DOXYGEN_EXTRA_INPUT ${PROJECT_SOURCE_DIR}/README.md)
 include(DoxygenRule) # must be after all targets
