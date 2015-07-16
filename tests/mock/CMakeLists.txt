@@ -17,9 +17,8 @@ set(MOCK_SOURCES
   MockServer.cpp
 )
 
-set(IGNORE_LIB_TARGETS Mock)
-
 set(MOCK_INCLUDE_NAME mock)
+set(MOCK_NAMESPACE mock)
 set(MOCK_LINK_LIBRARIES ${Qt5Core_LIBRARIES} ${Qt5Network_LIBRARIES})
 common_library(Mock)
 
