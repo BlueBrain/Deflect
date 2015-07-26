@@ -72,6 +72,9 @@ public:
      */
     DEFLECT_API void startDecoding( Segment& segment );
 
+    /** Waits for the decoding of a segment to finish, initiated by startDecoding(). */
+    DEFLECT_API void waitDecoding();
+
     /** Check if the decoding thread is running. */
     DEFLECT_API bool isRunning() const;
 
