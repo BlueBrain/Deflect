@@ -50,47 +50,33 @@ namespace ut = boost::unit_test;
 
 BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp );
 
-BOOST_AUTO_TEST_CASE( testSocketConnectionValidWhenReturnedCorrectNetworkProtocolVersion )
+void testSocketConnect( const int32_t versionOffset )
 {
     QThread thread;
-    MockServer server;
-    server.moveToThread( &thread );
+    MockServer* server = new MockServer( NETWORK_PROTOCOL_VERSION + versionOffset );
+    server->moveToThread( &thread );
+    server->connect( &thread, &QThread::finished, server, &QObject::deleteLater );
     thread.start();
 
-    deflect::Socket socket( "localhost", server.serverPort( ));
+    deflect::Socket socket( "localhost", server->serverPort( ));
 
-    BOOST_CHECK( socket.isConnected( ));
+    BOOST_CHECK( socket.isConnected() == (versionOffset == 0));
 
     thread.quit();
     thread.wait();
+}
+
+BOOST_AUTO_TEST_CASE( testSocketConnectionValidWhenReturnedCorrectNetworkProtocolVersion )
+{
+    testSocketConnect( 0 );
 }
 
 BOOST_AUTO_TEST_CASE( testSocketConnectionInvalidWhenReturnedLowerNetworkProtocolVersion )
 {
-    QThread thread;
-    MockServer server( NETWORK_PROTOCOL_VERSION-1 );
-    server.moveToThread( &thread );
-    thread.start();
-
-    deflect::Socket socket( "localhost", server.serverPort());
-
-    BOOST_CHECK( !socket.isConnected() );
-
-    thread.quit();
-    thread.wait();
+    testSocketConnect( -1 );
 }
 
 BOOST_AUTO_TEST_CASE( testSocketConnectionInvalidWhenReturnedHigherNetworkProtocolVersion )
 {
-    QThread thread;
-    MockServer server( NETWORK_PROTOCOL_VERSION+1 );
-    server.moveToThread( &thread );
-    thread.start();
-
-    deflect::Socket socket( "localhost", server.serverPort( ));
-
-    BOOST_CHECK( !socket.isConnected( ));
-
-    thread.quit();
-    thread.wait();
+    testSocketConnect( 1 );
 }

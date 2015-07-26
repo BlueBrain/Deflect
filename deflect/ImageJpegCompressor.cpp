@@ -110,11 +110,10 @@ QByteArray ImageJpegCompressor::computeJpeg( const ImageWrapper& sourceImage,
     }
 
     // move the JPEG buffer to a byte array
-    QByteArray jpegData;
-    jpegData.append( (char*)tjJpegBuf, tjJpegSize );
+    const QByteArray jpegData( (char*)tjJpegBuf, tjJpegSize );
 
     // free the libjpeg-turbo allocated memory
-    free( tjJpegBuf );
+    tjFree( tjJpegBuf );
 
     return jpegData;
 }

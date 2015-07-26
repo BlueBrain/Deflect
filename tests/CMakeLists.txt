@@ -7,4 +7,3 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/mock)
 
 add_subdirectory(mock)
 add_subdirectory(cpp)
-add_subdirectory(perf)

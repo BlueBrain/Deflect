@@ -52,11 +52,17 @@ namespace ut = boost::unit_test;
 // blank and random images through deflect::Stream. Baseline test for best-case
 // performance when streaming pixels.
 
-#define WIDTH  (3840u)
-#define HEIGHT (2160u)
+#ifdef _MSC_VER
+#  define WIDTH  (800u)
+#  define HEIGHT (600u)
+#  define NIMAGES (10u)
+#else
+#  define WIDTH  (3840u)
+#  define HEIGHT (2160u)
+#  define NIMAGES (100u)
+#endif
 #define NPIXELS (WIDTH * HEIGHT)
 #define NBYTES  (NPIXELS * 4u)
-#define NIMAGES (100u)
 // #define NTHREADS 20 // QT default if not defined
 
 BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp )

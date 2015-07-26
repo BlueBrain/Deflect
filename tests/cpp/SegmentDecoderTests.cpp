@@ -129,15 +129,7 @@ BOOST_AUTO_TEST_CASE( testImageSegmentationWithCompressionAndDecompression )
     // Decompress image
     deflect::SegmentDecoder decoder;
     decoder.startDecoding(segment);
-
-    size_t timeout = 0;
-    while( decoder.isRunning( ))
-    {
-        boost::this_thread::sleep( boost::posix_time::microseconds( 10 ));
-        if( ++timeout >= 10 )
-            break;
-    }
-    BOOST_REQUIRE( timeout < 10 );
+    decoder.waitDecoding();
 
     // Check decoded image in format RGBA
     BOOST_REQUIRE( !segment.parameters.compressed );

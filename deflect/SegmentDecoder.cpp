@@ -99,6 +99,11 @@ void SegmentDecoder::startDecoding( Segment& segment )
                                                &segment );
 }
 
+void SegmentDecoder::waitDecoding()
+{
+    _impl->decodingFuture.waitForFinished();
+}
+
 bool SegmentDecoder::isRunning() const
 {
     return _impl->decodingFuture.isRunning();
