@@ -55,7 +55,7 @@ class ServerWorker : public EventReceiver
     Q_OBJECT
 
 public:
-    ServerWorker( int socketDescriptor );
+    explicit ServerWorker( int socketDescriptor );
     ~ServerWorker();
 
 public slots:

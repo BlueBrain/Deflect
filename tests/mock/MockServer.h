@@ -55,7 +55,8 @@ class MockServer : public QTcpServer
     Q_OBJECT
 
 public:
-    MOCK_API MockServer( int32_t protocolVersion = NETWORK_PROTOCOL_VERSION );
+    MOCK_API explicit MockServer( int32_t protocolVersion =
+                                  NETWORK_PROTOCOL_VERSION );
     MOCK_API virtual ~MockServer();
 
 protected:

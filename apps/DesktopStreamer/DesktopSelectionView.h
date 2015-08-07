@@ -48,7 +48,7 @@ class DesktopSelectionRectangle;
 class DesktopSelectionView : public QGraphicsView
 {
 public:
-    DesktopSelectionView( QWidget* parent );
+    explicit DesktopSelectionView( QWidget* parent );
     ~DesktopSelectionView();
 
     DesktopSelectionRectangle* getSelectionRectangle();
