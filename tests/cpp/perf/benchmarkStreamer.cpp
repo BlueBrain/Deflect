@@ -187,7 +187,7 @@ static bool append( deflect::Segments& segments,
 class Application
 {
 public:
-    Application( const BenchmarkOptions& options )
+    explicit Application( const BenchmarkOptions& options )
         : _options( options )
         , _stream( new deflect::Stream( options.name, options.hostname ))
     {

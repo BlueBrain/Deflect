@@ -62,7 +62,7 @@ class StreamSendWorker
 {
 public:
     /** Create a new stream worker associated to an existing stream object. */
-    StreamSendWorker( StreamPrivate& stream );
+    explicit StreamSendWorker( StreamPrivate& stream );
 
     ~StreamSendWorker();
 

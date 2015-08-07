@@ -66,6 +66,7 @@ public:
      * Constructor.
      * @param command A string-formatted command, as obtained by getCommand().
      */
+    // cppcheck-suppress noExplicitConstructor
     DEFLECT_API Command( const QString& command );
 
     /** Destructor. */
