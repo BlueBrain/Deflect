@@ -65,7 +65,7 @@ namespace ut = boost::unit_test;
 #define NBYTES  (NPIXELS * 4u)
 // #define NTHREADS 20 // QT default if not defined
 
-BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp )
+BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp );
 
 namespace
 {
