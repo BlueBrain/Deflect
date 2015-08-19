@@ -1,6 +1,11 @@
 Changelog {#Changelog}
 ============
 
+## Deflect 0.7
+
+### 0.7.0 (19-08-2015)
+* Added EVT_TAP_AND_HOLD EventType
+
 ## Deflect 0.6
 
 ### 0.6.1 (13-07-2015)
