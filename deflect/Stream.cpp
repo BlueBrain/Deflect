@@ -102,6 +102,7 @@ bool Stream::registerForEvents( const bool exclusive )
     MessageHeader mh( type, 0, _impl->name );
 
     // Send the bind message
+    QMutexLocker locker( &_impl->socketLock );
     if( !_impl->socket.send( mh, QByteArray( )))
     {
         std::cerr << "Could not send bind message" << std::endl;
@@ -134,7 +135,7 @@ int Stream::getDescriptor() const
 
 bool Stream::hasEvent() const
 {
-    QMutexLocker locker( &_impl->sendLock );
+    QMutexLocker locker( &_impl->socketLock );
     return _impl->socket.hasMessage( Event::serializedSize );
 }
 
@@ -143,7 +144,7 @@ Event Stream::getEvent()
     MessageHeader mh;
     QByteArray message;
 
-    QMutexLocker locker( &_impl->sendLock );
+    QMutexLocker locker( &_impl->socketLock );
     bool success = _impl->socket.receive( mh, message );
 
     if( !success || mh.type != MESSAGE_TYPE_EVENT )

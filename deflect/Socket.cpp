@@ -41,7 +41,8 @@
 #include "MessageHeader.h"
 #include "NetworkProtocol.h"
 
-#include <QtNetwork/QTcpSocket>
+#include <QLoggingCategory>
+#include <QTcpSocket>
 #include <iostream>
 
 #define INVALID_NETWORK_PROTOCOL_VERSION   -1
@@ -57,11 +58,20 @@ Socket::Socket( const std::string &hostname, const unsigned short port )
     : _socket( new QTcpSocket( ))
     , _remoteProtocolVersion( INVALID_NETWORK_PROTOCOL_VERSION )
 {
+    // disable message during connect() which happens if no QCoreApplication is
+    // present: QObject::connect: Cannot connect (null)::destroyed() to
+    // QHostInfoLookupManager::waitForThreadPoolDone()
+    QLoggingCategory* log = QLoggingCategory::defaultCategory();
+    const bool warnEnabled = log->isWarningEnabled();
+    log->setEnabled( QtWarningMsg, false );
+
     if( !_connect( hostname, port ))
     {
         std::cerr << "could not connect to host " << hostname << ":" <<  port
                   << std::endl;
     }
+    log->setEnabled( QtWarningMsg, warnEnabled );
+
     QObject::connect( _socket, SIGNAL( disconnected( )),
                       this, SIGNAL( disconnected( )));
 }
@@ -188,11 +198,7 @@ bool Socket::_connect( const std::string& hostname, const unsigned short port )
 
     // handshake
     if( _checkProtocolVersion( ))
-    {
-        std::cout << "connected to host " << hostname << ":" << port
-                  << std::endl;
         return true;
-    }
 
     std::cerr << "Protocol version check failed for host: " << hostname << ":"
               << port << std::endl;

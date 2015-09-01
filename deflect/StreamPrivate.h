@@ -127,7 +127,8 @@ public:
     /** Has a successful event registration reply been received */
     bool registeredForEvents;
 
-    QMutex sendLock;
+    /** Protect concurrent send & receive on the QTcpSocket */
+    QMutex socketLock;
 
 private slots:
     void _onDisconnected();
