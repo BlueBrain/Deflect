@@ -43,6 +43,7 @@
 
 #include <deflect/Server.h>
 #include <deflect/Stream.h>
+#include <deflect/version.h>
 
 #include <iostream>
 
@@ -180,6 +181,14 @@ void MainWindow::_setupUI()
     QToolBar* toolbar = addToolBar( "toolbar" );
     toolbar->addAction( _shareDesktopAction );
     toolbar->addAction( _showDesktopSelectionWindowAction );
+
+    // add About dialog
+    QAction* showAboutDialog = new QAction( "About", this );
+    showAboutDialog->setStatusTip( "About DesktopStreamer" );
+    connect( showAboutDialog, &QAction::triggered,
+             this, &MainWindow::_openAboutWidget );
+    QMenu* helpMenu = menuBar()->addMenu( "&Help" );
+    helpMenu->addAction( showAboutDialog );
 
     // Update timer
     connect( &_updateTimer, SIGNAL( timeout( )), this, SLOT( _update( )));
@@ -449,6 +458,18 @@ void MainWindow::_onStreamEventsBoxClicked( const bool checked )
     if( _stream && _stream->isConnected() && !_stream->isRegisteredForEvents( ))
         _stream->registerForEvents();
 #endif
+}
+
+void MainWindow::_openAboutWidget()
+{
+    const int revision = deflect::Version::getRevision();
+
+    std::ostringstream aboutMsg;
+    aboutMsg << "Current version: " << deflect::Version::getString();
+    aboutMsg << std::endl;
+    aboutMsg << "SCM revision: " << std::hex << revision << std::dec;
+
+    QMessageBox::about( this, "About DesktopStreamer", aboutMsg.str().c_str( ));
 }
 
 #ifdef __APPLE__
