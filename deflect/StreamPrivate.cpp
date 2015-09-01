@@ -83,6 +83,7 @@ StreamPrivate::~StreamPrivate()
         return;
 
     MessageHeader mh( MESSAGE_TYPE_QUIT, 0, name );
+    QMutexLocker locker( &socketLock );
     socket.send( mh, QByteArray( ));
 
     registeredForEvents = false;
@@ -115,6 +116,7 @@ bool StreamPrivate::finishFrame()
 {
     // Open a window for the PixelStream
     MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, name );
+    QMutexLocker locker( &socketLock );
     return socket.send( mh, QByteArray( ));
 }
 
@@ -135,7 +137,7 @@ bool StreamPrivate::sendPixelStreamSegment( const Segment& segment )
     // Message payload part 2: image data
     message.append( segment.imageData );
 
-    QMutexLocker locker( &sendLock );
+    QMutexLocker locker( &socketLock );
     return socket.send( mh, message );
 }
 
@@ -146,6 +148,7 @@ bool StreamPrivate::sendCommand( const QString& command )
 
     MessageHeader mh( MESSAGE_TYPE_COMMAND, message.size(), name );
 
+    QMutexLocker locker( &socketLock );
     return socket.send( mh, message );
 }
 

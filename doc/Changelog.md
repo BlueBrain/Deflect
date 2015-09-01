@@ -3,6 +3,9 @@ Changelog {#Changelog}
 
 ## Deflect 0.7
 
+### 0.7.1 (01-09-2015)
+* Fixed rare crash or hang together with stream and interaction
+
 ### 0.7.0 (19-08-2015)
 * Added EVT_TAP_AND_HOLD EventType
 
