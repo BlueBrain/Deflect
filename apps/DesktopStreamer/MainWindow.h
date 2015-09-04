@@ -79,6 +79,7 @@ private slots:
     void _updateCoordinates();
 
     void _onStreamEventsBoxClicked( bool checked );
+    void _openAboutWidget();
 
 private:
     deflect::Stream* _stream;

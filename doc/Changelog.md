@@ -3,6 +3,10 @@ Changelog {#Changelog}
 
 ## Deflect 0.7
 
+### 0.7.2 (03-09-2015)
+* Add 'About' dialog to learn current used version
+* Fix bundle generation on OSX, broken after 0.6.1
+
 ### 0.7.1 (01-09-2015)
 * Fixed rare crash or hang together with stream and interaction
 
