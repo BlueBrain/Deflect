@@ -1,7 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2014, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2015, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
-/*                     Stefan.Eilemann@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -38,101 +37,80 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_STREAMPRIVATE_H
-#define DEFLECT_STREAMPRIVATE_H
+#ifndef DEFLECT_MTQUEUE_H
+#define DEFLECT_MTQUEUE_H
 
-#include <deflect/api.h>
-
-#include "Event.h"
-#include "MessageHeader.h"
-#include "ImageSegmenter.h"
-#include "Socket.h" // member
-#include "Stream.h" // Stream::Future
-
-#include <string>
-
-class QString;
+#include <condition_variable>
+#include <mutex>
+#include <queue>
 
 namespace deflect
 {
 
-class StreamSendWorker;
-
-/**
- * Private implementation for the Stream class.
- */
-class StreamPrivate : public QObject
+/** Thread-safe multiple producer, multiple consumer queue. */
+template <class T>
+class MTQueue
 {
-    Q_OBJECT
-
 public:
-    /**
-     * Create a new stream and open a new connection to the DisplayCluster.
-     *
-     * It can be a hostname like "localhost" or an IP in string format,
-     * e.g. "192.168.1.83" This method must be called by all Streams sharing a
-     * common identifier before any of them starts sending images.
-     *
-     * @param stream the parent object owning this object
-     * @param name the unique stream name
-     * @param address Address of the target DisplayCluster instance.
-     */
-    StreamPrivate( Stream* stream, const std::string& name,
-                   const std::string& address );
-
-    /** Destructor, close the Stream. */
-    ~StreamPrivate();
+    /** @param maxSize maximum size of the queue after which enqueue() blocks */
+    MTQueue( const size_t maxSize = std::numeric_limits< size_t >::max( ))
+        : _maxSize( maxSize )
+    {}
 
     /**
-     * Close the stream.
-     * @return true on success or if the Stream was not connected
+     * Push a new value to the end of the queue. Blocks if maxSize is reached.
      */
-    bool close();
+    void enqueue( const T& value )
+    {
+        std::unique_lock<std::mutex> lock( _mutex );
+        while( _queue.size() >= _maxSize )
+            _full.wait( lock );
+        _queue.push( value );
+        _empty.notify_one();
+    }
 
-    /** @sa Stream::send */
-    bool send( const ImageWrapper& image );
+    /** Pop a value from the front of the queue. Blocks if queue is empty. */
+    T dequeue()
+    {
+        std::unique_lock<std::mutex> lock( _mutex );
+        while( _queue.empty( ))
+            _empty.wait( lock );
+        T value = _queue.front();
+        _queue.pop();
+        _full.notify_one();
+        return value;
+    }
 
-    /** @sa Stream::asyncSend */
-    Stream::Future asyncSend( const ImageWrapper& image );
+    /** Clears the queue. */
+    void clear()
+    {
+        std::lock_guard<std::mutex> lock( _mutex );
+        _queue = {};
+        _full.notify_one();
+    }
 
-    /** @sa Stream::finishFrame */
-    bool finishFrame();
+    /** @return the current size of the queue. */
+    size_t size() const
+    {
+        std::lock_guard<std::mutex> lock( _mutex );
+        return _queue.size();
+    }
 
-    /**
-     * Send an existing PixelStreamSegment via the Socket.
-     * @param socket The Socket instance
-     * @param segment A pixel stream segement with valid parameters and imageData
-     * @param senderName Used to identifiy the sender on the receiver side
-     * @return true if the message could be sent
-     */
-    DEFLECT_API bool sendPixelStreamSegment( const Segment& segment );
-
-    /**
-     * Send a command to the wall
-     * @param command A command string formatted by the Command class.
-     * @return true if the request could be sent, false otherwise.
-     */
-    bool sendCommand( const QString& command );
-
-    /** The stream identifier. */
-    const std::string name;
-
-    /** The communication socket instance */
-    Socket socket;
-
-    /** The image segmenter */
-    ImageSegmenter imageSegmenter;
-
-    /** Has a successful event registration reply been received */
-    bool registeredForEvents;
-
-private slots:
-    void _onDisconnected();
+    /** @return true if the queue is empty. */
+    bool empty() const
+    {
+        std::lock_guard<std::mutex> lock( _mutex );
+        return _queue.empty();
+    }
 
 private:
-    Stream* _parent;
-    StreamSendWorker* _sendWorker;
+    size_t _maxSize;
+    std::queue<T> _queue;
+    mutable std::mutex _mutex;
+    std::condition_variable _empty;
+    std::condition_variable _full;
 };
 
 }
+
 #endif

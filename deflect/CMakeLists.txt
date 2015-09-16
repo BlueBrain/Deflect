@@ -11,6 +11,7 @@ set(DEFLECT_PUBLIC_HEADERS
   Event.h
   Frame.h
   ImageWrapper.h
+  MTQueue.h
   Segment.h
   SegmentParameters.h
   Stream.h

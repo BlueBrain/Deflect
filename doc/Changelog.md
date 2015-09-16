@@ -1,6 +1,13 @@
 Changelog {#Changelog}
 ============
 
+## Deflect 0.8
+
+### 0.8.0 (21-09-2015)
+* Fix: ZeroConf record for server announces hostname instead of (wrong) port
+* Fix: send compressed JPEG images from correct thread, might fix crashes/hangs
+* Added MTQueue class, moved from DisplayCluster
+
 ## Deflect 0.7
 
 ### 0.7.2 (03-09-2015)

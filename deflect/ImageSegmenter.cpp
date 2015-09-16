@@ -41,13 +41,13 @@
 #include "ImageSegmenter.h"
 
 #include "ImageWrapper.h"
-#include "Segment.h"
 #ifdef DEFLECT_USE_LIBJPEGTURBO
 #  include "ImageJpegCompressor.h"
 #endif
 
 #include <QtConcurrentMap>
 #include <iostream>
+#include <functional>
 
 namespace deflect
 {
@@ -59,70 +59,38 @@ ImageSegmenter::ImageSegmenter()
 }
 
 bool ImageSegmenter::generate( const ImageWrapper& image,
-                               const Handler& handler ) const
+                               const Handler& handler )
 {
     if( image.compressionPolicy == COMPRESSION_ON )
         return _generateJpeg( image, handler );
     return _generateRaw( image, handler );
 }
 
-/**
- * The SegmentCompressionWrapper struct is used to pass additional parameters
- * to the JpegCompression function. It is required because
- * QtConcurrent::blockingMapped only allows one parameter to be passed to the
- * function being called.
- */
-struct SegmentCompressionWrapper
-{
-    Segment segment;
-    ImageSegmenter::Handler handler;
-    const ImageWrapper* image;
-    bool* result;
-
-    SegmentCompressionWrapper( const ImageWrapper& image_,
-                               const ImageSegmenter::Handler& handler_,
-                               bool& res )
-        : handler( handler_ )
-        , image( &image_ )
-        , result( &res )
-    {}
-};
-
-#ifdef DEFLECT_USE_LIBJPEGTURBO
-// use libjpeg-turbo for JPEG conversion
-void computeJpeg( SegmentCompressionWrapper& task )
-{
-    QRect imageRegion( task.segment.parameters.x - task.image->x,
-                       task.segment.parameters.y - task.image->y,
-                       task.segment.parameters.width,
-                       task.segment.parameters.height );
-    ImageJpegCompressor compressor;
-
-    task.segment.imageData = compressor.computeJpeg( *task.image, imageRegion );
-    if( !task.handler( task.segment ))
-        *task.result = false;
-}
-#endif
-
 bool ImageSegmenter::_generateJpeg( const ImageWrapper& image,
-                                   const Handler& handler ) const
+                                    const Handler& handler )
 {
 #ifdef DEFLECT_USE_LIBJPEGTURBO
     const SegmentParametersList& params = _generateSegmentParameters( image );
 
     // The resulting Jpeg segments
-    bool result = true;
-    std::vector<SegmentCompressionWrapper> tasks;
-    for( SegmentParametersList::const_iterator it = params.begin();
-         it != params.end(); ++it )
+    std::vector< Segment > segments;
+    for( const auto& param : params )
     {
-        SegmentCompressionWrapper task( image, handler, result );
-        task.segment.parameters = *it;
-        tasks.push_back( task );
+        Segment segment;
+        segment.parameters = param;
+        segment.sourceImage = &image;
+        segments.push_back( segment );
     }
 
     // create JPEGs for each segment, in parallel
-    QtConcurrent::blockingMap( tasks, &computeJpeg );
+    QtConcurrent::map( segments, std::bind( &ImageSegmenter::_computeJpeg,
+                                            this, std::placeholders::_1 ));
+
+    // send ready compressed jpeg images from here. It's the thread where the
+    // socket lives, and Qt insists on that to not violate this contract.
+    bool result = true;
+    for( size_t i = 0; i < segments.size(); ++i )
+        result = result && handler( _sendQueue.dequeue( ));
     return result;
 #else
     static bool first = true;
@@ -133,6 +101,21 @@ bool ImageSegmenter::_generateJpeg( const ImageWrapper& image,
                   << std::endl;
     }
     return generateRaw( image, handler );
+#endif
+}
+
+void ImageSegmenter::_computeJpeg( Segment& segment )
+{
+#ifdef DEFLECT_USE_LIBJPEGTURBO
+    QRect imageRegion( segment.parameters.x - segment.sourceImage->x,
+                       segment.parameters.y - segment.sourceImage->y,
+                       segment.parameters.width,
+                       segment.parameters.height );
+
+    ImageJpegCompressor compressor;
+    segment.imageData = compressor.computeJpeg( *segment.sourceImage,
+                                                imageRegion );
+    _sendQueue.enqueue( segment );
 #endif
 }
 

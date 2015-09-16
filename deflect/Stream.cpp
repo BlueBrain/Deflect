@@ -97,12 +97,11 @@ bool Stream::registerForEvents( const bool exclusive )
     if( isRegisteredForEvents( ))
         return true;
 
-    MessageType type = exclusive ? MESSAGE_TYPE_BIND_EVENTS_EX :
-                                    MESSAGE_TYPE_BIND_EVENTS;
+    const MessageType type = exclusive ? MESSAGE_TYPE_BIND_EVENTS_EX :
+                                         MESSAGE_TYPE_BIND_EVENTS;
     MessageHeader mh( type, 0, _impl->name );
 
     // Send the bind message
-    QMutexLocker locker( &_impl->socketLock );
     if( !_impl->socket.send( mh, QByteArray( )))
     {
         std::cerr << "Could not send bind message" << std::endl;
@@ -111,7 +110,7 @@ bool Stream::registerForEvents( const bool exclusive )
 
     // Wait for bind reply
     QByteArray message;
-    bool success = _impl->socket.receive( mh, message );
+    const bool success = _impl->socket.receive( mh, message );
     if( !success || mh.type != MESSAGE_TYPE_BIND_EVENTS_REPLY )
     {
         std::cerr << "Invalid reply from host" << std::endl;
@@ -135,7 +134,6 @@ int Stream::getDescriptor() const
 
 bool Stream::hasEvent() const
 {
-    QMutexLocker locker( &_impl->socketLock );
     return _impl->socket.hasMessage( Event::serializedSize );
 }
 
@@ -143,10 +141,7 @@ Event Stream::getEvent()
 {
     MessageHeader mh;
     QByteArray message;
-
-    QMutexLocker locker( &_impl->socketLock );
-    bool success = _impl->socket.receive( mh, message );
-
+    const bool success = _impl->socket.receive( mh, message );
     if( !success || mh.type != MESSAGE_TYPE_EVENT )
     {
         std::cerr << "Invalid reply from host" << std::endl;
