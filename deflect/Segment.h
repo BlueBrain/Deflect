@@ -50,6 +50,8 @@
 namespace deflect
 {
 
+struct ImageWrapper;
+
 /**
  * Image data and parameters for a single segment of a PixelStream.
  */
@@ -60,6 +62,9 @@ struct Segment
 
     /** Image data of the segment. */
     QByteArray imageData;
+
+    /** @internal raw, uncompressed source image, used for compression */
+    const ImageWrapper* sourceImage;
 
 private:
     friend class boost::serialization::access;

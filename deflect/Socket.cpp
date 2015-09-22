@@ -41,6 +41,7 @@
 #include "MessageHeader.h"
 #include "NetworkProtocol.h"
 
+#include <QCoreApplication>
 #include <QLoggingCategory>
 #include <QTcpSocket>
 #include <iostream>
@@ -54,23 +55,20 @@ namespace deflect
 
 const unsigned short Socket::defaultPortNumber = DEFAULT_PORT_NUMBER;
 
-Socket::Socket( const std::string &hostname, const unsigned short port )
+Socket::Socket( const std::string& hostname, const unsigned short port )
     : _socket( new QTcpSocket( ))
     , _remoteProtocolVersion( INVALID_NETWORK_PROTOCOL_VERSION )
 {
-    // disable message during connect() which happens if no QCoreApplication is
-    // present: QObject::connect: Cannot connect (null)::destroyed() to
+    // disable warnings which occur if no QCoreApplication is present during
+    // _connect(): QObject::connect: Cannot connect (null)::destroyed() to
     // QHostInfoLookupManager::waitForThreadPoolDone()
-    QLoggingCategory* log = QLoggingCategory::defaultCategory();
-    const bool warnEnabled = log->isWarningEnabled();
-    log->setEnabled( QtWarningMsg, false );
-
-    if( !_connect( hostname, port ))
+    if( !qApp )
     {
-        std::cerr << "could not connect to host " << hostname << ":" <<  port
-                  << std::endl;
+        QLoggingCategory* log = QLoggingCategory::defaultCategory();
+        log->setEnabled( QtWarningMsg, false );
     }
-    log->setEnabled( QtWarningMsg, warnEnabled );
+
+    _connect( hostname, port );
 
     QObject::connect( _socket, SIGNAL( disconnected( )),
                       this, SIGNAL( disconnected( )));
@@ -93,6 +91,8 @@ int Socket::getFileDescriptor() const
 
 bool Socket::hasMessage( const size_t messageSize ) const
 {
+    QMutexLocker locker( &_socketMutex );
+
     // needed to 'wakeup' socket when no data was streamed for a while
     _socket->waitForReadyRead( 0 );
     return _socket->bytesAvailable() >=
@@ -102,8 +102,12 @@ bool Socket::hasMessage( const size_t messageSize ) const
 bool Socket::send( const MessageHeader& messageHeader,
                    const QByteArray& message )
 {
-    // Send header
-    if ( !_send( messageHeader ))
+    QMutexLocker locker( &_socketMutex );
+
+    // send header
+    QDataStream stream( _socket );
+    stream << messageHeader;
+    if( stream.status() != QDataStream::Ok )
         return false;
 
     if( message.isEmpty( ))
@@ -125,17 +129,11 @@ bool Socket::send( const MessageHeader& messageHeader,
     return sent == size;
 }
 
-bool Socket::_send( const MessageHeader& messageHeader )
-{
-    QDataStream stream( _socket );
-    stream << messageHeader;
-
-    return stream.status() == QDataStream::Ok;
-}
-
 bool Socket::receive( MessageHeader& messageHeader, QByteArray& message )
 {
-    if ( !_receive( messageHeader ))
+    QMutexLocker locker( &_socketMutex );
+
+    if ( !_receiveHeader( messageHeader ))
         return false;
 
     // get the message
@@ -167,7 +165,7 @@ int32_t Socket::getRemoteProtocolVersion() const
     return _remoteProtocolVersion;
 }
 
-bool Socket::_receive( MessageHeader& messageHeader )
+bool Socket::_receiveHeader( MessageHeader& messageHeader )
 {
     while( _socket->bytesAvailable() < qint64(MessageHeader::serializedSize) )
     {

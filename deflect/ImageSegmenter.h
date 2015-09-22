@@ -44,6 +44,9 @@
 #include <deflect/api.h>
 #include <deflect/types.h>
 
+#include <deflect/MTQueue.h>
+#include <deflect/Segment.h>
+
 #include <boost/function/function1.hpp>
 #include <vector>
 
@@ -75,7 +78,7 @@ public:
      * @see setNominalSegmentDimensions()
      */
     DEFLECT_API bool generate( const ImageWrapper& image,
-                               const Handler& handler ) const;
+                               const Handler& handler );
 
     /**
      * Set the nominal segment dimensions.
@@ -96,12 +99,15 @@ private:
     _generateSegmentParameters( const ImageWrapper& image ) const;
 
     bool _generateJpeg( const ImageWrapper& image,
-                        const Handler& handler) const;
+                        const Handler& handler);
     bool _generateRaw( const ImageWrapper& image,
                        const Handler& handler ) const;
+    void _computeJpeg( Segment& task );
 
     unsigned int _nominalSegmentWidth;
     unsigned int _nominalSegmentHeight;
+
+    MTQueue< Segment > _sendQueue;
 };
 
 }

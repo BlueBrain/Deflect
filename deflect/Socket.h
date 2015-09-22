@@ -48,8 +48,9 @@ typedef __int32 int32_t;
 
 #include <string>
 
-#include <QObject>
 #include <QByteArray>
+#include <QMutex>
+#include <QObject>
 
 class QTcpSocket;
 
@@ -119,12 +120,12 @@ signals:
 private:
     QTcpSocket* _socket;
     int32_t _remoteProtocolVersion;
+    mutable QMutex _socketMutex;
 
     bool _connect( const std::string &hostname, const unsigned short port );
     bool _checkProtocolVersion();
 
-    bool _send( const MessageHeader& messageHeader );
-    bool _receive( MessageHeader& messageHeader );
+    bool _receiveHeader( MessageHeader& messageHeader );
 };
 
 }

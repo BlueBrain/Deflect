@@ -11,9 +11,9 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
 include(GitExternal)
 
 set(VERSION_MAJOR "0")
-set(VERSION_MINOR "7")
-set(VERSION_PATCH "2")
-set(VERSION_ABI 1)
+set(VERSION_MINOR "8")
+set(VERSION_PATCH "0")
+set(VERSION_ABI 2)
 
 set(DEFLECT_DESCRIPTION "A fast C++ library for streaming pixels and events")
 set(DEFLECT_DEPENDENT_LIBRARIES Boost)
