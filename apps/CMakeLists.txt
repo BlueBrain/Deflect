@@ -5,6 +5,10 @@
 
 add_subdirectory(DesktopStreamer)
 
+if(TARGET DeflectQml)
+  add_subdirectory(QmlStreamer)
+endif()
+
 if(GLUT_FOUND)
   add_subdirectory(SimpleStreamer)
 endif()

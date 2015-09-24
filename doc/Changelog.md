@@ -7,6 +7,8 @@ Changelog {#Changelog}
 * Fix: ZeroConf record for server announces hostname instead of (wrong) port
 * Fix: send compressed JPEG images from correct thread, might fix crashes/hangs
 * Added MTQueue class, moved from DisplayCluster
+* Added DeflectQml library to create QML applications which render offscreen
+  and stream and receive events via Deflect
 
 ## Deflect 0.7
 
