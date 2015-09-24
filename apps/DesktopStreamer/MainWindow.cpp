@@ -321,11 +321,6 @@ void MainWindow::_processStreamEvents()
             _sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
             _sendMouseReleaseEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
-        case deflect::Event::EVT_CLICK:
-            _sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
-            _sendMousePressEvent( wallEvent.mouseX, wallEvent.mouseY );
-            _sendMouseReleaseEvent( wallEvent.mouseX, wallEvent.mouseY );
-            break;
         case deflect::Event::EVT_DOUBLECLICK:
             _sendMouseDoubleClickEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
@@ -333,6 +328,7 @@ void MainWindow::_processStreamEvents()
         case deflect::Event::EVT_MOVE:
             _sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
             break;
+        case deflect::Event::EVT_CLICK:
         case deflect::Event::EVT_WHEEL:
         case deflect::Event::EVT_SWIPE_LEFT:
         case deflect::Event::EVT_SWIPE_RIGHT:
@@ -382,7 +378,7 @@ void MainWindow::_shareDesktopUpdate()
     QImage image = desktopPixmap.toImage();
 
     // render mouse cursor
-    QPoint mousePos = ( QCursor::pos() - QPoint( _x, _y )) -
+    QPoint mousePos = ( devicePixelRatio() * QCursor::pos() - QPoint( _x, _y )) -
                         QPoint( _cursor.width() / 2, _cursor.height() / 2 );
     QPainter painter( &image );
     painter.drawImage( mousePos, _cursor );
