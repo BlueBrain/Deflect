@@ -276,23 +276,19 @@ bool QmlStreamer::Impl::_setupRootItem()
     _rootItem = qobject_cast< QQuickItem* >( rootObject );
     if( !_rootItem )
     {
-        qWarning( "run: Not a QQuickItem" );
         delete rootObject;
         return false;
     }
 
-    if( !_setupDeflectStream( ))
-        return false;
+    connect( _rootItem, &QQuickItem::widthChanged, this,
+             [this]() { _updateSizes( QSize( _rootItem->width(),
+                                             _rootItem->height( ))); } );
+    connect( _rootItem, &QQuickItem::heightChanged, this,
+             [this]() { _updateSizes( QSize( _rootItem->width(),
+                                             _rootItem->height( ))); } );
 
     // The root item is ready. Associate it with the window.
     _rootItem->setParentItem( _quickWindow->contentItem( ));
-
-    // Update item and rendering related geometries.
-    _updateSizes( QSize( _rootItem->width(), _rootItem->height( )));
-
-    // Initialize the render control and our OpenGL resources.
-    _context->makeCurrent( _offscreenSurface );
-    _renderControl->initialize( _context );
 
     return true;
 }
@@ -335,6 +331,17 @@ void QmlStreamer::Impl::_updateSizes( const QSize& size_ )
         _rootItem->setHeight( size_.height( ));
     }
     _quickWindow->setGeometry( 0, 0, size_.width(), size_.height( ));
+
+    // Initialize the render control and our OpenGL resources. Do this as late
+    // as possible to use the proper size reported by the rootItem.
+    if( !_streaming )
+    {
+        _context->makeCurrent( _offscreenSurface );
+        _renderControl->initialize( _context );
+
+        if( !_setupDeflectStream( ))
+            qWarning() << "Could not setup Deflect stream";
+    }
 }
 
 void QmlStreamer::Impl::resizeEvent( QResizeEvent* e )

@@ -64,10 +64,18 @@ int main( int argc, char** argv )
 
     parser.process( app );
 
-    QString qmlFile = parser.value( qmlFileOption );
-    QString streamHost = parser.value( streamHostOption );
+    const QString qmlFile = parser.value( qmlFileOption );
+    const QString streamHost = parser.value( streamHostOption );
 
-    QScopedPointer< deflect::QmlStreamer > streamer(
-                new deflect::QmlStreamer( qmlFile, streamHost.toStdString( )));
-    return app.exec();
+    try
+    {
+        QScopedPointer< deflect::QmlStreamer > streamer(
+                 new deflect::QmlStreamer( qmlFile, streamHost.toStdString( )));
+        return app.exec();
+    }
+    catch( const std::runtime_error& exception )
+    {
+        qWarning() << "QmlStreamer startup failed:" << exception.what();
+        return EXIT_FAILURE;
+    }
 }
