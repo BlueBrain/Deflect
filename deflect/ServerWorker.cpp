@@ -43,6 +43,8 @@
 #include <stdint.h>
 #include <iostream>
 
+#include <QDataStream>
+
 #define RECEIVE_TIMEOUT_MS 3000
 
 namespace deflect

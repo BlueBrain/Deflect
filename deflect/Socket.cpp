@@ -42,6 +42,7 @@
 #include "NetworkProtocol.h"
 
 #include <QCoreApplication>
+#include <QDataStream>
 #include <QLoggingCategory>
 #include <QTcpSocket>
 #include <iostream>
