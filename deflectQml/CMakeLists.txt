@@ -7,5 +7,6 @@ set(DEFLECTQML_PUBLIC_HEADERS QmlStreamer.h)
 set(DEFLECTQML_SOURCES EventReceiver.cpp QmlStreamer.cpp QmlStreamerImpl.cpp)
 set(DEFLECTQML_LINK_LIBRARIES
   PUBLIC Deflect Qt5::Quick PRIVATE Qt5::Qml)
+set(DEFLECTQML_INCLUDE_NAME deflectQml)
 
 common_library(DeflectQml)
