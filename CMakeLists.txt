@@ -16,6 +16,8 @@ set(VERSION_PATCH "0")
 set(VERSION_ABI 2)
 
 set(DEFLECT_DESCRIPTION "A fast C++ library for streaming pixels and events")
+set(DEFLECT_MAINTAINER "Blue Brain Project <bbp-open-source@googlegroups.com>")
+set(DEFLECT_LICENSE BSD)
 set(DEFLECT_DEPENDENT_LIBRARIES Boost)
 
 include(Common)

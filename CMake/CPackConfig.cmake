@@ -5,9 +5,8 @@
 # General CPack configuration
 # Info: http://www.itk.org/Wiki/CMake:Component_Install_With_CPack
 
+set(CPACK_PACKAGE_VENDOR "bluebrain.epfl.ch")
 set(CPACK_PACKAGE_EXECUTABLES "${DESKTOPSTREAMER_APP_NAME}")
-set(CPACK_PACKAGE_CONTACT "Daniel Nachbaur <daniel.nachbaur@epfl.ch>")
-set(CPACK_PACKAGE_VENDOR "https://github.com/BlueBrain/Deflect")
 
 # Linux Debian specific settings
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "qtbase5-dev, libturbojpeg" )
