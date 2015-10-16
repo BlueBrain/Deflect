@@ -181,6 +181,10 @@ void QmlStreamer::Impl::_render()
     if( !_context->makeCurrent( _offscreenSurface ))
         return;
 
+    // fixed sized rootItems won't signal sizes changes, finish their setup now
+    if( !_fbo )
+        _updateSizes( QSize( _rootItem->width(), _rootItem->height( )));
+
     // Polish, synchronize and render the next frame (into our fbo). In this
     // example everything happens on the same thread and therefore all three
     // steps are performed in succession from here. In a threaded setup the
