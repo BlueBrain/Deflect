@@ -37,48 +37,42 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef QMLSTREAMER_H
-#define QMLSTREAMER_H
+#ifndef EVENTRECEIVER_H
+#define EVENTRECEIVER_H
 
-#include <QString>
-#include <QQuickItem>
+#include <QObject>
+#include <QSocketNotifier>
 
-#include <memory>
-#include <string>
+#include <deflect/Stream.h>
 
 namespace deflect
 {
-
-/** Based on http://doc.qt.io/qt-5/qtquick-rendercontrol-example.html
- *
- * This class renders the given QML file in an offscreen fashion and streams
- * on each update on the given Deflect stream. It automatically register also
- * for Deflect events, which can be directly handled in the QML.
- */
-class QmlStreamer
+namespace qt
 {
+
+class EventReceiver : public QObject
+{
+    Q_OBJECT
+
 public:
-    /**
-     * Construct a new qml streamer by loading the QML, accessible by
-     * getRootItem() and sets up the Deflect stream.
-     *
-     * @param qmlFile URL to QML file to load
-     * @param streamHost hostname of the Deflect server
-     */
-    QmlStreamer( const QString& qmlFile, const std::string& streamHost );
+    EventReceiver( Stream& stream );
+    ~EventReceiver();
 
-    ~QmlStreamer();
+signals:
+    void pressed( double x, double y );
+    void released( double x, double y );
+    void moved( double x, double y );
+    void resized( double x, double y );
 
-    /** @return the QML root item, might be nullptr if not ready yet. */
-    QQuickItem* getRootItem();
+private slots:
+    void _onEvent( int socket );
 
 private:
-    QmlStreamer( const QmlStreamer& ) = delete;
-    QmlStreamer operator=( const QmlStreamer& ) = delete;
-    class Impl;
-    std::unique_ptr< Impl > _impl;
+    Stream& _stream;
+    QScopedPointer< QSocketNotifier > _notifier;
 };
 
+}
 }
 
 #endif

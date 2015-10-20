@@ -37,39 +37,28 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef EVENTRECEIVER_H
-#define EVENTRECEIVER_H
-
-#include <QObject>
-#include <QSocketNotifier>
-
-#include <deflect/Stream.h>
+#include "QmlStreamer.h"
+#include "QmlStreamerImpl.h"
 
 namespace deflect
 {
-
-class EventReceiver : public QObject
+namespace qt
 {
-    Q_OBJECT
 
-public:
-    EventReceiver( Stream& stream );
-    ~EventReceiver();
-
-signals:
-    void pressed( double x, double y );
-    void released( double x, double y );
-    void moved( double x, double y );
-    void resized( double x, double y );
-
-private slots:
-    void _onEvent( int socket );
-
-private:
-    Stream& _stream;
-    QScopedPointer< QSocketNotifier > _notifier;
-};
-
+QmlStreamer::QmlStreamer( const QString& qmlFile,
+                          const std::string& streamHost )
+    : _impl( new Impl( qmlFile, streamHost ))
+{
 }
 
-#endif
+QmlStreamer::~QmlStreamer()
+{
+}
+
+QQuickItem* QmlStreamer::getRootItem()
+{
+    return _impl->getRootItem();
+}
+
+}
+}

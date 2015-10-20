@@ -37,25 +37,83 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
+#ifndef QMLSTREAMERIMPL_H
+#define QMLSTREAMERIMPL_H
+
+#include <QTimer>
+#include <QWindow>
+
 #include "QmlStreamer.h"
-#include "QmlStreamerImpl.h"
+
+QT_FORWARD_DECLARE_CLASS(QOpenGLContext)
+QT_FORWARD_DECLARE_CLASS(QOpenGLFramebufferObject)
+QT_FORWARD_DECLARE_CLASS(QOffscreenSurface)
+QT_FORWARD_DECLARE_CLASS(QQuickRenderControl)
+QT_FORWARD_DECLARE_CLASS(QQuickWindow)
+QT_FORWARD_DECLARE_CLASS(QQmlEngine)
+QT_FORWARD_DECLARE_CLASS(QQmlComponent)
+QT_FORWARD_DECLARE_CLASS(QQuickItem)
 
 namespace deflect
 {
 
-QmlStreamer::QmlStreamer( const QString& qmlFile,
-                          const std::string& streamHost )
-    : _impl( new Impl( qmlFile, streamHost ))
+class Stream;
+
+namespace qt
 {
+
+class EventReceiver;
+
+class QmlStreamer::Impl : public QWindow
+{
+    Q_OBJECT
+
+public:
+    Impl( const QString& qmlFile, const std::string& streamHost );
+
+    ~Impl();
+
+    QQuickItem* getRootItem() { return _rootItem; }
+
+protected:
+    void resizeEvent( QResizeEvent* e ) final;
+    void mousePressEvent( QMouseEvent* e ) final;
+    void mouseReleaseEvent( QMouseEvent* e ) final;
+
+private slots:
+    bool _setupRootItem();
+
+    void _createFbo();
+    void _destroyFbo();
+    void _render();
+    void _requestUpdate();
+
+    void _onPressed( double, double );
+    void _onReleased( double, double );
+    void _onMoved( double, double );
+    void _onResized( double, double );
+
+private:
+    bool _setupDeflectStream();
+    void _updateSizes( const QSize& size );
+
+    QOpenGLContext* _context;
+    QOffscreenSurface* _offscreenSurface;
+    QQuickRenderControl* _renderControl;
+    QQuickWindow* _quickWindow;
+    QQmlEngine* _qmlEngine;
+    QQmlComponent* _qmlComponent;
+    QQuickItem* _rootItem;
+    QOpenGLFramebufferObject* _fbo;
+    QTimer _updateTimer;
+
+    Stream* _stream;
+    EventReceiver* _eventHandler;
+    bool _streaming;
+    const std::string _streamHost;
+};
+
+}
 }
 
-QmlStreamer::~QmlStreamer()
-{
-}
-
-QQuickItem* QmlStreamer::getRootItem()
-{
-    return _impl->getRootItem();
-}
-
-}
+#endif

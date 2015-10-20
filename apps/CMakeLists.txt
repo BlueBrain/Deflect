@@ -5,7 +5,7 @@
 
 add_subdirectory(DesktopStreamer)
 
-if(TARGET DeflectQml)
+if(TARGET DeflectQt)
   add_subdirectory(QmlStreamer)
 endif()
 

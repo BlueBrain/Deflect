@@ -39,7 +39,7 @@
 
 #include <QGuiApplication>
 #include <QCommandLineParser>
-#include <deflectQml/QmlStreamer.h>
+#include <deflect/qt/QmlStreamer.h>
 #include <deflect/version.h>
 
 int main( int argc, char** argv )
@@ -69,8 +69,8 @@ int main( int argc, char** argv )
 
     try
     {
-        QScopedPointer< deflect::QmlStreamer > streamer(
-                 new deflect::QmlStreamer( qmlFile, streamHost.toStdString( )));
+        QScopedPointer< deflect::qt::QmlStreamer > streamer(
+             new deflect::qt::QmlStreamer( qmlFile, streamHost.toStdString( )));
         return app.exec();
     }
     catch( const std::runtime_error& exception )

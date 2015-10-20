@@ -37,68 +37,51 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "EventReceiver.h"
+#ifndef QMLSTREAMER_H
+#define QMLSTREAMER_H
 
-#include <QCoreApplication>
+#include <QString>
+#include <QQuickItem>
+
+#include <memory>
+#include <string>
 
 namespace deflect
 {
-
-EventReceiver::EventReceiver( Stream& stream )
-    : QObject()
-    , _stream( stream )
+namespace qt
 {
-    _notifier.reset( new QSocketNotifier( _stream.getDescriptor(),
-                                          QSocketNotifier::Read, this ));
-    connect( _notifier.data(), &QSocketNotifier::activated,
-             this, &EventReceiver::_onEvent );
-}
 
-EventReceiver::~EventReceiver()
+/** Based on http://doc.qt.io/qt-5/qtquick-rendercontrol-example.html
+ *
+ * This class renders the given QML file in an offscreen fashion and streams
+ * on each update on the given Deflect stream. It automatically register also
+ * for Deflect events, which can be directly handled in the QML.
+ */
+class QmlStreamer
 {
-}
+public:
+    /**
+     * Construct a new qml streamer by loading the QML, accessible by
+     * getRootItem() and sets up the Deflect stream.
+     *
+     * @param qmlFile URL to QML file to load
+     * @param streamHost hostname of the Deflect server
+     */
+    QmlStreamer( const QString& qmlFile, const std::string& streamHost );
 
-void EventReceiver::_onEvent( int socket )
-{
-    if( socket != _stream.getDescriptor( ))
-        return;
+    ~QmlStreamer();
 
-    while( _stream.hasEvent( ))
-    {
-        const Event& deflectEvent = _stream.getEvent();
+    /** @return the QML root item, might be nullptr if not ready yet. */
+    QQuickItem* getRootItem();
 
-        switch( deflectEvent.type )
-        {
-        case Event::EVT_CLOSE:
-            _notifier->setEnabled( false );
-            QCoreApplication::quit();
-            break;
-        case Event::EVT_PRESS:
-            emit pressed( deflectEvent.mouseX, deflectEvent.mouseY );
-            break;
-        case Event::EVT_RELEASE:
-            emit released( deflectEvent.mouseX, deflectEvent.mouseY );
-            break;
-        case Event::EVT_MOVE:
-            emit moved( deflectEvent.mouseX, deflectEvent.mouseY );
-            break;
-        case Event::EVT_VIEW_SIZE_CHANGED:
-            emit resized( deflectEvent.dx, deflectEvent.dy );
-            break;
-
-        case Event::EVT_CLICK:
-        case Event::EVT_DOUBLECLICK:
-        case Event::EVT_WHEEL:
-        case Event::EVT_SWIPE_LEFT:
-        case Event::EVT_SWIPE_RIGHT:
-        case Event::EVT_SWIPE_UP:
-        case Event::EVT_SWIPE_DOWN:
-        case Event::EVT_KEY_PRESS:
-        case Event::EVT_KEY_RELEASE:
-        default:
-            break;
-        }
-    }
-}
+private:
+    QmlStreamer( const QmlStreamer& ) = delete;
+    QmlStreamer operator=( const QmlStreamer& ) = delete;
+    class Impl;
+    std::unique_ptr< Impl > _impl;
+};
 
 }
+}
+
+#endif

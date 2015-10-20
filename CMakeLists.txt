@@ -37,10 +37,6 @@ common_package(Servus)
 common_package_post()
 
 add_subdirectory(deflect)
-if(Qt5Qml_FOUND AND Qt5Quick_FOUND AND Qt5Quick_VERSION VERSION_GREATER 5.3)
-  add_subdirectory(deflectQml)
-endif()
-
 add_subdirectory(apps)
 add_subdirectory(tests)
 add_subdirectory(doc)

@@ -86,3 +86,6 @@ endif()
 
 common_library(Deflect)
 
+if(Qt5Qml_FOUND AND Qt5Quick_FOUND AND Qt5Quick_VERSION VERSION_GREATER 5.3)
+  add_subdirectory(qt)
+endif()

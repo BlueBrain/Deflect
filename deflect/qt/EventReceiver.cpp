@@ -37,78 +37,71 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef QMLSTREAMERIMPL_H
-#define QMLSTREAMERIMPL_H
+#include "EventReceiver.h"
 
-#include <QTimer>
-#include <QWindow>
-
-#include "QmlStreamer.h"
-
-QT_FORWARD_DECLARE_CLASS(QOpenGLContext)
-QT_FORWARD_DECLARE_CLASS(QOpenGLFramebufferObject)
-QT_FORWARD_DECLARE_CLASS(QOffscreenSurface)
-QT_FORWARD_DECLARE_CLASS(QQuickRenderControl)
-QT_FORWARD_DECLARE_CLASS(QQuickWindow)
-QT_FORWARD_DECLARE_CLASS(QQmlEngine)
-QT_FORWARD_DECLARE_CLASS(QQmlComponent)
-QT_FORWARD_DECLARE_CLASS(QQuickItem)
+#include <QCoreApplication>
 
 namespace deflect
 {
-
-class EventReceiver;
-class Stream;
-
-class QmlStreamer::Impl : public QWindow
+namespace qt
 {
-    Q_OBJECT
 
-public:
-    Impl( const QString& qmlFile, const std::string& streamHost );
-
-    ~Impl();
-
-    QQuickItem* getRootItem() { return _rootItem; }
-
-protected:
-    void resizeEvent( QResizeEvent* e ) final;
-    void mousePressEvent( QMouseEvent* e ) final;
-    void mouseReleaseEvent( QMouseEvent* e ) final;
-
-private slots:
-    bool _setupRootItem();
-
-    void _createFbo();
-    void _destroyFbo();
-    void _render();
-    void _requestUpdate();
-
-    void _onPressed( double, double );
-    void _onReleased( double, double );
-    void _onMoved( double, double );
-    void _onResized( double, double );
-
-private:
-    bool _setupDeflectStream();
-    void _updateSizes( const QSize& size );
-
-    QOpenGLContext* _context;
-    QOffscreenSurface* _offscreenSurface;
-    QQuickRenderControl* _renderControl;
-    QQuickWindow* _quickWindow;
-    QQmlEngine* _qmlEngine;
-    QQmlComponent* _qmlComponent;
-    QQuickItem* _rootItem;
-    QOpenGLFramebufferObject* _fbo;
-    QTimer _updateTimer;
-
-    Stream* _stream;
-    EventReceiver* _eventHandler;
-    bool _streaming;
-    const std::string _streamHost;
-};
-
+EventReceiver::EventReceiver( Stream& stream )
+    : QObject()
+    , _stream( stream )
+{
+    _notifier.reset( new QSocketNotifier( _stream.getDescriptor(),
+                                          QSocketNotifier::Read, this ));
+    connect( _notifier.data(), &QSocketNotifier::activated,
+             this, &EventReceiver::_onEvent );
 }
 
-#endif
+EventReceiver::~EventReceiver()
+{
+}
+
+void EventReceiver::_onEvent( int socket )
+{
+    if( socket != _stream.getDescriptor( ))
+        return;
+
+    while( _stream.hasEvent( ))
+    {
+        const Event& deflectEvent = _stream.getEvent();
+
+        switch( deflectEvent.type )
+        {
+        case Event::EVT_CLOSE:
+            _notifier->setEnabled( false );
+            QCoreApplication::quit();
+            break;
+        case Event::EVT_PRESS:
+            emit pressed( deflectEvent.mouseX, deflectEvent.mouseY );
+            break;
+        case Event::EVT_RELEASE:
+            emit released( deflectEvent.mouseX, deflectEvent.mouseY );
+            break;
+        case Event::EVT_MOVE:
+            emit moved( deflectEvent.mouseX, deflectEvent.mouseY );
+            break;
+        case Event::EVT_VIEW_SIZE_CHANGED:
+            emit resized( deflectEvent.dx, deflectEvent.dy );
+            break;
+
+        case Event::EVT_CLICK:
+        case Event::EVT_DOUBLECLICK:
+        case Event::EVT_WHEEL:
+        case Event::EVT_SWIPE_LEFT:
+        case Event::EVT_SWIPE_RIGHT:
+        case Event::EVT_SWIPE_UP:
+        case Event::EVT_SWIPE_DOWN:
+        case Event::EVT_KEY_PRESS:
+        case Event::EVT_KEY_RELEASE:
+        default:
+            break;
+        }
+    }
+}
+}
+
+}
