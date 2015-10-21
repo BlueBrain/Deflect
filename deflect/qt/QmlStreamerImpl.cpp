@@ -72,6 +72,8 @@ private:
 
 namespace deflect
 {
+namespace qt
+{
 
 QmlStreamer::QmlStreamer::Impl::Impl( const QString& qmlFile,
                                       const std::string& streamHost )
@@ -380,4 +382,5 @@ void QmlStreamer::Impl::mouseReleaseEvent( QMouseEvent* e )
     QCoreApplication::sendEvent( _quickWindow, &mappedEvent );
 }
 
+}
 }

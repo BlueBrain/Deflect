@@ -11,8 +11,8 @@ Changelog {#Changelog}
 * Fix interaction with DesktopStreamer on OSX where one click resulted in two
   clicks
 * Added MTQueue class, moved from DisplayCluster
-* Added DeflectQml library to create QML applications which render offscreen
-  and stream and receive events via Deflect
+* Added DeflectQt library to create QML applications which render offscreen and
+  stream and receive events via Deflect
 
 ## Deflect 0.7
 
