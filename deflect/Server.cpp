@@ -1,5 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -118,45 +120,46 @@ void Server::incomingConnection( const qintptr socketHandle )
 
     worker->moveToThread( workerThread );
 
-    connect( workerThread, SIGNAL( started( )),
-             worker, SLOT( initConnection( )));
-    connect( worker, SIGNAL( connectionClosed( )),
-             workerThread, SLOT( quit( )));
+    connect( workerThread, &QThread::started,
+             worker, &ServerWorker::initConnection );
+    connect( worker, &ServerWorker::connectionClosed,
+             workerThread, &QThread::quit );
 
     // Make sure the thread will be deleted
-    connect( workerThread, SIGNAL( finished( )), worker, SLOT( deleteLater( )));
-    connect( workerThread, SIGNAL( finished( )),
-             workerThread, SLOT( deleteLater( )));
+    connect( workerThread, &QThread::finished,
+             worker, &ServerWorker::deleteLater );
+    connect( workerThread, &QThread::finished,
+             workerThread, &QThread::deleteLater );
 
     // public signals/slots, forwarding from/to worker
-    connect( worker, SIGNAL( registerToEvents( QString, bool,
-                                               deflect::EventReceiver* )),
-             this, SIGNAL( registerToEvents( QString, bool,
-                                             deflect::EventReceiver* )));
-    connect( this, SIGNAL( _pixelStreamerClosed( QString )),
-             worker, SLOT( closeConnection( QString )));
-    connect( this, SIGNAL( _eventRegistrationReply( QString, bool )),
-             worker, SLOT( replyToEventRegistration( QString, bool )));
+    connect( worker, &ServerWorker::registerToEvents,
+             this, &Server::registerToEvents );
+    connect( worker, &ServerWorker::receivedSizeHints,
+             this, &Server::receivedSizeHints );
+    connect( this, &Server::_pixelStreamerClosed,
+             worker, &ServerWorker::closeConnection );
+    connect( this, &Server::_eventRegistrationReply,
+             worker, &ServerWorker::replyToEventRegistration );
 
     // Commands
-    connect( worker, SIGNAL( receivedCommand( QString, QString )),
-             &_impl->commandHandler, SLOT( process( QString, QString )));
+    connect( worker, &ServerWorker::receivedCommand,
+             &_impl->commandHandler, &CommandHandler::process );
 
     // PixelStreamDispatcher
-    connect( worker, SIGNAL( addStreamSource( QString, size_t )),
-             &_impl->pixelStreamDispatcher, SLOT(addSource( QString, size_t )));
+    connect( worker, &ServerWorker::addStreamSource,
+             &_impl->pixelStreamDispatcher, &FrameDispatcher::addSource );
     connect( worker,
-             SIGNAL( receivedSegement( QString, size_t, deflect::Segment )),
+             &ServerWorker::receivedSegment,
              &_impl->pixelStreamDispatcher,
-             SLOT( processSegment( QString, size_t, deflect::Segment )));
+             &FrameDispatcher::processSegment );
     connect( worker,
-             SIGNAL( receivedFrameFinished( QString, size_t )),
+             &ServerWorker::receivedFrameFinished,
              &_impl->pixelStreamDispatcher,
-             SLOT( processFrameFinished( QString, size_t )));
+             &FrameDispatcher::processFrameFinished );
     connect( worker,
-             SIGNAL( removeStreamSource( QString, size_t )),
+             &ServerWorker::removeStreamSource,
              &_impl->pixelStreamDispatcher,
-             SLOT( removeSource( QString, size_t )));
+             &FrameDispatcher::removeSource );
 
     workerThread->start();
 }

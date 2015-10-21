@@ -1,6 +1,6 @@
 /*********************************************************************/
 /* Copyright (c) 2015, EPFL/Blue Brain Project                       */
-/*                     Daniel.Nachbaur <daniel.nachbaur@epfl.ch>     */
+/*                     Daniel.Nachbaur@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,85 +37,44 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef QMLSTREAMERIMPL_H
-#define QMLSTREAMERIMPL_H
+#define BOOST_TEST_MODULE Server
+#include <boost/test/unit_test.hpp>
+namespace ut = boost::unit_test;
 
-#include <QTimer>
-#include <QWindow>
+#include "MinimalGlobalQtApp.h"
 
-#include "QmlStreamer.h"
-#include "../SizeHints.h"
+#include <deflect/Stream.h>
+#include <deflect/Server.h>
 
-QT_FORWARD_DECLARE_CLASS(QOpenGLContext)
-QT_FORWARD_DECLARE_CLASS(QOpenGLFramebufferObject)
-QT_FORWARD_DECLARE_CLASS(QOffscreenSurface)
-QT_FORWARD_DECLARE_CLASS(QQuickRenderControl)
-QT_FORWARD_DECLARE_CLASS(QQuickWindow)
-QT_FORWARD_DECLARE_CLASS(QQmlEngine)
-QT_FORWARD_DECLARE_CLASS(QQmlComponent)
-QT_FORWARD_DECLARE_CLASS(QQuickItem)
+#include <QThread>
 
-namespace deflect
+BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp )
+
+BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
 {
+    const QString testURI( "teststream" );
+    deflect::SizeHints testHints;
+    testHints.maxWidth = 500;
+    testHints.preferredHeight= 200;
 
-class Stream;
+    QThread serverThread;
+    {
+        deflect::Server server;
+        server.connect( &server, &deflect::Server::receivedSizeHints,
+                        [&]( QString uri, deflect::SizeHints hints )
+                        {
+                            BOOST_CHECK( uri == testURI );
+                            BOOST_CHECK( hints == testHints );
+                            serverThread.exit();
+                        });
+        server.moveToThread( &serverThread );
+        serverThread.start();
 
-namespace qt
-{
+        deflect::Stream stream( testURI.toStdString(), "localhost" );
 
-class EventReceiver;
-
-class QmlStreamer::Impl : public QWindow
-{
-    Q_OBJECT
-
-public:
-    Impl( const QString& qmlFile, const std::string& streamHost );
-
-    ~Impl();
-
-    QQuickItem* getRootItem() { return _rootItem; }
-
-protected:
-    void resizeEvent( QResizeEvent* e ) final;
-    void mousePressEvent( QMouseEvent* e ) final;
-    void mouseReleaseEvent( QMouseEvent* e ) final;
-
-private slots:
-    bool _setupRootItem();
-
-    void _createFbo();
-    void _destroyFbo();
-    void _render();
-    void _requestUpdate();
-
-    void _onPressed( double, double );
-    void _onReleased( double, double );
-    void _onMoved( double, double );
-    void _onResized( double, double );
-
-private:
-    bool _setupDeflectStream();
-    void _updateSizes( const QSize& size );
-
-    QOpenGLContext* _context;
-    QOffscreenSurface* _offscreenSurface;
-    QQuickRenderControl* _renderControl;
-    QQuickWindow* _quickWindow;
-    QQmlEngine* _qmlEngine;
-    QQmlComponent* _qmlComponent;
-    QQuickItem* _rootItem;
-    QOpenGLFramebufferObject* _fbo;
-    QTimer _updateTimer;
-
-    Stream* _stream;
-    EventReceiver* _eventHandler;
-    bool _streaming;
-    const std::string _streamHost;
-    SizeHints _sizeHints;
-};
-
+        BOOST_CHECK( stream.isConnected( ));
+        stream.sendSizeHints( testHints );
+    }
+    serverThread.wait( 1000 /*ms*/ );
+    serverThread.quit();
 }
-}
-
-#endif

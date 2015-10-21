@@ -1,7 +1,8 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2014, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -42,6 +43,7 @@
 
 #include "Segment.h"
 #include "SegmentParameters.h"
+#include "SizeHints.h"
 #include "Stream.h"
 #include "StreamSendWorker.h"
 
@@ -64,12 +66,12 @@ StreamPrivate::StreamPrivate( Stream* stream, const std::string &name_,
     imageSegmenter.setNominalSegmentDimensions( SEGMENT_SIZE, SEGMENT_SIZE );
 
     if( name.empty( ))
-        std::cerr << "Invalid Stream name" << std::endl;
+        throw std::runtime_error( "Invalid Stream name: " + name );
 
     if( socket.isConnected( ))
     {
-        connect( &socket, SIGNAL( disconnected( )),
-                 this, SLOT( _onDisconnected( )));
+        connect( &socket, &Socket::disconnected,
+                 this, &StreamPrivate::_onDisconnected );
         const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_OPEN, 0, name );
         socket.send( mh, QByteArray( ));
     }
@@ -135,6 +137,15 @@ bool StreamPrivate::sendPixelStreamSegment( const Segment& segment )
     // Message payload part 2: image data
     message.append( segment.imageData );
 
+    return socket.send( mh, message );
+}
+
+bool StreamPrivate::sendSizeHints( const SizeHints& hints )
+{
+    const MessageHeader mh( MESSAGE_TYPE_SIZE_HINTS, sizeof( hints ), name );
+
+    QByteArray message;
+    message.append( (const char*)( &hints ), sizeof( hints ) );
     return socket.send( mh, message );
 }
 

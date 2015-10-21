@@ -1,7 +1,8 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2014, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -47,7 +48,6 @@
 #include "ImageWrapper.h"
 
 #include <QDataStream>
-#include <boost/bind.hpp>
 
 #include <iostream>
 
@@ -57,12 +57,10 @@ namespace deflect
 Stream::Stream( const std::string& name, const std::string& address )
     : _impl( new StreamPrivate( this, name, address ))
 {
-
 }
 
 Stream::~Stream()
 {
-    delete _impl;
 }
 
 bool Stream::isConnected() const
@@ -156,6 +154,11 @@ Event Stream::getEvent()
         stream >> event;
     }
     return event;
+}
+
+void Stream::sendSizeHints( const SizeHints& hints )
+{
+    _impl->sendSizeHints( hints );
 }
 
 void Stream::sendCommand( const std::string& command )

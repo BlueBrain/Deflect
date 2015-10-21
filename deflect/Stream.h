@@ -1,7 +1,8 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2014, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -42,10 +43,11 @@
 #define DEFLECT_STREAM_H
 
 #include <deflect/api.h>
+#include <deflect/types.h>
+#include <deflect/Event.h>
+#include <deflect/ImageWrapper.h>
 
-#include "Event.h"
-#include "ImageWrapper.h"
-
+#include <memory>
 #include <string>
 
 #ifndef Q_MOC_RUN  // See: https://bugreports.qt-project.org/browse/QTBUG-22829
@@ -226,17 +228,23 @@ public:
      */
     DEFLECT_API Event getEvent();
 
+    /**
+     * Send size hints to the stream host to indicate sizes that should be
+     * respected by resize operations on the host side.
+     *
+     * @param hints the new size hints for the host
+     * @version 1.2
+     */
+    DEFLECT_API void sendSizeHints( const SizeHints& hints );
+
     /** @internal */
     DEFLECT_API void sendCommand( const std::string& command );
 
 private:
-    /** Disable copy constructor. */
-    Stream( const Stream& );
+    Stream( const Stream& ) = delete;
+    const Stream& operator = ( const Stream& ) = delete;
 
-    /** Disable assignment operator. */
-    const Stream& operator = ( const Stream& );
-
-    StreamPrivate* _impl;
+    std::unique_ptr< StreamPrivate > _impl;
 
     friend class ::Application;
 };

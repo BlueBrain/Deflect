@@ -1,5 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -64,13 +66,13 @@ ServerWorker::ServerWorker( const int socketDescriptor )
         return;
     }
 
-    connect( _tcpSocket, SIGNAL( disconnected( )),
-             this, SIGNAL( connectionClosed( )));
+    connect( _tcpSocket, &QTcpSocket::disconnected,
+             this, &ServerWorker::connectionClosed );
 
-    connect( _tcpSocket, SIGNAL( readyRead( )),
-             this, SLOT( _processMessages( )), Qt::QueuedConnection );
-    connect( this, SIGNAL( _dataAvailable( )),
-             this, SLOT( _processMessages( )), Qt::QueuedConnection );
+    connect( _tcpSocket, &QTcpSocket::readyRead,
+             this, &ServerWorker::_processMessages, Qt::QueuedConnection );
+    connect( this, &ServerWorker::_dataAvailable,
+             this, &ServerWorker::_processMessages, Qt::QueuedConnection );
 }
 
 ServerWorker::~ServerWorker()
@@ -237,6 +239,14 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
         emit receivedCommand( QString( byteArray.data( )), _streamUri );
         break;
 
+    case MESSAGE_TYPE_SIZE_HINTS:
+    {
+        const SizeHints* hints =
+                reinterpret_cast< const SizeHints* >( byteArray.data( ));
+        emit receivedSizeHints( _streamUri, SizeHints( *hints ));
+        break;
+    }
+
     case MESSAGE_TYPE_BIND_EVENTS:
     case MESSAGE_TYPE_BIND_EVENTS_EX:
         if( _registeredToEvents )
@@ -266,7 +276,7 @@ void ServerWorker::_handlePixelStreamMessage( const QByteArray& byteArray )
             byteArray.right( byteArray.size() - sizeof( SegmentParameters ));
     segment.imageData = imageData;
 
-    emit( receivedSegement( _streamUri, _sourceId, segment ));
+    emit( receivedSegment( _streamUri, _sourceId, segment ));
 }
 
 void ServerWorker::_sendProtocolVersion()

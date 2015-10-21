@@ -71,8 +71,8 @@ Socket::Socket( const std::string& hostname, const unsigned short port )
 
     _connect( hostname, port );
 
-    QObject::connect( _socket, SIGNAL( disconnected( )),
-                      this, SIGNAL( disconnected( )));
+    QObject::connect( _socket, &QTcpSocket::disconnected,
+                      this, &Socket::disconnected );
 }
 
 Socket::~Socket()

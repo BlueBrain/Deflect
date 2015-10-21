@@ -1,6 +1,7 @@
 /*********************************************************************/
 /* Copyright (c) 2014-2015, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -63,6 +64,7 @@ struct ImageWrapper;
 struct MessageHeader;
 struct Segment;
 struct SegmentParameters;
+struct SizeHints;
 
 typedef boost::shared_ptr< Frame > FramePtr;
 typedef std::vector< Segment > Segments;

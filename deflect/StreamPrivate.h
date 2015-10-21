@@ -1,7 +1,8 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2014, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /*                     Stefan.Eilemann@epfl.ch                       */
+/*                     Daniel.Nachbaur@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -106,6 +107,9 @@ public:
      * @return true if the message could be sent
      */
     DEFLECT_API bool sendPixelStreamSegment( const Segment& segment );
+
+    /** @sa Stream::sendSizeHints */
+    bool sendSizeHints( const SizeHints& hints );
 
     /**
      * Send a command to the wall
