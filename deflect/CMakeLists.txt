@@ -14,6 +14,7 @@ set(DEFLECT_PUBLIC_HEADERS
   MTQueue.h
   Segment.h
   SegmentParameters.h
+  SizeHints.h
   Stream.h
   types.h
 )

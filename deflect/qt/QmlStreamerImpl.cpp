@@ -154,6 +154,7 @@ QmlStreamer::Impl::~Impl()
     // delete first to free scenegraph resources for following destructions
     delete _renderControl;
 
+    delete _rootItem;
     delete _qmlComponent;
     delete _quickWindow;
     delete _qmlEngine;
@@ -167,7 +168,8 @@ QmlStreamer::Impl::~Impl()
 
 void QmlStreamer::Impl::_createFbo()
 {
-    _fbo = new QOpenGLFramebufferObject( size() * devicePixelRatio(),
+    _fbo =
+        new QOpenGLFramebufferObject( _quickWindow->size() * devicePixelRatio(),
                                QOpenGLFramebufferObject::CombinedDepthStencil );
     _quickWindow->setRenderTarget( _fbo );
 }
@@ -293,6 +295,19 @@ bool QmlStreamer::Impl::_setupRootItem()
              [this]() { _updateSizes( QSize( _rootItem->width(),
                                              _rootItem->height( ))); } );
 
+    connect( _quickWindow, &QQuickWindow::minimumWidthChanged,
+             [this]( int size ) { _sizeHints.minWidth = size; } );
+    connect( _quickWindow, &QQuickWindow::minimumHeightChanged,
+             [this]( int size ) { _sizeHints.minHeight = size; } );
+    connect( _quickWindow, &QQuickWindow::maximumWidthChanged,
+             [this]( int size ) { _sizeHints.maxWidth = size; } );
+    connect( _quickWindow, &QQuickWindow::maximumHeightChanged,
+             [this]( int size ) { _sizeHints.maxHeight = size; } );
+    connect( _quickWindow, &QQuickWindow::widthChanged,
+             [this]( int size ) { _sizeHints.preferredWidth = size; } );
+    connect( _quickWindow, &QQuickWindow::heightChanged,
+             [this]( int size ) { _sizeHints.preferredHeight = size; } );
+
     // The root item is ready. Associate it with the window.
     _rootItem->setParentItem( _quickWindow->contentItem( ));
 
@@ -313,6 +328,8 @@ bool QmlStreamer::Impl::_setupDeflectStream()
 
     if( !_stream->registerForEvents( ))
         return false;
+
+    _stream->sendSizeHints( _sizeHints );
 
     _streaming = true;
     _eventHandler = new EventReceiver( *_stream );
@@ -336,7 +353,10 @@ void QmlStreamer::Impl::_updateSizes( const QSize& size_ )
         _rootItem->setWidth( size_.width( ));
         _rootItem->setHeight( size_.height( ));
     }
-    _quickWindow->setGeometry( 0, 0, size_.width(), size_.height( ));
+    _quickWindow->blockSignals( true );
+    _quickWindow->setWidth( size_.width( ));
+    _quickWindow->setHeight( size_.height( ));
+    _quickWindow->blockSignals( false );
 
     // Initialize the render control and our OpenGL resources. Do this as late
     // as possible to use the proper size reported by the rootItem.

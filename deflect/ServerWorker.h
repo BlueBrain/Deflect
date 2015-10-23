@@ -1,5 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -43,6 +45,7 @@
 #include <deflect/EventReceiver.h>
 #include <deflect/MessageHeader.h>
 #include <deflect/Segment.h>
+#include <deflect/SizeHints.h>
 
 #include <QtNetwork/QTcpSocket>
 #include <QQueue>
@@ -69,7 +72,7 @@ signals:
     void addStreamSource( QString uri, size_t sourceIndex );
     void removeStreamSource( QString uri, size_t sourceIndex );
 
-    void receivedSegement( QString uri, size_t sourceIndex,
+    void receivedSegment( QString uri, size_t sourceIndex,
                            deflect::Segment segment );
     void receivedFrameFinished( QString uri, size_t sourceIndex );
 
@@ -77,6 +80,8 @@ signals:
                            deflect::EventReceiver* receiver);
 
     void receivedCommand( QString command, QString senderUri );
+
+    void receivedSizeHints( QString uri, deflect::SizeHints hints );
 
     void connectionClosed();
 

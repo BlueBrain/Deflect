@@ -13,6 +13,7 @@ Changelog {#Changelog}
 * Added MTQueue class, moved from DisplayCluster
 * Added DeflectQt library to create QML applications which render offscreen and
   stream and receive events via Deflect
+* Added deflect::Stream::sendSizeHints()
 
 ## Deflect 0.7
 

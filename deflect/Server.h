@@ -1,5 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -41,6 +43,7 @@
 
 #include <deflect/api.h>
 #include <deflect/types.h>
+#include <deflect/SizeHints.h>
 
 #include <QtNetwork/QTcpServer>
 
@@ -80,6 +83,8 @@ public:
 signals:
     DEFLECT_API void registerToEvents( QString uri, bool exclusive,
                                        deflect::EventReceiver* receiver );
+
+    DEFLECT_API void receivedSizeHints( QString uri, deflect::SizeHints hints );
 
 public slots:
     DEFLECT_API void onPixelStreamerClosed( QString uri );

@@ -1,6 +1,6 @@
 /*********************************************************************/
 /* Copyright (c) 2015, EPFL/Blue Brain Project                       */
-/*                     Daniel.Nachbaur <daniel.nachbaur@epfl.ch>     */
+/*                     Daniel.Nachbaur@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,85 +37,57 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef QMLSTREAMERIMPL_H
-#define QMLSTREAMERIMPL_H
-
-#include <QTimer>
-#include <QWindow>
-
-#include "QmlStreamer.h"
-#include "../SizeHints.h"
-
-QT_FORWARD_DECLARE_CLASS(QOpenGLContext)
-QT_FORWARD_DECLARE_CLASS(QOpenGLFramebufferObject)
-QT_FORWARD_DECLARE_CLASS(QOffscreenSurface)
-QT_FORWARD_DECLARE_CLASS(QQuickRenderControl)
-QT_FORWARD_DECLARE_CLASS(QQuickWindow)
-QT_FORWARD_DECLARE_CLASS(QQmlEngine)
-QT_FORWARD_DECLARE_CLASS(QQmlComponent)
-QT_FORWARD_DECLARE_CLASS(QQuickItem)
+#ifndef DEFLECT_SIZEHINTS_H
+#define DEFLECT_SIZEHINTS_H
 
 namespace deflect
 {
 
-class Stream;
-
-namespace qt
+/**
+ * A struct that contains hints about minimum, maximum and preferred sizes of a
+ * streamer which can be interpreted by the stream server accordingly.
+ *
+ * @version 1.2
+ */
+struct SizeHints
 {
+    /** value for an unspecified size value; streamer did not report any hint */
+    static const unsigned int UNSPECIFIED_SIZE = 0;
 
-class EventReceiver;
+    /** @name Minimum size */
+    //@{
+    unsigned int minWidth = UNSPECIFIED_SIZE;
+    unsigned int minHeight = UNSPECIFIED_SIZE;
+    //@}
 
-class QmlStreamer::Impl : public QWindow
-{
-    Q_OBJECT
+    /** @name Maximum size */
+    //@{
+    unsigned int maxWidth = UNSPECIFIED_SIZE;
+    unsigned int maxHeight = UNSPECIFIED_SIZE;
+    //@}
 
-public:
-    Impl( const QString& qmlFile, const std::string& streamHost );
-
-    ~Impl();
-
-    QQuickItem* getRootItem() { return _rootItem; }
-
-protected:
-    void resizeEvent( QResizeEvent* e ) final;
-    void mousePressEvent( QMouseEvent* e ) final;
-    void mouseReleaseEvent( QMouseEvent* e ) final;
-
-private slots:
-    bool _setupRootItem();
-
-    void _createFbo();
-    void _destroyFbo();
-    void _render();
-    void _requestUpdate();
-
-    void _onPressed( double, double );
-    void _onReleased( double, double );
-    void _onMoved( double, double );
-    void _onResized( double, double );
-
-private:
-    bool _setupDeflectStream();
-    void _updateSizes( const QSize& size );
-
-    QOpenGLContext* _context;
-    QOffscreenSurface* _offscreenSurface;
-    QQuickRenderControl* _renderControl;
-    QQuickWindow* _quickWindow;
-    QQmlEngine* _qmlEngine;
-    QQmlComponent* _qmlComponent;
-    QQuickItem* _rootItem;
-    QOpenGLFramebufferObject* _fbo;
-    QTimer _updateTimer;
-
-    Stream* _stream;
-    EventReceiver* _eventHandler;
-    bool _streaming;
-    const std::string _streamHost;
-    SizeHints _sizeHints;
+    /** @name Preferred size */
+    //@{
+    unsigned int preferredWidth = UNSPECIFIED_SIZE;
+    unsigned int preferredHeight = UNSPECIFIED_SIZE;
+    //@}
 };
 
+/** @return true if rhs and this are equal for all sizes. */
+inline bool operator == ( const SizeHints& lhs, const SizeHints& rhs ) noexcept
+{
+    return lhs.minWidth == rhs.minWidth && lhs.minHeight == rhs.minHeight &&
+           lhs.maxWidth == rhs.maxWidth && lhs.maxHeight == rhs.maxHeight &&
+           lhs.preferredWidth == rhs.preferredWidth &&
+           lhs.preferredHeight == rhs.preferredHeight;
 }
+
+/** @return true if rhs and this not equal for any size. */
+inline bool operator != ( const SizeHints& lhs, const SizeHints& rhs ) noexcept
+{
+    return !(lhs == rhs);
+}
+
 }
 
 #endif

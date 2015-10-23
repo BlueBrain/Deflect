@@ -1,6 +1,7 @@
 /*********************************************************************/
 /* Copyright (c) 2014-2015, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -39,6 +40,7 @@
 
 #include "Event.h"
 #include "Segment.h"
+#include "SizeHints.h"
 
 #include <QMetaType>
 
@@ -54,6 +56,7 @@ struct MetaTypeRegistration
     {
         qRegisterMetaType< size_t >( "size_t" );
         qRegisterMetaType< deflect::Segment >( "deflect::Segment" );
+        qRegisterMetaType< deflect::SizeHints >( "deflect::SizeHints" );
         qRegisterMetaType< deflect::Event >( "deflect::Event" );
         qRegisterMetaType< deflect::FramePtr >( "deflect::FramePtr" );
     }

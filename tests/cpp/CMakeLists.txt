@@ -2,6 +2,8 @@
 # Copyright (c) 2013-2015, EPFL/Blue Brain Project
 #                     Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 #                     Raphael Dumusc <raphael.dumusc@epfl.ch>
+#
+# Change this number when adding tests to force a CMake run: 0
 
 set(TEST_LIBRARIES Deflect Mock ${Boost_LIBRARIES} Qt5::Widgets)
 add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)

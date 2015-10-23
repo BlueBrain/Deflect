@@ -1,7 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
-/* All rights reserved.                                              */
-/*                                                                   */
+/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/*                          Raphael.Dumusc@epfl.ch                   */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* Redistribution and use in source and binary forms, with or        */
 /* without modification, are permitted provided that the following   */
 /* conditions are met:                                               */
@@ -66,7 +66,8 @@ enum MessageType
     MESSAGE_TYPE_BIND_EVENTS_REPLY = 8,
     MESSAGE_TYPE_EVENT = 9,
     MESSAGE_TYPE_COMMAND = 11,
-    MESSAGE_TYPE_QUIT = 12
+    MESSAGE_TYPE_QUIT = 12,
+    MESSAGE_TYPE_SIZE_HINTS = 13
 };
 
 #define MESSAGE_HEADER_URI_LENGTH 64
