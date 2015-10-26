@@ -46,7 +46,9 @@ namespace ut = boost::unit_test;
 #include <deflect/Stream.h>
 #include <deflect/Server.h>
 
+#include <QMutex>
 #include <QThread>
+#include <QWaitCondition>
 
 BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp )
 
@@ -58,23 +60,33 @@ BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
     testHints.preferredHeight= 200;
 
     QThread serverThread;
+    QWaitCondition received;
+    QMutex mutex;
+
+    deflect::Server* server = new deflect::Server;
+    server->connect( server, &deflect::Server::receivedSizeHints,
+                     [&]( QString uri, deflect::SizeHints hints )
+                     {
+                         BOOST_CHECK( uri == testURI );
+                         BOOST_CHECK( hints == testHints );
+                         mutex.lock();
+                         received.wakeAll();
+                         mutex.unlock();
+                     });
+    server->moveToThread( &serverThread );
+    serverThread.start();
+
     {
-        deflect::Server server;
-        server.connect( &server, &deflect::Server::receivedSizeHints,
-                        [&]( QString uri, deflect::SizeHints hints )
-                        {
-                            BOOST_CHECK( uri == testURI );
-                            BOOST_CHECK( hints == testHints );
-                            serverThread.exit();
-                        });
-        server.moveToThread( &serverThread );
-        serverThread.start();
-
         deflect::Stream stream( testURI.toStdString(), "localhost" );
-
         BOOST_CHECK( stream.isConnected( ));
         stream.sendSizeHints( testHints );
     }
-    serverThread.wait( 1000 /*ms*/ );
+
+    mutex.lock();
+    received.wait( &mutex, 2000 /*ms*/ );
+    mutex.unlock();
+
     serverThread.quit();
+    serverThread.wait();
+    delete server;
 }
