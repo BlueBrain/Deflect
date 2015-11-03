@@ -14,6 +14,8 @@ Changelog {#Changelog}
 * Added DeflectQt library to create QML applications which render offscreen and
   stream and receive events via Deflect
 * Added deflect::Stream::sendSizeHints()
+* Fix [54](https://github.com/BlueBrain/Deflect/issues/54): ZeroConf discovery
+  in DesktopStreamer uses hostname instead of instance name. 
 
 ## Deflect 0.7
 

@@ -358,7 +358,7 @@ void MainWindow::_updateServus()
         return;
 
     _browseTimer.stop();
-    _hostnameLineEdit.setText( hosts.front().c_str( ));
+    _hostnameLineEdit.setText( _servus.getHost( hosts.front( )).c_str( ));
 }
 #endif
 
