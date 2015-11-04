@@ -14,11 +14,17 @@ Deflect provides the following functionality:
 * Compressed or uncompressed streaming
 * Fast multi-threaded JPEG compression (using libjpeg-turbo)
 
+DeflectQt (optional) provides the following additional functionality:
+
+* Create QML applications which render offscreen and stream and receive events
+  via Deflect
+
 The following applications are provided which make use of the streaming API:
 
 * DesktopStreamer: A small utility that lets you stream your desktop.
 * SimpleStreamer: A simple example to demonstrate streaming of an OpenGL
   application.
+* QmlStreamer (optional): An offscreen application to stream any given qml file.
 
 ## Building from source
 
@@ -32,8 +38,7 @@ The following applications are provided which make use of the streaming API:
 
 ## ChangeLog
 
-To keep track of the changes between releases check the
-[changelog](doc/Changelog.md).
+To keep track of the changes between releases check the @ref Changelog.
 
 ## About
 

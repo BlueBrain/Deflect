@@ -3,19 +3,19 @@ Changelog {#Changelog}
 
 ## Deflect 0.8
 
-### 0.8.0 (git master)
-* Fix: ZeroConf record for server announces hostname instead of (wrong) port
-* Fix: send compressed JPEG images from correct thread, might fix crashes/hangs
-* Fix [#45](https://github.com/BlueBrain/Deflect/issues/45): Mouse position for
-  DesktopStreamer is rendered correctly on Retina displays
-* Fix interaction with DesktopStreamer on OSX where one click resulted in two
-  clicks
-* Added MTQueue class, moved from DisplayCluster
+### 0.8.0 (04-11-2015)
 * Added DeflectQt library to create QML applications which render offscreen and
   stream and receive events via Deflect
 * Added deflect::Stream::sendSizeHints()
+* Added MTQueue class, moved from DisplayCluster
 * Fix [54](https://github.com/BlueBrain/Deflect/issues/54): ZeroConf discovery
-  in DesktopStreamer uses hostname instead of instance name. 
+  in DesktopStreamer uses hostname instead of instance name
+* Fix interaction with DesktopStreamer on OSX where one click resulted in two
+  clicks
+* Fix [45](https://github.com/BlueBrain/Deflect/issues/45): Mouse position for
+  DesktopStreamer is rendered correctly on Retina displays
+* Fix: send compressed JPEG images from correct thread, might fix crashes/hangs
+* Fix: ZeroConf record for server announces hostname instead of (wrong) port
 
 ## Deflect 0.7
 
