@@ -50,7 +50,7 @@ namespace ut = boost::unit_test;
 #include <QThread>
 #include <QWaitCondition>
 
-BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp )
+BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp );
 
 BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
 {
