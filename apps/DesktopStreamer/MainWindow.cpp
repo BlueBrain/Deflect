@@ -57,6 +57,9 @@ typedef __int32 int32_t;
 #endif
 
 #ifdef __APPLE__
+#  ifdef DEFLECT_USE_QT5MACEXTRAS
+#    include "DesktopWindowsModel.h"
+#  endif
 #  define STREAM_EVENTS_SUPPORTED TRUE
 #  if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
 #    include <CoreGraphics/CoreGraphics.h>
@@ -99,6 +102,32 @@ MainWindow::MainWindow()
     gethostname( hostname, 256 );
     _streamnameLineEdit->setText( QString( "Desktop - %1" ).arg( hostname ));
 
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+    _listView->setModel( new DesktopWindowsModel );
+
+    connect( _listView->selectionModel(), &QItemSelectionModel::currentChanged,
+             [=]( const QModelIndex& current, const QModelIndex& )
+    {
+        const QString& windowName =
+                _listView->model()->data( current, Qt::DisplayRole ).toString();
+        _streamnameLineEdit->setText( QString( "%1 - %2" ).arg( windowName )
+                                                          .arg( hostname ));
+    });
+
+    connect( _listView->model(), &DesktopWindowsModel::rowsRemoved,
+             [&]( const QModelIndex&, int, int )
+    {
+        if( !_windowIndex.isValid() && _stream )
+        {
+            _stopStreaming();
+            _listView->setCurrentIndex( _listView->model()->index( 0, 0 ));
+        }
+    });
+#else
+    _listView->setHidden( true );
+    adjustSize();
+#endif
+
     connect( _desktopInteractionCheckBox, &QCheckBox::clicked,
              this, &MainWindow::_onStreamEventsBoxClicked );
 
@@ -128,6 +157,15 @@ void MainWindow::_startStreaming()
         _handleStreamingError( "Could not connect to host" );
         return;
     }
+
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+    _windowIndex = _listView->currentIndex();
+    if( !_windowIndex.isValid( ))
+    {
+        _handleStreamingError( "No window to stream is selected" );
+        return;
+    }
+#endif
 
 #ifdef STREAM_EVENTS_SUPPORTED
     if( _desktopInteractionCheckBox->isChecked( ))
@@ -241,8 +279,24 @@ void MainWindow::_shareDesktopUpdate()
     QTime frameTime;
     frameTime.start();
 
-    const QPixmap pixmap = QApplication::primaryScreen()->grabWindow( 0 );
-    _windowRect = QRect( 0, 0, pixmap.width(), pixmap.height( ));
+    QPixmap pixmap;
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+    if( !_windowIndex.isValid( ))
+        return;
+    if( _windowIndex.row() > 0 )
+    {
+        QAbstractItemModel* model = _listView->model();
+        pixmap = model->data( _windowIndex,
+                          DesktopWindowsModel::ROLE_PIXMAP ).value< QPixmap >();
+        _windowRect = model->data( _windowIndex,
+                              DesktopWindowsModel::ROLE_RECT ).value< QRect >();
+    }
+    else
+#endif
+    {
+        pixmap = QApplication::primaryScreen()->grabWindow( 0 );
+        _windowRect = QRect( 0, 0, pixmap.width(), pixmap.height( ));
+    }
 
     if( pixmap.isNull( ))
     {

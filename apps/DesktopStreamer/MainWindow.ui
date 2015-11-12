@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>350</width>
-    <height>204</height>
+    <height>402</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -50,14 +50,33 @@
       <property name="verticalSpacing">
        <number>6</number>
       </property>
-      <item row="0" column="0">
+      <item row="0" column="0" colspan="2">
+       <widget class="QListView" name="_listView">
+        <property name="flow">
+         <enum>QListView::LeftToRight</enum>
+        </property>
+        <property name="isWrapping" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="resizeMode">
+         <enum>QListView::Fixed</enum>
+        </property>
+        <property name="viewMode">
+         <enum>QListView::ListMode</enum>
+        </property>
+        <property name="uniformItemSizes">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
        <widget class="QLabel" name="hostnameLabel">
         <property name="text">
          <string>Hostname</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item row="1" column="1">
        <widget class="QComboBox" name="_hostnameComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -85,48 +104,35 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="2" column="0">
        <widget class="QLabel" name="streamnameLabel">
         <property name="text">
          <string>Streamname</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="_streamnameLineEdit">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="clearButtonEnabled">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="desktopInteractionLabel">
         <property name="text">
          <string>Desktop interaction</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="3" column="1">
        <widget class="QCheckBox" name="_desktopInteractionCheckBox">
         <property name="checked">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
+      <item row="4" column="0">
        <widget class="QLabel" name="maxFrameRateLabel">
         <property name="text">
          <string>Max frame rate</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
+      <item row="4" column="1">
        <widget class="QSpinBox" name="_maxFrameRateSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -148,7 +154,7 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0" colspan="2">
+      <item row="5" column="0" colspan="2">
        <widget class="QPushButton" name="_streamButton">
         <property name="minimumSize">
          <size>
@@ -181,6 +187,19 @@
          <bool>false</bool>
         </property>
         <property name="flat">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="_streamnameLineEdit">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="clearButtonEnabled">
          <bool>false</bool>
         </property>
        </widget>
@@ -218,6 +237,22 @@
   <connection>
    <sender>_streamButton</sender>
    <signal>toggled(bool)</signal>
+   <receiver>_listView</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>147</x>
+     <y>399</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>140</x>
+     <y>116</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>_streamButton</sender>
+   <signal>toggled(bool)</signal>
    <receiver>_streamnameLineEdit</receiver>
    <slot>setDisabled(bool)</slot>
    <hints>
@@ -239,11 +274,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>174</x>
-     <y>196</y>
+     <y>394</y>
     </hint>
     <hint type="destinationlabel">
      <x>242</x>
-     <y>54</y>
+     <y>252</y>
     </hint>
    </hints>
   </connection>
