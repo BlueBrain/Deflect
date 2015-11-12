@@ -38,14 +38,15 @@
 
 #include "MainWindow.h"
 
-#include "DesktopSelectionWindow.h"
-#include "DesktopSelectionRectangle.h"
-
 #include <deflect/Server.h>
 #include <deflect/Stream.h>
 #include <deflect/version.h>
 
 #include <iostream>
+
+#include <QMessageBox>
+#include <QPainter>
+#include <QScreen>
 
 #ifdef _WIN32
 typedef __int32 int32_t;
@@ -67,137 +68,48 @@ typedef __int32 int32_t;
 #define SHARE_DESKTOP_UPDATE_DELAY      1
 #define SERVUS_BROWSE_DELAY           100
 #define FRAME_RATE_AVERAGE_NUM_FRAMES  10
-
-#define DEFAULT_HOST_ADDRESS  "bbpav02.epfl.ch"
 #define CURSOR_IMAGE_FILE     ":/cursor.png"
+#define CURSOR_IMAGE_SIZE     20
+
+const std::vector< std::pair< QString, QString > > defaultHosts = {
+    { "DisplayWall Ground floor", "bbpav02.epfl.ch" },
+    { "DisplayWall 5th floor", "bbpav05.epfl.ch" },
+    { "DisplayWall 6th floor", "bbpav06.epfl.ch" }
+};
 
 MainWindow::MainWindow()
     : _stream( 0 )
-    , _desktopSelectionWindow( new DesktopSelectionWindow( ))
-    , _x( 0 )
-    , _y( 0 )
-    , _width( 0 )
-    , _height( 0 )
+    , _cursor( QImage( CURSOR_IMAGE_FILE ).scaled(
+                  CURSOR_IMAGE_SIZE * devicePixelRatio(),
+                  CURSOR_IMAGE_SIZE * devicePixelRatio(), Qt::KeepAspectRatio ))
 #ifdef DEFLECT_USE_SERVUS
     , _servus( deflect::Server::serviceName )
 #endif
 {
-    _generateCursorImage();
-    _setupUI();
+    setupUi( this );
 
-    // Receive changes from the selection rectangle
-    connect( _desktopSelectionWindow->getSelectionRectangle(),
-             SIGNAL( coordinatesChanged( QRect )),
-             this, SLOT( _setCoordinates( QRect )));
+    connect( _hostnameComboBox, &QComboBox::currentTextChanged,
+             [&]( const QString& text )
+                { _streamButton->setEnabled( !text.isEmpty( )); });
 
-    connect( _desktopSelectionWindow, SIGNAL( windowVisible( bool )),
-             _showDesktopSelectionWindowAction, SLOT( setChecked( bool )));
-}
-
-void MainWindow::_generateCursorImage()
-{
-    _cursor = QImage( CURSOR_IMAGE_FILE ).scaled( 20, 20, Qt::KeepAspectRatio );
-}
-
-void MainWindow::_setupUI()
-{
-    QWidget* widget = new QWidget();
-    QFormLayout* formLayout = new QFormLayout();
-    widget->setLayout( formLayout );
-
-    setCentralWidget( widget );
-
-    connect( &_xSpinBox, SIGNAL( editingFinished( )),
-             this, SLOT( _updateCoordinates( )));
-    connect( &_ySpinBox, SIGNAL( editingFinished( )),
-             this, SLOT( _updateCoordinates( )));
-    connect( &_widthSpinBox, SIGNAL( editingFinished( )),
-             this, SLOT( _updateCoordinates( )));
-    connect( &_heightSpinBox, SIGNAL( editingFinished( )),
-             this, SLOT( _updateCoordinates( )));
-
-    _hostnameLineEdit.setText( DEFAULT_HOST_ADDRESS );
+    for( const auto& entry : defaultHosts )
+        _hostnameComboBox->addItem( entry.first, entry.second );
 
     char hostname[256] = { 0 };
     gethostname( hostname, 256 );
-    _uriLineEdit.setText( hostname );
+    _streamnameLineEdit->setText( QString( "Desktop - %1" ).arg( hostname ));
 
-    const int screen = -1;
-    QRect desktopRect = QApplication::desktop()->screenGeometry( screen );
+    connect( _desktopInteractionCheckBox, &QCheckBox::clicked,
+             this, &MainWindow::_onStreamEventsBoxClicked );
 
-    _xSpinBox.setRange( 0, desktopRect.width( ));
-    _ySpinBox.setRange( 0, desktopRect.height( ));
-    _widthSpinBox.setRange( 1, desktopRect.width( ));
-    _heightSpinBox.setRange( 1, desktopRect.height( ));
+    connect( _streamButton, &QPushButton::clicked,
+             this, &MainWindow::_shareDesktop );
 
-    // default to full screen
-    _xSpinBox.setValue( 0 );
-    _ySpinBox.setValue( 0 );
-    _widthSpinBox.setValue( desktopRect.width( ));
-    _heightSpinBox.setValue( desktopRect.height( ));
-
-    // call updateCoordinates() to commit coordinates from the UI
-    _updateCoordinates();
-
-    // frame rate limiting
-    _frameRateSpinBox.setRange( 1, 60 );
-    _frameRateSpinBox.setValue( 24 );
-
-    // add widgets to UI
-    formLayout->addRow( "Hostname", &_hostnameLineEdit );
-    formLayout->addRow( "Stream name", &_uriLineEdit );
-    formLayout->addRow( "X", &_xSpinBox );
-    formLayout->addRow( "Y", &_ySpinBox );
-    formLayout->addRow( "Width", &_widthSpinBox );
-    formLayout->addRow( "Height", &_heightSpinBox );
-#ifdef STREAM_EVENTS_SUPPORTED
-    formLayout->addRow( "Allow desktop interaction", &_streamEventsBox );
-    _streamEventsBox.setChecked( true );
-    connect( &_streamEventsBox, SIGNAL( clicked( bool )),
-             this, SLOT( _onStreamEventsBoxClicked( bool )));
-#endif
-    formLayout->addRow( "Max frame rate", &_frameRateSpinBox );
-    formLayout->addRow( "Actual frame rate", &_frameRateLabel );
-
-    // share desktop action
-    _shareDesktopAction = new QAction( "Share Desktop", this );
-    _shareDesktopAction->setStatusTip( "Share desktop" );
-    _shareDesktopAction->setCheckable( true );
-    _shareDesktopAction->setChecked( false );
-    connect( _shareDesktopAction, SIGNAL( triggered( bool )), this,
-             SLOT( _shareDesktop( bool )));
-    connect( this, SIGNAL( streaming( bool )), _shareDesktopAction,
-             SLOT( setChecked( bool )));
-
-    // show desktop selection window action
-    _showDesktopSelectionWindowAction = new QAction( "Show Rectangle", this );
-    _showDesktopSelectionWindowAction->setStatusTip(
-                "Show desktop selection rectangle" );
-    _showDesktopSelectionWindowAction->setCheckable( true );
-    _showDesktopSelectionWindowAction->setChecked( false );
-    connect( _showDesktopSelectionWindowAction, SIGNAL( triggered( bool )),
-             this, SLOT( _showDesktopSelectionWindow( bool )));
-
-    QToolBar* toolbar = addToolBar( "toolbar" );
-    toolbar->addAction( _shareDesktopAction );
-    toolbar->addAction( _showDesktopSelectionWindowAction );
-
-    // add About dialog
-    QAction* showAboutDialog = new QAction( "About", this );
-    showAboutDialog->setStatusTip( "About DesktopStreamer" );
-    connect( showAboutDialog, &QAction::triggered,
+    connect( _actionAbout, &QAction::triggered,
              this, &MainWindow::_openAboutWidget );
-    QMenu* helpMenu = menuBar()->addMenu( "&Help" );
-    helpMenu->addAction( showAboutDialog );
 
     // Update timer
-    connect( &_updateTimer, SIGNAL( timeout( )), this, SLOT( _update( )));
-
-#ifdef DEFLECT_USE_SERVUS
-    _servus.beginBrowsing( servus::Servus::IF_ALL );
-    connect( &_browseTimer, SIGNAL( timeout( )), this, SLOT( _updateServus( )));
-    _browseTimer.start( SERVUS_BROWSE_DELAY );
-#endif
+    connect( &_updateTimer, &QTimer::timeout, this, &MainWindow::_update );
 }
 
 void MainWindow::_startStreaming()
@@ -205,15 +117,20 @@ void MainWindow::_startStreaming()
     if( _stream )
         return;
 
-    _stream = new deflect::Stream( _uriLineEdit.text().toStdString(),
-                                   _hostnameLineEdit.text().toStdString( ));
+    QString streamHost =
+            _hostnameComboBox->currentData().toString();
+    if( streamHost.isEmpty( ))
+        streamHost = _hostnameComboBox->currentData( Qt::DisplayRole ).toString();
+    _stream = new deflect::Stream( _streamnameLineEdit->text().toStdString(),
+                                   streamHost.toStdString( ));
     if( !_stream->isConnected( ))
     {
-        _handleStreamingError( "Could not connect to host!" );
+        _handleStreamingError( "Could not connect to host" );
         return;
     }
+
 #ifdef STREAM_EVENTS_SUPPORTED
-    if( _streamEventsBox.isChecked( ))
+    if( _desktopInteractionCheckBox->isChecked( ))
         _stream->registerForEvents();
 #endif
 
@@ -229,7 +146,7 @@ void MainWindow::_startStreaming()
 void MainWindow::_stopStreaming()
 {
     _updateTimer.stop();
-    _frameRateLabel.setText( "" );
+    _statusbar->clearMessage();
 
     delete _stream;
     _stream = 0;
@@ -237,7 +154,7 @@ void MainWindow::_stopStreaming()
 #ifdef __APPLE__
     _napSuspender.resume();
 #endif
-    emit streaming( false );
+    _streamButton->setChecked( false );
 }
 
 void MainWindow::_handleStreamingError( const QString& errorMessage )
@@ -251,26 +168,8 @@ void MainWindow::_handleStreamingError( const QString& errorMessage )
 
 void MainWindow::closeEvent( QCloseEvent* closeEvt )
 {
-    delete _desktopSelectionWindow;
-    _desktopSelectionWindow = 0;
-
     _stopStreaming();
-
     QMainWindow::closeEvent( closeEvt );
-}
-
-void MainWindow::_setCoordinates( const QRect coordinates )
-{
-    _xSpinBox.setValue( coordinates.x( ));
-    _ySpinBox.setValue( coordinates.y( ));
-    _widthSpinBox.setValue( coordinates.width( ));
-    _heightSpinBox.setValue( coordinates.height( ));
-
-    // the spinboxes only update the UI; we must update the actual values too
-    _x = _xSpinBox.value();
-    _y = _ySpinBox.value();
-    _width = _widthSpinBox.value();
-    _height = _heightSpinBox.value();
 }
 
 void MainWindow::_shareDesktop( const bool set )
@@ -279,14 +178,6 @@ void MainWindow::_shareDesktop( const bool set )
         _startStreaming();
     else
         _stopStreaming();
-}
-
-void MainWindow::_showDesktopSelectionWindow( const bool set )
-{
-    if( set )
-        _desktopSelectionWindow->showFullScreen();
-    else
-        _desktopSelectionWindow->hide();
 }
 
 void MainWindow::_update()
@@ -303,7 +194,7 @@ void MainWindow::_processStreamEvents()
         const deflect::Event& wallEvent = _stream->getEvent();
         // Once registered for events they must be consumed, otherwise they
         // queue up. Until unregister is implemented, just ignore them.
-        if( !_streamEventsBox.checkState( ))
+        if( !_desktopInteractionCheckBox->checkState( ))
             break;
 #ifndef NDEBUG
         std::cout << "----------" << std::endl;
@@ -311,8 +202,7 @@ void MainWindow::_processStreamEvents()
         switch( wallEvent.type )
         {
         case deflect::Event::EVT_CLOSE:
-            _stopStreaming();
-            break;
+            return;
         case deflect::Event::EVT_PRESS:
             _sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
             _sendMousePressEvent( wallEvent.mouseX, wallEvent.mouseY );
@@ -343,43 +233,28 @@ void MainWindow::_processStreamEvents()
     }
 }
 
-#ifdef DEFLECT_USE_SERVUS
-void MainWindow::_updateServus()
-{
-    if( _hostnameLineEdit.text() != DEFAULT_HOST_ADDRESS )
-    {
-        _browseTimer.stop();
-        return;
-    }
-
-    _servus.browse( 0 );
-    const servus::Strings& hosts = _servus.getInstances();
-    if( hosts.empty( ))
-        return;
-
-    _browseTimer.stop();
-    _hostnameLineEdit.setText( _servus.getHost( hosts.front( )).c_str( ));
-}
-#endif
-
 void MainWindow::_shareDesktopUpdate()
 {
+    if( !_stream )
+        return;
+
     QTime frameTime;
     frameTime.start();
 
-    const QPixmap desktopPixmap =
-        QApplication::primaryScreen()->grabWindow( 0, _x, _y, _width, _height );
+    const QPixmap pixmap = QApplication::primaryScreen()->grabWindow( 0 );
+    _windowRect = QRect( 0, 0, pixmap.width(), pixmap.height( ));
 
-    if( desktopPixmap.isNull( ))
+    if( pixmap.isNull( ))
     {
         _handleStreamingError( "Got NULL desktop pixmap" );
         return;
     }
-    QImage image = desktopPixmap.toImage();
+    QImage image = pixmap.toImage();
 
     // render mouse cursor
-    QPoint mousePos = ( devicePixelRatio() * QCursor::pos() - QPoint( _x, _y )) -
-                        QPoint( _cursor.width() / 2, _cursor.height() / 2 );
+    const QPoint mousePos =
+            ( devicePixelRatio() * QCursor::pos() - _windowRect.topLeft()) -
+              QPoint( _cursor.width() / 2, _cursor.height() / 2 );
     QPainter painter( &image );
     painter.drawImage( mousePos, _cursor );
     painter.end(); // Make sure to release the QImage before using it
@@ -390,7 +265,8 @@ void MainWindow::_shareDesktopUpdate()
                                         deflect::BGRA );
     deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
 
-    bool success = _stream->send( deflectImage ) && _stream->finishFrame();
+    const bool success = _stream->send( deflectImage ) &&
+                         _stream->finishFrame();
     if( !success )
     {
         _handleStreamingError( "Streaming failure, connection closed." );
@@ -403,7 +279,7 @@ void MainWindow::_shareDesktopUpdate()
 void MainWindow::_regulateFrameRate( const int elapsedFrameTime )
 {
     // frame rate limiting
-    const int maxFrameRate = _frameRateSpinBox.value();
+    const int maxFrameRate = _maxFrameRateSpinBox->value();
     const int desiredFrameTime = (int)( 1000.f * 1.f / (float)maxFrameRate );
     const int sleepTime = desiredFrameTime - elapsedFrameTime;
 
@@ -429,21 +305,9 @@ void MainWindow::_regulateFrameRate( const int elapsedFrameTime )
         const float fps = (float)_frameSentTimes.size() * 1000.f /
                (float)_frameSentTimes.front().msecsTo( _frameSentTimes.back( ));
 
-        _frameRateLabel.setText( QString::number( fps ) + QString( " fps" ));
+        _statusbar->showMessage( QString( "Streaming to %1@%2 fps" )
+                           .arg( _hostnameComboBox->currentText( )).arg( fps ));
     }
-}
-
-void MainWindow::_updateCoordinates()
-{
-    _x = _xSpinBox.value();
-    _y = _ySpinBox.value();
-    _width = _widthSpinBox.value();
-    _height = _heightSpinBox.value();
-
-    _generateCursorImage();
-
-    const QRect coord( _x, _y, _width, _height );
-    _desktopSelectionWindow->getSelectionRectangle()->setCoordinates( coord );
 }
 
 void MainWindow::_onStreamEventsBoxClicked( const bool checked )
@@ -481,8 +345,8 @@ void sendMouseEvent( const CGEventType type, const CGMouseButton button,
 void MainWindow::_sendMousePressEvent( const float x, const float y )
 {
     CGPoint point;
-    point.x = _x + x * _width;
-    point.y = _y + y * _height;
+    point.x = _windowRect.topLeft().x() + x * _windowRect.width();
+    point.y = _windowRect.topLeft().y() + y * _windowRect.height();
 #ifndef NDEBUG
     std::cout << "Press " << point.x << ", " << point.y << " ("
               << x << ", " << y << ")"<< std::endl;
@@ -493,8 +357,8 @@ void MainWindow::_sendMousePressEvent( const float x, const float y )
 void MainWindow::_sendMouseMoveEvent( const float x, const float y )
 {
     CGPoint point;
-    point.x = _x + x * _width;
-    point.y = _y + y * _height;
+    point.x = _windowRect.topLeft().x() + x * _windowRect.width();
+    point.y = _windowRect.topLeft().y() + y * _windowRect.height();
 #ifndef NDEBUG
     std::cout << "Move " << point.x << ", " << point.y << " ("
               << x << ", " << y << ")"<< std::endl;
@@ -505,8 +369,8 @@ void MainWindow::_sendMouseMoveEvent( const float x, const float y )
 void MainWindow::_sendMouseReleaseEvent( const float x, const float y )
 {
     CGPoint point;
-    point.x = _x + x * _width;
-    point.y = _y + y * _height;
+    point.x = _windowRect.topLeft().x() + x * _windowRect.width();
+    point.y = _windowRect.topLeft().y() + y * _windowRect.height();
 #ifndef NDEBUG
     std::cout << "Release " << point.x << ", " << point.y << " ("
               << x << ", " << y << ")"<< std::endl;
@@ -517,8 +381,8 @@ void MainWindow::_sendMouseReleaseEvent( const float x, const float y )
 void MainWindow::_sendMouseDoubleClickEvent( const float x, const float y )
 {
     CGPoint point;
-    point.x = _x + x * _width;
-    point.y = _y + y * _height;
+    point.x = _windowRect.topLeft().x() + x * _windowRect.width();
+    point.y = _windowRect.topLeft().y() + y * _windowRect.height();
     CGEventRef event = CGEventCreateMouseEvent( 0, kCGEventLeftMouseDown,
                                                 point, kCGMouseButtonLeft );
 #ifndef NDEBUG

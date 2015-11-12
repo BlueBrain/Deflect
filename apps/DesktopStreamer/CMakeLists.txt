@@ -3,17 +3,16 @@
 #                     Raphael Dumusc <raphael.dumusc@epfl.ch>
 
 set(DESKTOPSTREAMER_MOC_HEADERS
-  DesktopSelectionWindow.h
-  DesktopSelectionRectangle.h
   MainWindow.h
 )
 
 set(DESKTOPSTREAMER_SOURCES
-  DesktopSelectionRectangle.cpp
-  DesktopSelectionWindow.cpp
-  DesktopSelectionView.cpp
   MainWindow.cpp
   main.cpp
+)
+
+set(DESKTOPSTREAMER_UI_FORMS
+  MainWindow.ui
 )
 
 set(DESKTOPSTREAMER_LINK_LIBRARIES
