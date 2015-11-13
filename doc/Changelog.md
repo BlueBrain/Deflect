@@ -1,6 +1,12 @@
 Changelog {#Changelog}
 ============
 
+## Deflect 0.9 (git master)
+
+* [60](https://github.com/BlueBrain/Deflect/pull/60):
+  Improved DesktopStreamer: removed selection rectangle, editable list of stream
+  hostnames
+
 ## Deflect 0.8
 
 ### 0.8.0 (04-11-2015)

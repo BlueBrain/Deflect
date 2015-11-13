@@ -40,6 +40,7 @@
 #define MAIN_WINDOW_H
 
 #include <deflect/types.h>
+#include <apps/DesktopStreamer/ui_MainWindow.h>
 
 #ifdef __APPLE__
 #  include "AppNapSuspender.h"
@@ -49,70 +50,32 @@
 #  include <servus/servus.h>
 #endif
 
-#include <QtWidgets>
+#include <QMainWindow>
+#include <QTimer>
+#include <QTime>
 
-class DesktopSelectionWindow;
-
-class MainWindow : public QMainWindow
+class MainWindow : public QMainWindow, public Ui::MainWindow
 {
     Q_OBJECT
 
 public:
     MainWindow();
 
-signals:
-    void streaming( bool enabled );
-
 protected:
     void closeEvent( QCloseEvent* event ) final;
 
 private slots:
     void _shareDesktop( bool set );
-    void _showDesktopSelectionWindow( bool set );
-
     void _update();
-#ifdef DEFLECT_USE_SERVUS
-    void _updateServus();
-#endif
-
-    void _setCoordinates( QRect coordinates );
-    void _updateCoordinates();
-
     void _onStreamEventsBoxClicked( bool checked );
     void _openAboutWidget();
 
 private:
     deflect::Stream* _stream;
 
-    DesktopSelectionWindow* _desktopSelectionWindow;
-
-    /** @name User Interface Elements */
-    //@{
-    QLineEdit _hostnameLineEdit;
-    QLineEdit _uriLineEdit;
-    QSpinBox _xSpinBox;
-    QSpinBox _ySpinBox;
-    QSpinBox _widthSpinBox;
-    QSpinBox _heightSpinBox;
-    QSpinBox _frameRateSpinBox;
-    QLabel _frameRateLabel;
-    QCheckBox _streamEventsBox;
-
-    QAction* _shareDesktopAction;
-    QAction* _showDesktopSelectionWindowAction;
-    //@}
-
-    /** @name Status */
-    //@{
-    int _x;
-    int _y;
-    int _width;
-    int _height;
-    //@}
-
     QImage _cursor;
-
     QTimer _updateTimer;
+    QRect _windowRect;
 
     // used for frame rate calculations
     std::vector<QTime> _frameSentTimes;
@@ -124,9 +87,6 @@ private:
     QTimer _browseTimer;
     servus::Servus _servus;
 #endif
-
-    void _setupUI();
-    void _generateCursorImage();
 
     void _startStreaming();
     void _stopStreaming();
