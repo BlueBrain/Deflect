@@ -75,8 +75,7 @@ namespace deflect
 namespace qt
 {
 
-QmlStreamer::QmlStreamer::Impl::Impl( const QString& qmlFile,
-                                      const std::string& streamHost )
+QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost )
     : QWindow()
     , _context( new QOpenGLContext )
     , _offscreenSurface( new QOffscreenSurface )
