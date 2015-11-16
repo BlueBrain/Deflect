@@ -93,6 +93,7 @@ private slots:
     void _onReleased( double, double );
     void _onMoved( double, double );
     void _onResized( double, double );
+    void _onWheeled( double, double, double );
 
 private:
     bool _setupDeflectStream();

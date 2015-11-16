@@ -3,7 +3,9 @@ Changelog {#Changelog}
 
 ## Deflect 0.9 (git master)
 
-* [60](https://github.com/BlueBrain/Deflect/pull/60):
+* [64](https://github.com/BlueBrain/Deflect/pull/64):
+  QmlStreamer: Fix event forwarding, implement wheel event support  
+* [60](https://github.com/BlueBrain/Deflect/pull/60): 
   Improved DesktopStreamer: removed selection rectangle, editable list of stream
   hostnames
 
