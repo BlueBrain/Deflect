@@ -228,28 +228,36 @@ void QmlStreamer::Impl::_requestUpdate()
 
 void QmlStreamer::Impl::_onPressed( double x_, double y_ )
 {
-    QPoint point( x_ * width(), y_ * height( ));
+    const QPoint point( x_ * width(), y_ * height( ));
     QMouseEvent* e = new QMouseEvent( QEvent::MouseButtonPress, point,
                                       Qt::LeftButton, Qt::LeftButton,
                                       Qt::NoModifier );
-    QCoreApplication::postEvent( this, e );
+    QCoreApplication::postEvent( _quickWindow, e );
 }
 
 void QmlStreamer::Impl::_onMoved( double x_, double y_ )
 {
-    QPoint point( x_ * width(), y_ * height( ));
+    const QPoint point( x_ * width(), y_ * height( ));
     QMouseEvent* e = new QMouseEvent( QEvent::MouseMove, point, Qt::LeftButton,
                                       Qt::LeftButton, Qt::NoModifier );
-    QCoreApplication::postEvent( this, e );
+    QCoreApplication::postEvent( _quickWindow, e );
 }
 
 void QmlStreamer::Impl::_onReleased( double x_, double y_ )
 {
-    QPoint point( x_ * width(), y_ * height( ));
+    const QPoint point( x_ * width(), y_ * height( ));
     QMouseEvent* e = new QMouseEvent( QEvent::MouseButtonRelease, point,
                                       Qt::LeftButton, Qt::NoButton,
                                       Qt::NoModifier );
-    QCoreApplication::postEvent( this, e );
+    QCoreApplication::postEvent( _quickWindow, e );
+}
+
+void QmlStreamer::Impl::_onWheeled( double x_, double y_, double deltaY )
+{
+    const QPoint point( x_ * width(), y_ * height( ));
+    QWheelEvent* e = new QWheelEvent( point, deltaY, Qt::NoButton,
+                                      Qt::NoModifier, Qt::Vertical );
+    QCoreApplication::postEvent( _quickWindow, e );
 }
 
 void QmlStreamer::Impl::_onResized( double x_, double y_ )
@@ -340,6 +348,9 @@ bool QmlStreamer::Impl::_setupDeflectStream()
              this, &QmlStreamer::Impl::_onMoved );
     connect( _eventHandler, &EventReceiver::resized,
              this, &QmlStreamer::Impl::_onResized );
+    connect( _eventHandler, &EventReceiver::wheeled,
+             this, &QmlStreamer::Impl::_onWheeled );
+
     return true;
 }
 

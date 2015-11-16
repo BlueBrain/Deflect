@@ -87,10 +87,13 @@ void EventReceiver::_onEvent( int socket )
         case Event::EVT_VIEW_SIZE_CHANGED:
             emit resized( deflectEvent.dx, deflectEvent.dy );
             break;
+        case Event::EVT_WHEEL:
+            emit wheeled( deflectEvent.mouseX, deflectEvent.mouseY,
+                          deflectEvent.dy );
+            break;
 
         case Event::EVT_CLICK:
         case Event::EVT_DOUBLECLICK:
-        case Event::EVT_WHEEL:
         case Event::EVT_SWIPE_LEFT:
         case Event::EVT_SWIPE_RIGHT:
         case Event::EVT_SWIPE_UP:

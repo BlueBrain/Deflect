@@ -63,6 +63,7 @@ signals:
     void released( double x, double y );
     void moved( double x, double y );
     void resized( double x, double y );
+    void wheeled( double x, double y, double dy );
 
 private slots:
     void _onEvent( int socket );
