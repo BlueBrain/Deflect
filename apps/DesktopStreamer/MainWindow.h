@@ -80,6 +80,10 @@ private:
     // used for frame rate calculations
     std::vector<QTime> _frameSentTimes;
 
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+    QPersistentModelIndex _windowIndex;
+#endif
+
 #ifdef __APPLE__
     AppNapSuspender _napSuspender;
 #endif
