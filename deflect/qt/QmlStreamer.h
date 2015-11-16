@@ -40,6 +40,8 @@
 #ifndef QMLSTREAMER_H
 #define QMLSTREAMER_H
 
+#include <deflect/qt/api.h>
+
 #include <QString>
 #include <QQuickItem>
 
@@ -67,12 +69,13 @@ public:
      * @param qmlFile URL to QML file to load
      * @param streamHost hostname of the Deflect server
      */
-    QmlStreamer( const QString& qmlFile, const std::string& streamHost );
+    DEFLECTQT_API QmlStreamer( const QString& qmlFile,
+                               const std::string& streamHost );
 
-    ~QmlStreamer();
+    DEFLECTQT_API ~QmlStreamer();
 
     /** @return the QML root item, might be nullptr if not ready yet. */
-    QQuickItem* getRootItem();
+    DEFLECTQT_API QQuickItem* getRootItem();
 
 private:
     QmlStreamer( const QmlStreamer& ) = delete;
