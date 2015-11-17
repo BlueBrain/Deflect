@@ -68,9 +68,13 @@ public:
      *
      * @param qmlFile URL to QML file to load
      * @param streamHost hostname of the Deflect server
+     * @param streamName name of the Deflect stream (optional). Setting this
+     *        value overrides the 'objectName' property of the root QML item.
+     *        If neither is provided, "QmlStreamer" is used instead.
      */
     DEFLECTQT_API QmlStreamer( const QString& qmlFile,
-                               const std::string& streamHost );
+                               const std::string& streamHost,
+                               const std::string& streamName = std::string( ));
 
     DEFLECTQT_API ~QmlStreamer();
 

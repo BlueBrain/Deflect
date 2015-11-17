@@ -38,19 +38,29 @@ int main( int argc, char** argv )
                                       "qrc:/qml/gui.qml" );
     parser.addOption( qmlFileOption );
 
-    QCommandLineOption streamHostOption( "host", "Stream hostname", "hostname",
-                                         "localhost" );
+    QCommandLineOption streamHostOption( "host", "Stream target hostname "
+                                                 "(default: localhost)",
+                                         "hostname", "localhost" );
     parser.addOption( streamHostOption );
+
+    // note: the 'name' command line option is already taken by QCoreApplication
+    QCommandLineOption streamNameOption( "streamname", "Stream name (default: "
+                                                 "Qml's root objectName "
+                                                 "property or 'QmlStreamer')",
+                                         "name" );
+    parser.addOption( streamNameOption );
 
     parser.process( app );
 
     const QString qmlFile = parser.value( qmlFileOption );
     const QString streamHost = parser.value( streamHostOption );
+    const QString streamName = parser.value( streamNameOption );
 
     try
     {
         QScopedPointer< deflect::qt::QmlStreamer > streamer(
-             new deflect::qt::QmlStreamer( qmlFile, streamHost.toStdString( )));
+             new deflect::qt::QmlStreamer( qmlFile, streamHost.toStdString(),
+                                           streamName.toStdString( )));
         return app.exec();
     }
     catch( const std::runtime_error& exception )

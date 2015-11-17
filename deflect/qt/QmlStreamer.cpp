@@ -46,8 +46,9 @@ namespace qt
 {
 
 QmlStreamer::QmlStreamer( const QString& qmlFile,
-                          const std::string& streamHost )
-    : _impl( new Impl( qmlFile, streamHost ))
+                          const std::string& streamHost,
+                          const std::string& streamName )
+    : _impl( new Impl( qmlFile, streamHost, streamName ))
 {
 }
 

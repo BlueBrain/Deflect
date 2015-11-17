@@ -51,6 +51,10 @@
 #include <QQuickRenderControl>
 #include <QQuickWindow>
 
+namespace
+{
+const std::string DEFAULT_STREAM_NAME( "QmlStreamer" );
+}
 
 class RenderControl : public QQuickRenderControl
 {
@@ -75,7 +79,8 @@ namespace deflect
 namespace qt
 {
 
-QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost )
+QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
+                         const std::string& streamName )
     : QWindow()
     , _context( new QOpenGLContext )
     , _offscreenSurface( new QOffscreenSurface )
@@ -92,6 +97,7 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost )
     , _eventHandler( nullptr )
     , _streaming( false )
     , _streamHost( streamHost )
+    , _streamName( streamName )
 {
     setSurfaceType( QSurface::OpenGLSurface );
 
@@ -321,14 +327,19 @@ bool QmlStreamer::Impl::_setupRootItem()
     return true;
 }
 
+std::string QmlStreamer::Impl::_getDeflectStreamName() const
+{
+    if( !_streamName.empty( ))
+        return _streamName;
+
+    const std::string streamName = _rootItem->objectName().toStdString();
+    return streamName.empty() ? DEFAULT_STREAM_NAME : streamName;
+}
+
 bool QmlStreamer::Impl::_setupDeflectStream()
 {
     if( !_stream )
-    {
-        const std::string streamName = _rootItem->objectName().toStdString();
-        _stream = new Stream( streamName.empty() ? "QmlStreamer" : streamName,
-                              _streamHost );
-    }
+        _stream = new Stream( _getDeflectStreamName(), _streamHost );
 
     if( !_stream->isConnected( ))
         return false;
