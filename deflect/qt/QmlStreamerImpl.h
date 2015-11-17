@@ -70,7 +70,8 @@ class QmlStreamer::Impl : public QWindow
     Q_OBJECT
 
 public:
-    Impl( const QString& qmlFile, const std::string& streamHost );
+    Impl( const QString& qmlFile, const std::string& streamHost,
+          const std::string& streamName );
 
     ~Impl();
 
@@ -96,6 +97,7 @@ private slots:
     void _onWheeled( double, double, double );
 
 private:
+    std::string _getDeflectStreamName() const;
     bool _setupDeflectStream();
     void _updateSizes( const QSize& size );
 
@@ -113,6 +115,7 @@ private:
     EventReceiver* _eventHandler;
     bool _streaming;
     const std::string _streamHost;
+    const std::string _streamName;
     SizeHints _sizeHints;
 };
 
