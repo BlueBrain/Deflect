@@ -146,10 +146,12 @@ void MainWindow::_startStreaming()
     if( _stream )
         return;
 
-    QString streamHost =
-            _hostnameComboBox->currentData().toString();
-    if( streamHost.isEmpty( ))
-        streamHost = _hostnameComboBox->currentData( Qt::DisplayRole ).toString();
+    QString streamHost;
+    if( _hostnameComboBox->findText( _hostnameComboBox->currentText( )) == -1 )
+        streamHost = _hostnameComboBox->currentText();
+    else
+        streamHost = _hostnameComboBox->currentData().toString();
+
     _stream = new deflect::Stream( _streamnameLineEdit->text().toStdString(),
                                    streamHost.toStdString( ));
     if( !_stream->isConnected( ))
@@ -360,7 +362,7 @@ void MainWindow::_regulateFrameRate( const int elapsedFrameTime )
                (float)_frameSentTimes.front().msecsTo( _frameSentTimes.back( ));
 
         _statusbar->showMessage( QString( "Streaming to %1@%2 fps" )
-                           .arg( _hostnameComboBox->currentText( )).arg( fps ));
+                .arg( _hostnameComboBox->currentData().toString( )).arg( fps ));
     }
 }
 

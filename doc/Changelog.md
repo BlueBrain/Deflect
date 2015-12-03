@@ -6,6 +6,8 @@ Changelog {#Changelog}
 ### 0.9.1 (03-12-2015)
 * [66](https://github.com/BlueBrain/Deflect/pull/66):
   DesktopStreamer: Fix memleaks with app streaming on OSX
+* [66](https://github.com/BlueBrain/Deflect/pull/66):
+  DesktopStreamer: Use current hostname if manually typed w/o pressing 'Enter'
 
 ### 0.9.0 (17-11-2015)
 * [65](https://github.com/BlueBrain/Deflect/pull/65):
