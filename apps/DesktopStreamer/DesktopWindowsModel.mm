@@ -78,7 +78,9 @@ QPixmap getWindowPixmap( const CGWindowID windowID )
                                      windowID,
                                      kCGWindowImageBoundsIgnoreFraming );
 
-    return QtMac::fromCGImageRef( windowImage );
+    const QPixmap pixmap = QtMac::fromCGImageRef( windowImage );
+    CGImageRelease( windowImage );
+    return pixmap;
 }
 
 QRect getWindowRect( const CGWindowID windowID )
@@ -203,7 +205,13 @@ public:
                                             kCGWindowListExcludeDesktopElements,
                                             kCGNullWindowID );
             if( _addApplication( app, windowList ))
+            {
+                CFRelease( windowList );
                 break;
+            }
+
+            CFRelease( windowList );
+
             // notification is not sync'd with CGWindowListCopyWindowInfo
             sleep( 1 );
         }
