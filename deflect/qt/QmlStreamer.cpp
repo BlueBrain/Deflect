@@ -61,5 +61,11 @@ QQuickItem* QmlStreamer::getRootItem()
     return _impl->getRootItem();
 }
 
+QQmlEngine* QmlStreamer::getQmlEngine()
+{
+    return _impl->getQmlEngine();
+}
+
+
 }
 }
