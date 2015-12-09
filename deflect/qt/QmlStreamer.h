@@ -44,6 +44,7 @@
 
 #include <QString>
 #include <QQuickItem>
+#include <QQmlEngine>
 
 #include <memory>
 #include <string>
@@ -80,6 +81,9 @@ public:
 
     /** @return the QML root item, might be nullptr if not ready yet. */
     DEFLECTQT_API QQuickItem* getRootItem();
+
+    /** @return the QML engine. */
+    DEFLECTQT_API QQmlEngine* getQmlEngine();
 
 private:
     QmlStreamer( const QmlStreamer& ) = delete;
