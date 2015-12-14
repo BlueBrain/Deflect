@@ -84,7 +84,7 @@ Server::Server( const int port )
         throw std::runtime_error( err.toStdString( ));
     }
 #ifdef DEFLECT_USE_SERVUS
-    _impl->servus.announce( port, "" );
+    _impl->servus.announce( serverPort(), "" );
 #endif
 }
 

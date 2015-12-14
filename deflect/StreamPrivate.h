@@ -77,9 +77,10 @@ public:
      * @param stream the parent object owning this object
      * @param name the unique stream name
      * @param address Address of the target DisplayCluster instance.
+     * @param port Port of the target DisplayCluster instance.
      */
     StreamPrivate( Stream* stream, const std::string& name,
-                   const std::string& address );
+                   const std::string& address, const unsigned short port );
 
     /** Destructor, close the Stream. */
     ~StreamPrivate();

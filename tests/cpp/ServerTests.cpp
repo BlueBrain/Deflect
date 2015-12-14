@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
     QWaitCondition received;
     QMutex mutex;
 
-    deflect::Server* server = new deflect::Server;
+    deflect::Server* server = new deflect::Server( 0 /* OS-chosen port */ );
     server->connect( server, &deflect::Server::receivedSizeHints,
                      [&]( QString uri, deflect::SizeHints hints )
                      {
@@ -77,7 +77,8 @@ BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
     serverThread.start();
 
     {
-        deflect::Stream stream( testURI.toStdString(), "localhost" );
+        deflect::Stream stream( testURI.toStdString(), "localhost",
+                                server->serverPort());
         BOOST_CHECK( stream.isConnected( ));
         stream.sendSizeHints( testHints );
     }
