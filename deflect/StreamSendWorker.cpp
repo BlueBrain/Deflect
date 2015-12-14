@@ -81,7 +81,11 @@ void StreamSendWorker::_stop()
     }
 
     _thread.join();
-    _requests.clear();
+    while( !_requests.empty( ))
+    {
+        _requests.back().first->set_value( false );
+        _requests.pop_back();
+    }
 }
 
 Stream::Future StreamSendWorker::enqueueImage( const ImageWrapper& image )

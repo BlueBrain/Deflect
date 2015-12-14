@@ -56,9 +56,10 @@ namespace deflect
 {
 
 StreamPrivate::StreamPrivate( Stream* stream, const std::string &name_,
-                              const std::string& address )
+                              const std::string& address,
+                              const unsigned short port )
     : name( name_ )
-    , socket( address )
+    , socket( address, port )
     , registeredForEvents( false )
     , _parent( stream )
     , _sendWorker( 0 )

@@ -94,9 +94,11 @@ public:
      * @param address Address of the target DisplayCluster instance, can be a
      *                hostname like "localhost" or an IP in string format like
      *                "192.168.1.83".
+     * @param port Port of the DisplayCluster instance, default 1701.
      * @version 1.0
      */
-    DEFLECT_API Stream( const std::string& name, const std::string& address );
+    DEFLECT_API Stream( const std::string& name, const std::string& address,
+                        const unsigned short port = 1701 );
 
     /** Destruct the Stream, closing the connection. @version 1.0 */
     DEFLECT_API virtual ~Stream();

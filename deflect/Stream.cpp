@@ -54,8 +54,9 @@
 namespace deflect
 {
 
-Stream::Stream( const std::string& name, const std::string& address )
-    : _impl( new StreamPrivate( this, name, address ))
+Stream::Stream( const std::string& name, const std::string& address,
+                const unsigned short port )
+    : _impl( new StreamPrivate( this, name, address, port ))
 {
 }
 
