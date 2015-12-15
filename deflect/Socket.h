@@ -113,6 +113,9 @@ public:
     /** Get the protocol version of the remote host */
     int32_t getRemoteProtocolVersion() const;
 
+    /** Flushes the socket buffer */
+    void flush();
+
 signals:
     /** Signal that the socket has been disconnected. */
     void disconnected();
