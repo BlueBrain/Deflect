@@ -41,6 +41,7 @@
 #define QMLSTREAMER_H
 
 #include <deflect/qt/api.h>
+#include <deflect/Stream.h>
 
 #include <QString>
 #include <QQuickItem>
@@ -84,6 +85,9 @@ public:
 
     /** @return the QML engine. */
     DEFLECTQT_API QQmlEngine* getQmlEngine();
+
+    /** @return the deflect streamer. */
+    DEFLECTQT_API Stream* getStream();
 
 private:
     QmlStreamer( const QmlStreamer& ) = delete;

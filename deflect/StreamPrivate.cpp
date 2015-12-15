@@ -118,7 +118,9 @@ bool StreamPrivate::finishFrame()
 {
     // Open a window for the PixelStream
     const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, name );
-    return socket.send( mh, QByteArray( ));
+    const bool ret = socket.send( mh, QByteArray( ));
+    socket.flush();
+    return ret;
 }
 
 bool StreamPrivate::sendPixelStreamSegment( const Segment& segment )

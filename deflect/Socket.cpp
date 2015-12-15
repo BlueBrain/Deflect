@@ -166,6 +166,11 @@ int32_t Socket::getRemoteProtocolVersion() const
     return _remoteProtocolVersion;
 }
 
+void Socket::flush()
+{
+    _socket->flush();
+}
+
 bool Socket::_receiveHeader( MessageHeader& messageHeader )
 {
     while( _socket->bytesAvailable() < qint64(MessageHeader::serializedSize) )
