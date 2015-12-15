@@ -66,6 +66,11 @@ QQmlEngine* QmlStreamer::getQmlEngine()
     return _impl->getQmlEngine();
 }
 
+Stream *deflect::qt::QmlStreamer::getStream()
+{
+    return _impl->getStream();
+}
+
 
 }
 }

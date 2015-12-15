@@ -77,6 +77,7 @@ public:
 
     QQuickItem* getRootItem() { return _rootItem; }
     QQmlEngine* getQmlEngine() { return _qmlEngine; }
+    Stream* getStream() { return _stream; }
 
 protected:
     void resizeEvent( QResizeEvent* e ) final;
