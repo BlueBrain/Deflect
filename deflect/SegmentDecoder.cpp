@@ -84,6 +84,11 @@ void decodeSegment( ImageJpegDecompressor* decompressor, Segment* segment )
     }
 }
 
+void SegmentDecoder::decode( Segment& segment )
+{
+    decodeSegment( &_impl->decompressor, &segment );
+}
+
 void SegmentDecoder::startDecoding( Segment& segment )
 {
     // drop frames if we're currently processing

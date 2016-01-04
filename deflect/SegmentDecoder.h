@@ -61,11 +61,20 @@ public:
     DEFLECT_API ~SegmentDecoder();
 
     /**
+     * Decode a segment.
+     *
+     * @param segment The segment to decode. Upon success, its imageData member
+     *        will hold the decompressed data and its "compressed" flag will be
+     *        set to false.
+     */
+    DEFLECT_API void decode( Segment& segment );
+
+    /**
      * Start decoding a segment.
      *
      * This function will silently ignore the request if a decoding is already
      * in progress.
-     * @param segment The segement to decode. The segment is will be modified by
+     * @param segment The segement to decode. The segment will be modified by
      *        this function. It must remain valid and should not be accessed
      *        until the decoding procedure has completed.
      * @see isRunning()
