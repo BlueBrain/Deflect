@@ -74,6 +74,8 @@ BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
                          mutex.unlock();
                      });
     server->moveToThread( &serverThread );
+    serverThread.connect( &serverThread, &QThread::finished,
+                          server, &deflect::Server::deleteLater );
     serverThread.start();
 
     {
@@ -89,5 +91,4 @@ BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
 
     serverThread.quit();
     serverThread.wait();
-    delete server;
 }
