@@ -53,42 +53,42 @@ namespace deflect
 /**
  * Listen to incoming PixelStream connections from Stream clients.
  */
-class Server : public QTcpServer
+class DEFLECT_API Server : public QTcpServer
 {
     Q_OBJECT
 
 public:
     /** The default port number used for Stream connections. */
-    DEFLECT_API static const int defaultPortNumber;
+    static const int defaultPortNumber;
 
     /** The zeroconf service name for announcing stream connections. */
-    DEFLECT_API static const std::string serviceName;
+    static const std::string serviceName;
 
     /**
      * Create a new server listening for Stream connections.
      * @param port The port to listen on. Must be available.
      * @throw std::runtime_error if the server could not be started.
      */
-    DEFLECT_API explicit Server( int port = defaultPortNumber );
+    explicit Server( int port = defaultPortNumber );
 
     /** Destructor */
-    DEFLECT_API ~Server();
+    ~Server();
 
     /** Get the command handler. */
-    DEFLECT_API CommandHandler& getCommandHandler();
+    CommandHandler& getCommandHandler();
 
     /** Get the PixelStreamDispatcher. */
-    DEFLECT_API FrameDispatcher& getPixelStreamDispatcher();
+    FrameDispatcher& getPixelStreamDispatcher();
 
 signals:
-    DEFLECT_API void registerToEvents( QString uri, bool exclusive,
-                                       deflect::EventReceiver* receiver );
+    void registerToEvents( QString uri, bool exclusive,
+                           deflect::EventReceiver* receiver );
 
-    DEFLECT_API void receivedSizeHints( QString uri, deflect::SizeHints hints );
+    void receivedSizeHints( QString uri, deflect::SizeHints hints );
 
 public slots:
-    DEFLECT_API void onPixelStreamerClosed( QString uri );
-    DEFLECT_API void onEventRegistrationReply( QString uri, bool success );
+    void onPixelStreamerClosed( QString uri );
+    void onEventRegistrationReply( QString uri, bool success );
 
 private:
     class Impl;

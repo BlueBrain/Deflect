@@ -45,8 +45,10 @@
 #    define final
 #    define override
 #  endif
-#  ifndef CXX_NOEXCEPT_SUPPORTED
-#    define noexcept
+#  ifdef CXX_NOEXCEPT_SUPPORTED
+#    define NOEXCEPT noexcept
+#  else
+#    define NOEXCEPT
 #  endif
 #endif
 
