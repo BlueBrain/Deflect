@@ -309,17 +309,17 @@ bool QmlStreamer::Impl::_setupRootItem()
                                              _rootItem->height( ))); } );
 
     connect( _quickWindow, &QQuickWindow::minimumWidthChanged,
-             [this]( int size ) { _sizeHints.minWidth = size; } );
+             [this]( int size_ ) { _sizeHints.minWidth = size_; } );
     connect( _quickWindow, &QQuickWindow::minimumHeightChanged,
-             [this]( int size ) { _sizeHints.minHeight = size; } );
+             [this]( int size_ ) { _sizeHints.minHeight = size_; } );
     connect( _quickWindow, &QQuickWindow::maximumWidthChanged,
-             [this]( int size ) { _sizeHints.maxWidth = size; } );
+             [this]( int size_ ) { _sizeHints.maxWidth = size_; } );
     connect( _quickWindow, &QQuickWindow::maximumHeightChanged,
-             [this]( int size ) { _sizeHints.maxHeight = size; } );
+             [this]( int size_ ) { _sizeHints.maxHeight = size_; } );
     connect( _quickWindow, &QQuickWindow::widthChanged,
-             [this]( int size ) { _sizeHints.preferredWidth = size; } );
+             [this]( int size_ ) { _sizeHints.preferredWidth = size_; } );
     connect( _quickWindow, &QQuickWindow::heightChanged,
-             [this]( int size ) { _sizeHints.preferredHeight = size; } );
+             [this]( int size_ ) { _sizeHints.preferredHeight = size_; } );
 
     // The root item is ready. Associate it with the window.
     _rootItem->setParentItem( _quickWindow->contentItem( ));
