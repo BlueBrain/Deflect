@@ -69,7 +69,6 @@ typedef __int32 int32_t;
 #endif
 
 #define SHARE_DESKTOP_UPDATE_DELAY      1
-#define SERVUS_BROWSE_DELAY           100
 #define FRAME_RATE_AVERAGE_NUM_FRAMES  10
 #define CURSOR_IMAGE_FILE     ":/cursor.png"
 #define CURSOR_IMAGE_SIZE     20
@@ -81,13 +80,9 @@ const std::vector< std::pair< QString, QString > > defaultHosts = {
 };
 
 MainWindow::MainWindow()
-    : _stream( 0 )
-    , _cursor( QImage( CURSOR_IMAGE_FILE ).scaled(
+    : _cursor( QImage( CURSOR_IMAGE_FILE ).scaled(
                   CURSOR_IMAGE_SIZE * devicePixelRatio(),
                   CURSOR_IMAGE_SIZE * devicePixelRatio(), Qt::KeepAspectRatio ))
-#ifdef DEFLECT_USE_SERVUS
-    , _servus( deflect::Server::serviceName )
-#endif
 {
     setupUi( this );
 
@@ -141,6 +136,8 @@ MainWindow::MainWindow()
     connect( &_updateTimer, &QTimer::timeout, this, &MainWindow::_update );
 }
 
+MainWindow::~MainWindow() {}
+
 void MainWindow::_startStreaming()
 {
     if( _stream )
@@ -152,8 +149,9 @@ void MainWindow::_startStreaming()
     else
         streamHost = _hostnameComboBox->currentData().toString();
 
-    _stream = new deflect::Stream( _streamnameLineEdit->text().toStdString(),
-                                   streamHost.toStdString( ));
+    _stream.reset(
+        new deflect::Stream( _streamnameLineEdit->text().toStdString(),
+                             streamHost.toStdString( )));
     if( !_stream->isConnected( ))
     {
         _handleStreamingError( "Could not connect to host" );
@@ -177,9 +175,6 @@ void MainWindow::_startStreaming()
 #ifdef __APPLE__
     _napSuspender.suspend();
 #endif
-#ifdef DEFLECT_USE_SERVUS
-    _browseTimer.stop();
-#endif
     _updateTimer.start( SHARE_DESKTOP_UPDATE_DELAY );
 }
 
@@ -187,9 +182,7 @@ void MainWindow::_stopStreaming()
 {
     _updateTimer.stop();
     _statusbar->clearMessage();
-
-    delete _stream;
-    _stream = 0;
+    _stream.reset();
 
 #ifdef __APPLE__
     _napSuspender.resume();
@@ -199,10 +192,8 @@ void MainWindow::_stopStreaming()
 
 void MainWindow::_handleStreamingError( const QString& errorMessage )
 {
-    std::cerr << errorMessage.toStdString() << std::endl;
     QMessageBox::warning( this, "Error", errorMessage, QMessageBox::Ok,
                           QMessageBox::Ok );
-
     _stopStreaming();
 }
 

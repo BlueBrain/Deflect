@@ -60,6 +60,7 @@ class MainWindow : public QMainWindow, public Ui::MainWindow
 
 public:
     MainWindow();
+    ~MainWindow();
 
 protected:
     void closeEvent( QCloseEvent* event ) final;
@@ -71,7 +72,7 @@ private slots:
     void _openAboutWidget();
 
 private:
-    deflect::Stream* _stream;
+    std::unique_ptr< deflect::Stream > _stream;
 
     QImage _cursor;
     QTimer _updateTimer;
@@ -86,10 +87,6 @@ private:
 
 #ifdef __APPLE__
     AppNapSuspender _napSuspender;
-#endif
-#ifdef DEFLECT_USE_SERVUS
-    QTimer _browseTimer;
-    servus::Servus _servus;
 #endif
 
     void _startStreaming();
