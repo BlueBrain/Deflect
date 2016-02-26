@@ -91,6 +91,7 @@ private:
 
     void _startStreaming();
     void _stopStreaming();
+    void _checkStream();
     void _handleStreamingError( const QString& errorMessage );
     void _processStreamEvents();
     void _shareDesktopUpdate();

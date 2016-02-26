@@ -32,17 +32,17 @@
     </property>
     <item>
      <widget class="QListView" name="_listView">
-      <property name="flow">
-       <enum>QListView::LeftToRight</enum>
-      </property>
-      <property name="isWrapping" stdset="0">
-       <bool>true</bool>
-      </property>
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="flow">
+       <enum>QListView::LeftToRight</enum>
+      </property>
+      <property name="isWrapping" stdset="0">
+       <bool>true</bool>
       </property>
       <property name="viewMode">
        <enum>QListView::ListMode</enum>
