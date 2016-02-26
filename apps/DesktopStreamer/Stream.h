@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2015, EPFL/Blue Brain Project                  */
-/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/* Copyright (c) 2016-2016, EPFL/Blue Brain Project                  */
+/*                          Stefan.Eilemann@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,30 +37,42 @@
 /* or implied, of The Ecole Polytechnique Federal de Lausanne.       */
 /*********************************************************************/
 
-#ifndef APPNAPSUSPENDER_H
-#define APPNAPSUSPENDER_H
+#ifndef STREAM_H
+#define STREAM_H
 
-/**
- * Suspend AppNap on OSX >= 10.9.
- */
-class AppNapSuspender
+#include <deflect/stream.h> // base class
+#include <QImage> // member
+#include <QPersistentModelIndex> // member
+#include <QRect> // member
+
+class MainWindow;
+
+class Stream : public deflect::Stream
 {
 public:
-    /** Constructor. */
-    AppNapSuspender();
+    Stream( const MainWindow& parent, const QPersistentModelIndex window,
+            const std::string& name, const std::string& host );
+    ~Stream();
 
-    /** Destruct the object, resuming AppNap if it was suspended. */
-    ~AppNapSuspender();
+    /**
+     * Send an update to the server.
+     * @return an empty string on success, the error message otherwise.
+     */
+    std::string update();
 
-    /** Suspend AppNap. */
-    void suspend();
-
-    /** Resume AppNap */
-    void resume();
+    void drainEvents(); //!< Drain pending events without processing them
+    void processEvents(); //!< Process all pending events
 
 private:
-    class Impl;
-    Impl* _impl;
+    const MainWindow& _parent;
+    const QPersistentModelIndex _window;
+    QRect _windowRect;
+    const QImage _cursor;
+
+    void _sendMousePressEvent( float x, float y );
+    void _sendMouseMoveEvent( float x, float y );
+    void _sendMouseReleaseEvent( float x, float y );
+    void _sendMouseDoubleClickEvent( float x, float y );
 };
 
-#endif // APPNAPSUSPENDER_H
+#endif

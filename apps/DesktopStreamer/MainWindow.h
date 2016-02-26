@@ -39,7 +39,6 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
-#include <deflect/types.h>
 #include <apps/DesktopStreamer/ui_MainWindow.h>
 
 #ifdef __APPLE__
@@ -54,6 +53,8 @@
 #include <QTimer>
 #include <QTime>
 
+class Stream;
+
 class MainWindow : public QMainWindow, public Ui::MainWindow
 {
     Q_OBJECT
@@ -61,6 +62,8 @@ class MainWindow : public QMainWindow, public Ui::MainWindow
 public:
     MainWindow();
     ~MainWindow();
+
+    const QAbstractItemModel* getWindowModel() const { return _listView->model(); }
 
 protected:
     void closeEvent( QCloseEvent* event ) final;
@@ -72,18 +75,12 @@ private slots:
     void _openAboutWidget();
 
 private:
-    std::unique_ptr< deflect::Stream > _stream;
+    std::unique_ptr< Stream > _stream;
 
-    QImage _cursor;
     QTimer _updateTimer;
-    QRect _windowRect;
 
     // used for frame rate calculations
     std::vector<QTime> _frameSentTimes;
-
-#ifdef DEFLECT_USE_QT5MACEXTRAS
-    QPersistentModelIndex _windowIndex;
-#endif
 
 #ifdef __APPLE__
     AppNapSuspender _napSuspender;
@@ -95,12 +92,6 @@ private:
     void _handleStreamingError( const QString& errorMessage );
     void _processStreamEvents();
     void _shareDesktopUpdate();
-
-    void _sendMousePressEvent( float x, float y );
-    void _sendMouseMoveEvent( float x, float y );
-    void _sendMouseReleaseEvent( float x, float y );
-    void _sendMouseDoubleClickEvent( float x, float y );
-
     void _regulateFrameRate( int elapsedFrameTime );
 };
 

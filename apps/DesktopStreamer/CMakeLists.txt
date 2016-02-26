@@ -6,8 +6,13 @@ set(DESKTOPSTREAMER_MOC_HEADERS
   MainWindow.h
 )
 
+set(DESKTOPSTREAMER_HEADERS
+  Stream.h
+)
+
 set(DESKTOPSTREAMER_SOURCES
   MainWindow.cpp
+  Stream.cpp
   main.cpp
 )
 
