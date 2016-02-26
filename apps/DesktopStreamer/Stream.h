@@ -40,7 +40,7 @@
 #ifndef STREAM_H
 #define STREAM_H
 
-#include <deflect/stream.h> // base class
+#include <deflect/Stream.h> // base class
 #include <QImage> // member
 #include <QPersistentModelIndex> // member
 #include <QRect> // member
@@ -50,6 +50,7 @@ class MainWindow;
 class Stream : public deflect::Stream
 {
 public:
+    /** Construct a new stream for the given desktop window. */
     Stream( const MainWindow& parent, const QPersistentModelIndex window,
             const std::string& name, const std::string& host );
     ~Stream();
@@ -60,14 +61,25 @@ public:
      */
     std::string update();
 
-    void drainEvents(); //!< Drain pending events without processing them
-    void processEvents(); //!< Process all pending events
+    /**
+     * Process all pending events.
+     *
+     * @param interact enable interaction from the server
+     * @return true on success, false if the stream should be closed.
+     */
+    bool processEvents( bool interact );
+
+    const QPersistentModelIndex& getIndex() const { return _window; }
 
 private:
     const MainWindow& _parent;
     const QPersistentModelIndex _window;
-    QRect _windowRect;
+    QRect _windowRect; // position on host in non-retina coordinates
     const QImage _cursor;
+    QImage _image;
+
+    Stream( const Stream& ) = delete;
+    Stream( Stream&& ) = delete;
 
     void _sendMousePressEvent( float x, float y );
     void _sendMouseMoveEvent( float x, float y );

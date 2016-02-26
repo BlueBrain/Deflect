@@ -34,7 +34,7 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The Ecole Polytechnique Federal de Lausanne.       */
+/* or implied, of The Ecole Polytechnique Federale de Lausanne.      */
 /*********************************************************************/
 
 #ifndef APPNAPSUSPENDER_H

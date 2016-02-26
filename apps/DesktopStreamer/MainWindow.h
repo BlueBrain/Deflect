@@ -52,6 +52,8 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QTime>
+#include <map>
+#include <memory>
 
 class Stream;
 
@@ -63,24 +65,26 @@ public:
     MainWindow();
     ~MainWindow();
 
-    const QAbstractItemModel* getWindowModel() const { return _listView->model(); }
+    const QAbstractItemModel* getItemModel() const { return _listView->model();}
 
 protected:
     void closeEvent( QCloseEvent* event ) final;
 
 private slots:
-    void _shareDesktop( bool set );
     void _update();
     void _onStreamEventsBoxClicked( bool checked );
     void _openAboutWidget();
 
 private:
-    std::unique_ptr< Stream > _stream;
+    typedef std::shared_ptr< Stream > StreamPtr;
+    typedef std::shared_ptr< const Stream > ConstStreamPtr;
+    typedef std::map< QPersistentModelIndex, StreamPtr > StreamMap;
+    StreamMap _streams;
+    uint32_t _streamID;
 
     QTimer _updateTimer;
-
-    // used for frame rate calculations
-    std::vector<QTime> _frameSentTimes;
+    QTime _frameTime;
+    float _averageUpdate;
 
 #ifdef __APPLE__
     AppNapSuspender _napSuspender;
@@ -88,11 +92,12 @@ private:
 
     void _startStreaming();
     void _stopStreaming();
-    void _checkStream();
-    void _handleStreamingError( const QString& errorMessage );
+    void _updateStreams();
+    void _deselect( ConstStreamPtr stream );
     void _processStreamEvents();
     void _shareDesktopUpdate();
-    void _regulateFrameRate( int elapsedFrameTime );
+    void _regulateFrameRate();
+    std::string _getStreamHost() const;
 };
 
 #endif

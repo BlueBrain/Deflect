@@ -41,11 +41,12 @@
 
 #include <deflect/version.h>
 
-#include <iostream>
-
 #include <QMessageBox>
 #include <QPainter>
 #include <QScreen>
+
+#include <algorithm>
+#include <iostream>
 
 #ifdef _WIN32
 typedef __int32 int32_t;
@@ -59,9 +60,9 @@ typedef __int32 int32_t;
 #  include "DesktopWindowsModel.h"
 #endif
 
-#define SHARE_DESKTOP_UPDATE_DELAY      1
+#define SHARE_DESKTOP_UPDATE_DELAY      0
 #define FAILURE_UPDATE_DELAY          100
-#define FRAME_RATE_AVERAGE_NUM_FRAMES  10
+#define FRAME_RATE_DAMPING            0.1f // influence of new value between 0-1
 
 const std::vector< std::pair< QString, QString > > defaultHosts = {
     { "DisplayWall Ground floor", "bbpav02.epfl.ch" },
@@ -70,6 +71,8 @@ const std::vector< std::pair< QString, QString > > defaultHosts = {
 };
 
 MainWindow::MainWindow()
+    : _streamID( 0 )
+    , _averageUpdate( 0 )
 {
     setupUi( this );
 
@@ -87,14 +90,13 @@ MainWindow::MainWindow()
 #ifdef DEFLECT_USE_QT5MACEXTRAS
     _listView->setModel( new DesktopWindowsModel );
 
-    connect( _listView->selectionModel(), &QItemSelectionModel::currentChanged,
-             [=]( const QModelIndex& current, const QModelIndex& )
-    {
-        const QString& windowName =
-                _listView->model()->data( current, Qt::DisplayRole ).toString();
-        _streamnameLineEdit->setText( QString( "%1 - %2" ).arg( windowName )
-                                                          .arg( hostname ));
-    });
+    connect( _listView->selectionModel(),
+             &QItemSelectionModel::selectionChanged,
+             [=]( const QItemSelection&, const QItemSelection& )
+             {
+                 _update();
+             });
+    _streamButton->setHidden( true );
 #else
     _listView->setHidden( true );
     adjustSize();
@@ -104,7 +106,7 @@ MainWindow::MainWindow()
              this, &MainWindow::_onStreamEventsBoxClicked );
 
     connect( _streamButton, &QPushButton::clicked,
-             this, &MainWindow::_shareDesktop );
+             this, &MainWindow::_update );
 
     connect( _actionAbout, &QAction::triggered,
              this, &MainWindow::_openAboutWidget );
@@ -125,25 +127,19 @@ void MainWindow::_startStreaming()
 
 void MainWindow::_stopStreaming()
 {
-    _stream.reset();
     if( _streamButton->isChecked( ))
         _updateTimer.start( FAILURE_UPDATE_DELAY );
     else
     {
         _updateTimer.stop();
         _statusbar->clearMessage();
+        _streams.clear();
 
 #ifdef __APPLE__
         _napSuspender.resume();
 #endif
-        _streamButton->setChecked( false );
+        _streamID = 0;
     }
-}
-
-void MainWindow::_handleStreamingError( const QString& errorMessage )
-{
-    _statusbar->showMessage( errorMessage );
-    _stopStreaming();
 }
 
 void MainWindow::closeEvent( QCloseEvent* closeEvt )
@@ -153,129 +149,189 @@ void MainWindow::closeEvent( QCloseEvent* closeEvt )
     QMainWindow::closeEvent( closeEvt );
 }
 
-void MainWindow::_shareDesktop( const bool set )
-{
-    if( set )
-        _startStreaming();
-    else
-        _stopStreaming();
-}
-
 void MainWindow::_update()
 {
+    _frameTime.start();
+    _updateStreams();
     if( _streamButton->isChecked( ))
     {
-        _checkStream();
         _processStreamEvents();
         _shareDesktopUpdate();
+        _regulateFrameRate();
     }
     else
         _stopStreaming();
 }
 
-void MainWindow::_checkStream()
+void MainWindow::_updateStreams()
 {
-    if( _stream )
-        return;
-
-    QString streamHost;
-    if( _hostnameComboBox->findText( _hostnameComboBox->currentText( )) == -1 )
-        streamHost = _hostnameComboBox->currentText();
-    else
-        streamHost = _hostnameComboBox->currentData().toString();
+    const std::string& host = _getStreamHost();
 
 #ifdef DEFLECT_USE_QT5MACEXTRAS
-    const QPersistentModelIndex windowIndex = _listView->currentIndex();
-    if( !windowIndex.isValid( ))
+    const QModelIndexList windowIndices =
+        _listView->selectionModel()->selectedIndexes();
+
+    StreamMap streams;
+    for( const QPersistentModelIndex& index : windowIndices )
     {
-        _handleStreamingError( "No window to stream is selected" );
+        if( _streams.count( index ))
+        {
+            streams[ index ] = _streams[ index ];
+            continue;
+        }
+
+        const std::string name = index.isValid() ?
+            _listView->model()->data( index, Qt::DisplayRole ).
+                toString().toStdString() : std::string();
+        const std::string streamName = std::to_string( ++_streamID ) +
+                                       " " + name + " - " +
+                                      _streamnameLineEdit->text().toStdString();
+        StreamPtr stream( new Stream( *this, index, streamName, host ));
+
+        if( !stream->isConnected( ))
+        {
+            _statusbar->showMessage( QString( "Could not connect to host %1" ).
+                                     arg( host.c_str( )));
+            continue;
+        }
+
+        if( _desktopInteractionCheckBox->isChecked( ))
+            stream->registerForEvents();
+
+        streams[ index ] = stream;
+    }
+    _streams.swap( streams );
+
+    if( !_streams.empty() && !_streamButton->isChecked( ))
+    {
+        _streamButton->setChecked( true );
+        _startStreaming();
+    }
+    _streamButton->setChecked( !windowIndices.empty( ));
+
+#else // No window list: Stream button toggles
+
+    if( !_streamButton->isChecked( ))
+    {
+        _stopStreaming();
         return;
     }
-#else
-    const QPersistentModelIndex windowIndex;
-#endif
 
-    _stream.reset( new Stream( *this, windowIndex,
-                               _streamnameLineEdit->text().toStdString(),
-                               streamHost.toStdString( )));
-    if( !_stream->isConnected( ))
+    if( _streams.empty( ))
     {
-        _handleStreamingError( "Could not connect to host" );
-        return;
+        const QPersistentModelIndex index; // default == use desktop
+        StreamPtr stream( new Stream( *this, index,
+                                      _streamnameLineEdit->text().toStdString(),
+                                      host ));
+        if( stream->isConnected( ))
+        {
+            if( _desktopInteractionCheckBox->isChecked( ))
+                stream->registerForEvents();
+            _streams[ index ] = stream;
+            _startStreaming();
+        }
+        else
+            _statusbar->showMessage( "Could not connect to host" );
     }
-
-#ifdef STREAM_EVENTS_SUPPORTED
-    if( _desktopInteractionCheckBox->isChecked( ))
-        _stream->registerForEvents();
 #endif
 }
 
 void MainWindow::_processStreamEvents()
 {
-    if( _stream )
+    const bool interact = _desktopInteractionCheckBox->checkState();
+    std::vector< ConstStreamPtr > closedStreams;
+
+    for( auto i = _streams.begin(); i != _streams.end(); )
     {
-        if( _desktopInteractionCheckBox->checkState( ))
-            _stream->processEvents();
+        if( i->second->processEvents( interact ))
+            ++i;
         else
-            _stream->drainEvents();
+        {
+            closedStreams.push_back( i->second );
+            i = _streams.erase( i );
+        }
     }
+
+    for( ConstStreamPtr stream : closedStreams )
+        _deselect( stream );
 }
 
 void MainWindow::_shareDesktopUpdate()
 {
-    if( !_stream )
+    if( _streams.empty( ))
         return;
 
-    QTime frameTime;
-    frameTime.start();
-
-    const std::string& error = _stream->update();
-    if( error.empty( ))
-        _regulateFrameRate( frameTime.elapsed( ));
-    else
-        _handleStreamingError( QString( error.c_str( )));
+    for( auto i = _streams.begin(); i != _streams.end(); )
+    {
+        const std::string& error = i->second->update();
+        if( error.empty( ))
+            ++i;
+        else
+        {
+            _statusbar->showMessage( QString( error.c_str( )));
+            i = _streams.erase( i );
+        }
+    }
 }
 
-void MainWindow::_regulateFrameRate( const int elapsedFrameTime )
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+void MainWindow::_deselect( ConstStreamPtr stream )
 {
-    // frame rate limiting
-    const int maxFrameRate = _maxFrameRateSpinBox->value();
-    const int desiredFrameTime = (int)( 1000.f * 1.f / (float)maxFrameRate );
-    const int sleepTime = desiredFrameTime - elapsedFrameTime;
-
-    if( sleepTime > 0 )
+    const QPersistentModelIndex& index = stream->getIndex();
+    if( index.isValid( ))
     {
-#ifdef _WIN32
-        Sleep( sleepTime );
+        QItemSelectionModel* model = _listView->selectionModel();
+        model->select( index, QItemSelectionModel::Deselect );
+    }
+}
 #else
-        usleep( 1000 * sleepTime );
+void MainWindow::_deselect( ConstStreamPtr )
+{
+    _streamButton->setChecked( false );
+}
 #endif
-    }
 
-    // frame rate is calculated for every FRAME_RATE_AVERAGE_NUM_FRAMES
-    // sequential frames
-    _frameSentTimes.push_back( QTime::currentTime( ));
+void MainWindow::_regulateFrameRate()
+{
+    // update smoothed average
+    const int elapsed = _frameTime.elapsed();
+    _averageUpdate = FRAME_RATE_DAMPING * elapsed +
+                     (1.0f - FRAME_RATE_DAMPING) * _averageUpdate;
 
-    if( _frameSentTimes.size() > FRAME_RATE_AVERAGE_NUM_FRAMES )
-        _frameSentTimes.clear();
-    else if( _frameSentTimes.size() == FRAME_RATE_AVERAGE_NUM_FRAMES )
+    // frame rate limiting
+    const int desiredFrameTime = int( 0.5f + 1000.f /
+                                      float( _maxFrameRateSpinBox->value( )));
+    const int sleepTime = std::max( desiredFrameTime - int( _averageUpdate ),
+                                    SHARE_DESKTOP_UPDATE_DELAY );
+    _updateTimer.start( sleepTime );
+
+    if( !_streams.empty( ))
     {
-        const float fps = (float)_frameSentTimes.size() * 1000.f /
-               (float)_frameSentTimes.front().msecsTo( _frameSentTimes.back( ));
-
-        _statusbar->showMessage( QString( "Streaming to %1@%2 fps" )
-                .arg( _hostnameComboBox->currentData().toString( )).arg( fps ));
+        const int fps = int( 0.5f + 1000.f / ( _averageUpdate + sleepTime ));
+        const std::string message = std::to_string( _streams.size( )) +
+            ( _streams.size() == 1 ? " stream to " : " streams to " ) +
+            _getStreamHost() + " @ " + std::to_string( fps ) + " fps";
+        _statusbar->showMessage( message.c_str( ));
     }
+}
+
+std::string MainWindow::_getStreamHost() const
+{
+    QString streamHost;
+    if( _hostnameComboBox->findText(_hostnameComboBox->currentText( )) == -1 )
+        streamHost = _hostnameComboBox->currentText();
+    else
+        streamHost = _hostnameComboBox->currentData().toString();
+    return streamHost.toStdString();
 }
 
 void MainWindow::_onStreamEventsBoxClicked( const bool checked )
 {
     if( !checked )
         return;
-#ifdef STREAM_EVENTS_SUPPORTED
-    if( _stream && _stream->isConnected() && !_stream->isRegisteredForEvents( ))
-        _stream->registerForEvents();
-#endif
+    for( auto i : _streams )
+        if( i.second->isConnected() && !i.second->isRegisteredForEvents( ))
+            i.second->registerForEvents();
 }
 
 void MainWindow::_openAboutWidget()
@@ -283,9 +339,9 @@ void MainWindow::_openAboutWidget()
     const int revision = deflect::Version::getRevision();
 
     std::ostringstream aboutMsg;
-    aboutMsg << "Current version: " << deflect::Version::getString();
-    aboutMsg << std::endl;
-    aboutMsg << "SCM revision: " << std::hex << revision << std::dec;
+    aboutMsg << "Current version: " << deflect::Version::getString()
+             << std::endl
+             << "   git revision: " << std::hex << revision << std::dec;
 
     QMessageBox::about( this, "About DesktopStreamer", aboutMsg.str().c_str( ));
 }

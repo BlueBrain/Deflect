@@ -44,15 +44,14 @@
 #  ifdef DEFLECT_USE_QT5MACEXTRAS
 #    include "DesktopWindowsModel.h"
 #  endif
-#  define STREAM_EVENTS_SUPPORTED TRUE
 #  if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
 #    include <CoreGraphics/CoreGraphics.h>
 #  else
 #    include <ApplicationServices/ApplicationServices.h>
 #  endif
 #endif
-#include <QPainter.h>
-#include <QScreen.h>
+#include <QPainter>
+#include <QScreen>
 
 #define CURSOR_IMAGE_FILE     ":/cursor.png"
 #define CURSOR_IMAGE_SIZE     20
@@ -71,21 +70,20 @@ Stream::Stream( const MainWindow& parent, const QPersistentModelIndex window,
 Stream::~Stream()
 {}
 
-void Stream::drainEvents()
-{
-    while( isRegisteredForEvents() && hasEvent( ))
-        getEvent();
-}
-
-void Stream::processEvents()
+bool Stream::processEvents( const bool interact )
 {
     while( isRegisteredForEvents() && hasEvent( ))
     {
-        const deflect::Event& event = getEvent();
+        deflect::Event event = getEvent();
+
+        if( event.type == deflect::Event::EVT_CLOSE )
+            return false;
+
+        if( !interact )
+            continue;
+
         switch( event.type )
         {
-        case deflect::Event::EVT_CLOSE:
-            return;
         case deflect::Event::EVT_PRESS:
             _sendMouseMoveEvent( event.mouseX, event.mouseY );
             _sendMousePressEvent( event.mouseX, event.mouseY );
@@ -114,6 +112,7 @@ void Stream::processEvents()
             break;
         }
     }
+    return true;
 }
 
 std::string Stream::update()
@@ -126,7 +125,7 @@ std::string Stream::update()
 
     if( _window.row() > 0 )
     {
-        const QAbstractItemModel* model = _parent.getWindowModel();
+        const QAbstractItemModel* model = _parent.getItemModel();
         pixmap = model->data( _window,
                           DesktopWindowsModel::ROLE_PIXMAP ).value< QPixmap >();
         _windowRect = model->data( _window,
@@ -136,7 +135,8 @@ std::string Stream::update()
 #endif
     {
         pixmap = QApplication::primaryScreen()->grabWindow( 0 );
-        _windowRect = QRect( 0, 0, pixmap.width(), pixmap.height( ));
+        _windowRect = QRect( 0, 0, pixmap.width() / _parent.devicePixelRatio(),
+                             pixmap.height() / _parent.devicePixelRatio( ));
     }
 
     if( pixmap.isNull( ))
@@ -145,13 +145,16 @@ std::string Stream::update()
     QImage image = pixmap.toImage();
 
     // render mouse cursor
-    const QPoint mousePos =
-            ( _parent.devicePixelRatio() * QCursor::pos() -
-              _windowRect.topLeft( )) - QPoint( _cursor.width() / 2,
-                                               _cursor.height() / 2 );
+    const QPoint mousePos = ( QCursor::pos() - _windowRect.topLeft( )) *
+                            _parent.devicePixelRatio() -
+                            QPoint( _cursor.width()/2, _cursor.height()/2 );
     QPainter painter( &image );
     painter.drawImage( mousePos, _cursor );
     painter.end(); // Make sure to release the QImage before using it
+
+    if( image == _image )
+        return std::string(); // OPT: Image is unchanged
+    _image = image;
 
     // QImage Format_RGB32 (0xffRRGGBB) corresponds to GL_BGRA == deflect::BGRA
     deflect::ImageWrapper deflectImage( (const void*)image.bits(),
