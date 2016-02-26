@@ -2,6 +2,8 @@ Changelog {#Changelog}
 ============
 
 ## Deflect 0.9 (git master)
+* [76](https://github.com/BlueBrain/Deflect/pull/76):
+  DesktopStreamer: Try to recover from streaming errors
 
 ### 0.9.1 (03-12-2015)
 * [66](https://github.com/BlueBrain/Deflect/pull/66):
@@ -13,8 +15,8 @@ Changelog {#Changelog}
 * [65](https://github.com/BlueBrain/Deflect/pull/65):
   QmlStreamer: New 'streamname' command line option.
 * [64](https://github.com/BlueBrain/Deflect/pull/64):
-  QmlStreamer: Fix event forwarding, implement wheel event support  
-* [60](https://github.com/BlueBrain/Deflect/pull/60): 
+  QmlStreamer: Fix event forwarding, implement wheel event support
+* [60](https://github.com/BlueBrain/Deflect/pull/60):
   Improved DesktopStreamer: removed selection rectangle, editable list of stream
   hostnames
 

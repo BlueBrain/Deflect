@@ -69,7 +69,7 @@ typedef __int32 int32_t;
 #endif
 
 #define SHARE_DESKTOP_UPDATE_DELAY      1
-#define SERVUS_BROWSE_DELAY           100
+#define FAILURE_UPDATE_DELAY          100
 #define FRAME_RATE_AVERAGE_NUM_FRAMES  10
 #define CURSOR_IMAGE_FILE     ":/cursor.png"
 #define CURSOR_IMAGE_SIZE     20
@@ -81,13 +81,9 @@ const std::vector< std::pair< QString, QString > > defaultHosts = {
 };
 
 MainWindow::MainWindow()
-    : _stream( 0 )
-    , _cursor( QImage( CURSOR_IMAGE_FILE ).scaled(
+    : _cursor( QImage( CURSOR_IMAGE_FILE ).scaled(
                   CURSOR_IMAGE_SIZE * devicePixelRatio(),
                   CURSOR_IMAGE_SIZE * devicePixelRatio(), Qt::KeepAspectRatio ))
-#ifdef DEFLECT_USE_SERVUS
-    , _servus( deflect::Server::serviceName )
-#endif
 {
     setupUi( this );
 
@@ -141,7 +137,67 @@ MainWindow::MainWindow()
     connect( &_updateTimer, &QTimer::timeout, this, &MainWindow::_update );
 }
 
+MainWindow::~MainWindow() {}
+
 void MainWindow::_startStreaming()
+{
+#ifdef __APPLE__
+    _napSuspender.suspend();
+#endif
+    _updateTimer.start( SHARE_DESKTOP_UPDATE_DELAY );
+}
+
+void MainWindow::_stopStreaming()
+{
+    _stream.reset();
+    if( _streamButton->isChecked( ))
+        _updateTimer.start( FAILURE_UPDATE_DELAY );
+    else
+    {
+        _updateTimer.stop();
+        _statusbar->clearMessage();
+
+#ifdef __APPLE__
+        _napSuspender.resume();
+#endif
+        _streamButton->setChecked( false );
+    }
+}
+
+void MainWindow::_handleStreamingError( const QString& errorMessage )
+{
+    _statusbar->showMessage( errorMessage );
+    _stopStreaming();
+}
+
+void MainWindow::closeEvent( QCloseEvent* closeEvt )
+{
+    _streamButton->setChecked( false );
+    _stopStreaming();
+    QMainWindow::closeEvent( closeEvt );
+}
+
+void MainWindow::_shareDesktop( const bool set )
+{
+    if( set )
+        _startStreaming();
+    else
+        _stopStreaming();
+}
+
+void MainWindow::_update()
+{
+    if( _streamButton->isChecked( ))
+    {
+        _checkStream();
+        _processStreamEvents();
+        _shareDesktopUpdate();
+    }
+    else
+        _stopStreaming();
+}
+
+void MainWindow::_checkStream()
 {
     if( _stream )
         return;
@@ -152,8 +208,9 @@ void MainWindow::_startStreaming()
     else
         streamHost = _hostnameComboBox->currentData().toString();
 
-    _stream = new deflect::Stream( _streamnameLineEdit->text().toStdString(),
-                                   streamHost.toStdString( ));
+    _stream.reset(
+        new deflect::Stream( _streamnameLineEdit->text().toStdString(),
+                             streamHost.toStdString( )));
     if( !_stream->isConnected( ))
     {
         _handleStreamingError( "Could not connect to host" );
@@ -173,72 +230,17 @@ void MainWindow::_startStreaming()
     if( _desktopInteractionCheckBox->isChecked( ))
         _stream->registerForEvents();
 #endif
-
-#ifdef __APPLE__
-    _napSuspender.suspend();
-#endif
-#ifdef DEFLECT_USE_SERVUS
-    _browseTimer.stop();
-#endif
-    _updateTimer.start( SHARE_DESKTOP_UPDATE_DELAY );
-}
-
-void MainWindow::_stopStreaming()
-{
-    _updateTimer.stop();
-    _statusbar->clearMessage();
-
-    delete _stream;
-    _stream = 0;
-
-#ifdef __APPLE__
-    _napSuspender.resume();
-#endif
-    _streamButton->setChecked( false );
-}
-
-void MainWindow::_handleStreamingError( const QString& errorMessage )
-{
-    std::cerr << errorMessage.toStdString() << std::endl;
-    QMessageBox::warning( this, "Error", errorMessage, QMessageBox::Ok,
-                          QMessageBox::Ok );
-
-    _stopStreaming();
-}
-
-void MainWindow::closeEvent( QCloseEvent* closeEvt )
-{
-    _stopStreaming();
-    QMainWindow::closeEvent( closeEvt );
-}
-
-void MainWindow::_shareDesktop( const bool set )
-{
-    if( set )
-        _startStreaming();
-    else
-        _stopStreaming();
-}
-
-void MainWindow::_update()
-{
-    if( _stream->isRegisteredForEvents( ))
-        _processStreamEvents();
-    _shareDesktopUpdate();
 }
 
 void MainWindow::_processStreamEvents()
 {
-    while( _stream->hasEvent( ))
+    while( _stream && _stream->isRegisteredForEvents() && _stream->hasEvent( ))
     {
         const deflect::Event& wallEvent = _stream->getEvent();
         // Once registered for events they must be consumed, otherwise they
         // queue up. Until unregister is implemented, just ignore them.
         if( !_desktopInteractionCheckBox->checkState( ))
             break;
-#ifndef NDEBUG
-        std::cout << "----------" << std::endl;
-#endif
         switch( wallEvent.type )
         {
         case deflect::Event::EVT_CLOSE:
@@ -302,7 +304,7 @@ void MainWindow::_shareDesktopUpdate()
 
     if( pixmap.isNull( ))
     {
-        _handleStreamingError( "Got NULL desktop pixmap" );
+        _handleStreamingError( "Got no pixmap for desktop or window" );
         return;
     }
     QImage image = pixmap.toImage();
@@ -325,7 +327,7 @@ void MainWindow::_shareDesktopUpdate()
                          _stream->finishFrame();
     if( !success )
     {
-        _handleStreamingError( "Streaming failure, connection closed." );
+        _handleStreamingError( "Streaming failure, connection closed" );
         return;
     }
 
@@ -403,10 +405,6 @@ void MainWindow::_sendMousePressEvent( const float x, const float y )
     CGPoint point;
     point.x = _windowRect.topLeft().x() + x * _windowRect.width();
     point.y = _windowRect.topLeft().y() + y * _windowRect.height();
-#ifndef NDEBUG
-    std::cout << "Press " << point.x << ", " << point.y << " ("
-              << x << ", " << y << ")"<< std::endl;
-#endif
     sendMouseEvent( kCGEventLeftMouseDown, kCGMouseButtonLeft, point );
 }
 
@@ -415,10 +413,6 @@ void MainWindow::_sendMouseMoveEvent( const float x, const float y )
     CGPoint point;
     point.x = _windowRect.topLeft().x() + x * _windowRect.width();
     point.y = _windowRect.topLeft().y() + y * _windowRect.height();
-#ifndef NDEBUG
-    std::cout << "Move " << point.x << ", " << point.y << " ("
-              << x << ", " << y << ")"<< std::endl;
-#endif
     sendMouseEvent( kCGEventMouseMoved, kCGMouseButtonLeft, point );
 }
 
@@ -427,10 +421,6 @@ void MainWindow::_sendMouseReleaseEvent( const float x, const float y )
     CGPoint point;
     point.x = _windowRect.topLeft().x() + x * _windowRect.width();
     point.y = _windowRect.topLeft().y() + y * _windowRect.height();
-#ifndef NDEBUG
-    std::cout << "Release " << point.x << ", " << point.y << " ("
-              << x << ", " << y << ")"<< std::endl;
-#endif
     sendMouseEvent( kCGEventLeftMouseUp, kCGMouseButtonLeft, point );
 }
 
@@ -441,10 +431,6 @@ void MainWindow::_sendMouseDoubleClickEvent( const float x, const float y )
     point.y = _windowRect.topLeft().y() + y * _windowRect.height();
     CGEventRef event = CGEventCreateMouseEvent( 0, kCGEventLeftMouseDown,
                                                 point, kCGMouseButtonLeft );
-#ifndef NDEBUG
-    std::cout << "Double click " << point.x << ", " << point.y << " ("
-              << x << ", " << y << ")"<< std::endl;
-#endif
 
     CGEventSetIntegerValueField( event, kCGMouseEventClickState, 2 );
     CGEventPost( kCGHIDEventTap, event );
