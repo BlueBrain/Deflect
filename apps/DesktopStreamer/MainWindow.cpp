@@ -37,16 +37,16 @@
 /*********************************************************************/
 
 #include "MainWindow.h"
+#include "Stream.h"
 
-#include <deflect/Server.h>
-#include <deflect/Stream.h>
 #include <deflect/version.h>
-
-#include <iostream>
 
 #include <QMessageBox>
 #include <QPainter>
 #include <QScreen>
+
+#include <algorithm>
+#include <iostream>
 
 #ifdef _WIN32
 typedef __int32 int32_t;
@@ -56,23 +56,13 @@ typedef __int32 int32_t;
 #  include <unistd.h>
 #endif
 
-#ifdef __APPLE__
-#  ifdef DEFLECT_USE_QT5MACEXTRAS
-#    include "DesktopWindowsModel.h"
-#  endif
-#  define STREAM_EVENTS_SUPPORTED TRUE
-#  if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
-#    include <CoreGraphics/CoreGraphics.h>
-#  else
-#    include <ApplicationServices/ApplicationServices.h>
-#  endif
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+#  include "DesktopWindowsModel.h"
 #endif
 
-#define SHARE_DESKTOP_UPDATE_DELAY      1
+#define SHARE_DESKTOP_UPDATE_DELAY      0
 #define FAILURE_UPDATE_DELAY          100
-#define FRAME_RATE_AVERAGE_NUM_FRAMES  10
-#define CURSOR_IMAGE_FILE     ":/cursor.png"
-#define CURSOR_IMAGE_SIZE     20
+#define FRAME_RATE_DAMPING            0.1f // influence of new value between 0-1
 
 const std::vector< std::pair< QString, QString > > defaultHosts = {
     { "DisplayWall Ground floor", "bbpav02.epfl.ch" },
@@ -81,9 +71,8 @@ const std::vector< std::pair< QString, QString > > defaultHosts = {
 };
 
 MainWindow::MainWindow()
-    : _cursor( QImage( CURSOR_IMAGE_FILE ).scaled(
-                  CURSOR_IMAGE_SIZE * devicePixelRatio(),
-                  CURSOR_IMAGE_SIZE * devicePixelRatio(), Qt::KeepAspectRatio ))
+    : _streamID( 0 )
+    , _averageUpdate( 0 )
 {
     setupUi( this );
 
@@ -96,29 +85,18 @@ MainWindow::MainWindow()
 
     char hostname[256] = { 0 };
     gethostname( hostname, 256 );
-    _streamnameLineEdit->setText( QString( "Desktop - %1" ).arg( hostname ));
+    _streamnameLineEdit->setText( QString( "%1" ).arg( hostname ));
 
 #ifdef DEFLECT_USE_QT5MACEXTRAS
     _listView->setModel( new DesktopWindowsModel );
 
-    connect( _listView->selectionModel(), &QItemSelectionModel::currentChanged,
-             [=]( const QModelIndex& current, const QModelIndex& )
-    {
-        const QString& windowName =
-                _listView->model()->data( current, Qt::DisplayRole ).toString();
-        _streamnameLineEdit->setText( QString( "%1 - %2" ).arg( windowName )
-                                                          .arg( hostname ));
-    });
-
-    connect( _listView->model(), &DesktopWindowsModel::rowsRemoved,
-             [&]( const QModelIndex&, int, int )
-    {
-        if( !_windowIndex.isValid() && _stream )
-        {
-            _stopStreaming();
-            _listView->setCurrentIndex( _listView->model()->index( 0, 0 ));
-        }
-    });
+    connect( _listView->selectionModel(),
+             &QItemSelectionModel::selectionChanged,
+             [=]( const QItemSelection&, const QItemSelection& )
+             {
+                 _update();
+             });
+    _streamButton->setHidden( true );
 #else
     _listView->setHidden( true );
     adjustSize();
@@ -128,7 +106,7 @@ MainWindow::MainWindow()
              this, &MainWindow::_onStreamEventsBoxClicked );
 
     connect( _streamButton, &QPushButton::clicked,
-             this, &MainWindow::_shareDesktop );
+             this, &MainWindow::_update );
 
     connect( _actionAbout, &QAction::triggered,
              this, &MainWindow::_openAboutWidget );
@@ -149,25 +127,19 @@ void MainWindow::_startStreaming()
 
 void MainWindow::_stopStreaming()
 {
-    _stream.reset();
     if( _streamButton->isChecked( ))
         _updateTimer.start( FAILURE_UPDATE_DELAY );
     else
     {
         _updateTimer.stop();
         _statusbar->clearMessage();
+        _streams.clear();
 
 #ifdef __APPLE__
         _napSuspender.resume();
 #endif
-        _streamButton->setChecked( false );
+        _streamID = 0;
     }
-}
-
-void MainWindow::_handleStreamingError( const QString& errorMessage )
-{
-    _statusbar->showMessage( errorMessage );
-    _stopStreaming();
 }
 
 void MainWindow::closeEvent( QCloseEvent* closeEvt )
@@ -177,205 +149,189 @@ void MainWindow::closeEvent( QCloseEvent* closeEvt )
     QMainWindow::closeEvent( closeEvt );
 }
 
-void MainWindow::_shareDesktop( const bool set )
-{
-    if( set )
-        _startStreaming();
-    else
-        _stopStreaming();
-}
-
 void MainWindow::_update()
 {
+    _frameTime.start();
+    _updateStreams();
     if( _streamButton->isChecked( ))
     {
-        _checkStream();
         _processStreamEvents();
         _shareDesktopUpdate();
+        _regulateFrameRate();
     }
     else
         _stopStreaming();
 }
 
-void MainWindow::_checkStream()
+void MainWindow::_updateStreams()
 {
-    if( _stream )
-        return;
-
-    QString streamHost;
-    if( _hostnameComboBox->findText( _hostnameComboBox->currentText( )) == -1 )
-        streamHost = _hostnameComboBox->currentText();
-    else
-        streamHost = _hostnameComboBox->currentData().toString();
-
-    _stream.reset(
-        new deflect::Stream( _streamnameLineEdit->text().toStdString(),
-                             streamHost.toStdString( )));
-    if( !_stream->isConnected( ))
-    {
-        _handleStreamingError( "Could not connect to host" );
-        return;
-    }
+    const std::string& host = _getStreamHost();
 
 #ifdef DEFLECT_USE_QT5MACEXTRAS
-    _windowIndex = _listView->currentIndex();
-    if( !_windowIndex.isValid( ))
+    const QModelIndexList windowIndices =
+        _listView->selectionModel()->selectedIndexes();
+
+    StreamMap streams;
+    for( const QPersistentModelIndex& index : windowIndices )
     {
-        _handleStreamingError( "No window to stream is selected" );
+        if( _streams.count( index ))
+        {
+            streams[ index ] = _streams[ index ];
+            continue;
+        }
+
+        const std::string name = index.isValid() ?
+            _listView->model()->data( index, Qt::DisplayRole ).
+                toString().toStdString() : std::string();
+        const std::string streamName = std::to_string( ++_streamID ) +
+                                       " " + name + " - " +
+                                      _streamnameLineEdit->text().toStdString();
+        StreamPtr stream( new Stream( *this, index, streamName, host ));
+
+        if( !stream->isConnected( ))
+        {
+            _statusbar->showMessage( QString( "Could not connect to host %1" ).
+                                     arg( host.c_str( )));
+            continue;
+        }
+
+        if( _desktopInteractionCheckBox->isChecked( ))
+            stream->registerForEvents();
+
+        streams[ index ] = stream;
+    }
+    _streams.swap( streams );
+
+    if( !_streams.empty() && !_streamButton->isChecked( ))
+    {
+        _streamButton->setChecked( true );
+        _startStreaming();
+    }
+    _streamButton->setChecked( !windowIndices.empty( ));
+
+#else // No window list: Stream button toggles
+
+    if( !_streamButton->isChecked( ))
+    {
+        _stopStreaming();
         return;
     }
-#endif
 
-#ifdef STREAM_EVENTS_SUPPORTED
-    if( _desktopInteractionCheckBox->isChecked( ))
-        _stream->registerForEvents();
+    if( _streams.empty( ))
+    {
+        const QPersistentModelIndex index; // default == use desktop
+        StreamPtr stream( new Stream( *this, index,
+                                      _streamnameLineEdit->text().toStdString(),
+                                      host ));
+        if( stream->isConnected( ))
+        {
+            if( _desktopInteractionCheckBox->isChecked( ))
+                stream->registerForEvents();
+            _streams[ index ] = stream;
+            _startStreaming();
+        }
+        else
+            _statusbar->showMessage( "Could not connect to host" );
+    }
 #endif
 }
 
 void MainWindow::_processStreamEvents()
 {
-    while( _stream && _stream->isRegisteredForEvents() && _stream->hasEvent( ))
-    {
-        const deflect::Event& wallEvent = _stream->getEvent();
-        // Once registered for events they must be consumed, otherwise they
-        // queue up. Until unregister is implemented, just ignore them.
-        if( !_desktopInteractionCheckBox->checkState( ))
-            break;
-        switch( wallEvent.type )
-        {
-        case deflect::Event::EVT_CLOSE:
-            return;
-        case deflect::Event::EVT_PRESS:
-            _sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
-            _sendMousePressEvent( wallEvent.mouseX, wallEvent.mouseY );
-            break;
-        case deflect::Event::EVT_RELEASE:
-            _sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
-            _sendMouseReleaseEvent( wallEvent.mouseX, wallEvent.mouseY );
-            break;
-        case deflect::Event::EVT_DOUBLECLICK:
-            _sendMouseDoubleClickEvent( wallEvent.mouseX, wallEvent.mouseY );
-            break;
+    const bool interact = _desktopInteractionCheckBox->checkState();
+    std::vector< ConstStreamPtr > closedStreams;
 
-        case deflect::Event::EVT_MOVE:
-            _sendMouseMoveEvent( wallEvent.mouseX, wallEvent.mouseY );
-            break;
-        case deflect::Event::EVT_CLICK:
-        case deflect::Event::EVT_WHEEL:
-        case deflect::Event::EVT_SWIPE_LEFT:
-        case deflect::Event::EVT_SWIPE_RIGHT:
-        case deflect::Event::EVT_SWIPE_UP:
-        case deflect::Event::EVT_SWIPE_DOWN:
-        case deflect::Event::EVT_KEY_PRESS:
-        case deflect::Event::EVT_KEY_RELEASE:
-        case deflect::Event::EVT_VIEW_SIZE_CHANGED:
-        default:
-            break;
+    for( auto i = _streams.begin(); i != _streams.end(); )
+    {
+        if( i->second->processEvents( interact ))
+            ++i;
+        else
+        {
+            closedStreams.push_back( i->second );
+            i = _streams.erase( i );
         }
     }
+
+    for( ConstStreamPtr stream : closedStreams )
+        _deselect( stream );
 }
 
 void MainWindow::_shareDesktopUpdate()
 {
-    if( !_stream )
+    if( _streams.empty( ))
         return;
 
-    QTime frameTime;
-    frameTime.start();
-
-    QPixmap pixmap;
-#ifdef DEFLECT_USE_QT5MACEXTRAS
-    if( !_windowIndex.isValid( ))
-        return;
-    if( _windowIndex.row() > 0 )
+    for( auto i = _streams.begin(); i != _streams.end(); )
     {
-        QAbstractItemModel* model = _listView->model();
-        pixmap = model->data( _windowIndex,
-                          DesktopWindowsModel::ROLE_PIXMAP ).value< QPixmap >();
-        _windowRect = model->data( _windowIndex,
-                              DesktopWindowsModel::ROLE_RECT ).value< QRect >();
+        const std::string& error = i->second->update();
+        if( error.empty( ))
+            ++i;
+        else
+        {
+            _statusbar->showMessage( QString( error.c_str( )));
+            i = _streams.erase( i );
+        }
     }
-    else
-#endif
-    {
-        pixmap = QApplication::primaryScreen()->grabWindow( 0 );
-        _windowRect = QRect( 0, 0, pixmap.width(), pixmap.height( ));
-    }
-
-    if( pixmap.isNull( ))
-    {
-        _handleStreamingError( "Got no pixmap for desktop or window" );
-        return;
-    }
-    QImage image = pixmap.toImage();
-
-    // render mouse cursor
-    const QPoint mousePos =
-            ( devicePixelRatio() * QCursor::pos() - _windowRect.topLeft()) -
-              QPoint( _cursor.width() / 2, _cursor.height() / 2 );
-    QPainter painter( &image );
-    painter.drawImage( mousePos, _cursor );
-    painter.end(); // Make sure to release the QImage before using it
-
-    // QImage Format_RGB32 (0xffRRGGBB) corresponds to GL_BGRA == deflect::BGRA
-    deflect::ImageWrapper deflectImage( (const void*)image.bits(),
-                                        image.width(), image.height(),
-                                        deflect::BGRA );
-    deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
-
-    const bool success = _stream->send( deflectImage ) &&
-                         _stream->finishFrame();
-    if( !success )
-    {
-        _handleStreamingError( "Streaming failure, connection closed" );
-        return;
-    }
-
-    _regulateFrameRate( frameTime.elapsed( ));
 }
 
-void MainWindow::_regulateFrameRate( const int elapsedFrameTime )
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+void MainWindow::_deselect( ConstStreamPtr stream )
 {
-    // frame rate limiting
-    const int maxFrameRate = _maxFrameRateSpinBox->value();
-    const int desiredFrameTime = (int)( 1000.f * 1.f / (float)maxFrameRate );
-    const int sleepTime = desiredFrameTime - elapsedFrameTime;
-
-    if( sleepTime > 0 )
+    const QPersistentModelIndex& index = stream->getIndex();
+    if( index.isValid( ))
     {
-#ifdef _WIN32
-        Sleep( sleepTime );
+        QItemSelectionModel* model = _listView->selectionModel();
+        model->select( index, QItemSelectionModel::Deselect );
+    }
+}
 #else
-        usleep( 1000 * sleepTime );
+void MainWindow::_deselect( ConstStreamPtr )
+{
+    _streamButton->setChecked( false );
+}
 #endif
-    }
 
-    // frame rate is calculated for every FRAME_RATE_AVERAGE_NUM_FRAMES
-    // sequential frames
-    _frameSentTimes.push_back( QTime::currentTime( ));
+void MainWindow::_regulateFrameRate()
+{
+    // update smoothed average
+    const int elapsed = _frameTime.elapsed();
+    _averageUpdate = FRAME_RATE_DAMPING * elapsed +
+                     (1.0f - FRAME_RATE_DAMPING) * _averageUpdate;
 
-    if( _frameSentTimes.size() > FRAME_RATE_AVERAGE_NUM_FRAMES )
+    // frame rate limiting
+    const int desiredFrameTime = int( 0.5f + 1000.f /
+                                      float( _maxFrameRateSpinBox->value( )));
+    const int sleepTime = std::max( desiredFrameTime - int( _averageUpdate ),
+                                    SHARE_DESKTOP_UPDATE_DELAY );
+    _updateTimer.start( sleepTime );
+
+    if( !_streams.empty( ))
     {
-        _frameSentTimes.clear();
+        const int fps = int( 0.5f + 1000.f / ( _averageUpdate + sleepTime ));
+        const std::string message = std::to_string( _streams.size( )) +
+            ( _streams.size() == 1 ? " stream to " : " streams to " ) +
+            _getStreamHost() + " @ " + std::to_string( fps ) + " fps";
+        _statusbar->showMessage( message.c_str( ));
     }
-    else if( _frameSentTimes.size() == FRAME_RATE_AVERAGE_NUM_FRAMES )
-    {
-        const float fps = (float)_frameSentTimes.size() * 1000.f /
-               (float)_frameSentTimes.front().msecsTo( _frameSentTimes.back( ));
+}
 
-        _statusbar->showMessage( QString( "Streaming to %1@%2 fps" )
-                .arg( _hostnameComboBox->currentData().toString( )).arg( fps ));
-    }
+std::string MainWindow::_getStreamHost() const
+{
+    QString streamHost;
+    if( _hostnameComboBox->findText(_hostnameComboBox->currentText( )) == -1 )
+        streamHost = _hostnameComboBox->currentText();
+    else
+        streamHost = _hostnameComboBox->currentData().toString();
+    return streamHost.toStdString();
 }
 
 void MainWindow::_onStreamEventsBoxClicked( const bool checked )
 {
     if( !checked )
         return;
-#ifdef STREAM_EVENTS_SUPPORTED
-    if( _stream && _stream->isConnected() && !_stream->isRegisteredForEvents( ))
-        _stream->registerForEvents();
-#endif
+    for( auto i : _streams )
+        if( i.second->isConnected() && !i.second->isRegisteredForEvents( ))
+            i.second->registerForEvents();
 }
 
 void MainWindow::_openAboutWidget()
@@ -383,71 +339,9 @@ void MainWindow::_openAboutWidget()
     const int revision = deflect::Version::getRevision();
 
     std::ostringstream aboutMsg;
-    aboutMsg << "Current version: " << deflect::Version::getString();
-    aboutMsg << std::endl;
-    aboutMsg << "SCM revision: " << std::hex << revision << std::dec;
+    aboutMsg << "Current version: " << deflect::Version::getString()
+             << std::endl
+             << "   git revision: " << std::hex << revision << std::dec;
 
     QMessageBox::about( this, "About DesktopStreamer", aboutMsg.str().c_str( ));
 }
-
-#ifdef __APPLE__
-void sendMouseEvent( const CGEventType type, const CGMouseButton button,
-                     const CGPoint point )
-{
-    CGEventRef event = CGEventCreateMouseEvent( 0, type, point, button );
-    CGEventSetType( event, type );
-    CGEventPost( kCGHIDEventTap, event );
-    CFRelease( event );
-}
-
-void MainWindow::_sendMousePressEvent( const float x, const float y )
-{
-    CGPoint point;
-    point.x = _windowRect.topLeft().x() + x * _windowRect.width();
-    point.y = _windowRect.topLeft().y() + y * _windowRect.height();
-    sendMouseEvent( kCGEventLeftMouseDown, kCGMouseButtonLeft, point );
-}
-
-void MainWindow::_sendMouseMoveEvent( const float x, const float y )
-{
-    CGPoint point;
-    point.x = _windowRect.topLeft().x() + x * _windowRect.width();
-    point.y = _windowRect.topLeft().y() + y * _windowRect.height();
-    sendMouseEvent( kCGEventMouseMoved, kCGMouseButtonLeft, point );
-}
-
-void MainWindow::_sendMouseReleaseEvent( const float x, const float y )
-{
-    CGPoint point;
-    point.x = _windowRect.topLeft().x() + x * _windowRect.width();
-    point.y = _windowRect.topLeft().y() + y * _windowRect.height();
-    sendMouseEvent( kCGEventLeftMouseUp, kCGMouseButtonLeft, point );
-}
-
-void MainWindow::_sendMouseDoubleClickEvent( const float x, const float y )
-{
-    CGPoint point;
-    point.x = _windowRect.topLeft().x() + x * _windowRect.width();
-    point.y = _windowRect.topLeft().y() + y * _windowRect.height();
-    CGEventRef event = CGEventCreateMouseEvent( 0, kCGEventLeftMouseDown,
-                                                point, kCGMouseButtonLeft );
-
-    CGEventSetIntegerValueField( event, kCGMouseEventClickState, 2 );
-    CGEventPost( kCGHIDEventTap, event );
-
-    CGEventSetType( event, kCGEventLeftMouseUp );
-    CGEventPost( kCGHIDEventTap, event );
-
-    CGEventSetType( event, kCGEventLeftMouseDown );
-    CGEventPost( kCGHIDEventTap, event );
-
-    CGEventSetType( event, kCGEventLeftMouseUp );
-    CGEventPost( kCGHIDEventTap, event );
-    CFRelease( event );
-}
-#else
-void MainWindow::_sendMousePressEvent( const float, const float ) {}
-void MainWindow::_sendMouseMoveEvent( const float, const float ) {}
-void MainWindow::_sendMouseReleaseEvent( const float, const float ) {}
-void MainWindow::_sendMouseDoubleClickEvent( const float, const float ) {}
-#endif

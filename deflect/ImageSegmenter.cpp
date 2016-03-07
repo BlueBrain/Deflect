@@ -90,7 +90,8 @@ bool ImageSegmenter::_generateJpeg( const ImageWrapper& image,
     // socket lives, and Qt insists on that to not violate this contract.
     bool result = true;
     for( size_t i = 0; i < segments.size(); ++i )
-        result = result && handler( _sendQueue.dequeue( ));
+        if( !handler( _sendQueue.dequeue( )))
+            result = false;
     return result;
 #else
     static bool first = true;

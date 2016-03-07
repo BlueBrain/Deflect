@@ -104,6 +104,8 @@ bool Socket::send( const MessageHeader& messageHeader,
                    const QByteArray& message )
 {
     QMutexLocker locker( &_socketMutex );
+    if( !isConnected( ))
+        return false;
 
     // send header
     QDataStream stream( _socket );

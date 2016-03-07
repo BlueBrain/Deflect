@@ -1,7 +1,7 @@
 
-# Copyright (c) 2013-2015, EPFL/Blue Brain Project
-#                     Raphael Dumusc <raphael.dumusc@epfl.ch>
-#                     Daniel Nachbaur <daniel.nachbaur@epfl.ch>
+# Copyright (c) 2013-2016, EPFL/Blue Brain Project
+#                          Raphael Dumusc <raphael.dumusc@epfl.ch>
+#                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(Deflect)
@@ -10,9 +10,9 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
                               ${CMAKE_SOURCE_DIR}/CMake/common)
 include(GitExternal)
 
-set(VERSION_MAJOR "0")
-set(VERSION_MINOR "9")
-set(VERSION_PATCH "1")
+set(VERSION_MAJOR 0)
+set(VERSION_MINOR 10)
+set(VERSION_PATCH 0)
 set(VERSION_ABI 2)
 
 set(DEFLECT_DESCRIPTION "A fast C++ library for streaming pixels and events")

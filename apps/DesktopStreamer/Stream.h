@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2016-2016, EPFL/Blue Brain Project                  */
+/*                          Stefan.Eilemann@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -33,71 +34,57 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The University of Texas at Austin.                 */
+/* or implied, of The Ecole Polytechnique Federal de Lausanne.       */
 /*********************************************************************/
 
-#ifndef MAIN_WINDOW_H
-#define MAIN_WINDOW_H
+#ifndef STREAM_H
+#define STREAM_H
 
-#include <apps/DesktopStreamer/ui_MainWindow.h>
+#include <deflect/Stream.h> // base class
+#include <QImage> // member
+#include <QPersistentModelIndex> // member
+#include <QRect> // member
 
-#ifdef __APPLE__
-#  include "AppNapSuspender.h"
-#endif
+class MainWindow;
 
-#ifdef DEFLECT_USE_SERVUS
-#  include <servus/servus.h>
-#endif
-
-#include <QMainWindow>
-#include <QTimer>
-#include <QTime>
-#include <map>
-#include <memory>
-
-class Stream;
-
-class MainWindow : public QMainWindow, public Ui::MainWindow
+class Stream : public deflect::Stream
 {
-    Q_OBJECT
-
 public:
-    MainWindow();
-    ~MainWindow();
+    /** Construct a new stream for the given desktop window. */
+    Stream( const MainWindow& parent, const QPersistentModelIndex window,
+            const std::string& name, const std::string& host );
+    ~Stream();
 
-    const QAbstractItemModel* getItemModel() const { return _listView->model();}
+    /**
+     * Send an update to the server.
+     * @return an empty string on success, the error message otherwise.
+     */
+    std::string update();
 
-protected:
-    void closeEvent( QCloseEvent* event ) final;
+    /**
+     * Process all pending events.
+     *
+     * @param interact enable interaction from the server
+     * @return true on success, false if the stream should be closed.
+     */
+    bool processEvents( bool interact );
 
-private slots:
-    void _update();
-    void _onStreamEventsBoxClicked( bool checked );
-    void _openAboutWidget();
+    const QPersistentModelIndex& getIndex() const { return _window; }
 
 private:
-    typedef std::shared_ptr< Stream > StreamPtr;
-    typedef std::shared_ptr< const Stream > ConstStreamPtr;
-    typedef std::map< QPersistentModelIndex, StreamPtr > StreamMap;
-    StreamMap _streams;
-    uint32_t _streamID;
+    const MainWindow& _parent;
+    const QPersistentModelIndex _window;
+    QRect _windowRect; // position on host in non-retina coordinates
+    const QImage _cursor;
+    QImage _image;
 
-    QTimer _updateTimer;
-    QTime _frameTime;
-    float _averageUpdate;
+    Stream( const Stream& ) = delete;
+    Stream( Stream&& ) = delete;
 
-#ifdef __APPLE__
-    AppNapSuspender _napSuspender;
-#endif
-
-    void _startStreaming();
-    void _stopStreaming();
-    void _updateStreams();
-    void _deselect( ConstStreamPtr stream );
-    void _processStreamEvents();
-    void _shareDesktopUpdate();
-    void _regulateFrameRate();
-    std::string _getStreamHost() const;
+    void _sendMousePressEvent( float x, float y );
+    void _sendMouseMoveEvent( float x, float y );
+    void _sendMouseReleaseEvent( float x, float y );
+    void _sendMouseDoubleClickEvent( float x, float y );
 };
 
 #endif
