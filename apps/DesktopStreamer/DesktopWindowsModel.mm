@@ -262,8 +262,12 @@ private:
     bool _addApplication( NSRunningApplication* app, CFArrayRef windowList )
     {
         const QString& appName = NSStringToQString([app localizedName]);
-        if( appName == "SystemUIServer" || appName == "Dock" )
+        const auto& pid = [app processIdentifier];
+        if( appName == "SystemUIServer" || appName == "Dock" ||
+            pid == QApplication::applicationPid( ))
+        {
            return true;
+        }
 
         NSArray* windows = getWindows( app, windowList );
 
