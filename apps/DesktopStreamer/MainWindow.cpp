@@ -50,6 +50,7 @@
 
 #ifdef _WIN32
 typedef __int32 int32_t;
+#  define NOMINMAX
 #  include <windows.h>
 #else
 #  include <stdint.h>
