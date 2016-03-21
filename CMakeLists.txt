@@ -13,7 +13,7 @@ include(GitExternal)
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 10)
 set(VERSION_PATCH 0)
-set(VERSION_ABI 2)
+set(VERSION_ABI 3)
 
 set(DEFLECT_DESCRIPTION "A fast C++ library for streaming pixels and events")
 set(DEFLECT_MAINTAINER "Blue Brain Project <bbp-open-source@googlegroups.com>")

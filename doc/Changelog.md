@@ -1,7 +1,9 @@
 Changelog {#Changelog}
 ============
 
-## Deflect 0.10 (git master)
+## git master
+
+## Deflect 0.10
 * [79](https://github.com/BlueBrain/Deflect/pull/79):
   DesktopStreamer: Support multi-window streaming on OS X, fix mouse
   event handling for retina devices, fix crash on stream close from
