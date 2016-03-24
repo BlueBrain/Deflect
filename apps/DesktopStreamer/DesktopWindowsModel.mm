@@ -32,6 +32,7 @@
 namespace
 {
 const int PREVIEWIMAGEWIDTH = 200;
+const int PREVIEWIMAGEHEIGHT = PREVIEWIMAGEWIDTH * 0.6;
 
 /**
  * Based on: http://www.qtcentre.org/threads/34752-NSString-to-QString
@@ -66,8 +67,10 @@ NSArray* getWindows( NSRunningApplication* app, const CFArrayRef& windowList )
 
 QPixmap getPreviewPixmap( const QPixmap& pixmap )
 {
-    return QPixmap::fromImage( pixmap.toImage().scaledToWidth(
-                                 PREVIEWIMAGEWIDTH, Qt::SmoothTransformation ));
+    return QPixmap::fromImage(
+                pixmap.toImage().scaled( PREVIEWIMAGEWIDTH, PREVIEWIMAGEHEIGHT,
+                                         Qt::KeepAspectRatio,
+                                         Qt::SmoothTransformation ));
 }
 
 QPixmap getWindowPixmap( const CGWindowID windowID )

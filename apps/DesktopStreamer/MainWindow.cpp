@@ -72,6 +72,8 @@ const std::vector< std::pair< QString, QString > > defaultHosts = {
     { "DisplayWall 6th floor", "bbpav06.epfl.ch" }
 };
 
+const QString streamSelected = "Stream selected item(s)";
+
 MainWindow::MainWindow()
     : _streamID( 0 )
     , _averageUpdate( 0 )
@@ -80,10 +82,16 @@ MainWindow::MainWindow()
 
     connect( _hostnameComboBox, &QComboBox::currentTextChanged,
              [&]( const QString& text )
-                { _streamButton->setEnabled( !text.isEmpty( )); });
+             {
+                _streamButton->setEnabled( !text.isEmpty( ));
+                _listView->setEnabled( !text.isEmpty( ));
+             });
 
     for( const auto& entry : defaultHosts )
         _hostnameComboBox->addItem( entry.first, entry.second );
+
+    // no default host selected initially
+    _hostnameComboBox->setCurrentIndex( -1 );
 
     char hostname[256] = { 0 };
     gethostname( hostname, 256 );
@@ -92,13 +100,18 @@ MainWindow::MainWindow()
 #ifdef DEFLECT_USE_QT5MACEXTRAS
     _listView->setModel( new DesktopWindowsModel );
 
-    connect( _listView->selectionModel(),
-             &QItemSelectionModel::selectionChanged,
-             [=]( const QItemSelection&, const QItemSelection& )
-             {
-                 _update();
-             });
-    _streamButton->setHidden( true );
+    // select 'Desktop' item as initial default stream item
+    _listView->setCurrentIndex( _listView->model()->index( 0, 0 ));
+    _streamButton->setText( streamSelected );
+
+    const int itemsHorizontal = std::min( 3.f,
+                std::ceil( std::sqrt( float(_listView->model()->rowCount( )))));
+    const int itemsVertical = std::min( 3.f,
+         std::ceil(float( _listView->model()->rowCount( )) / itemsHorizontal ));
+
+    // 230 (itemSize + spacing), frameWidth for decorations
+    resize( QSize( 230 * itemsHorizontal + 2 * _listView->frameWidth(),
+                   230 * itemsVertical   + 2 * _listView->frameWidth() + 50 ));
 #else
     _listView->setHidden( true );
     adjustSize();
@@ -154,9 +167,9 @@ void MainWindow::closeEvent( QCloseEvent* closeEvt )
 void MainWindow::_update()
 {
     _frameTime.start();
-    _updateStreams();
     if( _streamButton->isChecked( ))
     {
+        _updateStreams();
         _processStreamEvents();
         _shareDesktopUpdate();
         _regulateFrameRate();
@@ -208,8 +221,7 @@ void MainWindow::_updateStreams()
     {
         _streamButton->setChecked( true );
         _startStreaming();
-    }
-    _streamButton->setChecked( !windowIndices.empty( ));
+    };
 
 #else // No window list: Stream button toggles
 
