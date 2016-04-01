@@ -3,6 +3,9 @@ Changelog {#Changelog}
 
 ## git master
 
+* [79](https://github.com/BlueBrain/Deflect/pull/79):
+  DesktopStreamer: Grid-view like layout in apps listview
+
 ## Deflect 0.10
 * [79](https://github.com/BlueBrain/Deflect/pull/79):
   DesktopStreamer: Support multi-window streaming on OS X, fix mouse
