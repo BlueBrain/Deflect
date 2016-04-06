@@ -3,41 +3,42 @@
 #                          Raphael Dumusc <raphael.dumusc@epfl.ch>
 #                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-project(Deflect)
+cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+project(Deflect VERSION 0.10.1)
+set(Deflect_VERSION_ABI 3)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
                               ${CMAKE_SOURCE_DIR}/CMake/common)
 include(GitExternal)
 
-set(VERSION_MAJOR 0)
-set(VERSION_MINOR 10)
-set(VERSION_PATCH 1)
-set(VERSION_ABI 3)
-
 set(DEFLECT_DESCRIPTION "A fast C++ library for streaming pixels and events")
 set(DEFLECT_MAINTAINER "Blue Brain Project <bbp-open-source@googlegroups.com>")
 set(DEFLECT_LICENSE BSD)
 set(DEFLECT_DEPENDENT_LIBRARIES Boost)
+set(DEFLECT_DEB_DEPENDS libjpeg-turbo8-dev libturbojpeg freeglut3-dev
+  libboost-test-dev libboost-date-time-dev libboost-program-options-dev
+  libboost-serialization-dev libboost-system-dev libboost-thread-dev
+  qtbase5-dev)
+set(DEFLECT_PORT_DEPENDS boost freeglut qt5)
 
 include(Common)
 
-common_package(Boost REQUIRED COMPONENTS date_time program_options
+common_find_package(Boost REQUIRED COMPONENTS date_time program_options
                                 unit_test_framework serialization system thread)
-common_package(GLUT)
-common_package(LibJpegTurbo REQUIRED)
-common_package(OpenGL)
-common_package(Qt5Concurrent REQUIRED SYSTEM)
-common_package(Qt5Core REQUIRED)
+common_find_package(GLUT)
+common_find_package(LibJpegTurbo REQUIRED)
+common_find_package(OpenGL)
+common_find_package(Qt5Concurrent REQUIRED SYSTEM)
+common_find_package(Qt5Core REQUIRED)
 if(APPLE)
-  common_package(Qt5MacExtras)
+  common_find_package(Qt5MacExtras)
 endif()
-common_package(Qt5Network REQUIRED)
-common_package(Qt5Qml)
-common_package(Qt5Quick)
-common_package(Qt5Widgets REQUIRED)
-common_package(Servus)
-common_package_post()
+common_find_package(Qt5Network REQUIRED)
+common_find_package(Qt5Qml)
+common_find_package(Qt5Quick)
+common_find_package(Qt5Widgets REQUIRED)
+common_find_package(Servus)
+common_find_package_post()
 
 add_subdirectory(deflect)
 add_subdirectory(apps)

@@ -2,22 +2,17 @@
 # Copyright (c) 2013-2015, EPFL/Blue Brain Project
 #                     Raphael Dumusc <raphael.dumusc@epfl.ch>
 
-set(DESKTOPSTREAMER_MOC_HEADERS
-  MainWindow.h
-)
-
 set(DESKTOPSTREAMER_HEADERS
+  MainWindow.h
   Stream.h
 )
 
 set(DESKTOPSTREAMER_SOURCES
-  MainWindow.cpp
-  Stream.cpp
   main.cpp
-)
-
-set(DESKTOPSTREAMER_UI_FORMS
+  MainWindow.cpp
   MainWindow.ui
+  resources.qrc
+  Stream.cpp
 )
 
 set(DESKTOPSTREAMER_LINK_LIBRARIES
@@ -31,7 +26,6 @@ if(DEFLECT_USE_SERVUS)
 endif()
 
 set(DESKTOPSTREAMER_APP_NAME desktopstreamer)
-set(DESKTOPSTREAMER_RESOURCES resources.qrc)
 
 if(APPLE)
   set(DESKTOPSTREAMER_APP_NAME DesktopStreamer)

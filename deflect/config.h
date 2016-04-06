@@ -40,15 +40,11 @@
 #ifndef DEFLECT_CONFIG_H
 #define DEFLECT_CONFIG_H
 
-#ifdef __cplusplus
-#  ifndef CXX_FINAL_OVERRIDE_SUPPORTED
-#    define final
-#    define override
-#  endif
-#  ifdef CXX_NOEXCEPT_SUPPORTED
-#    define NOEXCEPT noexcept
-#  else
+#ifndef NOEXCEPT
+#  ifdef _MSC_VER
 #    define NOEXCEPT
+#  else
+#    define NOEXCEPT noexcept
 #  endif
 #endif
 
