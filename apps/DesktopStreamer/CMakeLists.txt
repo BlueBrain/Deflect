@@ -55,7 +55,7 @@ elseif(MSVC)
   list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES Ws2_32)
 endif()
 
-common_gui_application(${DESKTOPSTREAMER_APP_NAME})
+common_application(${DESKTOPSTREAMER_APP_NAME} GUI)
 
 if(APPLE)
   # create a zip for Puppet deployment
