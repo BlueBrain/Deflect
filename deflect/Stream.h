@@ -67,7 +67,7 @@ namespace deflect
 class StreamPrivate;
 
 /**
- * Stream visual data to a DisplayCluster application.
+ * Stream visual data to a deflect::Server.
  *
  * A Stream can be subdivided into one or more images. This allows to have
  * different applications each responsible for sending one part of the global
@@ -80,21 +80,20 @@ class Stream
 {
 public:
     /**
-     * Open a new connection to the DisplayCluster application.
+     * Open a new connection to the Server.
      *
      * The user can check if the connection was successfully established with
-     * isConnected(). The DisplayCluster application creates a window for the
-     * Stream using the given name as an identifier.
+     * isConnected().
      *
      * Different Streams can contribute to a single window by using the same
-     * name. All the Streams which contribute to the same window should be
-     * created before any of them starts sending images.
+     * name as identifier. All the Streams which contribute to the same window
+     * should be created before any of them starts sending images.
      *
      * @param name An identifier for the stream which cannot be empty.
-     * @param address Address of the target DisplayCluster instance, can be a
+     * @param address Address of the target Server instance, can be a
      *                hostname like "localhost" or an IP in string format like
      *                "192.168.1.83".
-     * @param port Port of the DisplayCluster instance, default 1701.
+     * @param port Port of the Server instance, default 1701.
      * @version 1.0
      */
     DEFLECT_API Stream( const std::string& name, const std::string& address,
@@ -162,8 +161,8 @@ public:
     /**
      * Register to receive Events.
      *
-     * After registering, the DisplayCluster master application will send Events
-     * whenever a user is interacting with this Stream's window.
+     * After registering, the Server application will send Events whenever a
+     * user is interacting with this Stream's window.
      *
      * Events can be retrieved using hasEvent() and getEvent().
      *
@@ -171,7 +170,7 @@ public:
      * isRegisteredForEvents().
      *
      * This method is synchronous and waits for a registration reply from the
-     * DisplayWall before returning.
+     * Server before returning.
      *
      * @param exclusive Binds only one stream source for the same name
      * @return true if the registration could be or was already established.
@@ -185,7 +184,7 @@ public:
      * Check if the stream has already successfully registered with
      * registerForEvents().
      *
-     * @return true after the DisplayCluster application has acknowledged the
+     * @return true after the Server application has acknowledged the
      *         registration request, false otherwise
      * @version 1.0
      */
