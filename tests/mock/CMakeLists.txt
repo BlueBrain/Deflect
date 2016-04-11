@@ -1,24 +1,26 @@
 
-# Copyright (c) 2013-2015, EPFL/Blue Brain Project
+# Copyright (c) 2013-2016, EPFL/Blue Brain Project
 #                     Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 #                     Raphael Dumusc <raphael.dumusc@epfl.ch>
 #
 # Generates a mock library used by the cpp unit tests.
 
-set(MOCK_HEADERS
+set(DEFLECTMOCK_HEADERS
   MinimalGlobalQtApp.h
 )
 
-set(MOCK_MOC_HEADERS
+set(DEFLECTMOCK_MOC_HEADERS
   MockServer.h
 )
 
-set(MOCK_SOURCES
+set(DEFLECTMOCK_SOURCES
   MockServer.cpp
 )
 
-set(MOCK_INCLUDE_NAME mock)
-set(MOCK_NAMESPACE mock)
-set(MOCK_LINK_LIBRARIES Qt5::Core Qt5::Network)
-common_library(Mock)
+set(DEFLECTMOCK_LINK_LIBRARIES Qt5::Core Qt5::Network)
 
+set(DEFLECTMOCK_INCLUDE_NAME deflect/mock)
+set(DEFLECTMOCK_OMIT_LIBRARY_HEADER ON)
+set(DEFLECTMOCK_OMIT_CHECK_TARGETS ON)
+set(DEFLECTMOCK_OMIT_INSTALL ON)
+common_library(DeflectMock)

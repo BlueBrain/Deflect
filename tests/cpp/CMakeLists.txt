@@ -5,7 +5,7 @@
 #
 # Change this number when adding tests to force a CMake run: 0
 
-set(TEST_LIBRARIES Deflect Mock ${Boost_LIBRARIES} Qt5::Widgets)
+set(TEST_LIBRARIES Deflect DeflectMock ${Boost_LIBRARIES} Qt5::Widgets)
 add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)
 if(NOT DEFLECT_USE_LIBJPEGTURBO)
   set(EXCLUDE_FROM_TESTS SegmentDecoderTests.cpp)
