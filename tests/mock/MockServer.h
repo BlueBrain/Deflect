@@ -44,7 +44,7 @@
 typedef __int32 int32_t;
 #endif
 
-#include <mock/api.h>
+#include <deflect/mock/api.h>
 #include <deflect/config.h>
 #include <deflect/NetworkProtocol.h>
 
@@ -55,9 +55,9 @@ class MockServer : public QTcpServer
     Q_OBJECT
 
 public:
-    MOCK_API explicit MockServer( int32_t protocolVersion =
-                                  NETWORK_PROTOCOL_VERSION );
-    MOCK_API virtual ~MockServer();
+    DEFLECT_API explicit MockServer( int32_t protocolVersion =
+                                     NETWORK_PROTOCOL_VERSION );
+    DEFLECT_API virtual ~MockServer();
 
 protected:
     void incomingConnection( qintptr handle ) final;

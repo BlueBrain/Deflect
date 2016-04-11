@@ -104,7 +104,6 @@ struct BenchmarkOptions
         std::cout << desc;
     }
 
-
     void initDesc()
     {
         using namespace boost::program_options;
@@ -121,7 +120,7 @@ struct BenchmarkOptions
             ("framerate", value<unsigned int>()->default_value( 0 ),
                      "framerate at which to send frames (default: unlimited)")
             ("hostname", value<std::string>()->default_value( "localhost" ),
-                     "DisplayCluster host name")
+                     "Target Deflect server host")
             ("compress", "compress segments using jpeg")
             ("precompute", "send precomputed segments (no encoding time)")
             ("quality", value<unsigned int>()->default_value( 80 ),

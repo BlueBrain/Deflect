@@ -68,7 +68,7 @@ class StreamPrivate : public QObject
 
 public:
     /**
-     * Create a new stream and open a new connection to the DisplayCluster.
+     * Create a new stream and open a new connection to the deflect::Server.
      *
      * It can be a hostname like "localhost" or an IP in string format,
      * e.g. "192.168.1.83" This method must be called by all Streams sharing a
@@ -76,8 +76,8 @@ public:
      *
      * @param stream the parent object owning this object
      * @param name the unique stream name
-     * @param address Address of the target DisplayCluster instance.
-     * @param port Port of the target DisplayCluster instance.
+     * @param address Address of the target Server instance.
+     * @param port Port of the target Server instance.
      */
     StreamPrivate( Stream* stream, const std::string& name,
                    const std::string& address, const unsigned short port );
