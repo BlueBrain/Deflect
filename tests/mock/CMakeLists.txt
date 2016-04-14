@@ -7,9 +7,6 @@
 
 set(DEFLECTMOCK_HEADERS
   MinimalGlobalQtApp.h
-)
-
-set(DEFLECTMOCK_MOC_HEADERS
   MockServer.h
 )
 

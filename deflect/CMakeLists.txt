@@ -5,25 +5,22 @@
 
 set(DEFLECT_PUBLIC_HEADERS
   AbstractCommandHandler.h
-  config.h
   Command.h
+  CommandHandler.h
   CommandType.h
+  config.h
   Event.h
+  EventReceiver.h
+  FrameDispatcher.h
   Frame.h
   ImageWrapper.h
   MTQueue.h
   Segment.h
   SegmentParameters.h
+  Server.h
   SizeHints.h
   Stream.h
   types.h
-)
-
-set(DEFLECT_MOC_PUBLIC_HEADERS
-  CommandHandler.h
-  EventReceiver.h
-  FrameDispatcher.h
-  Server.h
 )
 
 set(DEFLECT_HEADERS
@@ -31,12 +28,9 @@ set(DEFLECT_HEADERS
   MessageHeader.h
   NetworkProtocol.h
   ReceiveBuffer.h
-)
-
-set(DEFLECT_MOC_HEADERS
+  ServerWorker.h
   Socket.h
   StreamPrivate.h
-  ServerWorker.h
 )
 
 set(DEFLECT_SOURCES
