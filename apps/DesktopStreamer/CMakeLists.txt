@@ -54,7 +54,7 @@ common_application(${DESKTOPSTREAMER_APP_NAME} GUI)
 if(APPLE)
   # create a zip for Puppet deployment
   install(CODE "execute_process(COMMAND zip -r
-    ${DESKTOPSTREAMER_APP_NAME}-${VERSION}.zip ${DESKTOPSTREAMER_APP_NAME}.app
+    ${DESKTOPSTREAMER_APP_NAME}-${PROJECT_VERSION}.zip ${DESKTOPSTREAMER_APP_NAME}.app
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)" COMPONENT apps)
 endif()
 
