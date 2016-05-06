@@ -1,18 +1,21 @@
 Changelog {#Changelog}
 ============
 
-## git master
+## Deflect 0.10
 
+### 0.10.1 (01-04-2016)
 * [79](https://github.com/BlueBrain/Deflect/pull/79):
   DesktopStreamer: Grid-view like layout in apps listview
 
-## Deflect 0.10
+### 0.10.0 (07-03-2016)
 * [79](https://github.com/BlueBrain/Deflect/pull/79):
   DesktopStreamer: Support multi-window streaming on OS X, fix mouse
   event handling for retina devices, fix crash on stream close from
   DisplayCluster
 * [76](https://github.com/BlueBrain/Deflect/pull/76):
   DesktopStreamer: Try to recover from streaming errors
+
+## Deflect 0.9
 
 ### 0.9.1 (03-12-2015)
 * [66](https://github.com/BlueBrain/Deflect/pull/66):
