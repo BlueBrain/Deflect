@@ -190,9 +190,17 @@ void QmlStreamer::Impl::_render()
     if( !_context->makeCurrent( _offscreenSurface ))
         return;
 
-    // fixed sized rootItems won't signal sizes changes, finish their setup now
+    // Initialize the render control and our OpenGL resources. Do this as
+    // late as possible to use the proper size reported by the rootItem.
     if( !_fbo )
+    {
         _updateSizes( QSize( _rootItem->width(), _rootItem->height( )));
+
+        _renderControl->initialize( _context );
+
+        if( !_setupDeflectStream( ))
+            qWarning() << "Could not setup Deflect stream";
+    }
 
     // Polish, synchronize and render the next frame (into our fbo). In this
     // example everything happens on the same thread and therefore all three
@@ -301,13 +309,6 @@ bool QmlStreamer::Impl::_setupRootItem()
         return false;
     }
 
-    connect( _rootItem, &QQuickItem::widthChanged, this,
-             [this]() { _updateSizes( QSize( _rootItem->width(),
-                                             _rootItem->height( ))); } );
-    connect( _rootItem, &QQuickItem::heightChanged, this,
-             [this]() { _updateSizes( QSize( _rootItem->width(),
-                                             _rootItem->height( ))); } );
-
     connect( _quickWindow, &QQuickWindow::minimumWidthChanged,
              [this]( int size_ ) { _sizeHints.minWidth = size_; } );
     connect( _quickWindow, &QQuickWindow::minimumHeightChanged,
@@ -321,7 +322,7 @@ bool QmlStreamer::Impl::_setupRootItem()
     connect( _quickWindow, &QQuickWindow::heightChanged,
              [this]( int size_ ) { _sizeHints.preferredHeight = size_; } );
 
-    // The root item is ready. Associate it with the window.
+    // The root item is ready. Associate it with the window and get sizeHints.
     _rootItem->setParentItem( _quickWindow->contentItem( ));
 
     return true;
@@ -347,7 +348,8 @@ bool QmlStreamer::Impl::_setupDeflectStream()
     if( !_stream->registerForEvents( ))
         return false;
 
-    _stream->sendSizeHints( _sizeHints );
+    if( _sizeHints != SizeHints( ))
+        _stream->sendSizeHints( _sizeHints );
 
     _streaming = true;
     _eventHandler = new EventReceiver( *_stream );
@@ -367,27 +369,15 @@ bool QmlStreamer::Impl::_setupDeflectStream()
 
 void QmlStreamer::Impl::_updateSizes( const QSize& size_ )
 {
-    setWidth( size_.width( ));
-    setHeight( size_.height( ));
+    resize( size_ );
+    _quickWindow->blockSignals( true );
+    _quickWindow->resize( size_ );
+    _quickWindow->blockSignals( false );
+    // emulate QQuickView::ResizeMode:SizeRootObjectToView
     if( _rootItem )
     {
         _rootItem->setWidth( size_.width( ));
         _rootItem->setHeight( size_.height( ));
-    }
-    _quickWindow->blockSignals( true );
-    _quickWindow->setWidth( size_.width( ));
-    _quickWindow->setHeight( size_.height( ));
-    _quickWindow->blockSignals( false );
-
-    // Initialize the render control and our OpenGL resources. Do this as late
-    // as possible to use the proper size reported by the rootItem.
-    if( !_streaming )
-    {
-        _context->makeCurrent( _offscreenSurface );
-        _renderControl->initialize( _context );
-
-        if( !_setupDeflectStream( ))
-            qWarning() << "Could not setup Deflect stream";
     }
 }
 

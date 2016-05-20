@@ -4,7 +4,7 @@
 #                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
-project(Deflect VERSION 0.10.1)
+project(Deflect VERSION 0.10.2)
 set(Deflect_VERSION_ABI 3)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
