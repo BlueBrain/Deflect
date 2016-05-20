@@ -3,6 +3,12 @@ Changelog {#Changelog}
 
 ## Deflect 0.10
 
+### git master (0.10.2)
+* [93](https://github.com/BlueBrain/Deflect/pull/93):
+  Minor fixes for the Qml stream API:
+  - Cleanup size handling, allow programmatic resizing of root Qml item
+  - Do not send a size hints event if none were set by the user
+
 ### 0.10.1 (01-04-2016)
 * [79](https://github.com/BlueBrain/Deflect/pull/79):
   DesktopStreamer: Grid-view like layout in apps listview
