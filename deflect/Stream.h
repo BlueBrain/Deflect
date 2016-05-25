@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
@@ -237,9 +237,6 @@ public:
      * @version 1.2
      */
     DEFLECT_API void sendSizeHints( const SizeHints& hints );
-
-    /** @internal */
-    DEFLECT_API void sendCommand( const std::string& command );
 
 private:
     Stream( const Stream& ) = delete;

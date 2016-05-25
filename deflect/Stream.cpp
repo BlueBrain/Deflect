@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
@@ -160,11 +160,6 @@ Event Stream::getEvent()
 void Stream::sendSizeHints( const SizeHints& hints )
 {
     _impl->sendSizeHints( hints );
-}
-
-void Stream::sendCommand( const std::string& command )
-{
-    _impl->sendCommand( QString::fromStdString( command ));
 }
 
 }

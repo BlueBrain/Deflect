@@ -1,13 +1,9 @@
 
-# Copyright (c) 2013-2015, EPFL/Blue Brain Project
+# Copyright (c) 2013-2016, EPFL/Blue Brain Project
 #                     Raphael Dumusc <raphael.dumusc@epfl.ch>
 #                     Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 
 set(DEFLECT_PUBLIC_HEADERS
-  AbstractCommandHandler.h
-  Command.h
-  CommandHandler.h
-  CommandType.h
   config.h
   Event.h
   EventReceiver.h
@@ -34,9 +30,6 @@ set(DEFLECT_HEADERS
 )
 
 set(DEFLECT_SOURCES
-  Command.cpp
-  CommandHandler.cpp
-  CommandType.cpp
   Event.cpp
   Frame.cpp
   FrameDispatcher.cpp

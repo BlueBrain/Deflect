@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -233,10 +233,6 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
 
     case MESSAGE_TYPE_PIXELSTREAM:
         _handlePixelStreamMessage( byteArray );
-        break;
-
-    case MESSAGE_TYPE_COMMAND:
-        emit receivedCommand( QString( byteArray.data( )), _streamUri );
         break;
 
     case MESSAGE_TYPE_SIZE_HINTS:

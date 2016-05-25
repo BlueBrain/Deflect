@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
 /*                          Raphael.Dumusc@epfl.ch                   */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* Redistribution and use in source and binary forms, with or        */
@@ -65,7 +65,6 @@ enum MessageType
     MESSAGE_TYPE_BIND_EVENTS_EX = 7,
     MESSAGE_TYPE_BIND_EVENTS_REPLY = 8,
     MESSAGE_TYPE_EVENT = 9,
-    MESSAGE_TYPE_COMMAND = 11,
     MESSAGE_TYPE_QUIT = 12,
     MESSAGE_TYPE_SIZE_HINTS = 13
 };

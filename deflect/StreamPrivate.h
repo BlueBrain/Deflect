@@ -112,13 +112,6 @@ public:
     /** @sa Stream::sendSizeHints */
     bool sendSizeHints( const SizeHints& hints );
 
-    /**
-     * Send a command to the wall
-     * @param command A command string formatted by the Command class.
-     * @return true if the request could be sent, false otherwise.
-     */
-    bool sendCommand( const QString& command );
-
     /** The stream identifier. */
     const std::string name;
 

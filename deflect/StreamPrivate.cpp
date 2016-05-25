@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
@@ -147,15 +147,6 @@ bool StreamPrivate::sendSizeHints( const SizeHints& hints )
 
     QByteArray message;
     message.append( (const char*)( &hints ), sizeof( hints ) );
-    return socket.send( mh, message );
-}
-
-bool StreamPrivate::sendCommand( const QString& command )
-{
-    QByteArray message;
-    message.append( command );
-
-    const MessageHeader mh( MESSAGE_TYPE_COMMAND, message.size(), name );
     return socket.send( mh, message );
 }
 

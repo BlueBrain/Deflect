@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -40,7 +40,6 @@
 
 #include "Server.h"
 
-#include "CommandHandler.h"
 #include "FrameDispatcher.h"
 #include "NetworkProtocol.h"
 #include "ServerWorker.h"
@@ -68,7 +67,6 @@ public:
     {}
 
     FrameDispatcher pixelStreamDispatcher;
-    CommandHandler commandHandler;
 #ifdef DEFLECT_USE_SERVUS
     servus::Servus servus;
 #endif
@@ -91,11 +89,6 @@ Server::Server( const int port )
 Server::~Server()
 {
     delete _impl;
-}
-
-CommandHandler& Server::getCommandHandler()
-{
-    return _impl->commandHandler;
 }
 
 FrameDispatcher& Server::getPixelStreamDispatcher()
@@ -140,10 +133,6 @@ void Server::incomingConnection( const qintptr socketHandle )
              worker, &ServerWorker::closeConnection );
     connect( this, &Server::_eventRegistrationReply,
              worker, &ServerWorker::replyToEventRegistration );
-
-    // Commands
-    connect( worker, &ServerWorker::receivedCommand,
-             &_impl->commandHandler, &CommandHandler::process );
 
     // PixelStreamDispatcher
     connect( worker, &ServerWorker::addStreamSource,
