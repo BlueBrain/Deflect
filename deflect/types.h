@@ -49,9 +49,6 @@
 namespace deflect
 {
 
-class AbstractCommandHandler;
-class Command;
-class CommandHandler;
 class EventReceiver;
 class Frame;
 class FrameDispatcher;
