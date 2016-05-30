@@ -172,18 +172,28 @@ QRect getWindowRect( const CGWindowID windowID )
     parent = parent_;
 }
 
+- (bool)isCurrent:(NSRunningApplication*)app_
+{
+    NSRunningApplication* current = [NSRunningApplication currentApplication];
+    return [app_ processIdentifier] == [current processIdentifier];
+}
+
 - (void)newApplication:(NSNotification*) notification
 {
     NSRunningApplication* app =
             [[notification userInfo] objectForKey:@"NSWorkspaceApplicationKey"];
-    parent->addApplication( app );
+
+    if( ![self isCurrent:app] )
+        parent->addApplication( app );
 }
 
 - (void)closedApplication:(NSNotification*) notification
 {
     NSRunningApplication* app =
             [[notification userInfo] objectForKey:@"NSWorkspaceApplicationKey"];
-    parent->removeApplication( app );
+
+    if( ![self isCurrent:app] )
+        parent->removeApplication( app );
 }
 
 @end
@@ -209,7 +219,8 @@ public:
     {
         APPNAME,
         WINDOWID,
-        WINDOWIMAGE
+        WINDOWIMAGE,
+        PID
     };
 
     void addApplication( NSRunningApplication* app )
@@ -260,8 +271,9 @@ public:
                                             kCGNullWindowID );
 
         _data.clear();
-        _data.push_back( std::make_tuple( "Desktop", 0,
-            getPreviewPixmap( QApplication::primaryScreen()->grabWindow( 0 ))));
+        const QPixmap preview =
+                getPreviewPixmap( QApplication::primaryScreen()->grabWindow(0));
+        _data.push_back( std::make_tuple( "Desktop", 0, preview, 0 ));
 
         for( NSRunningApplication* app in runningApplications )
             _addApplication( app, windowList );
@@ -271,7 +283,8 @@ public:
     }
 
     DesktopWindowsModel& _parent;
-    typedef std::vector< std::tuple< QString, CGWindowID, QPixmap > > Data;
+    typedef std::vector< std::tuple<
+                QString, CGWindowID, QPixmap, int > > Data;
     Data _data;
     AppObserver* _observer;
 
@@ -308,9 +321,8 @@ private:
                    qDebug() << "Ignoring" << appName << "-" << windowName;
                continue;
            }
-
            _data.push_back( std::make_tuple( appName, windowID,
-                          getPreviewPixmap( getWindowPixmap( windowID ))));
+                         getPreviewPixmap( getWindowPixmap( windowID )), pid ));
            gotOne = true;
         }
         return gotOne;
@@ -345,9 +357,26 @@ QVariant DesktopWindowsModel::data( const QModelIndex& index, int role ) const
     case ROLE_RECT:
         return getWindowRect( std::get< Impl::WINDOWID >( data ));
 
+    case ROLE_PID:
+        return std::get< Impl::PID >( data );
+
     default:
         return QVariant();
     }
+}
+
+bool DesktopWindowsModel::isActive( const int pid )
+{
+    return [[NSRunningApplication
+             runningApplicationWithProcessIdentifier: pid] isActive];
+}
+
+void DesktopWindowsModel::activate( const int pid )
+{
+    NSRunningApplication* app = [NSRunningApplication
+                                 runningApplicationWithProcessIdentifier: pid];
+    [app activateWithOptions: NSApplicationActivateAllWindows |
+                              NSApplicationActivateIgnoringOtherApps];
 }
 
 void DesktopWindowsModel::addApplication( void* app )

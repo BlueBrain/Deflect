@@ -52,29 +52,31 @@
 #endif
 #include <QPainter>
 #include <QScreen>
+#include <queue>
 
 #define CURSOR_IMAGE_FILE     ":/cursor.png"
 #define CURSOR_IMAGE_SIZE     20
 
-Stream::Stream( const MainWindow& parent, const QPersistentModelIndex window,
-                const std::string& id, const std::string& host )
-    : deflect::Stream( id, host )
+class Stream::Impl
+{
+public:
+    Impl( Stream& stream, const MainWindow& parent,
+          const QPersistentModelIndex window, const int pid )
+    : _stream( stream )
     , _parent( parent )
     , _window( window )
     , _cursor( QImage( CURSOR_IMAGE_FILE ).scaled(
                    CURSOR_IMAGE_SIZE * parent.devicePixelRatio(),
                    CURSOR_IMAGE_SIZE * parent.devicePixelRatio(),
                    Qt::KeepAspectRatio ))
-{}
+    , _pid( pid )
+    {}
 
-Stream::~Stream()
-{}
-
-bool Stream::processEvents( const bool interact )
+bool processEvents( const bool interact )
 {
-    while( isRegisteredForEvents() && hasEvent( ))
+    while( _stream.isRegisteredForEvents() && _stream.hasEvent( ))
     {
-        deflect::Event event = getEvent();
+        deflect::Event event = _stream.getEvent();
 
         if( event.type == deflect::Event::EVT_CLOSE )
             return false;
@@ -115,7 +117,7 @@ bool Stream::processEvents( const bool interact )
     return true;
 }
 
-std::string Stream::update()
+std::string update()
 {
     QPixmap pixmap;
 
@@ -123,9 +125,9 @@ std::string Stream::update()
     if( !_window.isValid( ))
         return "Window does not exist anymore";
 
+    const QAbstractItemModel* model = _parent.getItemModel();
     if( _window.row() > 0 )
     {
-        const QAbstractItemModel* model = _parent.getItemModel();
         pixmap = model->data( _window,
                           DesktopWindowsModel::ROLE_PIXMAP ).value< QPixmap >();
         _windowRect = model->data( _window,
@@ -143,14 +145,19 @@ std::string Stream::update()
         return "Got no pixmap for desktop or window";
 
     QImage image = pixmap.toImage();
-
-    // render mouse cursor
-    const QPoint mousePos = ( QCursor::pos() - _windowRect.topLeft( )) *
-                            _parent.devicePixelRatio() -
-                            QPoint( _cursor.width()/2, _cursor.height()/2 );
-    QPainter painter( &image );
-    painter.drawImage( mousePos, _cursor );
-    painter.end(); // Make sure to release the QImage before using it
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+    // render mouse cursor only on active window and full desktop streams
+    if( DesktopWindowsModel::isActive( _pid ) ||
+        model->data( _window, Qt::DisplayRole ) == "Desktop" )
+#endif
+    {
+        const QPoint mousePos = ( QCursor::pos() - _windowRect.topLeft( )) *
+                                _parent.devicePixelRatio() -
+                                QPoint( _cursor.width()/2, _cursor.height()/2 );
+        QPainter painter( &image );
+        painter.drawImage( mousePos, _cursor );
+        painter.end(); // Make sure to release the QImage before using it
+    }
 
     if( image == _image )
         return std::string(); // OPT: Image is unchanged
@@ -162,46 +169,66 @@ std::string Stream::update()
                                         deflect::BGRA );
     deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
 
-    if( !send( deflectImage ) || !finishFrame( ))
+    if( !_stream.send( deflectImage ) || !_stream.finishFrame( ))
         return "Streaming failure, connection closed";
     return std::string();
 }
 
 #ifdef __APPLE__
-void sendMouseEvent( const CGEventType type, const CGMouseButton button,
-                     const CGPoint point )
+void _sendMouseEvent( const CGEventType type, const CGMouseButton button,
+                      const CGPoint point )
 {
     CGEventRef event = CGEventCreateMouseEvent( 0, type, point, button );
     CGEventSetType( event, type );
-    CGEventPost( kCGHIDEventTap, event );
-    CFRelease( event );
+
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+    // If the destination app is not active, store the event in a queue and
+    // consume it after it's been activated (next iteration of main run loop)
+    if( !DesktopWindowsModel::isActive( _pid ))
+    {
+        DesktopWindowsModel::activate( _pid );
+        EventQueue().swap( _events ); // empty the queue
+        _events.push( event );
+        return;
+    }
+#endif
+    _events.push( event );
+
+    while( !_events.empty( ))
+    {
+        event = _events.front();
+        CGEventPost( kCGHIDEventTap, event );
+        CFRelease( event );
+        _events.pop();
+    }
+    return;
 }
 
-void Stream::_sendMousePressEvent( const float x, const float y )
+void _sendMousePressEvent( const float x, const float y )
 {
     CGPoint point;
     point.x = _windowRect.topLeft().x() + x * _windowRect.width();
     point.y = _windowRect.topLeft().y() + y * _windowRect.height();
-    sendMouseEvent( kCGEventLeftMouseDown, kCGMouseButtonLeft, point );
+    _sendMouseEvent( kCGEventLeftMouseDown, kCGMouseButtonLeft, point );
 }
 
-void Stream::_sendMouseMoveEvent( const float x, const float y )
+void _sendMouseMoveEvent( const float x, const float y )
 {
     CGPoint point;
     point.x = _windowRect.topLeft().x() + x * _windowRect.width();
     point.y = _windowRect.topLeft().y() + y * _windowRect.height();
-    sendMouseEvent( kCGEventMouseMoved, kCGMouseButtonLeft, point );
+    _sendMouseEvent( kCGEventMouseMoved, kCGMouseButtonLeft, point );
 }
 
-void Stream::_sendMouseReleaseEvent( const float x, const float y )
+void _sendMouseReleaseEvent( const float x, const float y )
 {
     CGPoint point;
     point.x = _windowRect.topLeft().x() + x * _windowRect.width();
     point.y = _windowRect.topLeft().y() + y * _windowRect.height();
-    sendMouseEvent( kCGEventLeftMouseUp, kCGMouseButtonLeft, point );
+    _sendMouseEvent( kCGEventLeftMouseUp, kCGMouseButtonLeft, point );
 }
 
-void Stream::_sendMouseDoubleClickEvent( const float x, const float y )
+void _sendMouseDoubleClickEvent( const float x, const float y )
 {
     CGPoint point;
     point.x = _windowRect.topLeft().x() + x * _windowRect.width();
@@ -223,8 +250,45 @@ void Stream::_sendMouseDoubleClickEvent( const float x, const float y )
     CFRelease( event );
 }
 #else
-void Stream::_sendMousePressEvent( const float, const float ) {}
-void Stream::_sendMouseMoveEvent( const float, const float ) {}
-void Stream::_sendMouseReleaseEvent( const float, const float ) {}
-void Stream::_sendMouseDoubleClickEvent( const float, const float ) {}
+void _sendMousePressEvent( const float, const float ) {}
+void _sendMouseMoveEvent( const float, const float ) {}
+void _sendMouseReleaseEvent( const float, const float ) {}
+void _sendMouseDoubleClickEvent( const float, const float ) {}
 #endif
+
+    Stream& _stream;
+    const MainWindow& _parent;
+    const QPersistentModelIndex _window;
+    QRect _windowRect; // position on host in non-retina coordinates
+    const QImage _cursor;
+    QImage _image;
+    const int _pid;
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+    typedef std::queue< CGEventRef > EventQueue;
+    EventQueue _events;
+#endif
+};
+
+Stream::Stream( const MainWindow& parent, const QPersistentModelIndex window,
+                const std::string& name, const std::string& host, const int pid)
+    : deflect::Stream( name, host )
+    , _impl( new Impl( *this, parent, window, pid ))
+{}
+
+Stream::~Stream()
+{}
+
+std::string Stream::update()
+{
+    return _impl->update();
+}
+
+bool Stream::processEvents( const bool interact )
+{
+    return _impl->processEvents( interact );
+}
+
+const QPersistentModelIndex& Stream::getIndex() const
+{
+    return _impl->_window;
+}

@@ -201,7 +201,10 @@ void MainWindow::_updateStreams()
         const std::string streamId = std::to_string( ++_streamID ) +
                                        " " + appName + " - " +
                                       _streamIdLineEdit->text().toStdString();
-        StreamPtr stream( new Stream( *this, index, streamId, host ));
+        const int pid = index.isValid() ?
+            _listView->model()->data( index,
+                                      DesktopWindowsModel::ROLE_PID).toInt(): 0;
+        StreamPtr stream( new Stream( *this, index, streamId, host, pid ));
 
         if( !stream->isConnected( ))
         {
