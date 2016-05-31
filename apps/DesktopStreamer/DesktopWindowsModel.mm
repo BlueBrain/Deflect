@@ -135,6 +135,14 @@ QRect getWindowRect( const CGWindowID windowID )
             selector:@selector(closedApplication:)
             name:NSWorkspaceDidTerminateApplicationNotification
             object:Nil];
+    [center addObserver:self
+            selector:@selector(newApplication:)
+            name:NSWorkspaceDidUnhideApplicationNotification
+            object:Nil];
+    [center addObserver:self
+            selector:@selector(closedApplication:)
+            name:NSWorkspaceDidHideApplicationNotification
+            object:Nil];
 
     return self;
 }
@@ -148,6 +156,12 @@ QRect getWindowRect( const CGWindowID windowID )
             object:Nil];
     [center removeObserver:self
             name:NSWorkspaceDidTerminateApplicationNotification
+            object:Nil];
+    [center removeObserver:self
+            name:NSWorkspaceDidUnhideApplicationNotification
+            object:Nil];
+    [center removeObserver:self
+            name:NSWorkspaceDidHideApplicationNotification
             object:Nil];
 
     [super dealloc];

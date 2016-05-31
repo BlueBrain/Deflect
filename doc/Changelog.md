@@ -4,6 +4,9 @@ Changelog {#Changelog}
 ## Deflect 0.11
 
 ### 0.11.0 (git master)
+* [95](https://github.com/BlueBrain/Deflect/pull/95):
+  DesktopStreamer: the list of windows available for streaming is also updated
+  after a window has been hidden or unhidden.
 * [94](https://github.com/BlueBrain/Deflect/pull/94):
   Removed legacy SendCommand functionality from Stream to Server. It was only
   used internally by the old Tide Dock streamer and never meant to be public.
