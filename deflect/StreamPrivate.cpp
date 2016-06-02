@@ -50,22 +50,52 @@
 #include <iostream>
 
 #include <boost/thread/thread.hpp>
-#define SEGMENT_SIZE 512
+
+#include <QHostInfo>
+
+namespace
+{
+const unsigned int SEGMENT_SIZE = 512;
+const char* STREAM_ID_ENV_VAR = "DEFLECT_ID";
+const char* STREAM_HOST_ENV_VAR = "DEFLECT_HOST";
+}
+
+std::string _getStreamHost( const std::string& host )
+{
+    if( !host.empty( ))
+        return host;
+
+    const QString streamHost = qgetenv( STREAM_HOST_ENV_VAR ).constData();
+    if( !streamHost.isEmpty( ))
+        return streamHost.toStdString();
+
+    throw std::runtime_error( "No host provided" );
+}
+
+std::string _getStreamId( const std::string& id )
+{
+    if( !id.empty( ))
+        return id;
+
+    const QString streamId = qgetenv( STREAM_ID_ENV_VAR ).constData();
+    if( !streamId.isEmpty( ))
+        return streamId.toStdString();
+
+    return QString( "%1_%2" ).arg( QHostInfo::localHostName(),
+                                   QString::number( rand(), 16 )).toStdString();
+}
 
 namespace deflect
 {
 
-StreamPrivate::StreamPrivate( const std::string &name_,
-                              const std::string& address,
+StreamPrivate::StreamPrivate( const std::string& id_,
+                              const std::string& host,
                               const unsigned short port )
-    : name( name_ )
-    , socket( address, port )
+    : id( _getStreamId( id_ ))
+    , socket( _getStreamHost( host ), port )
     , registeredForEvents( false )
 {
     imageSegmenter.setNominalSegmentDimensions( SEGMENT_SIZE, SEGMENT_SIZE );
-
-    if( name.empty( ))
-        throw std::runtime_error( "Invalid Stream name: " + name );
 }
 
 StreamPrivate::~StreamPrivate()
@@ -80,13 +110,13 @@ StreamPrivate::~StreamPrivate()
 
 void StreamPrivate::sendOpen()
 {
-    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_OPEN, 0, name );
+    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_OPEN, 0, id );
     socket.send( mh, QByteArray( ));
 }
 
 void StreamPrivate::sendClose()
 {
-    const MessageHeader mh( MESSAGE_TYPE_QUIT, 0, name );
+    const MessageHeader mh( MESSAGE_TYPE_QUIT, 0, id );
     socket.send( mh, QByteArray( ));
 }
 
@@ -116,7 +146,7 @@ Stream::Future StreamPrivate::asyncSend( const ImageWrapper& image )
 bool StreamPrivate::finishFrame()
 {
     // Open a window for the PixelStream
-    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, name );
+    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, id );
     return socket.send( mh, QByteArray( ));
 }
 
@@ -125,7 +155,7 @@ bool StreamPrivate::sendPixelStreamSegment( const Segment& segment )
     // Create message header
     const uint32_t segmentSize( sizeof( SegmentParameters ) +
                                 segment.imageData.size( ));
-    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM, segmentSize, name );
+    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM, segmentSize, id );
 
     // This byte array will hold the message to be sent over the socket
     QByteArray message;
@@ -142,7 +172,7 @@ bool StreamPrivate::sendPixelStreamSegment( const Segment& segment )
 
 bool StreamPrivate::sendSizeHints( const SizeHints& hints )
 {
-    const MessageHeader mh( MESSAGE_TYPE_SIZE_HINTS, sizeof( hints ), name );
+    const MessageHeader mh( MESSAGE_TYPE_SIZE_HINTS, sizeof( hints ), id );
 
     QByteArray message;
     message.append( (const char*)( &hints ), sizeof( hints ) );

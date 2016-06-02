@@ -67,16 +67,12 @@ public:
     /**
      * Create a new stream and open a new connection to the deflect::Server.
      *
-     * It can be a hostname like "localhost" or an IP in string format,
-     * e.g. "192.168.1.83" This method must be called by all Streams sharing a
-     * common identifier before any of them starts sending images.
-     *
-     * @param name the unique stream name
-     * @param address Address of the target Server instance.
+     * @param id the unique stream identifier
+     * @param host Address of the target Server instance.
      * @param port Port of the target Server instance.
      */
-    StreamPrivate( const std::string& name, const std::string& address,
-                   const unsigned short port );
+    StreamPrivate( const std::string& id, const std::string& host,
+                   unsigned short port );
 
     /** Destructor, close the Stream. */
     ~StreamPrivate();
@@ -103,10 +99,8 @@ public:
     bool finishFrame();
 
     /**
-     * Send an existing PixelStreamSegment via the Socket.
-     * @param socket The Socket instance
-     * @param segment A pixel stream segement with valid parameters and imageData
-     * @param senderName Used to identifiy the sender on the receiver side
+     * Send a Segment through the Stream.
+     * @param segment An image segment with valid parameters and data
      * @return true if the message could be sent
      */
     DEFLECT_API bool sendPixelStreamSegment( const Segment& segment );
@@ -115,7 +109,7 @@ public:
     bool sendSizeHints( const SizeHints& hints );
 
     /** The stream identifier. */
-    const std::string name;
+    const std::string id;
 
     /** The communication socket instance */
     Socket socket;

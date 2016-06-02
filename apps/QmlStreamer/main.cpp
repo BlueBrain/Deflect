@@ -38,9 +38,9 @@ int main( int argc, char** argv )
                                       "qrc:/qml/gui.qml" );
     parser.addOption( qmlFileOption );
 
-    QCommandLineOption streamHostOption( "host", "Stream target hostname "
+    QCommandLineOption streamHostOption( "host", "Stream target host "
                                                  "(default: localhost)",
-                                         "hostname", "localhost" );
+                                         "host", "localhost" );
     parser.addOption( streamHostOption );
 
     // note: the 'name' command line option is already taken by QCoreApplication

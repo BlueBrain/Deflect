@@ -80,30 +80,51 @@ class Stream
 {
 public:
     /**
+     * Open a new connection to the Server using environment variables.
+     *
+     * DEFLECT_HOST  The address of the target Server instance (required).
+     * DEFLECT_ID    The identifier for the stream. If not provided, a random
+     *               unique identifier will be used.
+     * @throw std::runtime_error if DEFLECT_HOST was not provided.
+     * @version 1.3
+     */
+    DEFLECT_API Stream();
+
+    /**
      * Open a new connection to the Server.
      *
      * The user can check if the connection was successfully established with
      * isConnected().
      *
      * Different Streams can contribute to a single window by using the same
-     * name as identifier. All the Streams which contribute to the same window
-     * should be created before any of them starts sending images.
+     * identifier. All the Streams which contribute to the same window should be
+     * created before any of them starts sending images.
      *
-     * @param name An identifier for the stream which cannot be empty.
-     * @param address Address of the target Server instance, can be a
-     *                hostname like "localhost" or an IP in string format like
-     *                "192.168.1.83".
+     * @param id The identifier for the stream. If left empty, the environment
+     *           variable DEFLECT_ID will be used. If both values are empty,
+     *           a random unique identifier will be used.
+     * @param host The address of the target Server instance. It can be a
+     *             hostname like "localhost" or an IP in string format like
+     *             "192.168.1.83". If left empty, the environment variable
+     *             DEFLECT_HOST will be used instead.
      * @param port Port of the Server instance, default 1701.
+     * @throw std::runtime_error if no host was provided.
      * @version 1.0
      */
-    DEFLECT_API Stream( const std::string& name, const std::string& address,
-                        const unsigned short port = 1701 );
+    DEFLECT_API Stream( const std::string& id, const std::string& host,
+                        unsigned short port = 1701 );
 
     /** Destruct the Stream, closing the connection. @version 1.0 */
     DEFLECT_API virtual ~Stream();
 
     /** @return true if the stream is connected, false otherwise. @version 1.0*/
     DEFLECT_API bool isConnected() const;
+
+    /** @return the identifier defined by the constructor. @version 1.3 */
+    DEFLECT_API const std::string& getId() const;
+
+    /** @return the host defined by the constructor. @version 1.3 */
+    DEFLECT_API const std::string& getHost() const;
 
     /** Emitted after the stream was disconnected. @version 1.0 */
     boost::signals2::signal< void() > disconnected;
@@ -147,8 +168,8 @@ public:
      *
      * This method must be called everytime this Stream instance has finished
      * sending its image(s) for the current frame. The receiver will display
-     * the images once all the senders which use the same name have finished a
-     * frame.
+     * the images once all the senders which use the same identifier have
+     * finished a frame.
      *
      * @note A call to finishFrame() while an asyncSend() is pending is
      *       undefined.
@@ -172,7 +193,7 @@ public:
      * This method is synchronous and waits for a registration reply from the
      * Server before returning.
      *
-     * @param exclusive Binds only one stream source for the same name
+     * @param exclusive Binds only one stream source for the same identifier.
      * @return true if the registration could be or was already established.
      * @version 1.0
      */

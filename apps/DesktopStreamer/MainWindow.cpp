@@ -80,7 +80,7 @@ MainWindow::MainWindow()
 {
     setupUi( this );
 
-    connect( _hostnameComboBox, &QComboBox::currentTextChanged,
+    connect( _hostComboBox, &QComboBox::currentTextChanged,
              [&]( const QString& text )
              {
                 _streamButton->setEnabled( !text.isEmpty( ));
@@ -88,14 +88,14 @@ MainWindow::MainWindow()
              });
 
     for( const auto& entry : defaultHosts )
-        _hostnameComboBox->addItem( entry.first, entry.second );
+        _hostComboBox->addItem( entry.first, entry.second );
 
     // no default host selected initially
-    _hostnameComboBox->setCurrentIndex( -1 );
+    _hostComboBox->setCurrentIndex( -1 );
 
     char hostname[256] = { 0 };
     gethostname( hostname, 256 );
-    _streamnameLineEdit->setText( QString( "%1" ).arg( hostname ));
+    _streamIdLineEdit->setText( QString( "%1" ).arg( hostname ));
 
 #ifdef DEFLECT_USE_QT5MACEXTRAS
     _listView->setModel( new DesktopWindowsModel );
@@ -195,13 +195,13 @@ void MainWindow::_updateStreams()
             continue;
         }
 
-        const std::string name = index.isValid() ?
+        const std::string appName = index.isValid() ?
             _listView->model()->data( index, Qt::DisplayRole ).
                 toString().toStdString() : std::string();
-        const std::string streamName = std::to_string( ++_streamID ) +
-                                       " " + name + " - " +
-                                      _streamnameLineEdit->text().toStdString();
-        StreamPtr stream( new Stream( *this, index, streamName, host ));
+        const std::string streamId = std::to_string( ++_streamID ) +
+                                       " " + appName + " - " +
+                                      _streamIdLineEdit->text().toStdString();
+        StreamPtr stream( new Stream( *this, index, streamId, host ));
 
         if( !stream->isConnected( ))
         {
@@ -235,7 +235,7 @@ void MainWindow::_updateStreams()
     {
         const QPersistentModelIndex index; // default == use desktop
         StreamPtr stream( new Stream( *this, index,
-                                      _streamnameLineEdit->text().toStdString(),
+                                      _streamIdLineEdit->text().toStdString(),
                                       host ));
         if( stream->isConnected( ))
         {
@@ -332,10 +332,10 @@ void MainWindow::_regulateFrameRate()
 std::string MainWindow::_getStreamHost() const
 {
     QString streamHost;
-    if( _hostnameComboBox->findText(_hostnameComboBox->currentText( )) == -1 )
-        streamHost = _hostnameComboBox->currentText();
+    if( _hostComboBox->findText(_hostComboBox->currentText( )) == -1 )
+        streamHost = _hostComboBox->currentText();
     else
-        streamHost = _hostnameComboBox->currentData().toString();
+        streamHost = _hostComboBox->currentData().toString();
     return streamHost.toStdString();
 }
 

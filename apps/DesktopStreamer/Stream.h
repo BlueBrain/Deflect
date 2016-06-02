@@ -52,7 +52,7 @@ class Stream : public deflect::Stream
 public:
     /** Construct a new stream for the given desktop window. */
     Stream( const MainWindow& parent, const QPersistentModelIndex window,
-            const std::string& name, const std::string& host );
+            const std::string& id, const std::string& host );
     ~Stream();
 
     /**

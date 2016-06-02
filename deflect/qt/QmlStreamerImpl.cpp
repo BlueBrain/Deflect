@@ -53,7 +53,7 @@
 
 namespace
 {
-const std::string DEFAULT_STREAM_NAME( "QmlStreamer" );
+const std::string DEFAULT_STREAM_ID( "QmlStreamer" );
 }
 
 class RenderControl : public QQuickRenderControl
@@ -80,7 +80,7 @@ namespace qt
 {
 
 QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
-                         const std::string& streamName )
+                         const std::string& streamId )
     : QWindow()
     , _context( new QOpenGLContext )
     , _offscreenSurface( new QOffscreenSurface )
@@ -97,7 +97,7 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
     , _eventHandler( nullptr )
     , _streaming( false )
     , _streamHost( streamHost )
-    , _streamName( streamName )
+    , _streamId( streamId )
 {
     setSurfaceType( QSurface::OpenGLSurface );
 
@@ -328,19 +328,19 @@ bool QmlStreamer::Impl::_setupRootItem()
     return true;
 }
 
-std::string QmlStreamer::Impl::_getDeflectStreamName() const
+std::string QmlStreamer::Impl::_getDeflectStreamIdentifier() const
 {
-    if( !_streamName.empty( ))
-        return _streamName;
+    if( !_streamId.empty( ))
+        return _streamId;
 
-    const std::string streamName = _rootItem->objectName().toStdString();
-    return streamName.empty() ? DEFAULT_STREAM_NAME : streamName;
+    const std::string streamId = _rootItem->objectName().toStdString();
+    return streamId.empty() ? DEFAULT_STREAM_ID : streamId;
 }
 
 bool QmlStreamer::Impl::_setupDeflectStream()
 {
     if( !_stream )
-        _stream = new Stream( _getDeflectStreamName(), _streamHost );
+        _stream = new Stream( _getDeflectStreamIdentifier(), _streamHost );
 
     if( !_stream->isConnected( ))
         return false;
