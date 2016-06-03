@@ -113,23 +113,26 @@ bool Socket::send( const MessageHeader& messageHeader,
     if( stream.status() != QDataStream::Ok )
         return false;
 
-    if( message.isEmpty( ))
-        return true;
+    bool allSent = true;
+    if( !message.isEmpty( ))
+    {
+        // Send message data
+        const char* data = message.constData();
+        const int size = message.size();
 
-    // Send message data
-    const char* data = message.constData();
-    const int size = message.size();
+        int sent = _socket->write( data, size );
 
-    int sent = _socket->write( data, size );
+        while( sent < size && isConnected( ))
+            sent += _socket->write( data + sent, size - sent );
 
-    while( sent < size && isConnected( ))
-        sent += _socket->write( data + sent, size - sent );
+        allSent = sent == size;
+    }
 
     // Needed in the absence of event loop, otherwise the reception is frozen.
     while( _socket->bytesToWrite() > 0 && isConnected( ))
         _socket->waitForBytesWritten();
 
-    return sent == size;
+    return allSent;
 }
 
 bool Socket::receive( MessageHeader& messageHeader, QByteArray& message )
