@@ -4,6 +4,8 @@ Changelog {#Changelog}
 ## Deflect 0.11
 
 ### 0.11.0 (git master)
+* [100](https://github.com/BlueBrain/Deflect/pull/100):
+  QmlStreamer: correcly quit application when stream is closed.
 * [95](https://github.com/BlueBrain/Deflect/pull/95):
   DesktopStreamer: the list of windows available for streaming is also updated
   after a window has been hidden or unhidden.

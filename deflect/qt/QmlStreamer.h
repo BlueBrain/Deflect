@@ -60,8 +60,10 @@ namespace qt
  * on each update on the given Deflect stream. It automatically register also
  * for Deflect events, which can be directly handled in the QML.
  */
-class QmlStreamer
+class QmlStreamer : public QObject
 {
+    Q_OBJECT
+
 public:
     /**
      * Construct a new qml streamer by loading the QML, accessible by
@@ -84,6 +86,10 @@ public:
 
     /** @return the QML engine. */
     DEFLECTQT_API QQmlEngine* getQmlEngine();
+
+signals:
+    /** Emitted when the stream has been closed. */
+    void streamClosed();
 
 private:
     QmlStreamer( const QmlStreamer& ) = delete;

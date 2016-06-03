@@ -50,6 +50,8 @@ QmlStreamer::QmlStreamer( const QString& qmlFile,
                           const std::string& streamName )
     : _impl( new Impl( qmlFile, streamHost, streamName ))
 {
+    connect( _impl.get(), &Impl::streamClosed,
+             this, &QmlStreamer::streamClosed );
 }
 
 QmlStreamer::~QmlStreamer()
@@ -65,7 +67,6 @@ QQmlEngine* QmlStreamer::getQmlEngine()
 {
     return _impl->getQmlEngine();
 }
-
 
 }
 }

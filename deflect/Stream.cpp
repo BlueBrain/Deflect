@@ -56,8 +56,14 @@ namespace deflect
 
 Stream::Stream( const std::string& name, const std::string& address,
                 const unsigned short port )
-    : _impl( new StreamPrivate( this, name, address, port ))
+    : _impl( new StreamPrivate( name, address, port ))
 {
+    if( isConnected( ))
+    {
+        _impl->socket.connect( &_impl->socket, &Socket::disconnected,
+                               [this]() { disconnected(); });
+        _impl->sendOpen();
+    }
 }
 
 Stream::~Stream()

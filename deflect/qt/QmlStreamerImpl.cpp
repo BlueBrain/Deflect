@@ -202,6 +202,9 @@ void QmlStreamer::Impl::_render()
             qWarning() << "Could not setup Deflect stream";
     }
 
+    if( !_streaming )
+        return;
+
     // Polish, synchronize and render the next frame (into our fbo). In this
     // example everything happens on the same thread and therefore all three
     // steps are performed in succession from here. In a threaded setup the
@@ -215,12 +218,6 @@ void QmlStreamer::Impl::_render()
 
     _context->functions()->glFlush();
 
-    if( !_streaming )
-    {
-        QCoreApplication::quit();
-        return;
-    }
-
     const QImage image = _fbo->toImage();
     if( image.isNull( ))
     {
@@ -233,6 +230,9 @@ void QmlStreamer::Impl::_render()
     imageWrapper.compressionPolicy = COMPRESSION_ON;
     imageWrapper.compressionQuality = 100;
     _streaming = _stream->send( imageWrapper ) && _stream->finishFrame();
+
+    if( !_streaming )
+        emit streamClosed();
 }
 
 void QmlStreamer::Impl::_requestUpdate()
@@ -344,6 +344,9 @@ bool QmlStreamer::Impl::_setupDeflectStream()
 
     if( !_stream->isConnected( ))
         return false;
+
+    _stream->disconnected.connect(
+                boost::bind( &QmlStreamer::Impl::streamClosed, this ));
 
     if( !_stream->registerForEvents( ))
         return false;
