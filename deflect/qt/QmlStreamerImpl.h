@@ -97,6 +97,9 @@ private slots:
     void _onResized( double, double );
     void _onWheeled( double, double, double );
 
+signals:
+    void streamClosed();
+
 private:
     std::string _getDeflectStreamName() const;
     bool _setupDeflectStream();

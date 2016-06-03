@@ -58,9 +58,11 @@ int main( int argc, char** argv )
 
     try
     {
-        QScopedPointer< deflect::qt::QmlStreamer > streamer(
+        std::unique_ptr< deflect::qt::QmlStreamer > streamer(
              new deflect::qt::QmlStreamer( qmlFile, streamHost.toStdString(),
                                            streamName.toStdString( )));
+        app.connect( streamer.get(), &deflect::qt::QmlStreamer::streamClosed,
+                     &app, &QCoreApplication::quit );
         return app.exec();
     }
     catch( const std::runtime_error& exception )

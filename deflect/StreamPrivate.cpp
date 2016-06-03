@@ -55,40 +55,39 @@
 namespace deflect
 {
 
-StreamPrivate::StreamPrivate( Stream* stream, const std::string &name_,
+StreamPrivate::StreamPrivate( const std::string &name_,
                               const std::string& address,
                               const unsigned short port )
     : name( name_ )
     , socket( address, port )
     , registeredForEvents( false )
-    , _parent( stream )
-    , _sendWorker( 0 )
 {
     imageSegmenter.setNominalSegmentDimensions( SEGMENT_SIZE, SEGMENT_SIZE );
 
     if( name.empty( ))
         throw std::runtime_error( "Invalid Stream name: " + name );
-
-    if( socket.isConnected( ))
-    {
-        connect( &socket, &Socket::disconnected,
-                 this, &StreamPrivate::_onDisconnected );
-        const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_OPEN, 0, name );
-        socket.send( mh, QByteArray( ));
-    }
 }
 
 StreamPrivate::~StreamPrivate()
 {
-    delete _sendWorker;
+    _sendWorker.reset();
 
     if( !socket.isConnected( ))
         return;
 
+    sendClose();
+}
+
+void StreamPrivate::sendOpen()
+{
+    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_OPEN, 0, name );
+    socket.send( mh, QByteArray( ));
+}
+
+void StreamPrivate::sendClose()
+{
     const MessageHeader mh( MESSAGE_TYPE_QUIT, 0, name );
     socket.send( mh, QByteArray( ));
-
-    registeredForEvents = false;
 }
 
 bool StreamPrivate::send( const ImageWrapper& image )
@@ -109,7 +108,7 @@ bool StreamPrivate::send( const ImageWrapper& image )
 Stream::Future StreamPrivate::asyncSend( const ImageWrapper& image )
 {
     if( !_sendWorker )
-        _sendWorker = new StreamSendWorker( *this );
+        _sendWorker.reset( new StreamSendWorker( *this ));
 
     return _sendWorker->enqueueImage( image );
 }
@@ -148,12 +147,6 @@ bool StreamPrivate::sendSizeHints( const SizeHints& hints )
     QByteArray message;
     message.append( (const char*)( &hints ), sizeof( hints ) );
     return socket.send( mh, message );
-}
-
-void StreamPrivate::_onDisconnected()
-{
-    if( _parent )
-        _parent->disconnected();
 }
 
 }

@@ -136,7 +136,7 @@ bool Socket::receive( MessageHeader& messageHeader, QByteArray& message )
 {
     QMutexLocker locker( &_socketMutex );
 
-    if ( !_receiveHeader( messageHeader ))
+    if( !_receiveHeader( messageHeader ))
         return false;
 
     // get the message
