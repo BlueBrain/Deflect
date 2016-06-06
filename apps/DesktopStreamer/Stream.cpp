@@ -57,8 +57,8 @@
 #define CURSOR_IMAGE_SIZE     20
 
 Stream::Stream( const MainWindow& parent, const QPersistentModelIndex window,
-                const std::string& name, const std::string& host )
-    : deflect::Stream( name, host )
+                const std::string& id, const std::string& host )
+    : deflect::Stream( id, host )
     , _parent( parent )
     , _window( window )
     , _cursor( QImage( CURSOR_IMAGE_FILE ).scaled(

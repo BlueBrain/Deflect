@@ -43,18 +43,23 @@ namespace ut = boost::unit_test;
 
 #include "MinimalGlobalQtApp.h"
 
-#include <deflect/Stream.h>
+#include <deflect/EventReceiver.h>
 #include <deflect/Server.h>
+#include <deflect/Stream.h>
 
 #include <QMutex>
 #include <QThread>
 #include <QWaitCondition>
 
+namespace
+{
+const QString testStreamId( "teststream" );
+}
+
 BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp );
 
 BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
 {
-    const QString testURI( "teststream" );
     deflect::SizeHints testHints;
     testHints.maxWidth = 500;
     testHints.preferredHeight= 200;
@@ -63,12 +68,15 @@ BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
     QWaitCondition received;
     QMutex mutex;
 
+    QString streamId;
+    deflect::SizeHints sizeHints;
+
     deflect::Server* server = new deflect::Server( 0 /* OS-chosen port */ );
     server->connect( server, &deflect::Server::receivedSizeHints,
-                     [&]( QString uri, deflect::SizeHints hints )
+                     [&]( const QString id, const deflect::SizeHints hints )
                      {
-                         BOOST_CHECK( uri == testURI );
-                         BOOST_CHECK( hints == testHints );
+                         streamId = id;
+                         sizeHints = hints;
                          mutex.lock();
                          received.wakeAll();
                          mutex.unlock();
@@ -79,7 +87,7 @@ BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
     serverThread.start();
 
     {
-        deflect::Stream stream( testURI.toStdString(), "localhost",
+        deflect::Stream stream( testStreamId.toStdString(), "localhost",
                                 server->serverPort());
         BOOST_CHECK( stream.isConnected( ));
         stream.sendSizeHints( testHints );
@@ -88,6 +96,56 @@ BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
     mutex.lock();
     received.wait( &mutex, 2000 /*ms*/ );
     mutex.unlock();
+
+    BOOST_CHECK_EQUAL( streamId.toStdString(), testStreamId.toStdString( ));
+    BOOST_CHECK( sizeHints == testHints );
+
+    serverThread.quit();
+    serverThread.wait();
+}
+
+BOOST_AUTO_TEST_CASE( testRegisterForEventReceivedByServer )
+{
+    QThread serverThread;
+    deflect::Server* server = new deflect::Server( 0 /* OS-chosen port */ );
+    server->moveToThread( &serverThread );
+    serverThread.connect( &serverThread, &QThread::finished,
+                          server, &deflect::Server::deleteLater );
+    serverThread.start();
+
+    QWaitCondition received;
+    QMutex mutex;
+
+    QString streamId;
+    bool exclusiveBind = false;
+    deflect::EventReceiver* eventReceiver = nullptr;
+
+    server->connect( server, &deflect::Server::registerToEvents,
+             [&]( const QString id, const bool exclusive,
+                     deflect::EventReceiver* receiver )
+    {
+        streamId = id;
+        exclusiveBind = exclusive;
+        eventReceiver = receiver;
+        mutex.lock();
+        received.wakeAll();
+        mutex.unlock();
+    });
+
+    {
+        deflect::Stream stream( testStreamId.toStdString(), "localhost",
+                                server->serverPort( ));
+        BOOST_REQUIRE( stream.isConnected( ));
+        // Just send an event to check the streamId received by the server
+        stream.registerForEvents( true );
+    }
+    mutex.lock();
+    received.wait( &mutex, 2000 /*ms*/ );
+    mutex.unlock();
+
+    BOOST_CHECK_EQUAL( streamId.toStdString(), testStreamId.toStdString( ));
+    BOOST_CHECK_EQUAL( exclusiveBind, true );
+    BOOST_CHECK( eventReceiver );
 
     serverThread.quit();
     serverThread.wait();

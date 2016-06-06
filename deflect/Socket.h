@@ -70,14 +70,17 @@ public:
 
     /**
      * Construct a Socket and connect to host.
-     * @param hostname The target host (IP address or hostname)
+     * @param host The target host (IP address or hostname)
      * @param port The target port
      */
-    DEFLECT_API Socket( const std::string& hostname,
+    DEFLECT_API Socket( const std::string& host,
                         unsigned short port = defaultPortNumber );
 
     /** Destruct a Socket, disconnecting from host. */
     DEFLECT_API ~Socket();
+
+    /** Get the host passed to the constructor. */
+    const std::string& getHost() const;
 
     /** Is the Socket connected */
     DEFLECT_API bool isConnected() const;
@@ -118,11 +121,12 @@ signals:
     void disconnected();
 
 private:
+    const std::string _host;
     QTcpSocket* _socket;
     int32_t _remoteProtocolVersion;
     mutable QMutex _socketMutex;
 
-    bool _connect( const std::string &hostname, const unsigned short port );
+    bool _connect( const std::string &host, const unsigned short port );
     bool _checkProtocolVersion();
 
     bool _receiveHeader( MessageHeader& messageHeader );

@@ -69,15 +69,15 @@ public:
      * Construct a new qml streamer by loading the QML, accessible by
      * getRootItem() and sets up the Deflect stream.
      *
-     * @param qmlFile URL to QML file to load
-     * @param streamHost hostname of the Deflect server
-     * @param streamName name of the Deflect stream (optional). Setting this
-     *        value overrides the 'objectName' property of the root QML item.
-     *        If neither is provided, "QmlStreamer" is used instead.
+     * @param qmlFile URL to QML file to load.
+     * @param streamHost host where the Deflect server is running.
+     * @param streamId identifier for the Deflect stream (optional). Setting
+     *        this value overrides the 'objectName' property of the root QML
+     *        item. If neither is provided, "QmlStreamer" is used instead.
      */
     DEFLECTQT_API QmlStreamer( const QString& qmlFile,
                                const std::string& streamHost,
-                               const std::string& streamName = std::string( ));
+                               const std::string& streamId = std::string( ));
 
     DEFLECTQT_API ~QmlStreamer();
 

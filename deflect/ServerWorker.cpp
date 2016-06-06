@@ -81,8 +81,8 @@ ServerWorker::~ServerWorker()
     // We still want to remove this source so that the stream does not get stuck
     // if other senders are still active / resp. the window gets closed if no
     // more senders contribute to it.
-    if( !_streamUri.isEmpty( ))
-        emit removeStreamSource( _streamUri, _sourceId );
+    if( !_streamId.isEmpty( ))
+        emit removeStreamSource( _streamId, _sourceId );
 
     if( _tcpSocket->state() == QAbstractSocket::ConnectedState )
         _sendQuit();
@@ -103,7 +103,7 @@ void ServerWorker::initConnection()
 
 void ServerWorker::closeConnection( const QString uri )
 {
-    if( uri != _streamUri )
+    if( uri != _streamId )
         return;
 
     Event closeEvent;
@@ -116,7 +116,7 @@ void ServerWorker::closeConnection( const QString uri )
 void ServerWorker::replyToEventRegistration( const QString uri,
                                              const bool success )
 {
-    if( uri != _streamUri )
+    if( uri != _streamId )
         return;
 
     _registeredToEvents = success;
@@ -196,39 +196,38 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
     const QString uri( messageHeader.uri );
     if( uri.isEmpty( ))
     {
-        std::cerr << "Warning: rejecting streamer with empty uri"
-                  << std::endl;
-        closeConnection( _streamUri );
+        std::cerr << "Warning: rejecting streamer with empty id" << std::endl;
+        closeConnection( _streamId );
         return;
     }
-    if( uri != _streamUri &&
+    if( uri != _streamId &&
             messageHeader.type != MESSAGE_TYPE_PIXELSTREAM_OPEN )
     {
-        std::cerr << "Warning: ingnoring message with incorrect stream uri: '"
+        std::cerr << "Warning: ingnoring message with incorrect stream id: '"
                   << messageHeader.uri << "', expected: '"
-                  << _streamUri.toStdString() << "'" <<  std::endl;
+                  << _streamId.toStdString() << "'" <<  std::endl;
         return;
     }
 
     switch( messageHeader.type )
     {
     case MESSAGE_TYPE_QUIT:
-        emit removeStreamSource( _streamUri, _sourceId );
-        _streamUri = QString();
+        emit removeStreamSource( _streamId, _sourceId );
+        _streamId = QString();
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM_OPEN:
-        if( !_streamUri.isEmpty( ))
+        if( !_streamId.isEmpty( ))
         {
             std::cerr << "Warning: PixelStream already opened!" << std::endl;
             return;
         }
-        _streamUri = uri;
-        emit addStreamSource( _streamUri, _sourceId );
+        _streamId = uri;
+        emit addStreamSource( _streamId, _sourceId );
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME:
-        emit receivedFrameFinished( _streamUri, _sourceId );
+        emit receivedFrameFinished( _streamId, _sourceId );
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM:
@@ -239,7 +238,7 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
     {
         const SizeHints* hints =
                 reinterpret_cast< const SizeHints* >( byteArray.data( ));
-        emit receivedSizeHints( _streamUri, SizeHints( *hints ));
+        emit receivedSizeHints( _streamId, SizeHints( *hints ));
         break;
     }
 
@@ -251,7 +250,7 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
         {
             const bool exclusive =
                     (messageHeader.type == MESSAGE_TYPE_BIND_EVENTS_EX);
-            emit registerToEvents( _streamUri, exclusive, this );
+            emit registerToEvents( _streamId, exclusive, this );
         }
         break;
 
@@ -272,7 +271,7 @@ void ServerWorker::_handlePixelStreamMessage( const QByteArray& byteArray )
             byteArray.right( byteArray.size() - sizeof( SegmentParameters ));
     segment.imageData = imageData;
 
-    emit( receivedSegment( _streamUri, _sourceId, segment ));
+    emit( receivedSegment( _streamId, _sourceId, segment ));
 }
 
 void ServerWorker::_sendProtocolVersion()

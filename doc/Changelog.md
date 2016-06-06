@@ -8,6 +8,8 @@ Changelog {#Changelog}
   QmlStreamer: correcly quit application when stream is closed.
 * [99](https://github.com/BlueBrain/Deflect/pull/99):
   Fix incomplete socket send under certain timing conditions
+* [98](https://github.com/BlueBrain/Deflect/pull/98):
+  Streams can be constructed based on the DEFLECT_ID and DEFLECT_HOST ENV_VARs.
 * [95](https://github.com/BlueBrain/Deflect/pull/95):
   DesktopStreamer: the list of windows available for streaming is also updated
   after a window has been hidden or unhidden.

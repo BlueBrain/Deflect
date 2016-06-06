@@ -92,7 +92,7 @@ private slots:
 private:
     QTcpSocket* _tcpSocket;
 
-    QString _streamUri;
+    QString _streamId;
     int _sourceId;
 
     bool _registeredToEvents;

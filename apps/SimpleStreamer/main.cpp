@@ -57,8 +57,8 @@
 bool deflectInteraction = false;
 bool deflectCompressImage = true;
 unsigned int deflectCompressionQuality = 75;
-char* deflectHostname = NULL;
-std::string deflectStreamName = "SimpleStreamer";
+char* deflectHost = NULL;
+std::string deflectStreamId = "SimpleStreamer";
 deflect::Stream* deflectStream = NULL;
 
 void syntax( char* app );
@@ -78,7 +78,7 @@ int main( int argc, char** argv )
 {
     readCommandLineArguments( argc, argv );
 
-    if( deflectHostname == NULL )
+    if( deflectHost == NULL )
         syntax( argv[0] );
 
     initGLWindow( argc, argv );
@@ -101,7 +101,7 @@ void readCommandLineArguments( int argc, char** argv )
                 case 'n':
                     if( i + 1 < argc )
                     {
-                        deflectStreamName = argv[i+1];
+                        deflectStreamId = argv[i+1];
                         ++i;
                     }
                     break;
@@ -116,7 +116,7 @@ void readCommandLineArguments( int argc, char** argv )
             }
         }
         else if( i == argc - 1 )
-            deflectHostname = argv[i];
+            deflectHost = argv[i];
     }
 }
 
@@ -147,7 +147,7 @@ void initGLWindow( int argc, char** argv )
 
 void initDeflectStream()
 {
-    deflectStream = new deflect::Stream( deflectStreamName, deflectHostname );
+    deflectStream = new deflect::Stream( deflectStreamId, deflectHost );
     if( !deflectStream->isConnected( ))
     {
         std::cerr << "Could not connect to host!" << std::endl;
@@ -166,11 +166,11 @@ void initDeflectStream()
 
 void syntax( char* app )
 {
-    std::cerr << "syntax: " << app << " [options] <hostname>" << std::endl;
+    std::cerr << "syntax: " << app << " [options] <host>" << std::endl;
     std::cerr << "options:" << std::endl;
-    std::cerr << " -n <stream name>     set stream name (default SimpleStreamer)" << std::endl;
-    std::cerr << " -i                   enable interaction events (default disabled)" << std::endl;
-    std::cerr << " -u                   enable uncompressed streaming (default disabled)" << std::endl;
+    std::cerr << " -n <stream id>     set stream identifier (default: 'SimpleStreamer')" << std::endl;
+    std::cerr << " -i                 enable interaction events (default: OFF)" << std::endl;
+    std::cerr << " -u                 enable uncompressed streaming (default: OFF)" << std::endl;
 
     exit( 1 );
 }

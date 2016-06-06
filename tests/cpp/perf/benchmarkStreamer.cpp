@@ -109,8 +109,8 @@ struct BenchmarkOptions
         using namespace boost::program_options;
         desc.add_options()
             ("help", "produce help message")
-            ("name", value<std::string>()->default_value( "BenchmarkStreamer" ),
-                     "identifier for the stream")
+            ("id", value<std::string>()->default_value( "BenchmarkStreamer" ),
+                   "identifier for the stream")
             ("width", value<unsigned int>()->default_value( 0 ),
                      "width of the stream in pixel")
             ("height", value<unsigned int>()->default_value( 0 ),
@@ -119,7 +119,7 @@ struct BenchmarkOptions
                      "number of frames")
             ("framerate", value<unsigned int>()->default_value( 0 ),
                      "framerate at which to send frames (default: unlimited)")
-            ("hostname", value<std::string>()->default_value( "localhost" ),
+            ("host", value<std::string>()->default_value( "localhost" ),
                      "Target Deflect server host")
             ("compress", "compress segments using jpeg")
             ("precompute", "send precomputed segments (no encoding time)")
@@ -147,12 +147,12 @@ struct BenchmarkOptions
         }
 
         getHelp = vm.count("help");
-        name = vm["name"].as<std::string>();
+        id = vm["id"].as<std::string>();
         width = vm["width"].as<unsigned int>();
         height = vm["height"].as<unsigned int>();
         nframes = vm["nframes"].as<unsigned int>();
         framerate = vm["framerate"].as<unsigned int>();
-        hostname = vm["hostname"].as<std::string>();
+        host = vm["host"].as<std::string>();
         compress = vm.count("compress");
         precompute = vm.count("precompute");
         quality = vm["quality"].as<unsigned int>();
@@ -161,11 +161,11 @@ struct BenchmarkOptions
     boost::program_options::options_description desc;
 
     bool getHelp;
-    std::string name;
+    std::string id;
     unsigned int width, height;
     unsigned int nframes;
     unsigned int framerate;
-    std::string hostname;
+    std::string host;
     bool compress;
     bool precompute;
     unsigned int quality;
@@ -188,7 +188,7 @@ class Application
 public:
     explicit Application( const BenchmarkOptions& options )
         : _options( options )
-        , _stream( new deflect::Stream( options.name, options.hostname ))
+        , _stream( new deflect::Stream( options.id, options.host ))
     {
         generateNoiseImage( _options.width, _options.height );
         generateJpegSegments();
