@@ -49,11 +49,17 @@ namespace qt
 EventReceiver::EventReceiver( Stream& stream )
     : QObject()
     , _stream( stream )
+    , _notifier( new QSocketNotifier( _stream.getDescriptor(),
+                                      QSocketNotifier::Read ))
+    , _timer( new QTimer )
 {
-    _notifier.reset( new QSocketNotifier( _stream.getDescriptor(),
-                                          QSocketNotifier::Read, this ));
-    connect( _notifier.data(), &QSocketNotifier::activated,
+    connect( _notifier.get(), &QSocketNotifier::activated,
              this, &EventReceiver::_onEvent );
+
+    // QSocketNotifier sometimes does not fire, help with a timer
+    connect( _timer.get(), &QTimer::timeout,
+             [this] { _onEvent( _stream.getDescriptor( )); });
+    _timer->start( 1 );
 }
 
 EventReceiver::~EventReceiver()

@@ -82,6 +82,7 @@ protected:
     void resizeEvent( QResizeEvent* e ) final;
     void mousePressEvent( QMouseEvent* e ) final;
     void mouseReleaseEvent( QMouseEvent* e ) final;
+    void timerEvent( QTimerEvent* e ) final;
 
 private slots:
     bool _setupRootItem();
@@ -89,7 +90,7 @@ private slots:
     void _createFbo();
     void _destroyFbo();
     void _render();
-    void _requestUpdate();
+    void _requestRender();
 
     void _onPressed( double, double );
     void _onReleased( double, double );
@@ -113,7 +114,9 @@ private:
     QQmlComponent* _qmlComponent;
     QQuickItem* _rootItem;
     QOpenGLFramebufferObject* _fbo;
-    QTimer _updateTimer;
+
+    int _renderTimer;
+    int _stopRenderingDelayTimer;
 
     Stream* _stream;
     EventReceiver* _eventHandler;

@@ -42,6 +42,7 @@
 
 #include <QObject>
 #include <QSocketNotifier>
+#include <QTimer>
 
 #include <deflect/Stream.h>
 
@@ -70,7 +71,8 @@ private slots:
 
 private:
     Stream& _stream;
-    QScopedPointer< QSocketNotifier > _notifier;
+    std::unique_ptr< QSocketNotifier > _notifier;
+    std::unique_ptr< QTimer > _timer;
 };
 
 }

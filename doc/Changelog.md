@@ -4,6 +4,10 @@ Changelog {#Changelog}
 ## Deflect 0.11
 
 ### 0.11.0 (git master)
+
+* [102](https://github.com/BlueBrain/Deflect/pull/102):
+  DeflectQt: Continue rendering & streaming after updates for a while to
+  compensate for running animations, fix spurious missing event handling  
 * [100](https://github.com/BlueBrain/Deflect/pull/100):
   QmlStreamer: correcly quit application when stream is closed.
 * [99](https://github.com/BlueBrain/Deflect/pull/99):
