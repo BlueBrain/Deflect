@@ -43,7 +43,8 @@ public:
     enum DataRole
     {
         ROLE_PIXMAP = Qt::UserRole,
-        ROLE_RECT
+        ROLE_RECT,
+        ROLE_PID
     };
 
     /** @internal */
@@ -51,6 +52,24 @@ public:
 
     /** @internal */
     void removeApplication( void* app );
+
+    /**
+     * Check if the application corresponding to the specified PID is currently
+     * active
+     *
+     * @param pid the application process id
+     * @return true if the application with the PID specified is currently
+     *         active
+     */
+    static bool isActive( int pid );
+
+    /**
+     * Activate the application corresponding to the specified PID. This will
+     * send the application to the front
+     *
+     * @param pid the application process id
+     */
+    static void activate( int pid );
 
 private:
     class Impl;

@@ -8,13 +8,17 @@ Changelog {#Changelog}
 * [102](https://github.com/BlueBrain/Deflect/pull/102):
   DeflectQt: Continue rendering & streaming after updates for a while to
   compensate for running animations, fix spurious missing event handling  
+* [101](https://github.com/BlueBrain/Deflect/pull/101):
+  DesktopStreamer: windows that are streamed independently are activated
+  (i.e. sent to the foreground) before applying an interaction event. The mouse
+  cursor is now rendered only on active windows or desktop.
 * [100](https://github.com/BlueBrain/Deflect/pull/100):
   QmlStreamer: correcly quit application when stream is closed.
 * [99](https://github.com/BlueBrain/Deflect/pull/99):
   Fix incomplete socket send under certain timing conditions
 * [98](https://github.com/BlueBrain/Deflect/pull/98):
   Streams can be constructed based on the DEFLECT_ID and DEFLECT_HOST ENV_VARs.
-* [95](https://github.com/BlueBrain/Deflect/pull/95):
+* [97](https://github.com/BlueBrain/Deflect/pull/97):
   DesktopStreamer: the list of windows available for streaming is also updated
   after a window has been hidden or unhidden.
 * [94](https://github.com/BlueBrain/Deflect/pull/94):

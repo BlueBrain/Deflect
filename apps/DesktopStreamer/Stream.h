@@ -52,7 +52,7 @@ class Stream : public deflect::Stream
 public:
     /** Construct a new stream for the given desktop window. */
     Stream( const MainWindow& parent, const QPersistentModelIndex window,
-            const std::string& id, const std::string& host );
+            const std::string& id, const std::string& host, const int pid = 0 );
     ~Stream();
 
     /**
@@ -69,22 +69,14 @@ public:
      */
     bool processEvents( bool interact );
 
-    const QPersistentModelIndex& getIndex() const { return _window; }
+    const QPersistentModelIndex& getIndex() const;
 
 private:
-    const MainWindow& _parent;
-    const QPersistentModelIndex _window;
-    QRect _windowRect; // position on host in non-retina coordinates
-    const QImage _cursor;
-    QImage _image;
-
     Stream( const Stream& ) = delete;
     Stream( Stream&& ) = delete;
 
-    void _sendMousePressEvent( float x, float y );
-    void _sendMouseMoveEvent( float x, float y );
-    void _sendMouseReleaseEvent( float x, float y );
-    void _sendMouseDoubleClickEvent( float x, float y );
+    class Impl;
+    std::unique_ptr< Impl > _impl;
 };
 
 #endif
