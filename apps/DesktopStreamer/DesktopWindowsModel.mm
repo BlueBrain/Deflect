@@ -367,8 +367,9 @@ QVariant DesktopWindowsModel::data( const QModelIndex& index, int role ) const
 
 bool DesktopWindowsModel::isActive( const int pid )
 {
+    // A pid of 0 means the full desktop, always active
     return [[NSRunningApplication
-             runningApplicationWithProcessIdentifier: pid] isActive];
+            runningApplicationWithProcessIdentifier: pid] isActive] || pid == 0;
 }
 
 void DesktopWindowsModel::activate( const int pid )
