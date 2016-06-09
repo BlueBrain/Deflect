@@ -166,6 +166,13 @@ void MainWindow::closeEvent( QCloseEvent* closeEvt )
 
 void MainWindow::_update()
 {
+#ifdef __APPLE__
+    // On OS X >= 10.9 AppNap switches on/off automatically based on the app
+    // visibility. We can avoid this by actively checking the state of the
+    // AppNapSuspender (calling 'suspend' does the check, it will rarely need to
+    // disable the AppNap feature if it was already disabled)
+    _napSuspender.suspend();
+#endif
     _frameTime.start();
     if( _streamButton->isChecked( ))
     {
