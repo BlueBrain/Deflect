@@ -59,7 +59,7 @@ public:
      *
      * @param pid the application process id
      * @return true if the application with the PID specified is currently
-     *         active
+     *         active. A pid of 0 means the full desktop, always active
      */
     static bool isActive( int pid );
 
