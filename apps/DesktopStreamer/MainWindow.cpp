@@ -80,6 +80,12 @@ MainWindow::MainWindow()
 {
     setupUi( this );
 
+#ifndef __APPLE__
+    // Event injection support is currently limited to OSX
+    _remoteControlLabel->setVisible( false );
+    _remoteControlCheckBox->setVisible( false );
+#endif
+
     connect( _hostComboBox, &QComboBox::currentTextChanged,
              [&]( const QString& text )
              {
@@ -117,7 +123,7 @@ MainWindow::MainWindow()
     adjustSize();
 #endif
 
-    connect( _desktopInteractionCheckBox, &QCheckBox::clicked,
+    connect( _remoteControlCheckBox, &QCheckBox::clicked,
              this, &MainWindow::_onStreamEventsBoxClicked );
 
     connect( _streamButton, &QPushButton::clicked,
@@ -220,7 +226,7 @@ void MainWindow::_updateStreams()
             continue;
         }
 
-        if( _desktopInteractionCheckBox->isChecked( ))
+        if( _remoteControlCheckBox->isChecked( ))
             stream->registerForEvents();
 
         streams[ index ] = stream;
@@ -249,7 +255,7 @@ void MainWindow::_updateStreams()
                                       host ));
         if( stream->isConnected( ))
         {
-            if( _desktopInteractionCheckBox->isChecked( ))
+            if( _remoteControlCheckBox->isChecked( ))
                 stream->registerForEvents();
             _streams[ index ] = stream;
             _startStreaming();
@@ -262,7 +268,7 @@ void MainWindow::_updateStreams()
 
 void MainWindow::_processStreamEvents()
 {
-    const bool interact = _desktopInteractionCheckBox->checkState();
+    const bool interact = _remoteControlCheckBox->checkState();
     std::vector< ConstStreamPtr > closedStreams;
 
     for( auto i = _streams.begin(); i != _streams.end(); )
