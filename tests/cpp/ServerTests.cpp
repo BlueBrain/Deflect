@@ -77,12 +77,14 @@ BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
     QString streamId;
     deflect::SizeHints sizeHints;
 
+    bool receivedState = false;
     server->connect( server, &deflect::Server::receivedSizeHints,
                      [&]( const QString id, const deflect::SizeHints hints )
     {
         streamId = id;
         sizeHints = hints;
         mutex.lock();
+        receivedState = true;
         received.wakeAll();
         mutex.unlock();
     });
@@ -94,15 +96,24 @@ BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
         stream.sendSizeHints( testHints );
     }
 
-    mutex.lock();
-    received.wait( &mutex, 2000 /*ms*/ );
-    mutex.unlock();
+    for( size_t i = 0; i < 20; ++i )
+    {
+        mutex.lock();
+        received.wait( &mutex, 100 /*ms*/ );
+        if( receivedState )
+        {
+            BOOST_CHECK_EQUAL( streamId.toStdString(),
+                               testStreamId.toStdString( ));
+            BOOST_CHECK( sizeHints == testHints );
 
-    BOOST_CHECK_EQUAL( streamId.toStdString(), testStreamId.toStdString( ));
-    BOOST_CHECK( sizeHints == testHints );
-
-    serverThread.quit();
-    serverThread.wait();
+            serverThread.quit();
+            serverThread.wait();
+            mutex.unlock();
+            return;
+        }
+        mutex.unlock();
+    }
+    BOOST_CHECK( !"reachable" );
 }
 
 BOOST_AUTO_TEST_CASE( testRegisterForEventReceivedByServer )
@@ -121,6 +132,7 @@ BOOST_AUTO_TEST_CASE( testRegisterForEventReceivedByServer )
     bool exclusiveBind = false;
     deflect::EventReceiver* eventReceiver = nullptr;
 
+    bool receivedState = false;
     server->connect( server, &deflect::Server::registerToEvents,
              [&]( const QString id, const bool exclusive,
                      deflect::EventReceiver* receiver )
@@ -129,6 +141,7 @@ BOOST_AUTO_TEST_CASE( testRegisterForEventReceivedByServer )
         exclusiveBind = exclusive;
         eventReceiver = receiver;
         mutex.lock();
+        receivedState = true;
         received.wakeAll();
         mutex.unlock();
     });
@@ -140,14 +153,24 @@ BOOST_AUTO_TEST_CASE( testRegisterForEventReceivedByServer )
         // Just send an event to check the streamId received by the server
         stream.registerForEvents( true );
     }
-    mutex.lock();
-    received.wait( &mutex, 2000 /*ms*/ );
-    mutex.unlock();
 
-    BOOST_CHECK_EQUAL( streamId.toStdString(), testStreamId.toStdString( ));
-    BOOST_CHECK_EQUAL( exclusiveBind, true );
-    BOOST_CHECK( eventReceiver );
+    for( size_t i = 0; i < 20; ++i )
+    {
+        mutex.lock();
+        received.wait( &mutex, 100 /*ms*/ );
+        if( receivedState )
+        {
+            BOOST_CHECK_EQUAL( streamId.toStdString(),
+                               testStreamId.toStdString( ));
+            BOOST_CHECK( exclusiveBind );
+            BOOST_CHECK( eventReceiver );
 
-    serverThread.quit();
-    serverThread.wait();
+            serverThread.quit();
+            serverThread.wait();
+            mutex.unlock();
+            return;
+        }
+        mutex.unlock();
+    }
+    BOOST_CHECK( !"reachable" );
 }
