@@ -60,35 +60,36 @@ BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp );
 
 BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
 {
-    deflect::SizeHints testHints;
-    testHints.maxWidth = 500;
-    testHints.preferredHeight= 200;
-
     QThread serverThread;
-    QWaitCondition received;
-    QMutex mutex;
-
-    QString streamId;
-    deflect::SizeHints sizeHints;
-
     deflect::Server* server = new deflect::Server( 0 /* OS-chosen port */ );
-    server->connect( server, &deflect::Server::receivedSizeHints,
-                     [&]( const QString id, const deflect::SizeHints hints )
-                     {
-                         streamId = id;
-                         sizeHints = hints;
-                         mutex.lock();
-                         received.wakeAll();
-                         mutex.unlock();
-                     });
     server->moveToThread( &serverThread );
     serverThread.connect( &serverThread, &QThread::finished,
                           server, &deflect::Server::deleteLater );
     serverThread.start();
 
+    QWaitCondition received;
+    QMutex mutex;
+
+    deflect::SizeHints testHints;
+    testHints.maxWidth = 500;
+    testHints.preferredHeight= 200;
+
+    QString streamId;
+    deflect::SizeHints sizeHints;
+
+    server->connect( server, &deflect::Server::receivedSizeHints,
+                     [&]( const QString id, const deflect::SizeHints hints )
+    {
+        streamId = id;
+        sizeHints = hints;
+        mutex.lock();
+        received.wakeAll();
+        mutex.unlock();
+    });
+
     {
         deflect::Stream stream( testStreamId.toStdString(), "localhost",
-                                server->serverPort());
+                                server->serverPort( ));
         BOOST_CHECK( stream.isConnected( ));
         stream.sendSizeHints( testHints );
     }
