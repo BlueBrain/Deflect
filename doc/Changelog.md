@@ -5,6 +5,8 @@ Changelog {#Changelog}
 
 ### 0.11.0 (git master)
 
+* [106](https://github.com/BlueBrain/Deflect/pull/106):
+  DesktopStreamer: Rename 'interaction' -> 'remote control', off by default.
 * [103](https://github.com/BlueBrain/Deflect/pull/103):
   DesktopStreamer: prevent AppNap of being re-enabled automatically
 * [102](https://github.com/BlueBrain/Deflect/pull/102):
