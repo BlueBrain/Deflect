@@ -347,12 +347,15 @@ void MainWindow::_regulateFrameRate()
 
 std::string MainWindow::_getStreamHost() const
 {
-    QString streamHost;
-    if( _hostComboBox->findText(_hostComboBox->currentText( )) == -1 )
-        streamHost = _hostComboBox->currentText();
-    else
-        streamHost = _hostComboBox->currentData().toString();
-    return streamHost.toStdString();
+    if( _hostComboBox->findText( _hostComboBox->currentText( )) != -1 &&
+            _hostComboBox->currentData().isValid( ))
+    {
+        // hardcoded preset (with associated data different than displayed text)
+        return _hostComboBox->currentData().toString().toStdString();
+    }
+
+    // user input text, either stored or not entered (yet), no associated data
+    return _hostComboBox->currentText().toStdString();
 }
 
 void MainWindow::_onStreamEventsBoxClicked( const bool checked )
