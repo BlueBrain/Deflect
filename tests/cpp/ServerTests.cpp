@@ -94,26 +94,26 @@ BOOST_AUTO_TEST_CASE( testSizeHintsReceivedByServer )
                                 server->serverPort( ));
         BOOST_CHECK( stream.isConnected( ));
         stream.sendSizeHints( testHints );
-    }
 
-    for( size_t i = 0; i < 20; ++i )
-    {
-        mutex.lock();
-        received.wait( &mutex, 100 /*ms*/ );
-        if( receivedState )
+        for( size_t i = 0; i < 20; ++i )
         {
-            BOOST_CHECK_EQUAL( streamId.toStdString(),
-                               testStreamId.toStdString( ));
-            BOOST_CHECK( sizeHints == testHints );
+            mutex.lock();
+            received.wait( &mutex, 100 /*ms*/ );
+            if( receivedState )
+            {
+                BOOST_CHECK_EQUAL( streamId.toStdString(),
+                                   testStreamId.toStdString( ));
+                BOOST_CHECK( sizeHints == testHints );
 
-            serverThread.quit();
-            serverThread.wait();
+                serverThread.quit();
+                serverThread.wait();
+                mutex.unlock();
+                return;
+            }
             mutex.unlock();
-            return;
         }
-        mutex.unlock();
+        BOOST_CHECK( !"reachable" );
     }
-    BOOST_CHECK( !"reachable" );
 }
 
 BOOST_AUTO_TEST_CASE( testRegisterForEventReceivedByServer )
