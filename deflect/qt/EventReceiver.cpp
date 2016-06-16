@@ -105,7 +105,13 @@ void EventReceiver::_onEvent( int socket )
         case Event::EVT_SWIPE_UP:
         case Event::EVT_SWIPE_DOWN:
         case Event::EVT_KEY_PRESS:
+            emit keyPress( deflectEvent.key, deflectEvent.modifiers,
+                           QString::fromStdString( deflectEvent.text ));
+            break;
         case Event::EVT_KEY_RELEASE:
+            emit keyRelease( deflectEvent.key, deflectEvent.modifiers,
+                             QString::fromStdString( deflectEvent.text ));
+            break;
         default:
             break;
         }

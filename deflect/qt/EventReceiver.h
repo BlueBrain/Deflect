@@ -65,6 +65,8 @@ signals:
     void moved( double x, double y );
     void resized( double x, double y );
     void wheeled( double x, double y, double dy );
+    void keyPress( int key, int modifiers, QString text );
+    void keyRelease( int key, int modifiers, QString text );
 
 private slots:
     void _onEvent( int socket );

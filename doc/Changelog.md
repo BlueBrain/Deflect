@@ -1,6 +1,13 @@
 Changelog {#Changelog}
 ============
 
+## Deflect 0.12
+
+### 0.12.0 (git master)
+
+* [114](https://github.com/BlueBrain/Deflect/pull/114):
+  QmlStreamer: added support for keyboard events
+
 ## Deflect 0.11
 
 ### 0.11.1 (30-06-2016)
