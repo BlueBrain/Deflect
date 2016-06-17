@@ -5,13 +5,16 @@ Changelog {#Changelog}
 
 ### 0.11.0 (git master)
 
+* [110](https://github.com/BlueBrain/Deflect/pull/110):
+  DesktopStreamer: Support for streaming multiple windows on OSX disabled by
+  default, can be enabled with cmake -DDESKTOPSTREAMER_ENABLE_MULTIWINDOW=ON.
 * [106](https://github.com/BlueBrain/Deflect/pull/106):
   DesktopStreamer: Rename 'interaction' -> 'remote control', off by default.
 * [103](https://github.com/BlueBrain/Deflect/pull/103):
   DesktopStreamer: prevent AppNap of being re-enabled automatically
 * [102](https://github.com/BlueBrain/Deflect/pull/102):
   DeflectQt: Continue rendering & streaming after updates for a while to
-  compensate for running animations, fix spurious missing event handling  
+  compensate for running animations, fix spurious missing event handling
 * [101](https://github.com/BlueBrain/Deflect/pull/101):
   DesktopStreamer: windows that are streamed independently are activated
   (i.e. sent to the foreground) before applying an interaction event. The mouse
