@@ -41,7 +41,7 @@
 #include "MainWindow.h"
 
 #ifdef __APPLE__
-#  ifdef DEFLECT_USE_QT5MACEXTRAS
+#  ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
 #    include "DesktopWindowsModel.h"
 #  endif
 #  if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
@@ -121,7 +121,7 @@ std::string update()
 {
     QPixmap pixmap;
 
-#ifdef DEFLECT_USE_QT5MACEXTRAS
+#ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
     if( !_window.isValid( ))
         return "Window does not exist anymore";
 
@@ -145,7 +145,7 @@ std::string update()
         return "Got no pixmap for desktop or window";
 
     QImage image = pixmap.toImage();
-#ifdef DEFLECT_USE_QT5MACEXTRAS
+#ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
     // render mouse cursor only on active window and full desktop streams
     if( DesktopWindowsModel::isActive( _pid ) ||
         model->data( _window, Qt::DisplayRole ) == "Desktop" )
@@ -181,7 +181,7 @@ void _sendMouseEvent( const CGEventType type, const CGMouseButton button,
     CGEventRef event = CGEventCreateMouseEvent( 0, type, point, button );
     CGEventSetType( event, type );
 
-#ifdef DEFLECT_USE_QT5MACEXTRAS
+#ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
     // If the destination app is not active, store the event in a queue and
     // consume it after it's been activated (next iteration of main run loop)
     if( !DesktopWindowsModel::isActive( _pid ))
@@ -263,7 +263,7 @@ void _sendMouseDoubleClickEvent( const float, const float ) {}
     const QImage _cursor;
     QImage _image;
     const int _pid;
-#ifdef DEFLECT_USE_QT5MACEXTRAS
+#ifdef __APPLE__
     typedef std::queue< CGEventRef > EventQueue;
     EventQueue _events;
 #endif

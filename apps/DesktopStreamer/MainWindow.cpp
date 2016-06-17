@@ -1,5 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2011-2012, The University of Texas at Austin.       */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -57,7 +59,7 @@ typedef __int32 int32_t;
 #  include <unistd.h>
 #endif
 
-#ifdef DEFLECT_USE_QT5MACEXTRAS
+#ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
 #  include "DesktopWindowsModel.h"
 #endif
 
@@ -103,7 +105,7 @@ MainWindow::MainWindow()
     gethostname( hostname, 256 );
     _streamIdLineEdit->setText( QString( "%1" ).arg( hostname ));
 
-#ifdef DEFLECT_USE_QT5MACEXTRAS
+#ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
     _listView->setModel( new DesktopWindowsModel );
 
     // select 'Desktop' item as initial default stream item
@@ -195,7 +197,7 @@ void MainWindow::_updateStreams()
 {
     const std::string& host = _getStreamHost();
 
-#ifdef DEFLECT_USE_QT5MACEXTRAS
+#ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
     const QModelIndexList windowIndices =
         _listView->selectionModel()->selectedIndexes();
 
@@ -304,7 +306,7 @@ void MainWindow::_shareDesktopUpdate()
     }
 }
 
-#ifdef DEFLECT_USE_QT5MACEXTRAS
+#ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
 void MainWindow::_deselect( ConstStreamPtr stream )
 {
     const QPersistentModelIndex& index = stream->getIndex();
