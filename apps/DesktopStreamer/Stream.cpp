@@ -74,14 +74,14 @@ public:
 
 bool processEvents( const bool interact )
 {
-    while( _stream.isRegisteredForEvents() && _stream.hasEvent( ))
+    while( _stream.hasEvent( ))
     {
-        deflect::Event event = _stream.getEvent();
+        const deflect::Event event = _stream.getEvent();
 
         if( event.type == deflect::Event::EVT_CLOSE )
             return false;
 
-        if( !interact )
+        if( !_stream.isRegisteredForEvents() || !interact )
             continue;
 
         switch( event.type )

@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.11.0 (git master)
 
+* [111](https://github.com/BlueBrain/Deflect/pull/111):
+  DesktopStreamer: bugfix; stop streaming when the server closes the stream
+  and the "remote control" option was not enabled.
 * [110](https://github.com/BlueBrain/Deflect/pull/110):
   DesktopStreamer: Support for streaming multiple windows on OSX disabled by
   default, can be enabled with cmake -DDESKTOPSTREAMER_ENABLE_MULTIWINDOW=ON.
