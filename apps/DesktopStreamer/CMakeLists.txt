@@ -18,6 +18,7 @@ set(DESKTOPSTREAMER_SOURCES
 set(DESKTOPSTREAMER_LINK_LIBRARIES
   Deflect
   Qt5::Core
+  Qt5::Network
   Qt5::Widgets
 )
 
@@ -36,12 +37,11 @@ if(APPLE)
   list(APPEND DESKTOPSTREAMER_SOURCES AppNapSuspender.mm)
   list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES "-framework Foundation")
   if(TARGET Qt5::MacExtras)
-    option(DESKTOPSTREAMER_ENABLE_MULTIWINDOW "Enable support for streaming multiple windows" OFF)
-    if(DESKTOPSTREAMER_ENABLE_MULTIWINDOW)
-      list(APPEND DESKTOPSTREAMER_SOURCES DesktopWindowsModel.mm)
-      list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES
-        Qt5::MacExtras "-framework AppKit")
-    endif()
+    list(APPEND DESKTOPSTREAMER_HEADERS DesktopWindowsModel.h)
+    list(APPEND DESKTOPSTREAMER_SOURCES DesktopWindowsModel.mm)
+    list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES
+      Qt5::MacExtras "-framework AppKit"
+    )
   endif()
   if(OSX_VERSION VERSION_LESS 10.9)
     list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES "-framework ApplicationServices")
@@ -55,9 +55,6 @@ endif()
 common_application(${DESKTOPSTREAMER_APP_NAME} GUI)
 
 if(APPLE)
-  if(TARGET Qt5::MacExtras AND DESKTOPSTREAMER_ENABLE_MULTIWINDOW)
-    target_compile_definitions(${DESKTOPSTREAMER_APP_NAME} PRIVATE DESKTOPSTREAMER_ENABLE_MULTIWINDOW)
-  endif()
   # create a zip for Puppet deployment
   install(CODE "execute_process(COMMAND zip -r
     ${DESKTOPSTREAMER_APP_NAME}-${PROJECT_VERSION}.zip ${DESKTOPSTREAMER_APP_NAME}.app

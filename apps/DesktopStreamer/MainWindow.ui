@@ -33,7 +33,7 @@
     <item>
      <layout class="QFormLayout" name="formLayout">
       <property name="sizeConstraint">
-       <enum>QLayout::SetFixedSize</enum>
+       <enum>QLayout::SetMinimumSize</enum>
       </property>
       <property name="fieldGrowthPolicy">
        <enum>QFormLayout::ExpandingFieldsGrow</enum>
@@ -51,7 +51,7 @@
        <number>6</number>
       </property>
       <item row="0" column="0">
-       <widget class="QLabel" name="hostnameLabel">
+       <widget class="QLabel" name="_hostLabel">
         <property name="text">
          <string>Stream to</string>
         </property>
@@ -87,6 +87,9 @@
       </item>
       <item row="1" column="0" colspan="2">
        <widget class="QPushButton" name="_streamButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="minimumSize">
          <size>
           <width>268</width>
@@ -124,6 +127,9 @@
       </item>
       <item row="2" column="0" colspan="2">
        <widget class="QListView" name="_listView">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
           <horstretch>0</horstretch>
@@ -166,13 +172,27 @@
        </widget>
       </item>
       <item row="3" column="0">
-       <widget class="QLabel" name="streamnameLabel">
+       <widget class="QLabel" name="_remoteControlLabel">
+        <property name="text">
+         <string>Remote control</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="_remoteControlCheckBox">
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="_streamIdLabel">
         <property name="text">
          <string>Stream name</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
+      <item row="4" column="1">
        <widget class="QLineEdit" name="_streamIdLineEdit">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -185,22 +205,8 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="_remoteControlLabel">
-        <property name="text">
-         <string>Remote control</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QCheckBox" name="_remoteControlCheckBox">
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
       <item row="5" column="0">
-       <widget class="QLabel" name="maxFrameRateLabel">
+       <widget class="QLabel" name="_maxFrameRateLabel">
         <property name="text">
          <string>Frame rate</string>
         </property>
@@ -247,12 +253,36 @@
     </property>
     <addaction name="_actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="_actionAdvancedSettings"/>
+    <addaction name="_actionMultiWindowMode"/>
+   </widget>
+   <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="_statusbar"/>
   <action name="_actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="_actionMultiWindowMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Multi-window mode (experimental)</string>
+   </property>
+  </action>
+  <action name="_actionAdvancedSettings">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Advanced settings</string>
    </property>
   </action>
  </widget>
