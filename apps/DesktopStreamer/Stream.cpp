@@ -41,7 +41,7 @@
 #include "MainWindow.h"
 
 #ifdef __APPLE__
-#  ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
+#  ifdef DEFLECT_USE_QT5MACEXTRAS
 #    include "DesktopWindowsModel.h"
 #  endif
 #  if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
@@ -121,31 +121,29 @@ std::string update()
 {
     QPixmap pixmap;
 
-#ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
-    if( !_window.isValid( ))
-        return "Window does not exist anymore";
-
-    const QAbstractItemModel* model = _parent.getItemModel();
-    if( _window.row() > 0 )
-    {
-        pixmap = model->data( _window,
-                          DesktopWindowsModel::ROLE_PIXMAP ).value< QPixmap >();
-        _windowRect = model->data( _window,
-                              DesktopWindowsModel::ROLE_RECT ).value< QRect >();
-    }
-    else
-#endif
+    if( !_window.isValid( ) || _window.row() == 0 )
     {
         pixmap = QApplication::primaryScreen()->grabWindow( 0 );
         _windowRect = QRect( 0, 0, pixmap.width() / _parent.devicePixelRatio(),
                              pixmap.height() / _parent.devicePixelRatio( ));
+    }
+    else
+    {
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+        const QAbstractItemModel* model = _parent.getItemModel();
+        pixmap = model->data( _window,
+                          DesktopWindowsModel::ROLE_PIXMAP ).value< QPixmap >();
+        _windowRect = model->data( _window,
+                              DesktopWindowsModel::ROLE_RECT ).value< QRect >();
+#endif
     }
 
     if( pixmap.isNull( ))
         return "Got no pixmap for desktop or window";
 
     QImage image = pixmap.toImage();
-#ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+    const QAbstractItemModel* model = _parent.getItemModel();
     // render mouse cursor only on active window and full desktop streams
     if( DesktopWindowsModel::isActive( _pid ) ||
         model->data( _window, Qt::DisplayRole ) == "Desktop" )
@@ -181,7 +179,7 @@ void _sendMouseEvent( const CGEventType type, const CGMouseButton button,
     CGEventRef event = CGEventCreateMouseEvent( 0, type, point, button );
     CGEventSetType( event, type );
 
-#ifdef DESKTOPSTREAMER_ENABLE_MULTIWINDOW
+#ifdef DEFLECT_USE_QT5MACEXTRAS
     // If the destination app is not active, store the event in a queue and
     // consume it after it's been activated (next iteration of main run loop)
     if( !DesktopWindowsModel::isActive( _pid ))

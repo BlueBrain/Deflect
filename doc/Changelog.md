@@ -3,7 +3,16 @@ Changelog {#Changelog}
 
 ## Deflect 0.11
 
-### 0.11.0 (git master)
+### 0.11.1 (git master)
+
+* [112](https://github.com/BlueBrain/Deflect/pull/112):
+  DesktopStreamer improvements:
+  - new "view" menu to show advanced options (stream id, fps), hidden by default
+  - the experimental multi-window streaming on OSX can be selected at runtime
+    through the view menu (no longer a CMake option)
+  - improved resizing policy of the main window
+
+### 0.11.0 (17-06-2016)
 
 * [111](https://github.com/BlueBrain/Deflect/pull/111):
   DesktopStreamer: bugfix; stop streaming when the server closes the stream
