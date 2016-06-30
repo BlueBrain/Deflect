@@ -3,7 +3,7 @@ Changelog {#Changelog}
 
 ## Deflect 0.11
 
-### 0.11.1 (git master)
+### 0.11.1 (30-06-2016)
 
 * [112](https://github.com/BlueBrain/Deflect/pull/112):
   DesktopStreamer improvements:
