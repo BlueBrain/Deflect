@@ -97,11 +97,14 @@ private slots:
     void _onMoved( double, double );
     void _onResized( double, double );
     void _onWheeled( double, double, double );
+    void _onKeyPress( int key, int modifiers, QString text );
+    void _onKeyRelease( int key, int modifiers, QString text );
 
 signals:
     void streamClosed();
 
 private:
+    void _send( QKeyEvent* keyEvent );
     std::string _getDeflectStreamIdentifier() const;
     bool _setupDeflectStream();
     void _updateSizes( const QSize& size );

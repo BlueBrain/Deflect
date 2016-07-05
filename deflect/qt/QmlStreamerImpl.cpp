@@ -286,6 +286,41 @@ void QmlStreamer::Impl::_onResized( double x_, double y_ )
     QCoreApplication::postEvent( this, resizeEvent_ );
 }
 
+void QmlStreamer::Impl::_onKeyPress( int key, int modifiers, QString text )
+{
+    QKeyEvent* keyEvent_ = new QKeyEvent( QEvent::KeyPress, key,
+                                          (Qt::KeyboardModifiers)modifiers,
+                                          text );
+    _send( keyEvent_ );
+}
+
+void QmlStreamer::Impl::_onKeyRelease( int key, int modifiers, QString text )
+{
+    QKeyEvent* keyEvent_ = new QKeyEvent( QEvent::KeyRelease, key,
+                                          (Qt::KeyboardModifiers)modifiers,
+                                          text );
+    _send( keyEvent_ );
+}
+
+void QmlStreamer::Impl::_send( QKeyEvent* keyEvent_ )
+{
+    // Work around missing key event support in Qt for offscreen windows.
+
+    const QList<QQuickItem*> items =
+            _rootItem->findChildren<QQuickItem*>( QString(),
+                                                  Qt::FindChildrenRecursively );
+    for( QQuickItem* item : items )
+    {
+        if( item->hasFocus( ))
+        {
+            _quickWindow->sendEvent( item, keyEvent_ );
+            if( keyEvent_->isAccepted())
+                break;
+        }
+    }
+    delete keyEvent_;
+}
+
 bool QmlStreamer::Impl::_setupRootItem()
 {
     disconnect( _qmlComponent, &QQmlComponent::statusChanged,
@@ -372,6 +407,10 @@ bool QmlStreamer::Impl::_setupDeflectStream()
              this, &QmlStreamer::Impl::_onResized );
     connect( _eventHandler, &EventReceiver::wheeled,
              this, &QmlStreamer::Impl::_onWheeled );
+    connect( _eventHandler, &EventReceiver::keyPress,
+             this, &QmlStreamer::Impl::_onKeyPress );
+    connect( _eventHandler, &EventReceiver::keyRelease,
+             this, &QmlStreamer::Impl::_onKeyRelease );
 
     return true;
 }
