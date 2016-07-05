@@ -84,7 +84,7 @@ ServerWorker::~ServerWorker()
     if( !_streamId.isEmpty( ))
         emit removeStreamSource( _streamId, _sourceId );
 
-    if( _tcpSocket->state() == QAbstractSocket::ConnectedState )
+    if( _isConnected( ))
         _sendQuit();
 
     delete _tcpSocket;
@@ -138,7 +138,7 @@ void ServerWorker::_processMessages()
     _tcpSocket->flush();
 
     // Finish reading messages from the socket if connection closed
-    if( _tcpSocket->state() != QAbstractSocket::ConnectedState )
+    if( !_isConnected( ))
     {
         while( _tcpSocket->bytesAvailable() >= headerSize )
             _receiveMessage();
@@ -321,8 +321,13 @@ bool ServerWorker::_send( const MessageHeader& messageHeader )
 void ServerWorker::_flushSocket()
 {
     _tcpSocket->flush();
-    while( _tcpSocket->bytesToWrite() > 0 )
+    while( _tcpSocket->bytesToWrite() > 0 && _isConnected( ))
         _tcpSocket->waitForBytesWritten();
+}
+
+bool ServerWorker::_isConnected() const
+{
+    return _tcpSocket->state() == QTcpSocket::ConnectedState;
 }
 
 }

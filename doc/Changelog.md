@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [115](https://github.com/BlueBrain/Deflect/pull/115):
+  Bugfix for possible endless loop of warnings in ServerWorker::_flushSocket():
+  "QAbstractSocket::waitForBytesWritten() is not allowed in UnconnectedState"
 * [114](https://github.com/BlueBrain/Deflect/pull/114):
   QmlStreamer: added support for keyboard events
 

@@ -112,6 +112,7 @@ private:
     void _sendQuit();
     bool _send( const MessageHeader& messageHeader );
     void _flushSocket();
+    bool _isConnected() const;
 };
 
 }
