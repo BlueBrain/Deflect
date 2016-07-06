@@ -49,8 +49,6 @@
 
 #include <iostream>
 
-#include <boost/thread/thread.hpp>
-
 #include <QHostInfo>
 
 namespace
