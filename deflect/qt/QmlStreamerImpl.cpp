@@ -193,7 +193,10 @@ void QmlStreamer::Impl::_render()
         _renderControl->initialize( _context );
 
         if( !_setupDeflectStream( ))
+        {
             qWarning() << "Could not setup Deflect stream";
+            emit streamClosed();
+        }
     }
 
     if( !_streaming )
@@ -228,7 +231,9 @@ void QmlStreamer::Impl::_render()
     if( !_streaming )
     {
         killTimer( _renderTimer );
+        _renderTimer = 0;
         killTimer( _stopRenderingDelayTimer );
+        _stopRenderingDelayTimer = 0;
         emit streamClosed();
         return;
     }

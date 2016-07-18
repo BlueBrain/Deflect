@@ -5,6 +5,8 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [117](https://github.com/BlueBrain/Deflect/pull/117):
+  Fix several issues with stream connection / disconnection [DISCL-375]
 * [115](https://github.com/BlueBrain/Deflect/pull/115):
   Bugfix for possible endless loop of warnings in ServerWorker::_flushSocket():
   "QAbstractSocket::waitForBytesWritten() is not allowed in UnconnectedState"
