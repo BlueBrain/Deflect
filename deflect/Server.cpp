@@ -88,6 +88,15 @@ Server::Server( const int port )
 
 Server::~Server()
 {
+    for( QObject* child : children())
+    {
+        if( QThread* workerThread = qobject_cast<QThread*>( child ))
+        {
+            workerThread->quit();
+            workerThread->wait();
+        }
+    }
+
     delete _impl;
 }
 
