@@ -85,7 +85,8 @@ struct Event
         EVT_KEY_PRESS,
         EVT_KEY_RELEASE,
         EVT_VIEW_SIZE_CHANGED,
-        EVT_TAP_AND_HOLD
+        EVT_TAP_AND_HOLD,
+        EVT_PAN
     };
 
     /** The type of event */

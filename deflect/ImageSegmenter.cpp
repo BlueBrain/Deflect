@@ -98,7 +98,7 @@ bool ImageSegmenter::_generateJpeg( const ImageWrapper& image,
     if( first )
     {
         first = false;
-        std::cout << "LibJpegTurbo not available, not using compression"
+        std::cerr << "LibJpegTurbo not available, not using compression"
                   << std::endl;
     }
     return generateRaw( image, handler );
