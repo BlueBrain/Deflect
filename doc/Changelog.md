@@ -5,6 +5,8 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [118](https://github.com/BlueBrain/Deflect/pull/118):
+  New "pan" event for multi-finger pan gestures.
 * [117](https://github.com/BlueBrain/Deflect/pull/117):
   Fix several issues with stream connection / disconnection [DISCL-375]
 * [115](https://github.com/BlueBrain/Deflect/pull/115):
