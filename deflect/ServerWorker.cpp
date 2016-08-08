@@ -242,6 +242,10 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
         break;
     }
 
+    case MESSAGE_TYPE_DATA:
+        emit receivedData( _streamId, byteArray );
+        break;
+
     case MESSAGE_TYPE_BIND_EVENTS:
     case MESSAGE_TYPE_BIND_EVENTS_EX:
         if( _registeredToEvents )

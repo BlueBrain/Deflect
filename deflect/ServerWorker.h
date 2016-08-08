@@ -81,6 +81,8 @@ signals:
 
     void receivedSizeHints( QString uri, deflect::SizeHints hints );
 
+    void receivedData( QString uri, QByteArray data );
+
     void connectionClosed();
 
     /** @internal */

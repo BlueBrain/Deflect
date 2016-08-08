@@ -174,3 +174,58 @@ BOOST_AUTO_TEST_CASE( testRegisterForEventReceivedByServer )
     }
     BOOST_CHECK( !"reachable" );
 }
+
+BOOST_AUTO_TEST_CASE( testDataReceivedByServer )
+{
+    QThread serverThread;
+    deflect::Server* server = new deflect::Server( 0 /* OS-chosen port */ );
+    server->moveToThread( &serverThread );
+    serverThread.connect( &serverThread, &QThread::finished,
+                          server, &deflect::Server::deleteLater );
+    serverThread.start();
+
+    QWaitCondition received;
+    QMutex mutex;
+
+    QString streamId;
+    std::string receivedData;
+    const auto sentData = std::string{ "Hello World!" };
+
+    bool receivedState = false;
+    server->connect( server, &deflect::Server::receivedData,
+             [&]( const QString id, QByteArray data )
+    {
+        streamId = id;
+        receivedData = QString( data ).toStdString();
+        mutex.lock();
+        receivedState = true;
+        received.wakeAll();
+        mutex.unlock();
+    });
+
+    {
+        deflect::Stream stream( testStreamId.toStdString(), "localhost",
+                                server->serverPort( ));
+        BOOST_REQUIRE( stream.isConnected( ));
+        stream.sendData( sentData.data(), sentData.size( ));
+    }
+
+    for( size_t i = 0; i < 20; ++i )
+    {
+        mutex.lock();
+        received.wait( &mutex, 100 /*ms*/ );
+        if( receivedState )
+        {
+            BOOST_CHECK_EQUAL( streamId.toStdString(),
+                               testStreamId.toStdString( ));
+            BOOST_CHECK_EQUAL( receivedData, sentData );
+
+            serverThread.quit();
+            serverThread.wait();
+            mutex.unlock();
+            return;
+        }
+        mutex.unlock();
+    }
+    BOOST_CHECK( !"reachable" );
+}

@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [119](https://github.com/BlueBrain/Deflect/pull/119):
+  Added deflect::Stream::sendData() to allow sending user-defined information
+  to the deflect::Server.
 * [118](https://github.com/BlueBrain/Deflect/pull/118):
   New "pan" event for multi-finger pan gestures.
 * [117](https://github.com/BlueBrain/Deflect/pull/117):

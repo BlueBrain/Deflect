@@ -138,6 +138,8 @@ void Server::incomingConnection( const qintptr socketHandle )
              this, &Server::registerToEvents );
     connect( worker, &ServerWorker::receivedSizeHints,
              this, &Server::receivedSizeHints );
+    connect( worker, &ServerWorker::receivedData,
+             this, &Server::receivedData );
     connect( this, &Server::_pixelStreamerClosed,
              worker, &ServerWorker::closeConnection );
     connect( this, &Server::_eventRegistrationReply,
