@@ -108,6 +108,9 @@ public:
     /** @sa Stream::sendSizeHints */
     bool sendSizeHints( const SizeHints& hints );
 
+    /** Send a user-defined block of data to the server. */
+    bool send( QByteArray data );
+
     /** The stream identifier. */
     const std::string id;
 

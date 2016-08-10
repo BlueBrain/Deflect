@@ -189,4 +189,9 @@ void Stream::sendSizeHints( const SizeHints& hints )
     _impl->sendSizeHints( hints );
 }
 
+bool Stream::sendData( const char* data, const size_t count )
+{
+    return _impl->send( QByteArray::fromRawData( data, count ));
+}
+
 }

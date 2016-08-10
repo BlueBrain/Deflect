@@ -177,4 +177,10 @@ bool StreamPrivate::sendSizeHints( const SizeHints& hints )
     return socket.send( mh, message );
 }
 
+bool StreamPrivate::send( const QByteArray data )
+{
+    const MessageHeader mh( MESSAGE_TYPE_DATA, data.size(), id );
+    return socket.send( mh, data );
+}
+
 }

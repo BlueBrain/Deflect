@@ -259,6 +259,16 @@ public:
      */
     DEFLECT_API void sendSizeHints( const SizeHints& hints );
 
+    /**
+     * Send data to the Server.
+     *
+     * @param data the pointer to the data buffer.
+     * @param count the number of bytes to send.
+     * @return true if the data could be sent, false otherwise
+     * @version 1.3
+     */
+    DEFLECT_API bool sendData( const char* data, size_t count );
+
 private:
     Stream( const Stream& ) = delete;
     const Stream& operator = ( const Stream& ) = delete;

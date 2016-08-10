@@ -83,6 +83,8 @@ signals:
 
     void receivedSizeHints( QString uri, deflect::SizeHints hints );
 
+    void receivedData( QString uri, QByteArray data );
+
 public slots:
     void onPixelStreamerClosed( QString uri );
     void onEventRegistrationReply( QString uri, bool success );
