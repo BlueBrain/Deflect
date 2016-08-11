@@ -140,6 +140,7 @@ BOOST_AUTO_TEST_CASE( testRegisterForEventReceivedByServer )
         streamId = id;
         exclusiveBind = exclusive;
         eventReceiver = receiver;
+        server->onEventRegistrationReply( id, true ); // send reply to Stream
         mutex.lock();
         receivedState = true;
         received.wakeAll();
@@ -150,8 +151,7 @@ BOOST_AUTO_TEST_CASE( testRegisterForEventReceivedByServer )
         deflect::Stream stream( testStreamId.toStdString(), "localhost",
                                 server->serverPort( ));
         BOOST_REQUIRE( stream.isConnected( ));
-        // Just send an event to check the streamId received by the server
-        stream.registerForEvents( true );
+        BOOST_CHECK( stream.registerForEvents( true ));
     }
 
     for( size_t i = 0; i < 20; ++i )
