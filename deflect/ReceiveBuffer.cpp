@@ -44,7 +44,7 @@ namespace deflect
 
 ReceiveBuffer::ReceiveBuffer()
     : _lastFrameComplete( 0 )
-    , _allowedToSend( true )
+    , _allowedToSend( false )
 {
 }
 
