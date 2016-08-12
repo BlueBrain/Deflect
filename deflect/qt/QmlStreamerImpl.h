@@ -104,7 +104,8 @@ signals:
     void streamClosed();
 
 private:
-    void _send( QKeyEvent* keyEvent );
+    void _send( QKeyEvent& keyEvent );
+    bool _sendToWebengineviewItems( QKeyEvent& keyEvent );
     std::string _getDeflectStreamIdentifier() const;
     bool _setupDeflectStream();
     void _updateSizes( const QSize& size );

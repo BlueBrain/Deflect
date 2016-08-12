@@ -51,9 +51,14 @@
 #include <QQuickRenderControl>
 #include <QQuickWindow>
 
+#if DEFLECT_USE_QT5GUI
+#include <QtGui/private/qopenglcontext_p.h>
+#endif
+
 namespace
 {
 const std::string DEFAULT_STREAM_ID( "QmlStreamer" );
+const QString WEBENGINEVIEW_OBJECT_NAME( "webengineview" );
 }
 
 class RenderControl : public QQuickRenderControl
@@ -111,6 +116,15 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
 
     _context->setFormat( format_ );
     _context->create();
+
+    // Test if user has setup shared GL contexts (QtWebEngine::initialize).
+    // If so, setup global share context needed by the Qml WebEngineView.
+    if( QCoreApplication::testAttribute( Qt::AA_ShareOpenGLContexts ))
+#if DEFLECT_USE_QT5GUI
+        qt_gl_set_global_share_context( _context );
+#else
+        qWarning() << "DeflectQt was not compiled with WebEngineView support";
+#endif
 
     // Pass _context->format(), not format_. Format does not specify and color
     // buffer sizes, while the context, that has just been created, reports a
@@ -293,37 +307,54 @@ void QmlStreamer::Impl::_onResized( double x_, double y_ )
 
 void QmlStreamer::Impl::_onKeyPress( int key, int modifiers, QString text )
 {
-    QKeyEvent* keyEvent_ = new QKeyEvent( QEvent::KeyPress, key,
-                                          (Qt::KeyboardModifiers)modifiers,
-                                          text );
+    QKeyEvent keyEvent_( QEvent::KeyPress, key,
+                         (Qt::KeyboardModifiers)modifiers, text );
     _send( keyEvent_ );
 }
 
 void QmlStreamer::Impl::_onKeyRelease( int key, int modifiers, QString text )
 {
-    QKeyEvent* keyEvent_ = new QKeyEvent( QEvent::KeyRelease, key,
-                                          (Qt::KeyboardModifiers)modifiers,
-                                          text );
+    QKeyEvent keyEvent_( QEvent::KeyRelease, key,
+                         (Qt::KeyboardModifiers)modifiers, text );
     _send( keyEvent_ );
 }
 
-void QmlStreamer::Impl::_send( QKeyEvent* keyEvent_ )
+void QmlStreamer::Impl::_send( QKeyEvent& keyEvent_ )
 {
     // Work around missing key event support in Qt for offscreen windows.
 
-    const QList<QQuickItem*> items =
-            _rootItem->findChildren<QQuickItem*>( QString(),
-                                                  Qt::FindChildrenRecursively );
-    for( QQuickItem* item : items )
+    if( _sendToWebengineviewItems( keyEvent_ ))
+        return;
+
+    const auto items = _rootItem->findChildren<QQuickItem*>();
+    for( auto item : items )
     {
         if( item->hasFocus( ))
         {
-            _quickWindow->sendEvent( item, keyEvent_ );
-            if( keyEvent_->isAccepted())
+            _quickWindow->sendEvent( item, &keyEvent_ );
+            if( keyEvent_.isAccepted())
                 break;
         }
     }
-    delete keyEvent_;
+}
+
+bool QmlStreamer::Impl::_sendToWebengineviewItems( QKeyEvent& keyEvent_ )
+{
+    // Special handling for WebEngineView in offscreen Qml windows.
+
+    const auto items =
+            _rootItem->findChildren<QQuickItem*>( WEBENGINEVIEW_OBJECT_NAME );
+    for( auto webengineviewItem : items )
+    {
+        if( webengineviewItem->hasFocus( ))
+        {
+            for( auto child : webengineviewItem->childItems( ))
+                QCoreApplication::instance()->sendEvent( child, &keyEvent_ );
+            if( keyEvent_.isAccepted( ))
+                return true;
+        }
+    }
+    return false;
 }
 
 bool QmlStreamer::Impl::_setupRootItem()
