@@ -106,6 +106,8 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
     , _streamHost( streamHost )
     , _streamId( streamId )
 {
+    _device.setType( QTouchDevice::TouchScreen );
+
     setSurfaceType( QSurface::OpenGLSurface );
 
     // Qt Quick may need a depth and stencil buffer
@@ -267,27 +269,31 @@ void QmlStreamer::Impl::_requestRender()
 
 void QmlStreamer::Impl::_onPressed( double x_, double y_ )
 {
-    const QPoint point( x_ * width(), y_ * height( ));
-    QMouseEvent* e = new QMouseEvent( QEvent::MouseButtonPress, point,
-                                      Qt::LeftButton, Qt::LeftButton,
-                                      Qt::NoModifier );
+    auto touchPoint = _makeTouchPoint( 0, { x_, y_ });
+    touchPoint.setState( Qt::TouchPointPressed );
+
+    auto* e = new QTouchEvent( QEvent::TouchBegin, &_device, Qt::NoModifier,
+                               Qt::TouchPointPressed, { touchPoint } );
     QCoreApplication::postEvent( _quickWindow, e );
 }
 
 void QmlStreamer::Impl::_onMoved( double x_, double y_ )
 {
-    const QPoint point( x_ * width(), y_ * height( ));
-    QMouseEvent* e = new QMouseEvent( QEvent::MouseMove, point, Qt::LeftButton,
-                                      Qt::LeftButton, Qt::NoModifier );
+    auto touchPoint = _makeTouchPoint( 0, { x_, y_ });
+    touchPoint.setState( Qt::TouchPointMoved );
+
+    auto* e = new QTouchEvent( QEvent::TouchUpdate, &_device, Qt::NoModifier,
+                               Qt::TouchPointMoved, { touchPoint } );
     QCoreApplication::postEvent( _quickWindow, e );
 }
 
 void QmlStreamer::Impl::_onReleased( double x_, double y_ )
 {
-    const QPoint point( x_ * width(), y_ * height( ));
-    QMouseEvent* e = new QMouseEvent( QEvent::MouseButtonRelease, point,
-                                      Qt::LeftButton, Qt::NoButton,
-                                      Qt::NoModifier );
+    auto touchPoint = _makeTouchPoint( 0, { x_, y_ });
+    touchPoint.setState( Qt::TouchPointReleased );
+
+    auto* e = new QTouchEvent( QEvent::TouchEnd, &_device, Qt::NoModifier,
+                               Qt::TouchPointReleased, { touchPoint } );
     QCoreApplication::postEvent( _quickWindow, e );
 }
 
@@ -463,6 +469,20 @@ void QmlStreamer::Impl::_updateSizes( const QSize& size_ )
         _rootItem->setWidth( size_.width( ));
         _rootItem->setHeight( size_.height( ));
     }
+}
+
+QTouchEvent::TouchPoint
+QmlStreamer::Impl::_makeTouchPoint( const int id, const QPointF& normPos ) const
+{
+    const QPoint pos( normPos.x() * width(), normPos.y() * height( ));
+
+    QTouchEvent::TouchPoint touchPoint( id );
+    touchPoint.setPressure( 1.0 );
+    touchPoint.setPos( pos );
+    touchPoint.setScreenPos( pos );
+    touchPoint.setNormalizedPos( normPos );
+
+    return touchPoint;
 }
 
 void QmlStreamer::Impl::resizeEvent( QResizeEvent* e )

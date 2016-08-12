@@ -109,6 +109,7 @@ private:
     std::string _getDeflectStreamIdentifier() const;
     bool _setupDeflectStream();
     void _updateSizes( const QSize& size );
+    QTouchEvent::TouchPoint _makeTouchPoint( int id, const QPointF& pos ) const;
 
     QOpenGLContext* _context;
     QOffscreenSurface* _offscreenSurface;
@@ -128,6 +129,8 @@ private:
     const std::string _streamHost;
     const std::string _streamId;
     SizeHints _sizeHints;
+
+    QTouchDevice _device;
 };
 
 }
