@@ -64,6 +64,7 @@ namespace qt
 {
 
 class EventReceiver;
+class QmlGestures;
 
 class QmlStreamer::Impl : public QWindow
 {
@@ -77,6 +78,7 @@ public:
 
     QQuickItem* getRootItem() { return _rootItem; }
     QQmlEngine* getQmlEngine() { return _qmlEngine; }
+    Stream* getStream() { return _stream; }
 
 protected:
     void resizeEvent( QResizeEvent* e ) final;
@@ -125,6 +127,7 @@ private:
 
     Stream* _stream;
     EventReceiver* _eventHandler;
+    QmlGestures* _qmlGestures;
     bool _streaming;
     const std::string _streamHost;
     const std::string _streamId;

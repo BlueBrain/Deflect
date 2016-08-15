@@ -39,6 +39,7 @@
 
 #include "QmlStreamerImpl.h"
 #include "EventReceiver.h"
+#include "QmlGestures.h"
 
 #include <QGuiApplication>
 #include <QOffscreenSurface>
@@ -46,6 +47,7 @@
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLFunctions>
 #include <QQmlComponent>
+#include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QQuickRenderControl>
@@ -58,6 +60,7 @@
 namespace
 {
 const std::string DEFAULT_STREAM_ID( "QmlStreamer" );
+const QString GESTURES_CONTEXT_PROPERTY( "deflectgestures" );
 const QString WEBENGINEVIEW_OBJECT_NAME( "webengineview" );
 }
 
@@ -102,10 +105,15 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
     , _stopRenderingDelayTimer( 0 )
     , _stream( nullptr )
     , _eventHandler( nullptr )
+    , _qmlGestures( new QmlGestures )
     , _streaming( false )
     , _streamHost( streamHost )
     , _streamId( streamId )
 {
+    // Expose stream gestures to qml objects
+    _qmlEngine->rootContext()->setContextProperty( GESTURES_CONTEXT_PROPERTY,
+                                                   _qmlGestures );
+
     _device.setType( QTouchDevice::TouchScreen );
 
     setSurfaceType( QSurface::OpenGLSurface );
@@ -453,6 +461,16 @@ bool QmlStreamer::Impl::_setupDeflectStream()
              this, &QmlStreamer::Impl::_onKeyPress );
     connect( _eventHandler, &EventReceiver::keyRelease,
              this, &QmlStreamer::Impl::_onKeyRelease );
+
+    // Forward gestures to Qml context object
+    connect( _eventHandler, &EventReceiver::swipeDown,
+             _qmlGestures, &QmlGestures::swipeDown );
+    connect( _eventHandler, &EventReceiver::swipeUp,
+             _qmlGestures, &QmlGestures::swipeUp );
+    connect( _eventHandler, &EventReceiver::swipeLeft,
+             _qmlGestures, &QmlGestures::swipeLeft );
+    connect( _eventHandler, &EventReceiver::swipeRight,
+             _qmlGestures, &QmlGestures::swipeRight );
 
     return true;
 }

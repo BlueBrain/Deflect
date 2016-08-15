@@ -3,7 +3,7 @@
 #                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 #                          Raphael Dumusc <raphael.dumusc@epfl.ch>
 
-set(DEFLECTQT_HEADERS EventReceiver.h QmlStreamerImpl.h)
+set(DEFLECTQT_HEADERS EventReceiver.h QmlGestures.h QmlStreamerImpl.h)
 set(DEFLECTQT_PUBLIC_HEADERS QmlStreamer.h)
 set(DEFLECTQT_SOURCES EventReceiver.cpp QmlStreamer.cpp QmlStreamerImpl.cpp)
 set(DEFLECTQT_LINK_LIBRARIES

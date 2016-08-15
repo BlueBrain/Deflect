@@ -97,13 +97,18 @@ void EventReceiver::_onEvent( int socket )
             emit wheeled( deflectEvent.mouseX, deflectEvent.mouseY,
                           deflectEvent.dy );
             break;
-
-        case Event::EVT_CLICK:
-        case Event::EVT_DOUBLECLICK:
         case Event::EVT_SWIPE_LEFT:
+            emit swipeLeft();
+            break;
         case Event::EVT_SWIPE_RIGHT:
+            emit swipeRight();
+            break;
         case Event::EVT_SWIPE_UP:
+            emit swipeUp();
+            break;
         case Event::EVT_SWIPE_DOWN:
+            emit swipeDown();
+            break;
         case Event::EVT_KEY_PRESS:
             emit keyPress( deflectEvent.key, deflectEvent.modifiers,
                            QString::fromStdString( deflectEvent.text ));
@@ -112,6 +117,8 @@ void EventReceiver::_onEvent( int socket )
             emit keyRelease( deflectEvent.key, deflectEvent.modifiers,
                              QString::fromStdString( deflectEvent.text ));
             break;
+        case Event::EVT_CLICK:
+        case Event::EVT_DOUBLECLICK:
         default:
             break;
         }

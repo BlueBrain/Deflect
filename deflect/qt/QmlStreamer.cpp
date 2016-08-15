@@ -40,6 +40,8 @@
 #include "QmlStreamer.h"
 #include "QmlStreamerImpl.h"
 
+#include "../Stream.h"
+
 namespace deflect
 {
 namespace qt
@@ -66,6 +68,11 @@ QQuickItem* QmlStreamer::getRootItem()
 QQmlEngine* QmlStreamer::getQmlEngine()
 {
     return _impl->getQmlEngine();
+}
+
+bool QmlStreamer::sendData( const QByteArray data )
+{
+    return _impl->getStream()->sendData( data.constData(), data.size( ));
 }
 
 }

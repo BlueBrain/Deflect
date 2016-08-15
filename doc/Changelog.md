@@ -5,6 +5,13 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [123](https://github.com/BlueBrain/Deflect/pull/123):
+  QmlStreamer is now compatible with Qml WebEngineView items. Users must call
+  QtWebEngine::initialize() in their QApplication before creating the stream.
+  To receive keyboard events, the objectName property of a WebEngineView must
+  be set to "webengineview".
+  QmlStreamer also exposes the Stream::sendData() function and swipe gestures
+  are available in Qml from a "deflectgestures" context property.
 * [119](https://github.com/BlueBrain/Deflect/pull/119):
   Added deflect::Stream::sendData() to allow sending user-defined information
   to the deflect::Server.
