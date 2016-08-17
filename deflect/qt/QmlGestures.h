@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2015, EPFL/Blue Brain Project                       */
-/*                     Daniel.Nachbaur <daniel.nachbaur@epfl.ch>     */
+/* Copyright (c) 2016, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -34,84 +34,31 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The University of Texas at Austin.                 */
+/* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#ifndef QMLSTREAMER_H
-#define QMLSTREAMER_H
+#ifndef QMLGESTURES_H
+#define QMLGESTURES_H
 
-#include <deflect/qt/api.h>
-
-#include <QString>
-#include <QQuickItem>
-#include <QQmlEngine>
-
-#include <memory>
-#include <string>
+#include <QObject>
 
 namespace deflect
 {
 namespace qt
 {
 
-/** Based on http://doc.qt.io/qt-5/qtquick-rendercontrol-example.html
- *
- * This class renders the given QML file in an offscreen fashion and streams
- * on each update on the given Deflect stream. It automatically register also
- * for Deflect events, which can be directly handled in the QML.
-
- * Users can make connections to the "deflectgestures" context property to react
- * to certain gestures received as Event, currently swipe[Left|Right|Up|Down].
- *
- * When using a WebEngineView, users must call QtWebEngine::initialize() in the
- * QApplication before creating the streamer. Also, due to a limitiation in Qt,
- * the objectName property of any WebEngineView must be set to "webengineview"
- * for it to receive keyboard events.
+/**
+ * Expose gesture events as a Qml context property object.
  */
-class QmlStreamer : public QObject
+class QmlGestures : public QObject
 {
     Q_OBJECT
 
-public:
-    /**
-     * Construct a new qml streamer by loading the QML, accessible by
-     * getRootItem() and sets up the Deflect stream.
-     *
-     * @param qmlFile URL to QML file to load.
-     * @param streamHost host where the Deflect server is running.
-     * @param streamId identifier for the Deflect stream (optional). Setting
-     *        this value overrides the 'objectName' property of the root QML
-     *        item. If neither is provided, "QmlStreamer" is used instead.
-     */
-    DEFLECTQT_API QmlStreamer( const QString& qmlFile,
-                               const std::string& streamHost,
-                               const std::string& streamId = std::string( ));
-
-    DEFLECTQT_API ~QmlStreamer();
-
-    /** @return the QML root item, might be nullptr if not ready yet. */
-    DEFLECTQT_API QQuickItem* getRootItem();
-
-    /** @return the QML engine. */
-    DEFLECTQT_API QQmlEngine* getQmlEngine();
-
-    /**
-     * Send data to the Server.
-     *
-     * @param data the data buffer
-     * @return true if the data could be sent, false otherwise
-     */
-    DEFLECTQT_API bool sendData( QByteArray data );
-
 signals:
-    /** Emitted when the stream has been closed. */
-    void streamClosed();
-
-private:
-    QmlStreamer( const QmlStreamer& ) = delete;
-    QmlStreamer operator=( const QmlStreamer& ) = delete;
-    class Impl;
-    std::unique_ptr< Impl > _impl;
+    void swipeLeft();
+    void swipeRight();
+    void swipeUp();
+    void swipeDown();
 };
 
 }

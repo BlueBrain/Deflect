@@ -67,6 +67,10 @@ signals:
     void wheeled( double x, double y, double dy );
     void keyPress( int key, int modifiers, QString text );
     void keyRelease( int key, int modifiers, QString text );
+    void swipeLeft();
+    void swipeRight();
+    void swipeUp();
+    void swipeDown();
 
 private slots:
     void _onEvent( int socket );

@@ -30,6 +30,7 @@ common_find_package(LibJpegTurbo REQUIRED)
 common_find_package(OpenGL)
 common_find_package(Qt5Concurrent REQUIRED SYSTEM)
 common_find_package(Qt5Core REQUIRED)
+common_find_package(Qt5Gui COMPONENTS Private) # For Qml WebEngineView
 if(APPLE)
   common_find_package(Qt5MacExtras)
 endif()

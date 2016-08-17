@@ -64,6 +64,7 @@ namespace qt
 {
 
 class EventReceiver;
+class QmlGestures;
 
 class QmlStreamer::Impl : public QWindow
 {
@@ -77,6 +78,7 @@ public:
 
     QQuickItem* getRootItem() { return _rootItem; }
     QQmlEngine* getQmlEngine() { return _qmlEngine; }
+    Stream* getStream() { return _stream; }
 
 protected:
     void resizeEvent( QResizeEvent* e ) final;
@@ -104,10 +106,12 @@ signals:
     void streamClosed();
 
 private:
-    void _send( QKeyEvent* keyEvent );
+    void _send( QKeyEvent& keyEvent );
+    bool _sendToWebengineviewItems( QKeyEvent& keyEvent );
     std::string _getDeflectStreamIdentifier() const;
     bool _setupDeflectStream();
     void _updateSizes( const QSize& size );
+    QTouchEvent::TouchPoint _makeTouchPoint( int id, const QPointF& pos ) const;
 
     QOpenGLContext* _context;
     QOffscreenSurface* _offscreenSurface;
@@ -123,10 +127,13 @@ private:
 
     Stream* _stream;
     EventReceiver* _eventHandler;
+    QmlGestures* _qmlGestures;
     bool _streaming;
     const std::string _streamHost;
     const std::string _streamId;
     SizeHints _sizeHints;
+
+    QTouchDevice _device;
 };
 
 }
