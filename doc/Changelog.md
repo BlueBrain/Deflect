@@ -5,6 +5,10 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [124](https://github.com/BlueBrain/Deflect/pull/124):
+  QmlStreamer: Users can now interact with WebGL content in a WebEngineView
+  and no longer risk opening a system context menu with a long press (prevent
+  crashes in certain offscreen applications).
 * [123](https://github.com/BlueBrain/Deflect/pull/123):
   QmlStreamer is now compatible with Qml WebEngineView items. Users must call
   QtWebEngine::initialize() in their QApplication before creating the stream.

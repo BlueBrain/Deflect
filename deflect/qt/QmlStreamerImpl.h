@@ -113,6 +113,11 @@ private:
     void _updateSizes( const QSize& size );
     QTouchEvent::TouchPoint _makeTouchPoint( int id, const QPointF& pos ) const;
 
+    void _startMouseModeSwitchDetection( const QPointF& pos );
+    bool _touchIsTapAndHold();
+    void _switchFromTouchToMouseMode();
+    void _sendMouseEvent( QEvent::Type eventType, const QPointF& pos );
+
     QOpenGLContext* _context;
     QOffscreenSurface* _offscreenSurface;
     QQuickRenderControl* _renderControl;
@@ -134,6 +139,11 @@ private:
     SizeHints _sizeHints;
 
     QTouchDevice _device;
+
+    QTimer _mouseModeTimer;
+    bool _mouseMode;
+    QPointF _touchStartPos;
+    QPointF _touchCurrentPos;
 };
 
 }
