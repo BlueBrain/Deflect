@@ -65,8 +65,12 @@ namespace qt
  *
  * When using a WebEngineView, users must call QtWebEngine::initialize() in the
  * QApplication before creating the streamer. Also, due to a limitiation in Qt,
- * the objectName property of any WebEngineView must be set to "webengineview"
- * for it to receive keyboard events.
+ * the objectName property of any WebEngineView must be set to "webengineview".
+ * This is necessary for it to receive keyboard events and to correct the
+ * default behaviour of the tapAndHold gesture. Deflect will prevent the opening
+ * of an on-screen context menu (which may crash the application) and instead
+ * switch to a "mouse" interaction mode. This allows users to interact within
+ * a WebGL canevas or select text instead of scrolling the page.
  */
 class QmlStreamer : public QObject
 {

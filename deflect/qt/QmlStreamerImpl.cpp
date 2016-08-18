@@ -62,6 +62,8 @@ namespace
 const std::string DEFAULT_STREAM_ID( "QmlStreamer" );
 const QString GESTURES_CONTEXT_PROPERTY( "deflectgestures" );
 const QString WEBENGINEVIEW_OBJECT_NAME( "webengineview" );
+const int TOUCH_TAPANDHOLD_DIST_PX = 20;
+const int TOUCH_TAPANDHOLD_TIMEOUT_MS = 200;
 }
 
 class RenderControl : public QQuickRenderControl
@@ -109,6 +111,7 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
     , _streaming( false )
     , _streamHost( streamHost )
     , _streamId( streamId )
+    , _mouseMode( false )
 {
     // Expose stream gestures to qml objects
     _qmlEngine->rootContext()->setContextProperty( GESTURES_CONTEXT_PROPERTY,
@@ -135,6 +138,10 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
 #else
         qWarning() << "DeflectQt was not compiled with WebEngineView support";
 #endif
+    connect( &_mouseModeTimer, &QTimer::timeout, [this]() {
+        if( _touchIsTapAndHold( ))
+            _switchFromTouchToMouseMode();
+    });
 
     // Pass _context->format(), not format_. Format does not specify and color
     // buffer sizes, while the context, that has just been created, reports a
@@ -280,28 +287,49 @@ void QmlStreamer::Impl::_onPressed( double x_, double y_ )
     auto touchPoint = _makeTouchPoint( 0, { x_, y_ });
     touchPoint.setState( Qt::TouchPointPressed );
 
-    auto* e = new QTouchEvent( QEvent::TouchBegin, &_device, Qt::NoModifier,
-                               Qt::TouchPointPressed, { touchPoint } );
+    _startMouseModeSwitchDetection( touchPoint.pos( ));
+
+    auto e = new QTouchEvent( QEvent::TouchBegin, &_device, Qt::NoModifier,
+                              Qt::TouchPointPressed, { touchPoint } );
     QCoreApplication::postEvent( _quickWindow, e );
 }
 
 void QmlStreamer::Impl::_onMoved( double x_, double y_ )
 {
+    if( _mouseMode )
+    {
+        const QPoint pos( x_ * width(), y_ * height( ));
+        _sendMouseEvent( QEvent::MouseMove, pos );
+        return;
+    }
+
     auto touchPoint = _makeTouchPoint( 0, { x_, y_ });
     touchPoint.setState( Qt::TouchPointMoved );
 
-    auto* e = new QTouchEvent( QEvent::TouchUpdate, &_device, Qt::NoModifier,
-                               Qt::TouchPointMoved, { touchPoint } );
+    if( _mouseModeTimer.isActive( ))
+        _touchCurrentPos = touchPoint.pos();
+
+    auto e = new QTouchEvent( QEvent::TouchUpdate, &_device, Qt::NoModifier,
+                              Qt::TouchPointMoved, { touchPoint } );
     QCoreApplication::postEvent( _quickWindow, e );
 }
 
 void QmlStreamer::Impl::_onReleased( double x_, double y_ )
 {
+    _mouseModeTimer.stop();
+    if( _mouseMode )
+    {
+        const QPoint pos( x_ * width(), y_ * height( ));
+        _sendMouseEvent( QEvent::MouseButtonRelease, pos );
+        _mouseMode = false;
+        return;
+    }
+
     auto touchPoint = _makeTouchPoint( 0, { x_, y_ });
     touchPoint.setState( Qt::TouchPointReleased );
 
-    auto* e = new QTouchEvent( QEvent::TouchEnd, &_device, Qt::NoModifier,
-                               Qt::TouchPointReleased, { touchPoint } );
+    auto e = new QTouchEvent( QEvent::TouchEnd, &_device, Qt::NoModifier,
+                              Qt::TouchPointReleased, { touchPoint } );
     QCoreApplication::postEvent( _quickWindow, e );
 }
 
@@ -487,6 +515,39 @@ void QmlStreamer::Impl::_updateSizes( const QSize& size_ )
         _rootItem->setWidth( size_.width( ));
         _rootItem->setHeight( size_.height( ));
     }
+}
+
+void QmlStreamer::Impl::_startMouseModeSwitchDetection( const QPointF& pos )
+{
+    auto item = _rootItem->childAt( pos.x(), pos.y());
+    if( item->objectName() == WEBENGINEVIEW_OBJECT_NAME )
+    {
+        _mouseModeTimer.start( TOUCH_TAPANDHOLD_TIMEOUT_MS );
+        _touchStartPos = pos;
+        _touchCurrentPos = pos;
+    }
+}
+
+bool QmlStreamer::Impl::_touchIsTapAndHold()
+{
+    const auto distance = (_touchCurrentPos - _touchStartPos).manhattanLength();
+    return distance < TOUCH_TAPANDHOLD_DIST_PX;
+}
+
+void QmlStreamer::Impl::_switchFromTouchToMouseMode()
+{
+    _onReleased( _touchCurrentPos.x() / width(),
+                 _touchCurrentPos.y() / height( ));
+    _mouseMode = true;
+    _sendMouseEvent( QEvent::MouseButtonPress, _touchCurrentPos );
+}
+
+void QmlStreamer::Impl::_sendMouseEvent( const QEvent::Type eventType,
+                                         const QPointF& pos )
+{
+    auto e = new QMouseEvent( eventType, pos, Qt::LeftButton, Qt::LeftButton,
+                              Qt::NoModifier );
+    QCoreApplication::postEvent( _quickWindow, e );
 }
 
 QTouchEvent::TouchPoint
