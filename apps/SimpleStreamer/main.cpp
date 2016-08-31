@@ -140,7 +140,7 @@ void initGLWindow( int argc, char** argv )
     glClearColor( 0.5, 0.5, 0.5, 1.0 );
 
     glEnable( GL_DEPTH_TEST );
-    glEnable( GL_LIGHTING) ;
+    glEnable( GL_LIGHTING );
     glEnable( GL_LIGHT0 );
 }
 
@@ -180,6 +180,8 @@ void display()
     // angles of camera rotation and zoom factor
     static float angleX = 0.f;
     static float angleY = 0.f;
+    static float offsetX = 0.f;
+    static float offsetY = 0.f;
     static float zoom = 1.f;
 
     // Render the teapot
@@ -193,8 +195,10 @@ void display()
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity();
 
-    glRotatef( angleX, 0.0, 1.0, 0.0 );
-    glRotatef( angleY, -1.0, 0.0, 0.0 );
+    glTranslatef( offsetX, -offsetY, 0.f );
+
+    glRotatef( angleX, 0.f, 1.f, 0.f );
+    glRotatef( angleY, -1.f, 0.f, 0.f );
 
     glScalef( zoom, zoom, zoom );
     glutSolidTeapot( 1.f );
@@ -237,25 +241,49 @@ void display()
         {
             const deflect::Event& event = deflectStream->getEvent();
 
-            if( event.type == deflect::Event::EVT_CLOSE )
+            switch( event.type )
             {
+            case deflect::Event::EVT_CLOSE:
                 std::cout << "Received close..." << std::endl;
                 exit( 0 );
-            }
-
-            const float newMouseX = event.mouseX;
-            const float newMouseY = event.mouseY;
-
-            if( event.mouseLeft )
-            {
-                angleX += (newMouseX - mouseX) * 360.f;
-                angleY += (newMouseY - mouseY) * 360.f;
-            }
-            else if( event.mouseRight )
-                zoom += (newMouseY - mouseY);
-
-            mouseX = newMouseX;
-            mouseY = newMouseY;
+            case deflect::Event::EVT_PINCH:
+                zoom += std::copysign( std::sqrt( event.dx * event.dx +
+                                                  event.dy * event.dy ),
+                                       event.dx + event.dy );
+                break;
+            case deflect::Event::EVT_PRESS:
+                mouseX = event.mouseX;
+                mouseY = event.mouseY;
+                break;
+            case deflect::Event::EVT_MOVE:
+            case deflect::Event::EVT_RELEASE:
+                if( event.mouseLeft )
+                {
+                    angleX += (event.mouseX - mouseX) * 360.f;
+                    angleY += (event.mouseY - mouseY) * 360.f;
+                }
+                mouseX = event.mouseX;
+                mouseY = event.mouseY;
+                break;
+            case deflect::Event::EVT_PAN:
+                offsetX += event.dx;
+                offsetY += event.dy;
+                mouseX = event.mouseX;
+                mouseY = event.mouseY;
+                break;
+            case deflect::Event::EVT_KEY_PRESS:
+                if( event.key == ' ' )
+                {
+                    angleX = 0.f;
+                    angleY = 0.f;
+                    offsetX = 0.f;
+                    offsetY = 0.f;
+                    zoom = 1.f;
+                }
+                break;
+            default:
+                break;
+            };
         }
     }
     else

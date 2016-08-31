@@ -119,6 +119,7 @@ void EventReceiver::_onEvent( int socket )
             break;
         case Event::EVT_CLICK:
         case Event::EVT_DOUBLECLICK:
+        case Event::EVT_PINCH:
         default:
             break;
         }

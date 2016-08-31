@@ -110,6 +110,9 @@ bool processEvents( const bool interact )
         case deflect::Event::EVT_KEY_PRESS:
         case deflect::Event::EVT_KEY_RELEASE:
         case deflect::Event::EVT_VIEW_SIZE_CHANGED:
+        case deflect::Event::EVT_TAP_AND_HOLD:
+        case deflect::Event::EVT_PAN:
+        case deflect::Event::EVT_PINCH:
         default:
             break;
         }

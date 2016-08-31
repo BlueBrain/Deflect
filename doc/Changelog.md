@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [128](https://github.com/BlueBrain/Deflect/pull/128)
+  The *wheel* event has been replaced by a more aptly named *pinch* event.
+  Minor additions to the simplestreamer demo application.
 * [126](https://github.com/BlueBrain/Deflect/pull/126)
   DesktopStreamer: The list of default hosts can be configured using the CMake
   variable DEFLECT_DESKTOPSTREAMER_HOSTS.
