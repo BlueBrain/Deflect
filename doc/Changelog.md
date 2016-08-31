@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [126](https://github.com/BlueBrain/Deflect/pull/126)
+  DesktopStreamer: The list of default hosts can be configured using the CMake
+  variable DEFLECT_DESKTOPSTREAMER_HOSTS.
 * [124](https://github.com/BlueBrain/Deflect/pull/124):
   QmlStreamer: Users can now interact with WebGL content in a WebEngineView
   and no longer risk opening a system context menu with a long press (prevent

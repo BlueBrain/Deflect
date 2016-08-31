@@ -69,12 +69,7 @@ typedef __int32 int32_t;
 
 namespace
 {
-const std::vector< std::pair< QString, QString > > defaultHosts = {
-    { "DisplayWall Ground floor", "bbpav02.epfl.ch" },
-    { "DisplayWall 3rd floor", "bbpav04.epfl.ch" },
-    { "DisplayWall 5th floor", "bbpav05.epfl.ch" },
-    { "DisplayWall 6th floor", "bbpav06.epfl.ch" }
-};
+const std::vector< std::pair< QString, QString > > defaultHosts = { _HOSTS };
 const QString streamButtonDefaultText = "Stream";
 const QString streamSelected = "Stream selected item(s)";
 }

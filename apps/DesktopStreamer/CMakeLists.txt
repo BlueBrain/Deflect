@@ -22,6 +22,18 @@ set(DESKTOPSTREAMER_LINK_LIBRARIES
   Qt5::Widgets
 )
 
+set(DEFLECT_DESKTOPSTREAMER_HOSTS
+    "\
+{\"DisplayWall Ground floor\", \"bbpav02.epfl.ch\"}, \
+{\"DisplayWall 3rd floor\", \"bbpav04.epfl.ch\"}, \
+{\"DisplayWall 5th floor\", \"bbpav05.epfl.ch\"}, \
+{\"DisplayWall 6th floor\", \"bbpav06.epfl.ch\"}"
+    CACHE STRING "List of default hosts for the DesktopStreamer application"
+)
+set_source_files_properties(MainWindow.cpp PROPERTIES COMPILE_DEFINITIONS
+  _HOSTS=${DEFLECT_DESKTOPSTREAMER_HOSTS}
+)
+
 if(DEFLECT_USE_SERVUS)
   list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES Servus)
 endif()
