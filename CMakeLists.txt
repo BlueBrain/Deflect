@@ -15,7 +15,8 @@ set(DEFLECT_DESCRIPTION "A fast C++ library for streaming pixels and events")
 set(DEFLECT_MAINTAINER "Blue Brain Project <bbp-open-source@googlegroups.com>")
 set(DEFLECT_LICENSE BSD)
 set(DEFLECT_DEPENDENT_LIBRARIES Boost)
-set(DEFLECT_DEB_DEPENDS freeglut3-dev libjpeg-turbo8-dev libturbojpeg
+set(DEFLECT_DEB_DEPENDS freeglut3-dev libxi-dev libxmu-dev
+  libjpeg-turbo8-dev libturbojpeg
   libboost-date-time-dev libboost-program-options-dev libboost-serialization-dev
   libboost-system-dev libboost-test-dev libboost-thread-dev
   qtbase5-dev qtdeclarative5-dev)
