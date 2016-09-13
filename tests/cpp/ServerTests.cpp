@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE( testDataReceivedByServer )
     for( size_t i = 0; i < 20; ++i )
     {
         mutex.lock();
-        received.wait( &mutex, 100 /*ms*/ );
+        received.wait( &mutex, 500 /*ms*/ );
         if( receivedState )
         {
             BOOST_CHECK_EQUAL( streamId.toStdString(),
