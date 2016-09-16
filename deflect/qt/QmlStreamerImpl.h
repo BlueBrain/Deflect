@@ -1,6 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2015, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2015-2016, EPFL/Blue Brain Project                  */
 /*                     Daniel.Nachbaur <daniel.nachbaur@epfl.ch>     */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -65,6 +66,7 @@ namespace qt
 
 class EventReceiver;
 class QmlGestures;
+class TouchInjector;
 
 class QmlStreamer::Impl : public QWindow
 {
@@ -94,11 +96,12 @@ private slots:
     void _render();
     void _requestRender();
 
-    void _onPressed( double, double );
-    void _onReleased( double, double );
-    void _onMoved( double, double );
-    void _onResized( double, double );
-    void _onWheeled( double, double, double );
+    void _onPressed( QPointF position );
+    void _onReleased( QPointF position );
+    void _onMoved( QPointF position );
+
+    void _onResized( QSize newSize );
+
     void _onKeyPress( int key, int modifiers, QString text );
     void _onKeyRelease( int key, int modifiers, QString text );
 
@@ -111,12 +114,15 @@ private:
     std::string _getDeflectStreamIdentifier() const;
     bool _setupDeflectStream();
     void _updateSizes( const QSize& size );
-    QTouchEvent::TouchPoint _makeTouchPoint( int id, const QPointF& pos ) const;
 
+    void _connectTouchInjector();
     void _startMouseModeSwitchDetection( const QPointF& pos );
     bool _touchIsTapAndHold();
     void _switchFromTouchToMouseMode();
+    void _switchBackToTouchMode();
     void _sendMouseEvent( QEvent::Type eventType, const QPointF& pos );
+
+    QPointF _mapToScene( const QPointF& normalizedPos ) const;
 
     QOpenGLContext* _context;
     QOffscreenSurface* _offscreenSurface;
@@ -133,12 +139,11 @@ private:
     Stream* _stream;
     EventReceiver* _eventHandler;
     QmlGestures* _qmlGestures;
+    TouchInjector* _touchInjector;
     bool _streaming;
     const std::string _streamHost;
     const std::string _streamId;
     SizeHints _sizeHints;
-
-    QTouchDevice _device;
 
     QTimer _mouseModeTimer;
     bool _mouseMode;

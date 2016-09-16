@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -60,6 +60,52 @@ namespace deflect
  * Typically used to forward user inputs from a window to classes that
  * generate content for it.
  *
+ * Events can be divided into several categories, listed below. Applications can
+ * decide to handle all the events or limit themselves to any subset that is
+ * appropriate.
+ *
+ * For example, an application which supports multiple touch points natively may
+ * want to use unprocessed touch points, while still assigning some specific
+ * actions to high-level gestures such as swipe events.
+ *
+ * For a concrete code example of basic event processing, users can refer to
+ * the simplestreamer demo application.
+ *
+ * Stream events
+ * - EVT_VIEW_SIZE_CHANGED   < remote stream window resized by user
+ * - EVT_CLOSE               < remote stream window closed by user
+ *
+ * Basic interaction
+ * - EVT_PRESS               < touch/mouse button press (single touch point)
+ * - EVT_MOVE                < touch point/mouse move (single touch point)
+ * - EVT_RELEASE             < touch/mouse button release (single touch point)
+ * - EVT_WHEEL               < mouse wheel event (no longer sent by Tide >= 1.2, replaced by EVT_PINCH)
+ *
+ * Basic gestures
+ * - EVT_CLICK               < tap/click with one or more fingers/buttons (key field contains number of points)
+ * - EVT_DOUBLECLICK         < double tap/click with one or more fingers/button (key field contains number of points)
+ * - EVT_TAP_AND_HOLD        < tap and hold with one or more fingers/buttons (key field contains number of points)
+ *
+ * Advanced gestures
+ * - EVT_PAN                 < pan with two or more fingers (key field contains number of points)
+ * - EVT_PINCH               < pinch with two finger
+ * - EVT_SWIPE_LEFT          < swipe left with two fingers
+ * - EVT_SWIPE_RIGHT         < swipe right with two fingers
+ * - EVT_SWIPE_UP            < swipe up with two fingers
+ * - EVT_SWIPE_DOWN          < swipe down with two fingers
+ *
+ * Unprocessed touch points
+ * - EVT_TOUCH_ADD           < touch point added (key field contains point id)
+ * - EVT_TOUCH_UPDATE        < touch point moved (key field contains point id)
+ * - EVT_TOUCH_REMOVE        < touch point removed (key field contains point id)
+ *
+ * Keybord events
+ * - EVT_KEY_PRESS           < key pressed
+ * - EVT_KEY_RELEASE         < key released
+ *
+ * Other:
+ * - EVT_NONE                < normally unused
+ *
  * @version 1.0
  */
 struct Event
@@ -86,7 +132,11 @@ struct Event
         EVT_KEY_RELEASE,
         EVT_VIEW_SIZE_CHANGED,
         EVT_TAP_AND_HOLD,
-        EVT_PAN
+        EVT_PAN,
+        EVT_PINCH,
+        EVT_TOUCH_ADD,
+        EVT_TOUCH_UPDATE,
+        EVT_TOUCH_REMOVE
     };
 
     /** The type of event */
@@ -96,8 +146,8 @@ struct Event
     //@{
     double mouseX;    /**< Normalized X mouse/touch position relative to the window */
     double mouseY;    /**< Normalized Y mouse/touch position relative to the window */
-    double dx;        /**< Normalized horizontal delta for scroll events / delta in pixels for wheel events. */
-    double dy;        /**< Normalized vertical delta for scroll events / delta in pixels for wheel events. */
+    double dx;        /**< Normalized horizontal delta for pan/pinch events / delta in pixels for wheel events */
+    double dy;        /**< Normalized vertical delta for pan/pinch events / delta in pixels for wheel events */
     bool mouseLeft;   /**< The state of the left mouse button (pressed=true) */
     bool mouseRight;  /**< The state of the right mouse button (pressed=true) */
     bool mouseMiddle; /**< The state of the middle mouse button (pressed=true) */
@@ -105,7 +155,7 @@ struct Event
 
     /** @name Keyboard events */
     //@{
-    int key;         /**< The key code, see QKeyEvent::key() */
+    int key;         /**< The key code, see QKeyEvent::key() / number of fingers for gestures / point id for touch events */
     int modifiers;   /**< The keyboard modifiers, see QKeyEvent::modifiers() */
     char text[UNICODE_TEXT_SIZE];   /**< Carries unicode for key, see QKeyEvent::text() */
     //@}

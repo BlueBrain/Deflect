@@ -3,9 +3,21 @@
 #                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 #                          Raphael Dumusc <raphael.dumusc@epfl.ch>
 
-set(DEFLECTQT_HEADERS EventReceiver.h QmlGestures.h QmlStreamerImpl.h)
-set(DEFLECTQT_PUBLIC_HEADERS QmlStreamer.h)
-set(DEFLECTQT_SOURCES EventReceiver.cpp QmlStreamer.cpp QmlStreamerImpl.cpp)
+set(DEFLECTQT_HEADERS
+  EventReceiver.h
+  QmlGestures.h
+  QmlStreamerImpl.h
+)
+set(DEFLECTQT_PUBLIC_HEADERS
+  QmlStreamer.h
+  TouchInjector.h
+)
+set(DEFLECTQT_SOURCES
+  EventReceiver.cpp
+  QmlStreamer.cpp
+  QmlStreamerImpl.cpp
+  TouchInjector.cpp
+)
 set(DEFLECTQT_LINK_LIBRARIES
   PUBLIC Deflect Qt5::Quick PRIVATE Qt5::Qml)
 set(DEFLECTQT_INCLUDE_NAME deflect/qt)

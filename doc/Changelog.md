@@ -5,6 +5,18 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [128](https://github.com/BlueBrain/Deflect/pull/128)
+  New events for transmitting all touch points in addition to existing gestures:
+  - Gives the ability to handle more than one touch point in applications (e.g.
+    draw with multiple fingers on a whiteboard).
+  - Simplifies integration for applications that natively handle multitouch
+    events, like Qml-based ones.
+  - DeflectQt uses a new TouchInjector class for sending touch events to Qt
+    (moved from Tide).
+  In addition:
+  - A new *pinch* event was added. Clients of Tide >= 1.2 have to adapt their
+    code to use it instead of *wheel* events, which are no longer sent.
+  - Minor additions to the simplestreamer demo application.
 * [126](https://github.com/BlueBrain/Deflect/pull/126)
   DesktopStreamer: The list of default hosts can be configured using the CMake
   variable DEFLECT_DESKTOPSTREAMER_HOSTS.

@@ -1,6 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2015-2016, EPFL/Blue Brain Project                  */
-/*                     Daniel.Nachbaur <daniel.nachbaur@epfl.ch>     */
+/* Copyright (c) 2016, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -38,56 +37,76 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef EVENTRECEIVER_H
-#define EVENTRECEIVER_H
+#ifndef TOUCHINJECTOR_H
+#define TOUCHINJECTOR_H
 
 #include <QObject>
-#include <QPointF>
-#include <QSize>
-#include <QSocketNotifier>
-#include <QTimer>
+#include <QTouchEvent>
 
-#include <deflect/Stream.h>
+#include <functional>
 
 namespace deflect
 {
 namespace qt
 {
 
-class EventReceiver : public QObject
+/**
+ * Inject complete QTouchEvent from separate touch added/updated/removed events.
+ */
+class TouchInjector : public QObject
 {
     Q_OBJECT
+    Q_DISABLE_COPY( TouchInjector )
 
 public:
-    EventReceiver( Stream& stream );
-    ~EventReceiver();
+    /** Function to map normalized coordinates to scene / window coordinates. */
+    using MapToSceneFunc = std::function<QPointF(const QPointF&)>;
 
-signals:
-    void pressed( QPointF position );
-    void released( QPointF position );
-    void moved( QPointF position );
+    /**
+     * Constructor.
+     * @param target the target QObject that should receive the touch events
+     * @param mapFunc the function to generate scene / window coordinates
+     */
+    TouchInjector( QObject& target, MapToSceneFunc mapFunc );
 
-    void resized( QSize newSize );
+    /**
+     * Insert a new touch point.
+     *
+     * Does nothing if a point with the same id already exists.
+     * @param id the identifier for the point
+     * @param position the initial normalized position of the point
+     */
+    void addTouchPoint( int id, QPointF position );
 
-    void keyPress( int key, int modifiers, QString text );
-    void keyRelease( int key, int modifiers, QString text );
+    /**
+     * Update an existing touch point.
+     *
+     * Does nothing if the given point has not been added or was removed.
+     * @param id the identifier for the point
+     * @param position the new normalized position of the point
+     */
+    void updateTouchPoint( int id, QPointF position );
 
-    void swipeLeft();
-    void swipeRight();
-    void swipeUp();
-    void swipeDown();
+    /**
+     * Remove an existing touch point.
+     *
+     * Does nothing if the given point has not been added or was removed.
+     * @param id the identifier for the point
+     * @param position the new normalized position of the point
+     */
+    void removeTouchPoint( int id, QPointF position );
 
-    void touchPointAdded( int id, QPointF position );
-    void touchPointUpdated( int id, QPointF position );
-    void touchPointRemoved( int id, QPointF position );
-
-private slots:
-    void _onEvent( int socket );
+    /** Remove all touch points. */
+    void removeAllTouchPoints();
 
 private:
-    Stream& _stream;
-    std::unique_ptr< QSocketNotifier > _notifier;
-    std::unique_ptr< QTimer > _timer;
+    void _handleEvent( const int id, const QPointF& normalizedPos,
+                       const QEvent::Type eventType );
+
+    QObject& _target;
+    MapToSceneFunc _mapToSceneFunction;
+    QTouchDevice _device;
+    QMap<int, QTouchEvent::TouchPoint> _touchPointMap;
 };
 
 }
