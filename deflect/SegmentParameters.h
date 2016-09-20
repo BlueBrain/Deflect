@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -45,8 +46,6 @@
     #include <stdint.h>
 #endif
 
-#include <boost/serialization/access.hpp>
-
 namespace deflect
 {
 
@@ -77,22 +76,7 @@ struct SegmentParameters
         , width( 0 )
         , height( 0 )
         , compressed( true )
-    {
-    }
-
-private:
-    friend class boost::serialization::access;
-
-    /** Serialization method */
-    template<class Archive>
-    void serialize( Archive & ar, const unsigned int )
-    {
-        ar & x;
-        ar & y;
-        ar & width;
-        ar & height;
-        ar & compressed;
-    }
+    {}
 };
 
 }

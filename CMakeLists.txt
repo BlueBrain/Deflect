@@ -17,15 +17,15 @@ set(DEFLECT_LICENSE BSD)
 set(DEFLECT_DEPENDENT_LIBRARIES Boost)
 set(DEFLECT_DEB_DEPENDS freeglut3-dev libxi-dev libxmu-dev
   libjpeg-turbo8-dev libturbojpeg
-  libboost-date-time-dev libboost-program-options-dev libboost-serialization-dev
-  libboost-system-dev libboost-test-dev libboost-thread-dev
+  libboost-date-time-dev libboost-program-options-dev libboost-system-dev
+  libboost-test-dev libboost-thread-dev
   qtbase5-dev qtdeclarative5-dev)
 set(DEFLECT_PORT_DEPENDS boost freeglut qt5)
 
 include(Common)
 
-common_find_package(Boost REQUIRED COMPONENTS date_time program_options
-  serialization system thread unit_test_framework)
+common_find_package(Boost REQUIRED COMPONENTS date_time program_options system
+  thread unit_test_framework)
 common_find_package(GLUT)
 common_find_package(LibJpegTurbo REQUIRED)
 common_find_package(OpenGL)

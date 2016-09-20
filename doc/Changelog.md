@@ -5,6 +5,8 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [129](https://github.com/BlueBrain/Deflect/pull/129)
+  Cleared Deflect from boost::serialization that was used exclusively by Tide.
 * [128](https://github.com/BlueBrain/Deflect/pull/128)
   New events for transmitting all touch points in addition to existing gestures:
   - Gives the ability to handle more than one touch point in applications (e.g.
