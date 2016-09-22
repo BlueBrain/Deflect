@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2014-2016, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -44,10 +44,8 @@
 #include <deflect/types.h>
 #include <deflect/Segment.h>
 
-#include <QString>
 #include <QSize>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/vector.hpp>
+#include <QString>
 
 namespace deflect
 {
@@ -66,16 +64,6 @@ public:
 
     /** Get the total dimensions of this frame. */
     DEFLECT_API QSize computeDimensions() const;
-
-private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize( Archive & ar, const unsigned int )
-    {
-        ar & segments;
-        ar & uri;
-    }
 };
 
 }

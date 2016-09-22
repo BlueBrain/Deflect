@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -42,9 +42,6 @@
 
 #include <deflect/SegmentParameters.h>
 
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/split_member.hpp>
-
 #include <QByteArray>
 
 namespace deflect
@@ -65,36 +62,6 @@ struct Segment
 
     /** @internal raw, uncompressed source image, used for compression */
     const ImageWrapper* sourceImage;
-
-private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void save( Archive & ar, const unsigned int ) const
-    {
-        ar & parameters;
-
-        int size = imageData.size();
-        ar & size;
-
-        ar & boost::serialization::make_binary_object( (void*)imageData.data(),
-                                                       imageData.size( ));
-    }
-
-    template<class Archive>
-    void load( Archive & ar, const unsigned int )
-    {
-        ar & parameters;
-
-        int size = 0;
-        ar & size;
-        imageData.resize( size );
-
-        ar & boost::serialization::make_binary_object( (void*)imageData.data(),
-                                                       size );
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 }
