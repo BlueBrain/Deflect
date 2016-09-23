@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [130](https://github.com/BlueBrain/Deflect/pull/130)
+  Replaced boost by C++11. Boost is now an optional dependency and it is used
+  only by the tests. Some API changes were introduced by this change.
 * [129](https://github.com/BlueBrain/Deflect/pull/129)
   Cleared Deflect from boost::serialization that was used exclusively by Tide.
 * [128](https://github.com/BlueBrain/Deflect/pull/128)

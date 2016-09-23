@@ -49,7 +49,9 @@
 #include <QScreen>
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
+#include <sstream>
 
 #ifdef _WIN32
 typedef __int32 int32_t;

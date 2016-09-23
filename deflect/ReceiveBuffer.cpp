@@ -39,6 +39,8 @@
 
 #include "ReceiveBuffer.h"
 
+#include <cassert>
+
 namespace deflect
 {
 
@@ -91,10 +93,9 @@ bool ReceiveBuffer::hasCompleteFrame() const
     assert( !_sourceBuffers.empty( ));
 
     // Check if all sources for Stream have reached the same index
-    for( SourceBufferMap::const_iterator it = _sourceBuffers.begin();
-         it != _sourceBuffers.end(); ++it )
+    for( const auto& kv : _sourceBuffers )
     {
-        const SourceBuffer& buffer = it->second;
+        const auto& buffer = kv.second;
         if( buffer.backFrameIndex <= _lastFrameComplete )
             return false;
     }
@@ -104,10 +105,9 @@ bool ReceiveBuffer::hasCompleteFrame() const
 Segments ReceiveBuffer::popFrame()
 {
     Segments frame;
-    for( SourceBufferMap::iterator it = _sourceBuffers.begin();
-         it != _sourceBuffers.end(); ++it )
+    for( auto& kv : _sourceBuffers )
     {
-        SourceBuffer& buffer = it->second;
+        auto& buffer = kv.second;
         frame.insert( frame.end(), buffer.segments.front().begin(),
                       buffer.segments.front().end( ));
         buffer.pop();

@@ -48,8 +48,6 @@ namespace ut = boost::unit_test;
 #include <deflect/Segment.h>
 #include <deflect/SegmentDecoder.h>
 
-#include <boost/bind.hpp>
-
 #include <QMutex>
 
 void fillTestImage( std::vector<char>& data )
@@ -114,8 +112,8 @@ BOOST_AUTO_TEST_CASE( testImageSegmentationWithCompressionAndDecompression )
 
     deflect::Segments segments;
     deflect::ImageSegmenter segmenter;
-    const deflect::ImageSegmenter::Handler appendFunc =
-        boost::bind( &append, boost::ref( segments ), _1 );
+    const auto appendFunc = std::bind( &append, std::ref( segments ),
+                                       std::placeholders::_1 );
 
     segmenter.generate( imageWrapper, appendFunc );
     BOOST_REQUIRE_EQUAL( segments.size(), 1 );

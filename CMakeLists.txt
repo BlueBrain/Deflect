@@ -5,7 +5,7 @@
 
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(Deflect VERSION 0.12.0)
-set(Deflect_VERSION_ABI 4)
+set(Deflect_VERSION_ABI 5)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
                               ${CMAKE_SOURCE_DIR}/CMake/common)
@@ -14,18 +14,15 @@ include(GitExternal)
 set(DEFLECT_DESCRIPTION "A fast C++ library for streaming pixels and events")
 set(DEFLECT_MAINTAINER "Blue Brain Project <bbp-open-source@googlegroups.com>")
 set(DEFLECT_LICENSE BSD)
-set(DEFLECT_DEPENDENT_LIBRARIES Boost)
 set(DEFLECT_DEB_DEPENDS freeglut3-dev libxi-dev libxmu-dev
   libjpeg-turbo8-dev libturbojpeg
-  libboost-date-time-dev libboost-program-options-dev libboost-system-dev
-  libboost-test-dev libboost-thread-dev
+  libboost-program-options-dev libboost-test-dev
   qtbase5-dev qtdeclarative5-dev)
 set(DEFLECT_PORT_DEPENDS boost freeglut qt5)
 
 include(Common)
 
-common_find_package(Boost REQUIRED COMPONENTS date_time program_options system
-  thread unit_test_framework)
+common_find_package(Boost COMPONENTS program_options unit_test_framework)
 common_find_package(GLUT)
 common_find_package(LibJpegTurbo REQUIRED)
 common_find_package(OpenGL)
@@ -44,7 +41,9 @@ common_find_package_post()
 
 add_subdirectory(deflect)
 add_subdirectory(apps)
-add_subdirectory(tests)
+if(Boost_FOUND)
+  add_subdirectory(tests)
+endif()
 add_subdirectory(doc)
 
 set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)

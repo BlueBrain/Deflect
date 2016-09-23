@@ -43,7 +43,7 @@
 
 #include <deflect/config.h>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <vector>
 
 namespace deflect
@@ -63,7 +63,7 @@ struct Segment;
 struct SegmentParameters;
 struct SizeHints;
 
-typedef boost::shared_ptr< Frame > FramePtr;
+typedef std::shared_ptr< Frame > FramePtr;
 typedef std::vector< Segment > Segments;
 typedef std::vector< SegmentParameters > SegmentParametersList;
 

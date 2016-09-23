@@ -94,6 +94,17 @@ StreamPrivate::StreamPrivate( const std::string& id_,
     , registeredForEvents( false )
 {
     imageSegmenter.setNominalSegmentDimensions( SEGMENT_SIZE, SEGMENT_SIZE );
+
+    if( !socket.isConnected( ))
+        return;
+
+    socket.connect( &socket, &Socket::disconnected, [this]()
+    {
+        if( disconnectedCallback )
+            disconnectedCallback();
+    });
+
+    sendOpen();
 }
 
 StreamPrivate::~StreamPrivate()
@@ -128,8 +139,8 @@ bool StreamPrivate::send( const ImageWrapper& image )
         return false;
     }
 
-    const ImageSegmenter::Handler sendFunc =
-        boost::bind( &StreamPrivate::sendPixelStreamSegment, this, _1 );
+    const auto sendFunc = std::bind( &StreamPrivate::sendPixelStreamSegment,
+                                     this, std::placeholders::_1 );
     return imageSegmenter.generate( image, sendFunc );
 }
 

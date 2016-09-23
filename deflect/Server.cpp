@@ -46,7 +46,6 @@
 
 #ifdef DEFLECT_USE_SERVUS
 #  include <servus/servus.h>
-#  include <boost/lexical_cast.hpp>
 #endif
 
 #include <QThread>
@@ -77,8 +76,7 @@ Server::Server( const int port )
 {
     if( !listen( QHostAddress::Any, port ))
     {
-        const QString err =
-                QString( "could not listen on port: %1" ).arg( port );
+        const auto err = QString( "could not listen on port: %1" ).arg( port );
         throw std::runtime_error( err.toStdString( ));
     }
 #ifdef DEFLECT_USE_SERVUS

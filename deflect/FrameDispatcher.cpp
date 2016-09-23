@@ -42,6 +42,8 @@
 #include "Frame.h"
 #include "ReceiveBuffer.h"
 
+#include <cassert>
+
 namespace deflect
 {
 
@@ -74,13 +76,9 @@ public:
 
 FrameDispatcher::FrameDispatcher()
     : _impl( new Impl )
-{
-}
+{}
 
-FrameDispatcher::~FrameDispatcher()
-{
-    delete _impl;
-}
+FrameDispatcher::~FrameDispatcher() {}
 
 void FrameDispatcher::addSource( const QString uri, const size_t sourceIndex )
 {

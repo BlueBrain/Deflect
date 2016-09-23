@@ -8,6 +8,7 @@
 set(DEFLECTMOCK_HEADERS
   MinimalGlobalQtApp.h
   MockServer.h
+  Timer.h
 )
 
 set(DEFLECTMOCK_SOURCES

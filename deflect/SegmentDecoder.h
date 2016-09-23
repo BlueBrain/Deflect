@@ -43,15 +43,13 @@
 #include <deflect/api.h>
 #include <deflect/types.h>
 
-#include <boost/noncopyable.hpp>
-
 namespace deflect
 {
 
 /**
  * Decode a Segment's image asynchronously.
  */
-class SegmentDecoder : public boost::noncopyable
+class SegmentDecoder
 {
 public:
     /** Construct a Decoder */
@@ -89,7 +87,7 @@ public:
 
 private:
     class Impl;
-    Impl* _impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 }

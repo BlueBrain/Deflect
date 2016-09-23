@@ -37,50 +37,24 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
+#include "Timer.h"
+
 #include <deflect/ImageSegmenter.h>
 #include <deflect/Segment.h>
 #include <deflect/Stream.h>
 #include <deflect/StreamPrivate.h>
 
-#include <string>
 #include <iostream>
+#include <memory>
+#include <string>
+
 #include <QImage>
 #include <QMutexLocker>
 
-#include <boost/smart_ptr/scoped_ptr.hpp>
 #include <boost/program_options.hpp>
-#include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 #define MEGABYTE 1000000
 #define MICROSEC 1000000
-
-namespace
-{
-class Timer
-{
-public:
-    void start()
-    {
-        _lastTime = boost::posix_time::microsec_clock::universal_time();
-    }
-
-    void restart()
-    {
-        start();
-    }
-
-    float elapsed()
-    {
-        const boost::posix_time::ptime now =
-                boost::posix_time::microsec_clock::universal_time();
-        return (float)(now - _lastTime).total_milliseconds();
-    }
-
-private:
-    boost::posix_time::ptime _lastTime;
-};
-}
 
 struct BenchmarkOptions
 {
@@ -242,8 +216,8 @@ public:
         deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
         deflectImage.compressionQuality = _options.quality;
 
-        const deflect::ImageSegmenter::Handler appendHandler =
-            boost::bind( &append, boost::ref( _jpegSegments ), _1 );
+        const auto appendHandler = std::bind( &append, std::ref( _jpegSegments ),
+                                              std::placeholders::_1 );
 
         return _stream->_impl->imageSegmenter.generate( deflectImage,
                                                         appendHandler );
@@ -300,7 +274,7 @@ public:
 private:
     const BenchmarkOptions& _options;
     QImage _noiseImage;
-    boost::scoped_ptr<deflect::Stream> _stream;
+    std::unique_ptr<deflect::Stream> _stream;
     deflect::Segments _jpegSegments;
 };
 
@@ -325,13 +299,13 @@ int main( int argc, char** argv )
     while( streamOpen && ( options.nframes == 0 || counter < options.nframes ))
     {
         if( options.framerate )
-            boost::this_thread::sleep(
-               boost::posix_time::microseconds( MICROSEC / options.framerate ));
+            std::this_thread::sleep_for(
+               std::chrono::microseconds( MICROSEC / options.framerate ));
         streamOpen = benchmarkStreamer.send();
         ++counter;
     }
 
-    float time = timer.elapsed() / 1000.f;
+    const float time = timer.elapsed();
 
     const size_t frameSize = options.compress ?
                              benchmarkStreamer.jpegSegmentsSize() :

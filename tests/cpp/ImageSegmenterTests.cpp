@@ -46,7 +46,6 @@ namespace ut = boost::unit_test;
 #include <deflect/Segment.h>
 
 #include <QMutex>
-#include <boost/bind.hpp>
 
 static bool append( deflect::Segments& segments,
                     const deflect::Segment& segment )
@@ -74,8 +73,8 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterSegmentParameters )
     deflect::ImageWrapper imageWrapper( data, 4, 8, deflect::RGB );
 
     deflect::Segments segments;
-    const deflect::ImageSegmenter::Handler appendFunc =
-        boost::bind( &append, boost::ref( segments ), _1 );
+    const auto appendFunc = std::bind( &append, std::ref( segments ),
+                                       std::placeholders::_1 );
 
     {
         deflect::ImageSegmenter segmenter;
@@ -164,8 +163,8 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterSingleSegmentData )
 
     deflect::ImageSegmenter segmenter;
     deflect::Segments segments;
-    const deflect::ImageSegmenter::Handler appendFunc =
-        boost::bind( &append, boost::ref( segments ), _1 );
+    const auto appendFunc = std::bind( &append, std::ref( segments ),
+                                       std::placeholders::_1 );
 
     segmenter.generate( imageWrapper, appendFunc );
     BOOST_REQUIRE_EQUAL( segments.size(), 1 );
@@ -226,8 +225,8 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterUniformSegmentationData )
 
     deflect::ImageSegmenter segmenter;
     deflect::Segments segments;
-    const deflect::ImageSegmenter::Handler appendFunc =
-        boost::bind( &append, boost::ref( segments ), _1 );
+    const auto appendFunc = std::bind( &append, std::ref( segments ),
+                                       std::placeholders::_1 );
 
     segmenter.setNominalSegmentDimensions( 2, 4 );
     segmenter.generate( imageWrapper, appendFunc );
@@ -301,8 +300,8 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterNonUniformSegmentationData )
 
     deflect::ImageSegmenter segmenter;
     deflect::Segments segments;
-    const deflect::ImageSegmenter::Handler appendFunc =
-        boost::bind( &append, boost::ref( segments ), _1 );
+    const auto appendFunc = std::bind( &append, std::ref( segments ),
+                                       std::placeholders::_1 );
 
     segmenter.setNominalSegmentDimensions( 3, 5 );
     segmenter.generate( imageWrapper, appendFunc );

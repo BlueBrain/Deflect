@@ -49,6 +49,7 @@
 
 #include <QDataStream>
 
+#include <cassert>
 #include <iostream>
 
 namespace deflect
@@ -56,26 +57,12 @@ namespace deflect
 
 Stream::Stream()
     : _impl( new StreamPrivate( "", "", Socket::defaultPortNumber ))
-{
-    if( isConnected( ))
-    {
-        _impl->socket.connect( &_impl->socket, &Socket::disconnected,
-                               [this]() { disconnected(); });
-        _impl->sendOpen();
-    }
-}
+{}
 
 Stream::Stream( const std::string& id, const std::string& host,
                 const unsigned short port )
     : _impl( new StreamPrivate( id, host, port ))
-{
-    if( isConnected( ))
-    {
-        _impl->socket.connect( &_impl->socket, &Socket::disconnected,
-                               [this]() { disconnected(); });
-        _impl->sendOpen();
-    }
-}
+{}
 
 Stream::~Stream()
 {
@@ -198,6 +185,11 @@ Event Stream::getEvent()
 void Stream::sendSizeHints( const SizeHints& hints )
 {
     _impl->sendSizeHints( hints );
+}
+
+void Stream::setDisconnectedCallback( const std::function<void()> callback )
+{
+    _impl->disconnectedCallback = callback;
 }
 
 bool Stream::sendData( const char* data, const size_t count )

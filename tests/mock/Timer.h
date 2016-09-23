@@ -1,8 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2016, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
-/*                     Stefan.Eilemann@epfl.ch                       */
-/*                     Daniel.Nachbaur@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,99 +34,37 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The University of Texas at Austin.                 */
+/* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#ifndef DEFLECT_STREAMPRIVATE_H
-#define DEFLECT_STREAMPRIVATE_H
+#ifndef TIMER_H
+#define TIMER_H
 
-#include <deflect/api.h>
+#include <chrono>
 
-#include "Event.h"
-#include "MessageHeader.h"
-#include "ImageSegmenter.h"
-#include "Socket.h" // member
-#include "Stream.h" // Stream::Future
-
-#include <functional>
-#include <string>
-#include <memory>
-
-namespace deflect
-{
-
-class StreamSendWorker;
-
-/**
- * Private implementation for the Stream class.
- */
-class StreamPrivate
+class Timer
 {
 public:
-    /**
-     * Create a new stream and open a new connection to the deflect::Server.
-     *
-     * @param id the unique stream identifier
-     * @param host Address of the target Server instance.
-     * @param port Port of the target Server instance.
-     */
-    StreamPrivate( const std::string& id, const std::string& host,
-                   unsigned short port );
+    using clock = std::chrono::high_resolution_clock;
 
-    /** Destructor, close the Stream. */
-    ~StreamPrivate();
+    void start()
+    {
+        _startTime = clock::now();
+    }
 
-    /** Send the open message to the server. */
-    void sendOpen();
+    void restart()
+    {
+        start();
+    }
 
-    /** Send the quit message to the server. */
-    void sendClose();
-
-    /**
-     * Close the stream.
-     * @return true on success or if the Stream was not connected
-     */
-    bool close();
-
-    /** @sa Stream::send */
-    bool send( const ImageWrapper& image );
-
-    /** @sa Stream::asyncSend */
-    Stream::Future asyncSend( const ImageWrapper& image );
-
-    /** @sa Stream::finishFrame */
-    bool finishFrame();
-
-    /**
-     * Send a Segment through the Stream.
-     * @param segment An image segment with valid parameters and data
-     * @return true if the message could be sent
-     */
-    DEFLECT_API bool sendPixelStreamSegment( const Segment& segment );
-
-    /** @sa Stream::sendSizeHints */
-    bool sendSizeHints( const SizeHints& hints );
-
-    /** Send a user-defined block of data to the server. */
-    bool send( QByteArray data );
-
-    /** The stream identifier. */
-    const std::string id;
-
-    /** The communication socket instance */
-    Socket socket;
-
-    /** The image segmenter */
-    ImageSegmenter imageSegmenter;
-
-    /** Has a successful event registration reply been received */
-    bool registeredForEvents;
-
-    std::function<void()> disconnectedCallback;
+    float elapsed()
+    {
+        const auto now = clock::now();
+        return std::chrono::duration<float>{ now - _startTime }.count();
+    }
 
 private:
-    std::unique_ptr< StreamSendWorker > _sendWorker;
+    clock::time_point _startTime;
 };
 
-}
 #endif

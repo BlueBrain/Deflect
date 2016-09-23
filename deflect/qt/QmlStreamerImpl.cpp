@@ -436,8 +436,7 @@ bool QmlStreamer::Impl::_setupDeflectStream()
     if( !_stream->isConnected( ))
         return false;
 
-    _stream->disconnected.connect(
-                boost::bind( &QmlStreamer::Impl::streamClosed, this ));
+    _stream->setDisconnectedCallback( [this](){ emit streamClosed(); } );
 
     if( !_stream->registerForEvents( ))
         return false;
