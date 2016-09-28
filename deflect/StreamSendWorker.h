@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2014, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
 /*                     Daniel.Nachbaur@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -40,12 +40,8 @@
 #ifndef DEFLECT_STREAMSENDWORKER_H
 #define DEFLECT_STREAMSENDWORKER_H
 
-// needed for future.hpp with Boost 1.41
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition.hpp>
-
-#include <boost/thread/future.hpp>
-#include <boost/thread/thread.hpp>
+#include <mutex>
+#include <thread>
 #include <deque>
 
 #include "Stream.h" // Stream::Future
@@ -76,16 +72,16 @@ private:
     /** Stop the worker and clear any pending image send requests. */
     void _stop();
 
-    typedef boost::promise< bool > Promise;
-    typedef boost::shared_ptr< Promise > PromisePtr;
-    typedef std::pair< PromisePtr, ImageWrapper > Request;
+    using Promise = std::promise< bool >;
+    using PromisePtr = std::shared_ptr< Promise >;
+    using Request = std::pair< PromisePtr, ImageWrapper >;
 
     StreamPrivate& _stream;
     std::deque< Request > _requests;
-    boost::mutex _mutex;
-    boost::condition _condition;
+    std::mutex _mutex;
+    std::condition_variable _condition;
     bool _running;
-    boost::thread _thread;
+    std::thread _thread;
 };
 
 }

@@ -39,12 +39,15 @@
 
 #define BOOST_TEST_MODULE Stream
 #include <boost/test/unit_test.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 namespace ut = boost::unit_test;
 
 #include "MinimalGlobalQtApp.h"
+#include "Timer.h"
+
 #include <deflect/Server.h>
 #include <deflect/Stream.h>
+
+#include <iostream>
 
 #include <QThread>
 
@@ -67,32 +70,6 @@ namespace ut = boost::unit_test;
 
 BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp );
 
-namespace
-{
-class Timer
-{
-public:
-    void start()
-    {
-        _lastTime = boost::posix_time::microsec_clock::universal_time();
-    }
-
-    void restart()
-    {
-        start();
-    }
-
-    float elapsed()
-    {
-        const boost::posix_time::ptime now =
-                boost::posix_time::microsec_clock::universal_time();
-        return (float)(now - _lastTime).total_milliseconds();
-    }
-private:
-    boost::posix_time::ptime _lastTime;
-};
-}
-
 class DCThread : public QThread
 {
     void run()
@@ -112,7 +89,7 @@ class DCThread : public QThread
             BOOST_CHECK( stream.send( image ));
             BOOST_CHECK( stream.finishFrame( ));
         }
-        float time = timer.elapsed() / 1000.f;
+        float time = timer.elapsed();
         std::cout << "raw " << NPIXELS / float(1024*1024) / time * NIMAGES
                   << " megapixel/s (" << NIMAGES / time << " FPS)" << std::endl;
 
@@ -124,7 +101,7 @@ class DCThread : public QThread
             BOOST_CHECK( stream.send( image ));
             BOOST_CHECK( stream.finishFrame( ));
         }
-        time = timer.elapsed() / 1000.f;
+        time = timer.elapsed();
         std::cout << "blk " << NPIXELS / float(1024*1024) / time * NIMAGES
                   << " megapixel/s (" << NIMAGES / time << " FPS)"
                   << std::endl;
@@ -137,7 +114,7 @@ class DCThread : public QThread
             BOOST_CHECK( stream.send( image ));
             BOOST_CHECK( stream.finishFrame( ));
         }
-        time = timer.elapsed() / 1000.f;
+        time = timer.elapsed();
         std::cout << "rnd " << NPIXELS / float(1024*1024) / time * NIMAGES
                   << " megapixel/s (" << NIMAGES / time << " FPS)"
                   << std::endl;

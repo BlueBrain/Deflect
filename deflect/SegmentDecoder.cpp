@@ -65,13 +65,9 @@ public:
 
 SegmentDecoder::SegmentDecoder()
     : _impl( new Impl )
-{
-}
+{}
 
-SegmentDecoder::~SegmentDecoder()
-{
-    delete _impl;
-}
+SegmentDecoder::~SegmentDecoder() {}
 
 void decodeSegment( ImageJpegDecompressor* decompressor, Segment* segment )
 {

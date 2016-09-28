@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -47,7 +47,7 @@
 #include <deflect/MTQueue.h>
 #include <deflect/Segment.h>
 
-#include <boost/function/function1.hpp>
+#include <functional>
 #include <vector>
 
 namespace deflect
@@ -63,7 +63,7 @@ public:
     DEFLECT_API ImageSegmenter();
 
     /** Function called on each segment. */
-    typedef boost::function< bool( const Segment& ) > Handler;
+    using Handler = std::function< bool( const Segment& ) >;
 
     /**
      * Generate segments.

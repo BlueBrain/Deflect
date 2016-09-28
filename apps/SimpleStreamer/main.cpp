@@ -41,8 +41,9 @@
 
 #include <deflect/Stream.h>
 
-#include <string>
+#include <cmath>
 #include <iostream>
+#include <string>
 
 #ifdef __APPLE__
 #  include <OpenGL/gl.h>

@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2014, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
 /*                     Daniel.Nachbaur@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -47,7 +47,7 @@ namespace deflect
 StreamSendWorker::StreamSendWorker( StreamPrivate& stream )
     : _stream( stream )
     , _running( true )
-    , _thread( boost::bind( &StreamSendWorker::_run, this ))
+    , _thread( std::bind( &StreamSendWorker::_run, this ))
 {}
 
 StreamSendWorker::~StreamSendWorker()
@@ -57,7 +57,7 @@ StreamSendWorker::~StreamSendWorker()
 
 void StreamSendWorker::_run()
 {
-    boost::mutex::scoped_lock lock( _mutex );
+    std::unique_lock<std::mutex> lock( _mutex );
     while( true )
     {
         while( _requests.empty() && _running )
@@ -75,7 +75,7 @@ void StreamSendWorker::_run()
 void StreamSendWorker::_stop()
 {
     {
-        boost::mutex::scoped_lock lock( _mutex );
+        std::lock_guard<std::mutex> lock( _mutex );
         _running = false;
         _condition.notify_all();
     }
@@ -90,7 +90,7 @@ void StreamSendWorker::_stop()
 
 Stream::Future StreamSendWorker::enqueueImage( const ImageWrapper& image )
 {
-    boost::mutex::scoped_lock lock( _mutex );
+    std::lock_guard<std::mutex> lock( _mutex );
     PromisePtr promise( new Promise );
     _requests.push_back( Request( promise, image ));
     _condition.notify_all();

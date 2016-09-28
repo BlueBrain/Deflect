@@ -138,7 +138,7 @@ signals:
 
 private:
     class Impl;
-    Impl* _impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 }

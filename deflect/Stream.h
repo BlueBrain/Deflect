@@ -47,17 +47,10 @@
 #include <deflect/Event.h>
 #include <deflect/ImageWrapper.h>
 
+#include <functional>
+#include <future>
 #include <memory>
 #include <string>
-
-#ifndef Q_MOC_RUN  // See: https://bugreports.qt-project.org/browse/QTBUG-22829
-// needed for future.hpp with Boost 1.41
-#  include <boost/thread/mutex.hpp>
-#  include <boost/thread/condition_variable.hpp>
-
-#  include <boost/thread/future.hpp>
-#  include <boost/signals2/signal.hpp>
-#endif
 
 class Application;
 
@@ -126,13 +119,10 @@ public:
     /** @return the host defined by the constructor. @version 1.3 */
     DEFLECT_API const std::string& getHost() const;
 
-    /** Emitted after the stream was disconnected. @version 1.0 */
-    boost::signals2::signal< void() > disconnected;
-
     /** @name Asynchronous send API */
     //@{
-    /** Future signaling success of asyncSend(). @version 1.1 */
-    typedef boost::unique_future< bool > Future;
+    /** Future signaling success of asyncSend(). @version 1.5 */
+    using Future = std::future< bool >;
 
     /**
      * Send an image and finish the frame asynchronously.
@@ -268,6 +258,14 @@ public:
      * @version 1.3
      */
     DEFLECT_API bool sendData( const char* data, size_t count );
+
+    /**
+     * Set a function to be be called just after the stream gets disconnected.
+     * @param callback the function to call
+     * @note replaces the previous disconnected signal
+     * @version 1.5
+     */
+    void setDisconnectedCallback( std::function<void()> callback );
 
 private:
     Stream( const Stream& ) = delete;
