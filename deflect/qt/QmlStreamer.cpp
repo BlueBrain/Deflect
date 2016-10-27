@@ -60,6 +60,11 @@ QmlStreamer::~QmlStreamer()
 {
 }
 
+void QmlStreamer::useAsyncSend( const bool async )
+{
+    _impl->useAsyncSend( async );
+}
+
 QQuickItem* QmlStreamer::getRootItem()
 {
     return _impl->getRootItem();

@@ -67,6 +67,13 @@ typedef std::shared_ptr< Frame > FramePtr;
 typedef std::vector< Segment > Segments;
 typedef std::vector< SegmentParameters > SegmentParametersList;
 
+namespace qt
+{
+    class QuickRenderer;
+    class QmlStreamer;
+    class TouchInjector;
+}
+
 }
 
 #endif

@@ -42,24 +42,24 @@
 #define QMLSTREAMERIMPL_H
 
 #include <QTimer>
+#include <QThread>
 #include <QWindow>
 
 #include "QmlStreamer.h"
 #include "../SizeHints.h"
 
+#include <deflect/Stream.h>
+
 QT_FORWARD_DECLARE_CLASS(QOpenGLContext)
 QT_FORWARD_DECLARE_CLASS(QOpenGLFramebufferObject)
-QT_FORWARD_DECLARE_CLASS(QOffscreenSurface)
+QT_FORWARD_DECLARE_CLASS(QQmlComponent)
+QT_FORWARD_DECLARE_CLASS(QQmlEngine)
+QT_FORWARD_DECLARE_CLASS(QQuickItem)
 QT_FORWARD_DECLARE_CLASS(QQuickRenderControl)
 QT_FORWARD_DECLARE_CLASS(QQuickWindow)
-QT_FORWARD_DECLARE_CLASS(QQmlEngine)
-QT_FORWARD_DECLARE_CLASS(QQmlComponent)
-QT_FORWARD_DECLARE_CLASS(QQuickItem)
 
 namespace deflect
 {
-
-class Stream;
 
 namespace qt
 {
@@ -78,6 +78,7 @@ public:
 
     ~Impl();
 
+    void useAsyncSend( const bool async ) { _asyncSend = async; }
     QQuickItem* getRootItem() { return _rootItem; }
     QQmlEngine* getQmlEngine() { return _qmlEngine; }
     Stream* getStream() { return _stream; }
@@ -91,10 +92,11 @@ protected:
 private slots:
     bool _setupRootItem();
 
-    void _createFbo();
-    void _destroyFbo();
     void _render();
     void _requestRender();
+
+    void _afterRender();
+    void _afterStop();
 
     void _onPressed( QPointF position );
     void _onReleased( QPointF position );
@@ -105,10 +107,13 @@ private slots:
     void _onKeyPress( int key, int modifiers, QString text );
     void _onKeyRelease( int key, int modifiers, QString text );
 
+    void _onStreamClosed();
+
 signals:
     void streamClosed();
 
 private:
+    void _initRenderer();
     void _send( QKeyEvent& keyEvent );
     bool _sendToWebengineviewItems( QKeyEvent& keyEvent );
     std::string _getDeflectStreamIdentifier() const;
@@ -124,31 +129,34 @@ private:
 
     QPointF _mapToScene( const QPointF& normalizedPos ) const;
 
-    QOpenGLContext* _context;
-    QOffscreenSurface* _offscreenSurface;
     QQuickRenderControl* _renderControl;
+    QuickRenderer* _quickRenderer{ nullptr };
+    QThread _quickRendererThread;
     QQuickWindow* _quickWindow;
     QQmlEngine* _qmlEngine;
     QQmlComponent* _qmlComponent;
-    QQuickItem* _rootItem;
-    QOpenGLFramebufferObject* _fbo;
+    QQuickItem* _rootItem{ nullptr };
 
-    int _renderTimer;
-    int _stopRenderingDelayTimer;
+    int _renderTimer{ 0 };
+    int _stopRenderingDelayTimer{ 0 };
 
-    Stream* _stream;
-    EventReceiver* _eventHandler;
+    Stream* _stream{ nullptr };
+    EventReceiver* _eventHandler{ nullptr };
     QmlGestures* _qmlGestures;
     TouchInjector* _touchInjector;
-    bool _streaming;
+    bool _streaming{ false };
     const std::string _streamHost;
     const std::string _streamId;
     SizeHints _sizeHints;
 
     QTimer _mouseModeTimer;
-    bool _mouseMode;
+    bool _mouseMode{ false };
     QPointF _touchStartPos;
     QPointF _touchCurrentPos;
+
+    bool _asyncSend { false };
+    Stream::Future _sendFuture;
+    QImage _image;
 };
 
 }

@@ -83,7 +83,7 @@ void EventReceiver::_onEvent( int socket )
         {
         case Event::EVT_CLOSE:
             _notifier->setEnabled( false );
-            QCoreApplication::quit();
+            emit closed();
             break;
         case Event::EVT_PRESS:
             emit pressed( _pos( deflectEvent ));
