@@ -10,13 +10,16 @@ set(DEFLECTQT_HEADERS
 )
 set(DEFLECTQT_PUBLIC_HEADERS
   QmlStreamer.h
+  QuickRenderer.h
   TouchInjector.h
 )
 set(DEFLECTQT_SOURCES
   EventReceiver.cpp
   QmlStreamer.cpp
   QmlStreamerImpl.cpp
+  QuickRenderer.cpp
   TouchInjector.cpp
+
 )
 set(DEFLECTQT_LINK_LIBRARIES
   PUBLIC Deflect Qt5::Quick PRIVATE Qt5::Qml)

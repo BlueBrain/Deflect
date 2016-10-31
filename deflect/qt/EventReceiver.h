@@ -68,6 +68,7 @@ signals:
     void moved( QPointF position );
 
     void resized( QSize newSize );
+    void closed();
 
     void keyPress( int key, int modifiers, QString text );
     void keyRelease( int key, int modifiers, QString text );

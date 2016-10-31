@@ -39,7 +39,9 @@
 /*********************************************************************/
 
 #include "QmlStreamerImpl.h"
+
 #include "EventReceiver.h"
+#include "QuickRenderer.h"
 #include "QmlGestures.h"
 #include "TouchInjector.h"
 
@@ -54,10 +56,7 @@
 #include <QQuickItem>
 #include <QQuickRenderControl>
 #include <QQuickWindow>
-
-#if DEFLECT_USE_QT5GUI
-#include <QtGui/private/qopenglcontext_p.h>
-#endif
+#include <QThread>
 
 namespace
 {
@@ -66,6 +65,13 @@ const QString GESTURES_CONTEXT_PROPERTY( "deflectgestures" );
 const QString WEBENGINEVIEW_OBJECT_NAME( "webengineview" );
 const int TOUCH_TAPANDHOLD_DIST_PX = 20;
 const int TOUCH_TAPANDHOLD_TIMEOUT_MS = 200;
+
+deflect::Stream::Future make_ready_future( const bool value )
+{
+    std::promise< bool > promise;
+    promise.set_value( value );
+    return promise.get_future();
+}
 }
 
 class RenderControl : public QQuickRenderControl
@@ -94,8 +100,6 @@ namespace qt
 QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
                          const std::string& streamId )
     : QWindow()
-    , _context( new QOpenGLContext )
-    , _offscreenSurface( new QOffscreenSurface )
     , _renderControl( new RenderControl( this ))
     // Create a QQuickWindow that is associated with out render control. Note
     // that this window never gets created or shown, meaning that it will never
@@ -103,20 +107,13 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
     , _quickWindow( new QQuickWindow( _renderControl ))
     , _qmlEngine( new QQmlEngine )
     , _qmlComponent( new QQmlComponent( _qmlEngine, QUrl( qmlFile )))
-    , _rootItem( nullptr )
-    , _fbo( nullptr )
-    , _renderTimer( 0 )
-    , _stopRenderingDelayTimer( 0 )
-    , _stream( nullptr )
-    , _eventHandler( nullptr )
     , _qmlGestures( new QmlGestures )
     , _touchInjector( new TouchInjector( *_quickWindow,
                                          std::bind( &Impl::_mapToScene, this,
                                                     std::placeholders::_1 )))
-    , _streaming( false )
     , _streamHost( streamHost )
     , _streamId( streamId )
-    , _mouseMode( false )
+    , _sendFuture( make_ready_future( true ))
 {
     _mouseModeTimer.setSingleShot( true );
     _mouseModeTimer.setInterval( TOUCH_TAPANDHOLD_TIMEOUT_MS );
@@ -127,35 +124,10 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
 
     setSurfaceType( QSurface::OpenGLSurface );
 
-    // Qt Quick may need a depth and stencil buffer
-    QSurfaceFormat format_;
-    format_.setDepthBufferSize( 16 );
-    format_.setStencilBufferSize( 8 );
-    setFormat( format_ );
-
-    _context->setFormat( format_ );
-    _context->create();
-
-    // Test if user has setup shared GL contexts (QtWebEngine::initialize).
-    // If so, setup global share context needed by the Qml WebEngineView.
-    if( QCoreApplication::testAttribute( Qt::AA_ShareOpenGLContexts ))
-#if DEFLECT_USE_QT5GUI
-        qt_gl_set_global_share_context( _context );
-#else
-        qWarning() << "DeflectQt was not compiled with WebEngineView support";
-#endif
-    connect( &_mouseModeTimer, &QTimer::timeout, [this]() {
+    connect( &_mouseModeTimer, &QTimer::timeout, [&] {
         if( _touchIsTapAndHold( ))
             _switchFromTouchToMouseMode();
     });
-
-    // Pass _context->format(), not format_. Format does not specify and color
-    // buffer sizes, while the context, that has just been created, reports a
-    // format that has these values filled in. Pass this to the offscreen
-    // surface to make sure it will be compatible with the context's
-    // configuration.
-    _offscreenSurface->setFormat( _context->format( ));
-    _offscreenSurface->create();
 
     if( !_qmlEngine->incubationController( ))
         _qmlEngine->setIncubationController( _quickWindow->incubationController( ));
@@ -163,10 +135,6 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
     // Now hook up the signals. For simplicy we don't differentiate between
     // renderRequested (only render is needed, no sync) and sceneChanged (polish
     // and sync is needed too).
-    connect( _quickWindow, &QQuickWindow::sceneGraphInitialized,
-             this, &QmlStreamer::Impl::_createFbo );
-    connect( _quickWindow, &QQuickWindow::sceneGraphInvalidated,
-             this, &QmlStreamer::Impl::_destroyFbo );
     connect( _renderControl, &QQuickRenderControl::renderRequested,
              this, &QmlStreamer::Impl::_requestRender );
     connect( _renderControl, &QQuickRenderControl::sceneChanged,
@@ -182,10 +150,9 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
 
 QmlStreamer::Impl::~Impl()
 {
-    delete _eventHandler;
-    delete _stream;
-
-    _context->makeCurrent( _offscreenSurface );
+    _quickRenderer->stop();
+    _quickRendererThread.quit();
+    _quickRendererThread.wait();
 
     // delete first to free scenegraph resources for following destructions
     delete _renderControl;
@@ -194,89 +161,8 @@ QmlStreamer::Impl::~Impl()
     delete _qmlComponent;
     delete _quickWindow;
     delete _qmlEngine;
-    delete _fbo;
 
-    _context->doneCurrent();
-
-    delete _offscreenSurface;
-    delete _context;
-}
-
-void QmlStreamer::Impl::_createFbo()
-{
-    _fbo =
-        new QOpenGLFramebufferObject( _quickWindow->size() * devicePixelRatio(),
-                               QOpenGLFramebufferObject::CombinedDepthStencil );
-    _quickWindow->setRenderTarget( _fbo );
-}
-
-void QmlStreamer::Impl::_destroyFbo()
-{
-    delete _fbo;
-    _fbo = 0;
-}
-
-void QmlStreamer::Impl::_render()
-{
-    if( !_context->makeCurrent( _offscreenSurface ))
-        return;
-
-    // Initialize the render control and our OpenGL resources. Do this as
-    // late as possible to use the proper size reported by the rootItem.
-    if( !_fbo )
-    {
-        _updateSizes( QSize( _rootItem->width(), _rootItem->height( )));
-
-        _renderControl->initialize( _context );
-
-        if( !_setupDeflectStream( ))
-        {
-            qWarning() << "Could not setup Deflect stream";
-            emit streamClosed();
-        }
-    }
-
-    if( !_streaming )
-        return;
-
-    // Polish, synchronize and render the next frame (into our fbo). In this
-    // example everything happens on the same thread and therefore all three
-    // steps are performed in succession from here. In a threaded setup the
-    // render() call would happen on a separate thread.
-    _renderControl->polishItems();
-    _renderControl->sync();
-    _renderControl->render();
-
-    _quickWindow->resetOpenGLState();
-    QOpenGLFramebufferObject::bindDefault();
-
-    _context->functions()->glFlush();
-
-    const QImage image = _fbo->toImage();
-    if( image.isNull( ))
-    {
-        qDebug() << "Empty image not streamed";
-        return;
-    }
-
-    ImageWrapper imageWrapper( image.constBits(), image.width(), image.height(),
-                               BGRA, 0, 0 );
-    imageWrapper.compressionPolicy = COMPRESSION_ON;
-    imageWrapper.compressionQuality = 100;
-    _streaming = _stream->send( imageWrapper ) && _stream->finishFrame();
-
-    if( !_streaming )
-    {
-        killTimer( _renderTimer );
-        _renderTimer = 0;
-        killTimer( _stopRenderingDelayTimer );
-        _stopRenderingDelayTimer = 0;
-        emit streamClosed();
-        return;
-    }
-
-    if( _stopRenderingDelayTimer == 0 )
-        _stopRenderingDelayTimer = startTimer( 5000 /*ms*/ );
+    delete _quickRenderer;
 }
 
 void QmlStreamer::Impl::_requestRender()
@@ -286,6 +172,103 @@ void QmlStreamer::Impl::_requestRender()
 
     if( _renderTimer == 0 )
         _renderTimer = startTimer( 5, Qt::PreciseTimer );
+}
+
+void QmlStreamer::Impl::_initRenderer()
+{
+    _updateSizes( QSize( _rootItem->width(), _rootItem->height( )));
+
+    _quickRenderer = new QuickRenderer( *_quickWindow, *_renderControl,
+                                        true );
+
+#if QT_VERSION >= 0x050500
+    // Call required to make QtGraphicalEffects work in the initial scene.
+    _renderControl->prepareThread( &_quickRendererThread );
+#else
+    qDebug() << "missing QQuickRenderControl::prepareThread() on Qt < 5.5. "
+                "Expect some qWarnings and failing QtGraphicalEffects.";
+#endif
+
+    _quickRenderer->moveToThread( &_quickRendererThread );
+
+    _quickRendererThread.setObjectName( "Render" );
+    _quickRendererThread.start();
+
+    _quickRenderer->init();
+
+    connect( _quickRenderer, &QuickRenderer::afterRender,
+             this, &QmlStreamer::Impl::_afterRender, Qt::DirectConnection );
+    connect( _quickRenderer, &QuickRenderer::afterStop,
+             this, &QmlStreamer::Impl::_afterStop, Qt::DirectConnection );
+}
+
+void QmlStreamer::Impl::_render()
+{
+    // Initialize the render control and our OpenGL resources. Do this as late
+    // as possible to use the proper size reported by the rootItem.
+    if( !_quickRendererThread.isRunning( ))
+        _initRenderer();
+
+    _renderControl->polishItems();
+    _quickRenderer->render();
+
+    if( _stopRenderingDelayTimer == 0 )
+        _stopRenderingDelayTimer = startTimer( 5000 /*ms*/ );
+}
+
+void QmlStreamer::Impl::_afterRender()
+{
+    if( _stream )
+        _streaming = _sendFuture.get();
+    else
+    {
+        if( !_setupDeflectStream( ))
+        {
+            qWarning() << "Could not setup Deflect stream";
+            _streaming = false;
+            return;
+        }
+        _streaming = true;
+    }
+
+    if( !_streaming )
+        return;
+
+    _quickRenderer->context()->functions()->glFlush();
+    _image = _quickRenderer->fbo()->toImage();
+    if( _image.isNull( ))
+    {
+        qDebug() << "Empty image not streamed";
+        return;
+    }
+
+    ImageWrapper imageWrapper( _image.constBits(), _image.width(),
+                               _image.height(), BGRA );
+    imageWrapper.compressionPolicy = COMPRESSION_ON;
+    imageWrapper.compressionQuality = 80;
+
+    if( _asyncSend )
+        _sendFuture = _stream->asyncSend( imageWrapper );
+    else
+        _sendFuture = make_ready_future( _stream->send( imageWrapper ) &&
+                                         _stream->finishFrame( ));
+}
+
+void QmlStreamer::Impl::_afterStop()
+{
+    if( _sendFuture.valid() && _asyncSend )
+        _sendFuture.wait();
+    delete _eventHandler;
+    delete _stream;
+}
+
+void QmlStreamer::Impl::_onStreamClosed()
+{
+    killTimer( _renderTimer );
+    _renderTimer = 0;
+    killTimer( _stopRenderingDelayTimer );
+    _stopRenderingDelayTimer = 0;
+    emit streamClosed();
 }
 
 void QmlStreamer::Impl::_onPressed( const QPointF pos )
@@ -436,8 +419,6 @@ bool QmlStreamer::Impl::_setupDeflectStream()
     if( !_stream->isConnected( ))
         return false;
 
-    _stream->setDisconnectedCallback( [this](){ emit streamClosed(); } );
-
     if( !_stream->registerForEvents( ))
         return false;
 
@@ -477,6 +458,9 @@ bool QmlStreamer::Impl::_setupDeflectStream()
              _qmlGestures, &QmlGestures::swipeLeft );
     connect( _eventHandler, &EventReceiver::swipeRight,
              _qmlGestures, &QmlGestures::swipeRight );
+
+    connect( _eventHandler, &EventReceiver::closed,
+             this, &QmlStreamer::Impl::_onStreamClosed );
 
     return true;
 }
@@ -552,14 +536,6 @@ void QmlStreamer::Impl::_sendMouseEvent( const QEvent::Type eventType,
 void QmlStreamer::Impl::resizeEvent( QResizeEvent* e )
 {
     _updateSizes( e->size( ));
-
-    if( _fbo && _fbo->size() != e->size() * devicePixelRatio() &&
-        _context->makeCurrent( _offscreenSurface ))
-    {
-        _destroyFbo();
-        _createFbo();
-        _context->doneCurrent();
-    }
 }
 
 void QmlStreamer::Impl::mousePressEvent( QMouseEvent* e )

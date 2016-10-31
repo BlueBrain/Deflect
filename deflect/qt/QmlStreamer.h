@@ -93,6 +93,9 @@ public:
 
     DEFLECTQT_API ~QmlStreamer();
 
+    /** Use asynchronous send of images via Deflect stream. Default off. */
+    DEFLECTQT_API void useAsyncSend( bool async );
+
     /** @return the QML root item, might be nullptr if not ready yet. */
     DEFLECTQT_API QQuickItem* getRootItem();
 

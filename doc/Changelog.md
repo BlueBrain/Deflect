@@ -5,12 +5,16 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
-* [130](https://github.com/BlueBrain/Deflect/pull/130)
+* [133](https://github.com/BlueBrain/Deflect/pull/133):
+  QmlStreamer: Use asynchronous rendering, add
+  deflect::qt::QmlStreamer::useAsyncSend() to enable asynchronous image streaming
+  (off by default).
+* [130](https://github.com/BlueBrain/Deflect/pull/130):
   Replaced boost by C++11. Boost is now an optional dependency and it is used
   only by the tests. Some API changes were introduced by this change.
-* [129](https://github.com/BlueBrain/Deflect/pull/129)
+* [129](https://github.com/BlueBrain/Deflect/pull/129):
   Cleared Deflect from boost::serialization that was used exclusively by Tide.
-* [128](https://github.com/BlueBrain/Deflect/pull/128)
+* [128](https://github.com/BlueBrain/Deflect/pull/128):
   New events for transmitting all touch points in addition to existing gestures:
   - Gives the ability to handle more than one touch point in applications (e.g.
     draw with multiple fingers on a whiteboard).
@@ -22,7 +26,7 @@ Changelog {#Changelog}
   - A new *pinch* event was added. Clients of Tide >= 1.2 have to adapt their
     code to use it instead of *wheel* events, which are no longer sent.
   - Minor additions to the simplestreamer demo application.
-* [126](https://github.com/BlueBrain/Deflect/pull/126)
+* [126](https://github.com/BlueBrain/Deflect/pull/126):
   DesktopStreamer: The list of default hosts can be configured using the CMake
   variable DEFLECT_DESKTOPSTREAMER_HOSTS.
 * [124](https://github.com/BlueBrain/Deflect/pull/124):
