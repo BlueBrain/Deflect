@@ -58,25 +58,35 @@ namespace qt
 
 QuickRenderer::QuickRenderer( QQuickWindow& quickWindow,
                               QQuickRenderControl& renderControl,
+                              const bool multithreaded,
                               const bool offscreen )
     : _quickWindow( quickWindow )
     , _renderControl( renderControl )
+    , _multithreaded( multithreaded )
     , _offscreen( offscreen )
     , _initialized( false )
 {
+    const auto connectionType = multithreaded ?
+                Qt::BlockingQueuedConnection : Qt::DirectConnection;
+
     connect( this, &QuickRenderer::init, this,
-             &QuickRenderer::_onInit, Qt::BlockingQueuedConnection );
+             &QuickRenderer::_onInit, connectionType );
     connect( this, &QuickRenderer::stop, this,
-             &QuickRenderer::_onStop, Qt::BlockingQueuedConnection );
+             &QuickRenderer::_onStop, connectionType );
 }
 
 void QuickRenderer::render()
 {
-    QMutexLocker lock( &_mutex );
-    QCoreApplication::postEvent( this, new QEvent( QEvent::User ));
+    if( _multithreaded )
+    {
+        QMutexLocker lock( &_mutex );
+        QCoreApplication::postEvent( this, new QEvent( QEvent::User ));
 
-    // the main thread has to be blocked for sync()
-    _cond.wait( &_mutex );
+        // the main thread has to be blocked for sync()
+        _cond.wait( &_mutex );
+    }
+    else
+        _onRender();
 }
 
 bool QuickRenderer::event( QEvent* e )
@@ -186,7 +196,8 @@ void QuickRenderer::_onRender()
         _renderControl.sync();
 
         // unblock gui thread after sync in render thread is done
-        _cond.wakeOne();
+        if( _multithreaded )
+            _cond.wakeOne();
     }
 
     _renderControl.render();

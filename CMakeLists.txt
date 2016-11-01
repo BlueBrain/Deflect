@@ -39,6 +39,10 @@ common_find_package(Qt5Widgets REQUIRED)
 common_find_package(Servus)
 common_find_package_post()
 
+if(NOT Qt5Quick_VERSION VERSION_LESS 5.5)
+  option(DEFLECT_QMLSTREAMER_MULTITHREADED "Use multithreaded-rendering in QMLStreamer" ON)
+endif()
+
 add_subdirectory(deflect)
 add_subdirectory(apps)
 if(Boost_FOUND)

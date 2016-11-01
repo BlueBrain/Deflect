@@ -77,13 +77,15 @@ public:
      *                    the render target.
      * @param renderControl associated with the QML scene of quickWindow to
      *                      trigger the actual rendering.
+     * @param multithreaded whether the QuickRenderer is used in a multithreaded
+     *                      fashion and should setup accordingly
      * @param offscreen render into an offscreen surface rather than the
      *                  quickWindow. It creates an FBO internally to hold the
      *                  rendered pixels.
      */
     QuickRenderer( QQuickWindow& quickWindow,
                    QQuickRenderControl& renderControl,
-                   bool offscreen = false );
+                   bool multithreaded = true, bool offscreen = false );
 
     /** @return OpenGL context used for rendering; lives in render thread. */
     QOpenGLContext* context() { return _context; }
@@ -139,6 +141,7 @@ private:
     QOffscreenSurface* _offscreenSurface{ nullptr };
     QOpenGLFramebufferObject* _fbo{ nullptr };
 
+    bool _multithreaded;
     bool _offscreen;
     bool _initialized{ false };
 
