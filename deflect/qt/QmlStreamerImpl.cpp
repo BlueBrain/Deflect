@@ -151,8 +151,10 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
 QmlStreamer::Impl::~Impl()
 {
     _quickRenderer->stop();
+#ifdef DEFLECTQT_MULTITHREADED
     _quickRendererThread.quit();
     _quickRendererThread.wait();
+#endif
 
     // delete first to free scenegraph resources for following destructions
     delete _renderControl;
@@ -178,21 +180,21 @@ void QmlStreamer::Impl::_initRenderer()
 {
     _updateSizes( QSize( _rootItem->width(), _rootItem->height( )));
 
-    _quickRenderer = new QuickRenderer( *_quickWindow, *_renderControl,
+#ifdef DEFLECTQT_MULTITHREADED
+    _quickRenderer = new QuickRenderer( *_quickWindow, *_renderControl, true,
                                         true );
 
-#if QT_VERSION >= 0x050500
     // Call required to make QtGraphicalEffects work in the initial scene.
     _renderControl->prepareThread( &_quickRendererThread );
-#else
-    qDebug() << "missing QQuickRenderControl::prepareThread() on Qt < 5.5. "
-                "Expect some qWarnings and failing QtGraphicalEffects.";
-#endif
 
     _quickRenderer->moveToThread( &_quickRendererThread );
 
     _quickRendererThread.setObjectName( "Render" );
     _quickRendererThread.start();
+#else
+    _quickRenderer = new QuickRenderer( *_quickWindow, *_renderControl, false,
+                                        true );
+#endif
 
     _quickRenderer->init();
 
@@ -206,7 +208,7 @@ void QmlStreamer::Impl::_render()
 {
     // Initialize the render control and our OpenGL resources. Do this as late
     // as possible to use the proper size reported by the rootItem.
-    if( !_quickRendererThread.isRunning( ))
+    if( !_quickRenderer )
         _initRenderer();
 
     _renderControl->polishItems();
