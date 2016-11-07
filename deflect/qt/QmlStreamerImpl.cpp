@@ -45,10 +45,8 @@
 #include "QmlGestures.h"
 #include "TouchInjector.h"
 
-#include <QGuiApplication>
-#include <QOffscreenSurface>
+#include <QCoreApplication>
 #include <QOpenGLContext>
-#include <QOpenGLFramebufferObject>
 #include <QOpenGLFunctions>
 #include <QQmlComponent>
 #include <QQmlContext>
@@ -56,7 +54,6 @@
 #include <QQuickItem>
 #include <QQuickRenderControl>
 #include <QQuickWindow>
-#include <QThread>
 
 namespace
 {
@@ -74,24 +71,6 @@ deflect::Stream::Future make_ready_future( const bool value )
 }
 }
 
-class RenderControl : public QQuickRenderControl
-{
-public:
-    RenderControl( QWindow* w )
-        : _window( w )
-    {}
-
-    QWindow* renderWindow( QPoint* offset ) final
-    {
-        if( offset )
-            *offset = QPoint( 0, 0 );
-        return _window;
-    }
-
-private:
-    QWindow* _window;
-};
-
 namespace deflect
 {
 namespace qt
@@ -99,8 +78,7 @@ namespace qt
 
 QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
                          const std::string& streamId )
-    : QWindow()
-    , _renderControl( new RenderControl( this ))
+    : _renderControl( new QQuickRenderControl )
     // Create a QQuickWindow that is associated with out render control. Note
     // that this window never gets created or shown, meaning that it will never
     // get an underlying native (platform) window.
@@ -115,19 +93,11 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
     , _streamId( streamId )
     , _sendFuture( make_ready_future( true ))
 {
-    _mouseModeTimer.setSingleShot( true );
-    _mouseModeTimer.setInterval( TOUCH_TAPANDHOLD_TIMEOUT_MS );
+    _setupMouseModeSwitcher();
 
     // Expose stream gestures to qml objects
     _qmlEngine->rootContext()->setContextProperty( GESTURES_CONTEXT_PROPERTY,
                                                    _qmlGestures );
-
-    setSurfaceType( QSurface::OpenGLSurface );
-
-    connect( &_mouseModeTimer, &QTimer::timeout, [&] {
-        if( _touchIsTapAndHold( ))
-            _switchFromTouchToMouseMode();
-    });
 
     if( !_qmlEngine->incubationController( ))
         _qmlEngine->setIncubationController( _quickWindow->incubationController( ));
@@ -299,11 +269,6 @@ void QmlStreamer::Impl::_onReleased( const QPointF pos )
     }
 }
 
-void QmlStreamer::Impl::_onResized( const QSize newSize )
-{
-    QCoreApplication::postEvent( this, new QResizeEvent( newSize, size( )));
-}
-
 void QmlStreamer::Impl::_onKeyPress( int key, int modifiers, QString text )
 {
     QKeyEvent keyEvent_( QEvent::KeyPress, key,
@@ -443,7 +408,7 @@ bool QmlStreamer::Impl::_setupDeflectStream()
 
     // handle view resize
     connect( _eventHandler, &EventReceiver::resized,
-             this, &QmlStreamer::Impl::_onResized );
+             this, &QmlStreamer::Impl::_updateSizes );
 
     // inject key events
     connect( _eventHandler, &EventReceiver::keyPress,
@@ -469,7 +434,6 @@ bool QmlStreamer::Impl::_setupDeflectStream()
 
 void QmlStreamer::Impl::_updateSizes( const QSize& size_ )
 {
-    resize( size_ );
     _quickWindow->blockSignals( true );
     _quickWindow->resize( size_ );
     _quickWindow->blockSignals( false );
@@ -489,6 +453,16 @@ void QmlStreamer::Impl::_connectTouchInjector()
              _touchInjector, &TouchInjector::updateTouchPoint );
     connect( _eventHandler, &EventReceiver::touchPointRemoved,
              _touchInjector, &TouchInjector::removeTouchPoint );
+}
+
+void QmlStreamer::Impl::_setupMouseModeSwitcher()
+{
+    _mouseModeTimer.setSingleShot( true );
+    _mouseModeTimer.setInterval( TOUCH_TAPANDHOLD_TIMEOUT_MS );
+    connect( &_mouseModeTimer, &QTimer::timeout, [this] {
+        if( _touchIsTapAndHold( ))
+            _switchFromTouchToMouseMode();
+    });
 }
 
 void QmlStreamer::Impl::_startMouseModeSwitchDetection( const QPointF& pos )
@@ -524,7 +498,8 @@ void QmlStreamer::Impl::_switchBackToTouchMode()
 
 QPointF QmlStreamer::Impl::_mapToScene( const QPointF& normalizedPos ) const
 {
-    return QPointF{ normalizedPos.x() * width(), normalizedPos.y() * height() };
+    return { normalizedPos.x() * _quickWindow->width(),
+             normalizedPos.y() * _quickWindow->height() };
 }
 
 void QmlStreamer::Impl::_sendMouseEvent( const QEvent::Type eventType,
@@ -533,30 +508,6 @@ void QmlStreamer::Impl::_sendMouseEvent( const QEvent::Type eventType,
     auto e = new QMouseEvent( eventType, pos, Qt::LeftButton, Qt::LeftButton,
                               Qt::NoModifier );
     QCoreApplication::postEvent( _quickWindow, e );
-}
-
-void QmlStreamer::Impl::resizeEvent( QResizeEvent* e )
-{
-    _updateSizes( e->size( ));
-}
-
-void QmlStreamer::Impl::mousePressEvent( QMouseEvent* e )
-{
-    // Use the constructor taking localPos and screenPos. That puts localPos
-    // into the event's localPos and windowPos, and screenPos into the event's
-    // screenPos. This way the windowPos in e is ignored and is replaced by
-    // localPos. This is necessary because QQuickWindow thinks of itself as a
-    // top-level window always.
-    QMouseEvent mappedEvent( e->type(), e->localPos(), e->screenPos(),
-                             e->button(), e->buttons(), e->modifiers( ));
-    QCoreApplication::sendEvent( _quickWindow, &mappedEvent );
-}
-
-void QmlStreamer::Impl::mouseReleaseEvent( QMouseEvent* e )
-{
-    QMouseEvent mappedEvent( e->type(), e->localPos(), e->screenPos(),
-                             e->button(), e->buttons(), e->modifiers( ));
-    QCoreApplication::sendEvent( _quickWindow, &mappedEvent );
 }
 
 void QmlStreamer::Impl::timerEvent( QTimerEvent* e )
