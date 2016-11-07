@@ -41,17 +41,16 @@
 #ifndef QMLSTREAMERIMPL_H
 #define QMLSTREAMERIMPL_H
 
+#include <QImage>
+#include <QObject>
 #include <QTimer>
 #include <QThread>
-#include <QWindow>
 
 #include "QmlStreamer.h"
 #include "../SizeHints.h"
 
 #include <deflect/Stream.h>
 
-QT_FORWARD_DECLARE_CLASS(QOpenGLContext)
-QT_FORWARD_DECLARE_CLASS(QOpenGLFramebufferObject)
 QT_FORWARD_DECLARE_CLASS(QQmlComponent)
 QT_FORWARD_DECLARE_CLASS(QQmlEngine)
 QT_FORWARD_DECLARE_CLASS(QQuickItem)
@@ -68,14 +67,13 @@ class EventReceiver;
 class QmlGestures;
 class TouchInjector;
 
-class QmlStreamer::Impl : public QWindow
+class QmlStreamer::Impl : public QObject
 {
     Q_OBJECT
 
 public:
     Impl( const QString& qmlFile, const std::string& streamHost,
           const std::string& streamId );
-
     ~Impl();
 
     void useAsyncSend( const bool async ) { _asyncSend = async; }
@@ -83,10 +81,10 @@ public:
     QQmlEngine* getQmlEngine() { return _qmlEngine; }
     Stream* getStream() { return _stream; }
 
+signals:
+    void streamClosed();
+
 protected:
-    void resizeEvent( QResizeEvent* e ) final;
-    void mousePressEvent( QMouseEvent* e ) final;
-    void mouseReleaseEvent( QMouseEvent* e ) final;
     void timerEvent( QTimerEvent* e ) final;
 
 private slots:
@@ -102,15 +100,10 @@ private slots:
     void _onReleased( QPointF position );
     void _onMoved( QPointF position );
 
-    void _onResized( QSize newSize );
-
     void _onKeyPress( int key, int modifiers, QString text );
     void _onKeyRelease( int key, int modifiers, QString text );
 
     void _onStreamClosed();
-
-signals:
-    void streamClosed();
 
 private:
     void _initRenderer();
@@ -121,6 +114,7 @@ private:
     void _updateSizes( const QSize& size );
 
     void _connectTouchInjector();
+    void _setupMouseModeSwitcher();
     void _startMouseModeSwitchDetection( const QPointF& pos );
     bool _touchIsTapAndHold();
     void _switchFromTouchToMouseMode();
