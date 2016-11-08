@@ -59,11 +59,11 @@ namespace qt
 QuickRenderer::QuickRenderer( QQuickWindow& quickWindow,
                               QQuickRenderControl& renderControl,
                               const bool multithreaded,
-                              const bool offscreen )
+                              const RenderTarget target )
     : _quickWindow( quickWindow )
     , _renderControl( renderControl )
     , _multithreaded( multithreaded )
-    , _offscreen( offscreen )
+    , _renderTarget( target )
     , _initialized( false )
 {
     const auto connectionType = multithreaded ?
@@ -101,6 +101,9 @@ bool QuickRenderer::event( QEvent* e )
 
 void QuickRenderer::_onInit()
 {
+    if( _renderTarget == RenderTarget::NONE )
+        return;
+
     // Qt Quick may need a depth and stencil buffer
     QSurfaceFormat format_;
     format_.setDepthBufferSize( 16 );
@@ -119,7 +122,7 @@ void QuickRenderer::_onInit()
         qWarning() << "DeflectQt was not compiled with WebEngineView support";
 #endif
 
-    if( _offscreen )
+    if( _renderTarget == RenderTarget::FBO )
     {
         _offscreenSurface = new QOffscreenSurface;
         // Pass _context->format(), not format_. Format does not specify and color
@@ -138,14 +141,16 @@ void QuickRenderer::_onInit()
 
 void QuickRenderer::_onStop()
 {
-    _context->makeCurrent( _getSurface( ));
+    if( _context )
+        _context->makeCurrent( _getSurface( ));
 
     _renderControl.invalidate();
 
     delete _fbo;
     _fbo = nullptr;
 
-    _context->doneCurrent();
+    if( _context )
+        _context->doneCurrent();
 
     delete _offscreenSurface;
     _offscreenSurface = nullptr;
@@ -157,8 +162,9 @@ void QuickRenderer::_onStop()
 
 void QuickRenderer::_ensureFBO()
 {
-    if( _fbo &&
-        _fbo->size() != _quickWindow.size() * _quickWindow.devicePixelRatio())
+    const auto winSize = _quickWindow.size() * _quickWindow.devicePixelRatio();
+
+    if( _fbo && _fbo->size() != winSize )
     {
         delete _fbo;
         _fbo = nullptr;
@@ -167,22 +173,21 @@ void QuickRenderer::_ensureFBO()
     if( !_fbo )
     {
         _fbo = new QOpenGLFramebufferObject(
-                    _quickWindow.size() * _quickWindow.devicePixelRatio(),
-                    QOpenGLFramebufferObject::CombinedDepthStencil );
+                   winSize, QOpenGLFramebufferObject::CombinedDepthStencil );
         _quickWindow.setRenderTarget( _fbo );
     }
 }
 
 QSurface* QuickRenderer::_getSurface()
 {
-    if( _offscreen )
+    if( _offscreenSurface )
         return _offscreenSurface;
     return &_quickWindow;
 }
 
 void QuickRenderer::_onRender()
 {
-    if( !_initialized )
+    if( !_initialized || _renderTarget == RenderTarget::NONE )
         return;
 
     {
@@ -190,7 +195,7 @@ void QuickRenderer::_onRender()
 
         _context->makeCurrent( _getSurface( ));
 
-        if( _offscreen )
+        if( _renderTarget == RenderTarget::FBO )
             _ensureFBO();
 
         _renderControl.sync();

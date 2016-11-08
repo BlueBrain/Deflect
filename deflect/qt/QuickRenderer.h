@@ -37,8 +37,8 @@
 /* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#ifndef QUICKRENDERER_H
-#define QUICKRENDERER_H
+#ifndef DELFECT_QT_QUICKRENDERER_H
+#define DELFECT_QT_QUICKRENDERER_H
 
 #include <QMutex>
 #include <QObject>
@@ -55,6 +55,16 @@ namespace deflect
 {
 namespace qt
 {
+
+/**
+ * The different targets for rendering.
+ */
+enum class RenderTarget
+{
+    WINDOW,   /**< Render inside the window */
+    FBO,      /**< Render inside an FBO (offscreen) */
+    NONE      /**< Only process events without rendering */
+};
 
 /**
  * Renders the QML scene from the given window using QQuickRenderControl onto
@@ -79,13 +89,13 @@ public:
      *                      trigger the actual rendering.
      * @param multithreaded whether the QuickRenderer is used in a multithreaded
      *                      fashion and should setup accordingly
-     * @param offscreen render into an offscreen surface rather than the
-     *                  quickWindow. It creates an FBO internally to hold the
-     *                  rendered pixels.
+     * @param target defines where the rendering should happen. An FBO is
+     *               internally created to hold the rendered pixels if needed.
      */
     QuickRenderer( QQuickWindow& quickWindow,
                    QQuickRenderControl& renderControl,
-                   bool multithreaded = true, bool offscreen = false );
+                   bool multithreaded = true,
+                   RenderTarget target = RenderTarget::WINDOW );
 
     /** @return OpenGL context used for rendering; lives in render thread. */
     QOpenGLContext* context() { return _context; }
@@ -141,8 +151,8 @@ private:
     QOffscreenSurface* _offscreenSurface{ nullptr };
     QOpenGLFramebufferObject* _fbo{ nullptr };
 
-    bool _multithreaded;
-    bool _offscreen;
+    const bool _multithreaded;
+    const RenderTarget _renderTarget;
     bool _initialized{ false };
 
     QMutex _mutex;

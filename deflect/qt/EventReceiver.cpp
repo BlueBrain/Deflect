@@ -83,6 +83,7 @@ void EventReceiver::_onEvent( int socket )
         {
         case Event::EVT_CLOSE:
             _notifier->setEnabled( false );
+            _timer->stop();
             emit closed();
             break;
         case Event::EVT_PRESS:
@@ -133,6 +134,13 @@ void EventReceiver::_onEvent( int socket )
         default:
             break;
         }
+    }
+
+    if( !_stream.isConnected( ))
+    {
+        _notifier->setEnabled( false );
+        _timer->stop();
+        emit closed();
     }
 }
 }

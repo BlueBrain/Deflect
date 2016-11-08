@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2015-2016, EPFL/Blue Brain Project                  */
-/*                     Daniel.Nachbaur <daniel.nachbaur@epfl.ch>     */
+/* Copyright (c) 2016, EPFL/Blue Brain Project                       */
+/*                     Daniel Nachbaur <daniel.nachbaur@epfl.ch>     */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -35,60 +35,103 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The University of Texas at Austin.                 */
+/* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#ifndef DELFECT_QT_EVENTRECEIVER_H
-#define DELFECT_QT_EVENTRECEIVER_H
+#ifndef DELFECT_QT_OFFSCREENQUICKVIEW_H
+#define DELFECT_QT_OFFSCREENQUICKVIEW_H
 
-#include <QObject>
-#include <QPointF>
-#include <QSize>
-#include <QSocketNotifier>
-#include <QTimer>
+#include <future>
+#include <QQuickWindow>
 
-#include <deflect/Stream.h>
+QT_FORWARD_DECLARE_CLASS(QQmlComponent)
+QT_FORWARD_DECLARE_CLASS(QQmlEngine)
+QT_FORWARD_DECLARE_CLASS(QQuickItem)
 
 namespace deflect
 {
 namespace qt
 {
 
-class EventReceiver : public QObject
+/**
+ * The different modes of rendering.
+ */
+enum class RenderMode
+{
+    SINGLETHREADED, /**< Render and process events in the same thread */
+    MULTITHREADED,  /**< Render in a thread separate from event processing */
+    DISABLED        /**< Only process events without rendering */
+};
+
+class QuickRenderer;
+
+/**
+ * An offscreen Qt Quick window, similar to a QQuickView.
+ */
+class OffscreenQuickView : public QQuickWindow
 {
     Q_OBJECT
 
 public:
-    EventReceiver( Stream& stream );
-    ~EventReceiver();
+    /**
+     * Create an offscreen qml view.
+     * @param control the render control that will be used by the view.
+     * @param mode the rendering mode
+     */
+    OffscreenQuickView( std::unique_ptr<QQuickRenderControl> control,
+                        RenderMode mode = RenderMode::MULTITHREADED );
+
+    /** Close the view, stopping the rendering. */
+    ~OffscreenQuickView();
+
+    /**
+     * Load a qml file to render.
+     * @param url qml file to load (will happen asynchronously if it is remote).
+     * @return a future which will indicate the success of the operation.
+     */
+    std::future<bool> load( const QUrl& url );
+
+    /** @return the root qml item after a successful load, else nullptr. */
+    QQuickItem* getRootItem() const;
+
+    /** @return the internal qml engine. */
+    QQmlEngine* getEngine() const;
+
+    /** @return the root qml context. */
+    QQmlContext* getRootContext() const;
+
+    /** Get the rendered image. Must be called directly from afterRender(). */
+    QImage getImage() const;
 
 signals:
-    void pressed( QPointF position );
-    void released( QPointF position );
-    void moved( QPointF position );
+    /** Notify that the scene has just finished rendering. */
+    void afterRender();
 
-    void resized( QSize newSize );
-    void closed();
-
-    void keyPress( int key, int modifiers, QString text );
-    void keyRelease( int key, int modifiers, QString text );
-
-    void swipeLeft();
-    void swipeRight();
-    void swipeUp();
-    void swipeDown();
-
-    void touchPointAdded( int id, QPointF position );
-    void touchPointUpdated( int id, QPointF position );
-    void touchPointRemoved( int id, QPointF position );
-
-private slots:
-    void _onEvent( int socket );
+    /** Notify that the rendering has stopped. */
+    void afterStop();
 
 private:
-    Stream& _stream;
-    std::unique_ptr< QSocketNotifier > _notifier;
-    std::unique_ptr< QTimer > _timer;
+    std::unique_ptr<QQuickRenderControl> _renderControl;
+    const RenderMode _mode;
+
+    std::unique_ptr<QQmlEngine> _qmlEngine;
+    std::unique_ptr<QQmlComponent> _qmlComponent;
+    std::unique_ptr<QQuickItem> _rootItem;
+
+    std::unique_ptr<QThread> _quickRendererThread;
+    std::unique_ptr<QuickRenderer> _quickRenderer;
+
+    std::promise<bool> _loadPromise;
+
+    int _renderTimer = 0;
+    int _stopRenderingDelayTimer = 0;
+
+    void timerEvent( QTimerEvent* e ) final;
+
+    void _setupRootItem();
+    void _requestRender();
+    void _initRenderer();
+    void _render();
 };
 
 }

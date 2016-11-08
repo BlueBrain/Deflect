@@ -37,8 +37,8 @@
 /* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#ifndef QMLGESTURES_H
-#define QMLGESTURES_H
+#ifndef DELFECT_QT_QMLGESTURES_H
+#define DELFECT_QT_QMLGESTURES_H
 
 #include <QObject>
 

@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [137](https://github.com/BlueBrain/Deflect/pull/137):
+  Deflect Qt: the offscreen Qml view used by the Qml streamer is now available
+  as a separate class.
 * [133](https://github.com/BlueBrain/Deflect/pull/133):
   QmlStreamer: Use asynchronous rendering, add
   deflect::qt::QmlStreamer::useAsyncSend() to enable asynchronous image streaming

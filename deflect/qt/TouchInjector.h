@@ -37,13 +37,16 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef TOUCHINJECTOR_H
-#define TOUCHINJECTOR_H
+#ifndef DELFECT_QT_TOUCHINJECTOR_H
+#define DELFECT_QT_TOUCHINJECTOR_H
 
 #include <QObject>
 #include <QTouchEvent>
 
 #include <functional>
+#include <memory>
+
+class QWindow;
 
 namespace deflect
 {
@@ -68,6 +71,12 @@ public:
      * @param mapFunc the function to generate scene / window coordinates
      */
     TouchInjector( QObject& target, MapToSceneFunc mapFunc );
+
+    /**
+     * Create a touch injector for a QWindow.
+     * @param window the target window that should receive the touch events
+     */
+    static std::unique_ptr<TouchInjector> create( QWindow& window );
 
     /**
      * Insert a new touch point.

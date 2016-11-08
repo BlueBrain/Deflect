@@ -41,19 +41,14 @@
 #include "QmlStreamerImpl.h"
 
 #include "EventReceiver.h"
-#include "QuickRenderer.h"
+#include "helpers.h"
 #include "QmlGestures.h"
 #include "TouchInjector.h"
 
 #include <QCoreApplication>
-#include <QOpenGLContext>
-#include <QOpenGLFunctions>
-#include <QQmlComponent>
 #include <QQmlContext>
-#include <QQmlEngine>
 #include <QQuickItem>
 #include <QQuickRenderControl>
-#include <QQuickWindow>
 
 namespace
 {
@@ -62,13 +57,11 @@ const QString GESTURES_CONTEXT_PROPERTY( "deflectgestures" );
 const QString WEBENGINEVIEW_OBJECT_NAME( "webengineview" );
 const int TOUCH_TAPANDHOLD_DIST_PX = 20;
 const int TOUCH_TAPANDHOLD_TIMEOUT_MS = 200;
-
-deflect::Stream::Future make_ready_future( const bool value )
-{
-    std::promise< bool > promise;
-    promise.set_value( value );
-    return promise.get_future();
-}
+#ifdef DEFLECTQT_MULTITHREADED
+const auto renderMode = deflect::qt::RenderMode::MULTITHREADED;
+#else
+const auto renderMode = deflect::qt::RenderMode::SINGLETHREADED;
+#endif
 }
 
 namespace deflect
@@ -78,136 +71,44 @@ namespace qt
 
 QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
                          const std::string& streamId )
-    : _renderControl( new QQuickRenderControl )
-    // Create a QQuickWindow that is associated with out render control. Note
-    // that this window never gets created or shown, meaning that it will never
-    // get an underlying native (platform) window.
-    , _quickWindow( new QQuickWindow( _renderControl ))
-    , _qmlEngine( new QQmlEngine )
-    , _qmlComponent( new QQmlComponent( _qmlEngine, QUrl( qmlFile )))
-    , _qmlGestures( new QmlGestures )
-    , _touchInjector( new TouchInjector( *_quickWindow,
-                                         std::bind( &Impl::_mapToScene, this,
-                                                    std::placeholders::_1 )))
+    : _quickView{ new OffscreenQuickView{ make_unique<QQuickRenderControl>(),
+                                          renderMode }}
+    , _qmlGestures{ new QmlGestures }
+    , _touchInjector{ TouchInjector::create( *_quickView )}
     , _streamHost( streamHost )
     , _streamId( streamId )
     , _sendFuture( make_ready_future( true ))
 {
     _setupMouseModeSwitcher();
+    _setupSizeHintsConnections();
+
+    connect( _quickView.get(), &OffscreenQuickView::afterRender,
+             this, &QmlStreamer::Impl::_afterRender, Qt::DirectConnection );
+    connect( _quickView.get(), &OffscreenQuickView::afterStop,
+             this, &QmlStreamer::Impl::_afterStop, Qt::DirectConnection );
 
     // Expose stream gestures to qml objects
-    _qmlEngine->rootContext()->setContextProperty( GESTURES_CONTEXT_PROPERTY,
-                                                   _qmlGestures );
+    auto context = _quickView->getRootContext();
+    context->setContextProperty( GESTURES_CONTEXT_PROPERTY, _qmlGestures.get());
 
-    if( !_qmlEngine->incubationController( ))
-        _qmlEngine->setIncubationController( _quickWindow->incubationController( ));
-
-    // Now hook up the signals. For simplicy we don't differentiate between
-    // renderRequested (only render is needed, no sync) and sceneChanged (polish
-    // and sync is needed too).
-    connect( _renderControl, &QQuickRenderControl::renderRequested,
-             this, &QmlStreamer::Impl::_requestRender );
-    connect( _renderControl, &QQuickRenderControl::sceneChanged,
-             this, &QmlStreamer::Impl::_requestRender );
-
-    // remote URL to QML components are loaded asynchronously
-    if( _qmlComponent->isLoading( ))
-        connect( _qmlComponent, &QQmlComponent::statusChanged,
-                 this, &QmlStreamer::Impl::_setupRootItem );
-    else if( !_setupRootItem( ))
+    if( !_quickView->load( qmlFile ).get( ))
         throw std::runtime_error( "Failed to setup/load QML" );
 }
 
-QmlStreamer::Impl::~Impl()
-{
-    _quickRenderer->stop();
-#ifdef DEFLECTQT_MULTITHREADED
-    _quickRendererThread.quit();
-    _quickRendererThread.wait();
-#endif
-
-    // delete first to free scenegraph resources for following destructions
-    delete _renderControl;
-
-    delete _rootItem;
-    delete _qmlComponent;
-    delete _quickWindow;
-    delete _qmlEngine;
-
-    delete _quickRenderer;
-}
-
-void QmlStreamer::Impl::_requestRender()
-{
-    killTimer( _stopRenderingDelayTimer );
-    _stopRenderingDelayTimer = 0;
-
-    if( _renderTimer == 0 )
-        _renderTimer = startTimer( 5, Qt::PreciseTimer );
-}
-
-void QmlStreamer::Impl::_initRenderer()
-{
-    _updateSizes( QSize( _rootItem->width(), _rootItem->height( )));
-
-#ifdef DEFLECTQT_MULTITHREADED
-    _quickRenderer = new QuickRenderer( *_quickWindow, *_renderControl, true,
-                                        true );
-
-    // Call required to make QtGraphicalEffects work in the initial scene.
-    _renderControl->prepareThread( &_quickRendererThread );
-
-    _quickRenderer->moveToThread( &_quickRendererThread );
-
-    _quickRendererThread.setObjectName( "Render" );
-    _quickRendererThread.start();
-#else
-    _quickRenderer = new QuickRenderer( *_quickWindow, *_renderControl, false,
-                                        true );
-#endif
-
-    _quickRenderer->init();
-
-    connect( _quickRenderer, &QuickRenderer::afterRender,
-             this, &QmlStreamer::Impl::_afterRender, Qt::DirectConnection );
-    connect( _quickRenderer, &QuickRenderer::afterStop,
-             this, &QmlStreamer::Impl::_afterStop, Qt::DirectConnection );
-}
-
-void QmlStreamer::Impl::_render()
-{
-    // Initialize the render control and our OpenGL resources. Do this as late
-    // as possible to use the proper size reported by the rootItem.
-    if( !_quickRenderer )
-        _initRenderer();
-
-    _renderControl->polishItems();
-    _quickRenderer->render();
-
-    if( _stopRenderingDelayTimer == 0 )
-        _stopRenderingDelayTimer = startTimer( 5000 /*ms*/ );
-}
+QmlStreamer::Impl::~Impl() {}
 
 void QmlStreamer::Impl::_afterRender()
 {
-    if( _stream )
-        _streaming = _sendFuture.get();
-    else
-    {
-        if( !_setupDeflectStream( ))
-        {
-            qWarning() << "Could not setup Deflect stream";
-            _streaming = false;
-            return;
-        }
-        _streaming = true;
-    }
-
-    if( !_streaming )
+    if( !_sendFuture.valid() || !_sendFuture.get( ))
         return;
 
-    _quickRenderer->context()->functions()->glFlush();
-    _image = _quickRenderer->fbo()->toImage();
+    if( !_stream && !_setupDeflectStream( ))
+    {
+        qWarning() << "Could not setup Deflect stream";
+        return;
+    }
+
+    _image = _quickView->getImage();
     if( _image.isNull( ))
     {
         qDebug() << "Empty image not streamed";
@@ -230,16 +131,15 @@ void QmlStreamer::Impl::_afterStop()
 {
     if( _sendFuture.valid() && _asyncSend )
         _sendFuture.wait();
-    delete _eventHandler;
-    delete _stream;
+    _eventReceiver.reset();
+    _stream.reset();
 }
 
 void QmlStreamer::Impl::_onStreamClosed()
 {
-    killTimer( _renderTimer );
-    _renderTimer = 0;
-    killTimer( _stopRenderingDelayTimer );
-    _stopRenderingDelayTimer = 0;
+    disconnect( _quickView.get(), &OffscreenQuickView::afterRender,
+                this, &QmlStreamer::Impl::_afterRender );
+    _quickView.reset();
     emit streamClosed();
 }
 
@@ -290,12 +190,12 @@ void QmlStreamer::Impl::_send( QKeyEvent& keyEvent_ )
     if( _sendToWebengineviewItems( keyEvent_ ))
         return;
 
-    const auto items = _rootItem->findChildren<QQuickItem*>();
+    const auto items = _quickView->getRootItem()->findChildren<QQuickItem*>();
     for( auto item : items )
     {
         if( item->hasFocus( ))
         {
-            _quickWindow->sendEvent( item, &keyEvent_ );
+            _quickView->sendEvent( item, &keyEvent_ );
             if( keyEvent_.isAccepted())
                 break;
         }
@@ -306,8 +206,8 @@ bool QmlStreamer::Impl::_sendToWebengineviewItems( QKeyEvent& keyEvent_ )
 {
     // Special handling for WebEngineView in offscreen Qml windows.
 
-    const auto items =
-            _rootItem->findChildren<QQuickItem*>( WEBENGINEVIEW_OBJECT_NAME );
+    const auto root = _quickView->getRootItem();
+    const auto items = root->findChildren<QQuickItem*>( WEBENGINEVIEW_OBJECT_NAME );
     for( auto webengineviewItem : items )
     {
         if( webengineviewItem->hasFocus( ))
@@ -321,52 +221,20 @@ bool QmlStreamer::Impl::_sendToWebengineviewItems( QKeyEvent& keyEvent_ )
     return false;
 }
 
-bool QmlStreamer::Impl::_setupRootItem()
+void QmlStreamer::Impl::_setupSizeHintsConnections()
 {
-    disconnect( _qmlComponent, &QQmlComponent::statusChanged,
-                this, &QmlStreamer::Impl::_setupRootItem );
-
-    if( _qmlComponent->isError( ))
-    {
-        QList< QQmlError > errorList = _qmlComponent->errors();
-        foreach( const QQmlError &error, errorList )
-            qWarning() << error.url() << error.line() << error;
-        return false;
-    }
-
-    QObject* rootObject = _qmlComponent->create();
-    if( _qmlComponent->isError( ))
-    {
-        QList< QQmlError > errorList = _qmlComponent->errors();
-        foreach( const QQmlError &error, errorList )
-            qWarning() << error.url() << error.line() << error;
-        return false;
-    }
-
-    _rootItem = qobject_cast< QQuickItem* >( rootObject );
-    if( !_rootItem )
-    {
-        delete rootObject;
-        return false;
-    }
-
-    connect( _quickWindow, &QQuickWindow::minimumWidthChanged,
+    connect( _quickView.get(), &QQuickWindow::minimumWidthChanged,
              [this]( int size_ ) { _sizeHints.minWidth = size_; } );
-    connect( _quickWindow, &QQuickWindow::minimumHeightChanged,
+    connect( _quickView.get(), &QQuickWindow::minimumHeightChanged,
              [this]( int size_ ) { _sizeHints.minHeight = size_; } );
-    connect( _quickWindow, &QQuickWindow::maximumWidthChanged,
+    connect( _quickView.get(), &QQuickWindow::maximumWidthChanged,
              [this]( int size_ ) { _sizeHints.maxWidth = size_; } );
-    connect( _quickWindow, &QQuickWindow::maximumHeightChanged,
+    connect( _quickView.get(), &QQuickWindow::maximumHeightChanged,
              [this]( int size_ ) { _sizeHints.maxHeight = size_; } );
-    connect( _quickWindow, &QQuickWindow::widthChanged,
+    connect( _quickView.get(), &QQuickWindow::widthChanged,
              [this]( int size_ ) { _sizeHints.preferredWidth = size_; } );
-    connect( _quickWindow, &QQuickWindow::heightChanged,
+    connect( _quickView.get(), &QQuickWindow::heightChanged,
              [this]( int size_ ) { _sizeHints.preferredHeight = size_; } );
-
-    // The root item is ready. Associate it with the window and get sizeHints.
-    _rootItem->setParentItem( _quickWindow->contentItem( ));
-
-    return true;
 }
 
 std::string QmlStreamer::Impl::_getDeflectStreamIdentifier() const
@@ -374,14 +242,14 @@ std::string QmlStreamer::Impl::_getDeflectStreamIdentifier() const
     if( !_streamId.empty( ))
         return _streamId;
 
-    const std::string streamId = _rootItem->objectName().toStdString();
+    const auto streamId = _quickView->getRootItem()->objectName().toStdString();
     return streamId.empty() ? DEFAULT_STREAM_ID : streamId;
 }
 
 bool QmlStreamer::Impl::_setupDeflectStream()
 {
     if( !_stream )
-        _stream = new Stream( _getDeflectStreamIdentifier(), _streamHost );
+        _stream.reset( new Stream( _getDeflectStreamIdentifier(), _streamHost));
 
     if( !_stream->isConnected( ))
         return false;
@@ -392,67 +260,53 @@ bool QmlStreamer::Impl::_setupDeflectStream()
     if( _sizeHints != SizeHints( ))
         _stream->sendSizeHints( _sizeHints );
 
-    _streaming = true;
-    _eventHandler = new EventReceiver( *_stream );
+    _eventReceiver.reset( new EventReceiver( *_stream ));
 
     // inject touch events
     _connectTouchInjector();
 
     // used for mouse mode switch for Qml WebengineView
-    connect( _eventHandler, &EventReceiver::pressed,
+    connect( _eventReceiver.get(), &EventReceiver::pressed,
              this, &QmlStreamer::Impl::_onPressed );
-    connect( _eventHandler, &EventReceiver::released,
+    connect( _eventReceiver.get(), &EventReceiver::released,
              this, &QmlStreamer::Impl::_onReleased );
-    connect( _eventHandler, &EventReceiver::moved,
+    connect( _eventReceiver.get(), &EventReceiver::moved,
              this, &QmlStreamer::Impl::_onMoved );
 
     // handle view resize
-    connect( _eventHandler, &EventReceiver::resized,
-             this, &QmlStreamer::Impl::_updateSizes );
+    connect( _eventReceiver.get(), &EventReceiver::resized,
+             [this]( const QSize size ) { _quickView->resize( size ); } );
 
     // inject key events
-    connect( _eventHandler, &EventReceiver::keyPress,
+    connect( _eventReceiver.get(), &EventReceiver::keyPress,
              this, &QmlStreamer::Impl::_onKeyPress );
-    connect( _eventHandler, &EventReceiver::keyRelease,
+    connect( _eventReceiver.get(), &EventReceiver::keyRelease,
              this, &QmlStreamer::Impl::_onKeyRelease );
 
     // Forward gestures to Qml context object
-    connect( _eventHandler, &EventReceiver::swipeDown,
-             _qmlGestures, &QmlGestures::swipeDown );
-    connect( _eventHandler, &EventReceiver::swipeUp,
-             _qmlGestures, &QmlGestures::swipeUp );
-    connect( _eventHandler, &EventReceiver::swipeLeft,
-             _qmlGestures, &QmlGestures::swipeLeft );
-    connect( _eventHandler, &EventReceiver::swipeRight,
-             _qmlGestures, &QmlGestures::swipeRight );
+    connect( _eventReceiver.get(), &EventReceiver::swipeDown,
+             _qmlGestures.get(), &QmlGestures::swipeDown );
+    connect( _eventReceiver.get(), &EventReceiver::swipeUp,
+             _qmlGestures.get(), &QmlGestures::swipeUp );
+    connect( _eventReceiver.get(), &EventReceiver::swipeLeft,
+             _qmlGestures.get(), &QmlGestures::swipeLeft );
+    connect( _eventReceiver.get(), &EventReceiver::swipeRight,
+             _qmlGestures.get(), &QmlGestures::swipeRight );
 
-    connect( _eventHandler, &EventReceiver::closed,
+    connect( _eventReceiver.get(), &EventReceiver::closed,
              this, &QmlStreamer::Impl::_onStreamClosed );
 
     return true;
 }
 
-void QmlStreamer::Impl::_updateSizes( const QSize& size_ )
-{
-    _quickWindow->blockSignals( true );
-    _quickWindow->resize( size_ );
-    _quickWindow->blockSignals( false );
-    // emulate QQuickView::ResizeMode:SizeRootObjectToView
-    if( _rootItem )
-    {
-        _rootItem->setWidth( size_.width( ));
-        _rootItem->setHeight( size_.height( ));
-    }
-}
-
 void QmlStreamer::Impl::_connectTouchInjector()
 {
-    connect( _eventHandler, &EventReceiver::touchPointAdded,
-             _touchInjector, &TouchInjector::addTouchPoint );
-    connect( _eventHandler, &EventReceiver::touchPointUpdated,
-             _touchInjector, &TouchInjector::updateTouchPoint );
-    connect( _eventHandler, &EventReceiver::touchPointRemoved,
-             _touchInjector, &TouchInjector::removeTouchPoint );
+    connect( _eventReceiver.get(), &EventReceiver::touchPointAdded,
+             _touchInjector.get(), &TouchInjector::addTouchPoint );
+    connect( _eventReceiver.get(), &EventReceiver::touchPointUpdated,
+             _touchInjector.get(), &TouchInjector::updateTouchPoint );
+    connect( _eventReceiver.get(), &EventReceiver::touchPointRemoved,
+             _touchInjector.get(), &TouchInjector::removeTouchPoint );
 }
 
 void QmlStreamer::Impl::_setupMouseModeSwitcher()
@@ -467,7 +321,7 @@ void QmlStreamer::Impl::_setupMouseModeSwitcher()
 
 void QmlStreamer::Impl::_startMouseModeSwitchDetection( const QPointF& pos )
 {
-    const auto item = _rootItem->childAt( pos.x(), pos.y( ));
+    const auto item = _quickView->getRootItem()->childAt( pos.x(), pos.y( ));
     if( item->objectName() == WEBENGINEVIEW_OBJECT_NAME )
     {
         _mouseModeTimer.start();
@@ -484,7 +338,7 @@ bool QmlStreamer::Impl::_touchIsTapAndHold()
 
 void QmlStreamer::Impl::_switchFromTouchToMouseMode()
 {
-    _eventHandler->disconnect( _touchInjector );
+    _eventReceiver->disconnect( _touchInjector.get( ));
     _touchInjector->removeAllTouchPoints();
     _mouseMode = true;
     _sendMouseEvent( QEvent::MouseButtonPress, _touchCurrentPos );
@@ -498,8 +352,8 @@ void QmlStreamer::Impl::_switchBackToTouchMode()
 
 QPointF QmlStreamer::Impl::_mapToScene( const QPointF& normalizedPos ) const
 {
-    return { normalizedPos.x() * _quickWindow->width(),
-             normalizedPos.y() * _quickWindow->height() };
+    return { normalizedPos.x() * _quickView->width(),
+             normalizedPos.y() * _quickView->height() };
 }
 
 void QmlStreamer::Impl::_sendMouseEvent( const QEvent::Type eventType,
@@ -507,20 +361,7 @@ void QmlStreamer::Impl::_sendMouseEvent( const QEvent::Type eventType,
 {
     auto e = new QMouseEvent( eventType, pos, Qt::LeftButton, Qt::LeftButton,
                               Qt::NoModifier );
-    QCoreApplication::postEvent( _quickWindow, e );
-}
-
-void QmlStreamer::Impl::timerEvent( QTimerEvent* e )
-{
-    if( e->timerId() == _renderTimer )
-        _render();
-    else if( e->timerId() == _stopRenderingDelayTimer )
-    {
-        killTimer( _renderTimer );
-        killTimer( _stopRenderingDelayTimer );
-        _renderTimer = 0;
-        _stopRenderingDelayTimer = 0;
-    }
+    QCoreApplication::postEvent( _quickView.get(), e );
 }
 
 }

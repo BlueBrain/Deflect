@@ -56,9 +56,7 @@ QmlStreamer::QmlStreamer( const QString& qmlFile,
              this, &QmlStreamer::streamClosed );
 }
 
-QmlStreamer::~QmlStreamer()
-{
-}
+QmlStreamer::~QmlStreamer() {}
 
 void QmlStreamer::useAsyncSend( const bool async )
 {

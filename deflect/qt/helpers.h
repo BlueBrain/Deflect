@@ -1,6 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2015-2016, EPFL/Blue Brain Project                  */
-/*                     Daniel.Nachbaur <daniel.nachbaur@epfl.ch>     */
+/* Copyright (c) 2016, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -35,61 +34,35 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The University of Texas at Austin.                 */
+/* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#ifndef DELFECT_QT_EVENTRECEIVER_H
-#define DELFECT_QT_EVENTRECEIVER_H
+#ifndef DELFECT_QT_HELPERS_H
+#define DELFECT_QT_HELPERS_H
 
-#include <QObject>
-#include <QPointF>
-#include <QSize>
-#include <QSocketNotifier>
-#include <QTimer>
-
-#include <deflect/Stream.h>
+#include <memory>
+#include <future>
 
 namespace deflect
 {
 namespace qt
 {
 
-class EventReceiver : public QObject
+template<typename T>
+std::future<T> make_ready_future( const T value )
 {
-    Q_OBJECT
+    std::promise<T> promise;
+    promise.set_value( value );
+    return promise.get_future();
+}
 
-public:
-    EventReceiver( Stream& stream );
-    ~EventReceiver();
-
-signals:
-    void pressed( QPointF position );
-    void released( QPointF position );
-    void moved( QPointF position );
-
-    void resized( QSize newSize );
-    void closed();
-
-    void keyPress( int key, int modifiers, QString text );
-    void keyRelease( int key, int modifiers, QString text );
-
-    void swipeLeft();
-    void swipeRight();
-    void swipeUp();
-    void swipeDown();
-
-    void touchPointAdded( int id, QPointF position );
-    void touchPointUpdated( int id, QPointF position );
-    void touchPointRemoved( int id, QPointF position );
-
-private slots:
-    void _onEvent( int socket );
-
-private:
-    Stream& _stream;
-    std::unique_ptr< QSocketNotifier > _notifier;
-    std::unique_ptr< QTimer > _timer;
-};
+// missing make_unique() implementation in C++11 standard
+// source: http://herbsutter.com/gotw/_102/
+template<typename T, typename ...Args>
+std::unique_ptr<T> make_unique( Args&& ...args )
+{
+    return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
+}
 
 }
 }
