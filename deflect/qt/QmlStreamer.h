@@ -72,7 +72,7 @@ namespace qt
  * switch to a "mouse" interaction mode. This allows users to interact within
  * a WebGL canevas or select text instead of scrolling the page.
  */
-class QmlStreamer : public QObject
+class DEFLECTQT_API QmlStreamer : public QObject
 {
     Q_OBJECT
 
@@ -87,20 +87,19 @@ public:
      *        this value overrides the 'objectName' property of the root QML
      *        item. If neither is provided, "QmlStreamer" is used instead.
      */
-    DEFLECTQT_API QmlStreamer( const QString& qmlFile,
-                               const std::string& streamHost,
-                               const std::string& streamId = std::string( ));
+    QmlStreamer( const QString& qmlFile, const std::string& streamHost,
+                 const std::string& streamId = std::string( ));
 
-    DEFLECTQT_API ~QmlStreamer();
+    ~QmlStreamer();
 
     /** Use asynchronous send of images via Deflect stream. Default off. */
-    DEFLECTQT_API void useAsyncSend( bool async );
+    void useAsyncSend( bool async );
 
     /** @return the QML root item, might be nullptr if not ready yet. */
-    DEFLECTQT_API QQuickItem* getRootItem();
+    QQuickItem* getRootItem();
 
     /** @return the QML engine. */
-    DEFLECTQT_API QQmlEngine* getQmlEngine();
+    QQmlEngine* getQmlEngine();
 
     /**
      * Send data to the Server.
@@ -108,7 +107,7 @@ public:
      * @param data the data buffer
      * @return true if the data could be sent, false otherwise
      */
-    DEFLECTQT_API bool sendData( QByteArray data );
+    bool sendData( QByteArray data );
 
 signals:
     /** Emitted when the stream has been closed. */
