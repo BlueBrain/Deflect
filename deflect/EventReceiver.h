@@ -40,6 +40,7 @@
 #ifndef DEFLECT_EVENTRECEIVER_H
 #define DEFLECT_EVENTRECEIVER_H
 
+#include <deflect/api.h>
 #include <deflect/Event.h>
 
 #include <QObject>
@@ -50,7 +51,7 @@ namespace deflect
 /**
  * Interface for classes to register as receivers for events.
  */
-class EventReceiver : public QObject
+class DEFLECT_API EventReceiver : public QObject
 {
     Q_OBJECT
 

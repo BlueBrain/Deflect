@@ -194,7 +194,7 @@ void Stream::setDisconnectedCallback( const std::function<void()> callback )
 
 bool Stream::sendData( const char* data, const size_t count )
 {
-    return _impl->send( QByteArray::fromRawData( data, count ));
+    return _impl->send( QByteArray::fromRawData( data, int( count )));
 }
 
 }
