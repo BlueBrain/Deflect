@@ -100,15 +100,15 @@ public:
     /** @return the root qml context. */
     QQmlContext* getRootContext() const;
 
-    /** Get the rendered image. Must be called directly from afterRender(). */
-    QImage getImage() const;
-
 signals:
-    /** Notify that the scene has just finished rendering. */
-    void afterRender();
-
-    /** Notify that the rendering has stopped. */
-    void afterStop();
+    /**
+     * Notify that the scene has just finished rendering.
+     *
+     * @param image the newly rendered image.
+     * @note this signal is emitted from the render thread. It is generally
+     *       better to connect to it using an auto (queued) connection.
+     */
+    void afterRender( QImage image );
 
 private:
     std::unique_ptr<QQuickRenderControl> _renderControl;
@@ -132,6 +132,7 @@ private:
     void _requestRender();
     void _initRenderer();
     void _render();
+    void _afterRender();
 };
 
 }

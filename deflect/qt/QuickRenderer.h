@@ -40,6 +40,7 @@
 #ifndef DELFECT_QT_QUICKRENDERER_H
 #define DELFECT_QT_QUICKRENDERER_H
 
+#include <memory>
 #include <QMutex>
 #include <QObject>
 #include <QOpenGLFramebufferObject>
@@ -97,14 +98,17 @@ public:
                    bool multithreaded = true,
                    RenderTarget target = RenderTarget::WINDOW );
 
+    /** Destructor. */
+    ~QuickRenderer();
+
     /** @return OpenGL context used for rendering; lives in render thread. */
-    QOpenGLContext* context() { return _context; }
+    QOpenGLContext* context() { return _context.get(); }
 
     /**
-     * @return nullptr if !offscreen, otherwise accessible in afterRender();
+     * @return nullptr if target != FBO, otherwise accessible in afterRender();
      *         lives in render thread.
      */
-    QOpenGLFramebufferObject* fbo() { return _fbo; }
+    QOpenGLFramebufferObject* fbo() { return _fbo.get(); }
 
     /**
      * To be called from GUI/main thread to trigger rendering.
@@ -119,9 +123,6 @@ signals:
      * case. Originates from render thread.
      */
     void afterRender();
-
-    /** Emitted at the end of stop(). Originates from render thread. */
-    void afterStop();
 
     /**
      * To be called from GUI/main thread to initialize this object on render
@@ -147,9 +148,9 @@ private:
     QQuickWindow& _quickWindow;
     QQuickRenderControl& _renderControl;
 
-    QOpenGLContext* _context{ nullptr };
-    QOffscreenSurface* _offscreenSurface{ nullptr };
-    QOpenGLFramebufferObject* _fbo{ nullptr };
+    std::unique_ptr<QOpenGLContext> _context;
+    std::unique_ptr<QOffscreenSurface> _offscreenSurface;
+    std::unique_ptr<QOpenGLFramebufferObject> _fbo;
 
     const bool _multithreaded;
     const RenderTarget _renderTarget;

@@ -83,9 +83,7 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
     _setupSizeHintsConnections();
 
     connect( _quickView.get(), &OffscreenQuickView::afterRender,
-             this, &QmlStreamer::Impl::_afterRender, Qt::DirectConnection );
-    connect( _quickView.get(), &OffscreenQuickView::afterStop,
-             this, &QmlStreamer::Impl::_afterStop, Qt::DirectConnection );
+             this, &QmlStreamer::Impl::_afterRender );
 
     // Expose stream gestures to qml objects
     auto context = _quickView->getRootContext();
@@ -97,7 +95,7 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
 
 QmlStreamer::Impl::~Impl() {}
 
-void QmlStreamer::Impl::_afterRender()
+void QmlStreamer::Impl::_afterRender( const QImage image )
 {
     if( !_sendFuture.valid() || !_sendFuture.get( ))
         return;
@@ -108,13 +106,13 @@ void QmlStreamer::Impl::_afterRender()
         return;
     }
 
-    _image = _quickView->getImage();
-    if( _image.isNull( ))
+    if( image.isNull( ))
     {
         qDebug() << "Empty image not streamed";
         return;
     }
 
+    _image = image;
     ImageWrapper imageWrapper( _image.constBits(), _image.width(),
                                _image.height(), BGRA );
     imageWrapper.compressionPolicy = COMPRESSION_ON;
@@ -127,19 +125,19 @@ void QmlStreamer::Impl::_afterRender()
                                          _stream->finishFrame( ));
 }
 
-void QmlStreamer::Impl::_afterStop()
-{
-    if( _sendFuture.valid() && _asyncSend )
-        _sendFuture.wait();
-    _eventReceiver.reset();
-    _stream.reset();
-}
-
 void QmlStreamer::Impl::_onStreamClosed()
 {
+    // Stop rendering
     disconnect( _quickView.get(), &OffscreenQuickView::afterRender,
                 this, &QmlStreamer::Impl::_afterRender );
     _quickView.reset();
+
+    // Terminate the stream
+    if( _sendFuture.valid( ))
+        _sendFuture.wait();
+    _eventReceiver.reset();
+    _stream.reset();
+
     emit streamClosed();
 }
 

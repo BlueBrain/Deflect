@@ -75,6 +75,8 @@ QuickRenderer::QuickRenderer( QQuickWindow& quickWindow,
              &QuickRenderer::_onStop, connectionType );
 }
 
+QuickRenderer::~QuickRenderer() {}
+
 void QuickRenderer::render()
 {
     if( _multithreaded )
@@ -109,7 +111,7 @@ void QuickRenderer::_onInit()
     format_.setDepthBufferSize( 16 );
     format_.setStencilBufferSize( 8 );
 
-    _context = new QOpenGLContext;
+    _context.reset( new QOpenGLContext );
     _context->setFormat( format_ );
     _context->create();
 
@@ -117,14 +119,14 @@ void QuickRenderer::_onInit()
     // If so, setup global share context needed by the Qml WebEngineView.
     if( QCoreApplication::testAttribute( Qt::AA_ShareOpenGLContexts ))
 #if DEFLECT_USE_QT5GUI
-        qt_gl_set_global_share_context( _context );
+        qt_gl_set_global_share_context( _context.get( ));
 #else
         qWarning() << "DeflectQt was not compiled with WebEngineView support";
 #endif
 
     if( _renderTarget == RenderTarget::FBO )
     {
-        _offscreenSurface = new QOffscreenSurface;
+        _offscreenSurface.reset( new QOffscreenSurface );
         // Pass _context->format(), not format_. Format does not specify and color
         // buffer sizes, while the context, that has just been created, reports a
         // format that has these values filled in. Pass this to the offscreen
@@ -135,7 +137,7 @@ void QuickRenderer::_onInit()
     }
 
     _context->makeCurrent( _getSurface( ));
-    _renderControl.initialize( _context );
+    _renderControl.initialize( _context.get( ));
     _initialized = true;
 }
 
@@ -146,42 +148,34 @@ void QuickRenderer::_onStop()
 
     _renderControl.invalidate();
 
-    delete _fbo;
-    _fbo = nullptr;
+    _fbo.reset();
 
     if( _context )
         _context->doneCurrent();
 
-    delete _offscreenSurface;
-    _offscreenSurface = nullptr;
-    delete _context;
-    _context = nullptr;
-
-    emit afterStop();
+    _offscreenSurface.reset();
+#if DEFLECT_USE_QT5GUI
+    qt_gl_set_global_share_context( nullptr );
+#endif
+    _context.reset();
 }
 
 void QuickRenderer::_ensureFBO()
 {
     const auto winSize = _quickWindow.size() * _quickWindow.devicePixelRatio();
 
-    if( _fbo && _fbo->size() != winSize )
+    if( !_fbo || _fbo->size() != winSize )
     {
-        delete _fbo;
-        _fbo = nullptr;
-    }
-
-    if( !_fbo )
-    {
-        _fbo = new QOpenGLFramebufferObject(
-                   winSize, QOpenGLFramebufferObject::CombinedDepthStencil );
-        _quickWindow.setRenderTarget( _fbo );
+        const auto attachment = QOpenGLFramebufferObject::CombinedDepthStencil;
+        _fbo.reset( new QOpenGLFramebufferObject( winSize, attachment ));
+        _quickWindow.setRenderTarget( _fbo.get( ));
     }
 }
 
 QSurface* QuickRenderer::_getSurface()
 {
     if( _offscreenSurface )
-        return _offscreenSurface;
+        return _offscreenSurface.get();
     return &_quickWindow;
 }
 

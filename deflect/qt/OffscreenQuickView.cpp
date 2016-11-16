@@ -118,11 +118,6 @@ QQmlContext* OffscreenQuickView::getRootContext() const
     return _qmlEngine->rootContext();
 }
 
-QImage OffscreenQuickView::getImage() const
-{
-    return _quickRenderer->fbo()->toImage();
-}
-
 void OffscreenQuickView::timerEvent( QTimerEvent* e )
 {
     if( e->timerId() == _renderTimer )
@@ -223,9 +218,7 @@ void OffscreenQuickView::_initRenderer()
     }
 
     connect( _quickRenderer.get(), &QuickRenderer::afterRender,
-             this, &OffscreenQuickView::afterRender, Qt::DirectConnection );
-    connect( _quickRenderer.get(), &QuickRenderer::afterStop,
-             this, &OffscreenQuickView::afterStop, Qt::DirectConnection );
+             this, &OffscreenQuickView::_afterRender, Qt::DirectConnection );
 
     _quickRenderer->init();
 }
@@ -242,6 +235,13 @@ void OffscreenQuickView::_render()
 
     if( _stopRenderingDelayTimer == 0 )
         _stopRenderingDelayTimer = startTimer( 5000 /*ms*/ );
+}
+
+void OffscreenQuickView::_afterRender()
+{
+    // Called directly by the render thread just after the rendering is done.
+    // The fbo can be safely assumed to be valid when this function executes.
+    emit afterRender( _quickRenderer->fbo()->toImage( ));
 }
 
 }

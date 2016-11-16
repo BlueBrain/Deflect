@@ -80,8 +80,7 @@ signals:
     void streamClosed();
 
 private slots:
-    void _afterRender();
-    void _afterStop();
+    void _afterRender( QImage image );
 
     void _onPressed( QPointF position );
     void _onReleased( QPointF position );
