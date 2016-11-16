@@ -39,7 +39,10 @@
 
 #include "TouchInjector.h"
 
+#include "helpers.h"
+
 #include <QCoreApplication>
+#include <QWindow>
 
 namespace deflect
 {
@@ -51,6 +54,16 @@ TouchInjector::TouchInjector( QObject& target, MapToSceneFunc mapFunc )
     , _mapToSceneFunction( mapFunc )
 {
     _device.setType( QTouchDevice::TouchScreen );
+}
+
+std::unique_ptr<TouchInjector> TouchInjector::create( QWindow& window )
+{
+    auto mapFunc = [&window]( const QPointF& normPos )
+    {
+        return QPointF{ normPos.x() * window.width(),
+                        normPos.y() * window.height() };
+    };
+    return make_unique<TouchInjector>( window, mapFunc );
 }
 
 void TouchInjector::addTouchPoint( const int id, const QPointF position )

@@ -37,9 +37,10 @@
 /* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#ifndef QUICKRENDERER_H
-#define QUICKRENDERER_H
+#ifndef DELFECT_QT_QUICKRENDERER_H
+#define DELFECT_QT_QUICKRENDERER_H
 
+#include <memory>
 #include <QMutex>
 #include <QObject>
 #include <QOpenGLFramebufferObject>
@@ -55,6 +56,16 @@ namespace deflect
 {
 namespace qt
 {
+
+/**
+ * The different targets for rendering.
+ */
+enum class RenderTarget
+{
+    WINDOW,   /**< Render inside the window */
+    FBO,      /**< Render inside an FBO (offscreen) */
+    NONE      /**< Only process events without rendering */
+};
 
 /**
  * Renders the QML scene from the given window using QQuickRenderControl onto
@@ -79,22 +90,25 @@ public:
      *                      trigger the actual rendering.
      * @param multithreaded whether the QuickRenderer is used in a multithreaded
      *                      fashion and should setup accordingly
-     * @param offscreen render into an offscreen surface rather than the
-     *                  quickWindow. It creates an FBO internally to hold the
-     *                  rendered pixels.
+     * @param target defines where the rendering should happen. An FBO is
+     *               internally created to hold the rendered pixels if needed.
      */
     QuickRenderer( QQuickWindow& quickWindow,
                    QQuickRenderControl& renderControl,
-                   bool multithreaded = true, bool offscreen = false );
+                   bool multithreaded = true,
+                   RenderTarget target = RenderTarget::WINDOW );
+
+    /** Destructor. */
+    ~QuickRenderer();
 
     /** @return OpenGL context used for rendering; lives in render thread. */
-    QOpenGLContext* context() { return _context; }
+    QOpenGLContext* context() { return _context.get(); }
 
     /**
-     * @return nullptr if !offscreen, otherwise accessible in afterRender();
+     * @return nullptr if target != FBO, otherwise accessible in afterRender();
      *         lives in render thread.
      */
-    QOpenGLFramebufferObject* fbo() { return _fbo; }
+    QOpenGLFramebufferObject* fbo() { return _fbo.get(); }
 
     /**
      * To be called from GUI/main thread to trigger rendering.
@@ -109,9 +123,6 @@ signals:
      * case. Originates from render thread.
      */
     void afterRender();
-
-    /** Emitted at the end of stop(). Originates from render thread. */
-    void afterStop();
 
     /**
      * To be called from GUI/main thread to initialize this object on render
@@ -137,12 +148,12 @@ private:
     QQuickWindow& _quickWindow;
     QQuickRenderControl& _renderControl;
 
-    QOpenGLContext* _context{ nullptr };
-    QOffscreenSurface* _offscreenSurface{ nullptr };
-    QOpenGLFramebufferObject* _fbo{ nullptr };
+    std::unique_ptr<QOpenGLContext> _context;
+    std::unique_ptr<QOffscreenSurface> _offscreenSurface;
+    std::unique_ptr<QOpenGLFramebufferObject> _fbo;
 
-    bool _multithreaded;
-    bool _offscreen;
+    const bool _multithreaded;
+    const RenderTarget _renderTarget;
     bool _initialized{ false };
 
     QMutex _mutex;

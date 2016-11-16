@@ -59,11 +59,11 @@ namespace qt
 QuickRenderer::QuickRenderer( QQuickWindow& quickWindow,
                               QQuickRenderControl& renderControl,
                               const bool multithreaded,
-                              const bool offscreen )
+                              const RenderTarget target )
     : _quickWindow( quickWindow )
     , _renderControl( renderControl )
     , _multithreaded( multithreaded )
-    , _offscreen( offscreen )
+    , _renderTarget( target )
     , _initialized( false )
 {
     const auto connectionType = multithreaded ?
@@ -74,6 +74,8 @@ QuickRenderer::QuickRenderer( QQuickWindow& quickWindow,
     connect( this, &QuickRenderer::stop, this,
              &QuickRenderer::_onStop, connectionType );
 }
+
+QuickRenderer::~QuickRenderer() {}
 
 void QuickRenderer::render()
 {
@@ -101,12 +103,15 @@ bool QuickRenderer::event( QEvent* e )
 
 void QuickRenderer::_onInit()
 {
+    if( _renderTarget == RenderTarget::NONE )
+        return;
+
     // Qt Quick may need a depth and stencil buffer
     QSurfaceFormat format_;
     format_.setDepthBufferSize( 16 );
     format_.setStencilBufferSize( 8 );
 
-    _context = new QOpenGLContext;
+    _context.reset( new QOpenGLContext );
     _context->setFormat( format_ );
     _context->create();
 
@@ -114,14 +119,14 @@ void QuickRenderer::_onInit()
     // If so, setup global share context needed by the Qml WebEngineView.
     if( QCoreApplication::testAttribute( Qt::AA_ShareOpenGLContexts ))
 #if DEFLECT_USE_QT5GUI
-        qt_gl_set_global_share_context( _context );
+        qt_gl_set_global_share_context( _context.get( ));
 #else
         qWarning() << "DeflectQt was not compiled with WebEngineView support";
 #endif
 
-    if( _offscreen )
+    if( _renderTarget == RenderTarget::FBO )
     {
-        _offscreenSurface = new QOffscreenSurface;
+        _offscreenSurface.reset( new QOffscreenSurface );
         // Pass _context->format(), not format_. Format does not specify and color
         // buffer sizes, while the context, that has just been created, reports a
         // format that has these values filled in. Pass this to the offscreen
@@ -132,57 +137,51 @@ void QuickRenderer::_onInit()
     }
 
     _context->makeCurrent( _getSurface( ));
-    _renderControl.initialize( _context );
+    _renderControl.initialize( _context.get( ));
     _initialized = true;
 }
 
 void QuickRenderer::_onStop()
 {
-    _context->makeCurrent( _getSurface( ));
+    if( _context )
+        _context->makeCurrent( _getSurface( ));
 
     _renderControl.invalidate();
 
-    delete _fbo;
-    _fbo = nullptr;
+    _fbo.reset();
 
-    _context->doneCurrent();
+    if( _context )
+        _context->doneCurrent();
 
-    delete _offscreenSurface;
-    _offscreenSurface = nullptr;
-    delete _context;
-    _context = nullptr;
-
-    emit afterStop();
+    _offscreenSurface.reset();
+#if DEFLECT_USE_QT5GUI
+    qt_gl_set_global_share_context( nullptr );
+#endif
+    _context.reset();
 }
 
 void QuickRenderer::_ensureFBO()
 {
-    if( _fbo &&
-        _fbo->size() != _quickWindow.size() * _quickWindow.devicePixelRatio())
-    {
-        delete _fbo;
-        _fbo = nullptr;
-    }
+    const auto winSize = _quickWindow.size() * _quickWindow.devicePixelRatio();
 
-    if( !_fbo )
+    if( !_fbo || _fbo->size() != winSize )
     {
-        _fbo = new QOpenGLFramebufferObject(
-                    _quickWindow.size() * _quickWindow.devicePixelRatio(),
-                    QOpenGLFramebufferObject::CombinedDepthStencil );
-        _quickWindow.setRenderTarget( _fbo );
+        const auto attachment = QOpenGLFramebufferObject::CombinedDepthStencil;
+        _fbo.reset( new QOpenGLFramebufferObject( winSize, attachment ));
+        _quickWindow.setRenderTarget( _fbo.get( ));
     }
 }
 
 QSurface* QuickRenderer::_getSurface()
 {
-    if( _offscreen )
-        return _offscreenSurface;
+    if( _offscreenSurface )
+        return _offscreenSurface.get();
     return &_quickWindow;
 }
 
 void QuickRenderer::_onRender()
 {
-    if( !_initialized )
+    if( !_initialized || _renderTarget == RenderTarget::NONE )
         return;
 
     {
@@ -190,7 +189,7 @@ void QuickRenderer::_onRender()
 
         _context->makeCurrent( _getSurface( ));
 
-        if( _offscreen )
+        if( _renderTarget == RenderTarget::FBO )
             _ensureFBO();
 
         _renderControl.sync();

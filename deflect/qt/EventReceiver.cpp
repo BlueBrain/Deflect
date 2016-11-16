@@ -70,7 +70,7 @@ inline QPointF _pos( const Event& deflectEvent )
     return QPointF{ deflectEvent.mouseX, deflectEvent.mouseY };
 }
 
-void EventReceiver::_onEvent( int socket )
+void EventReceiver::_onEvent( const int socket )
 {
     if( socket != _stream.getDescriptor( ))
         return;
@@ -82,9 +82,8 @@ void EventReceiver::_onEvent( int socket )
         switch( deflectEvent.type )
         {
         case Event::EVT_CLOSE:
-            _notifier->setEnabled( false );
-            emit closed();
-            break;
+            _stop();
+            return;
         case Event::EVT_PRESS:
             emit pressed( _pos( deflectEvent ));
             break;
@@ -134,7 +133,18 @@ void EventReceiver::_onEvent( int socket )
             break;
         }
     }
+
+    if( !_stream.isConnected( ))
+        _stop();
 }
+
+void EventReceiver::_stop()
+{
+    _notifier->setEnabled( false );
+    _timer->stop();
+    emit closed();
+}
+
 }
 
 }

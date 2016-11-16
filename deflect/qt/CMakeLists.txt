@@ -5,16 +5,19 @@
 
 set(DEFLECTQT_HEADERS
   EventReceiver.h
+  helpers.h
   QmlGestures.h
   QmlStreamerImpl.h
 )
 set(DEFLECTQT_PUBLIC_HEADERS
+  OffscreenQuickView.h
   QmlStreamer.h
   QuickRenderer.h
   TouchInjector.h
 )
 set(DEFLECTQT_SOURCES
   EventReceiver.cpp
+  OffscreenQuickView.cpp
   QmlStreamer.cpp
   QmlStreamerImpl.cpp
   QuickRenderer.cpp

@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2015, EPFL/Blue Brain Project                       */
-/*                     Daniel.Nachbaur <daniel.nachbaur@epfl.ch>     */
+/* Copyright (c) 2016, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -34,49 +34,37 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The University of Texas at Austin.                 */
+/* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#include "QmlStreamer.h"
-#include "QmlStreamerImpl.h"
+#ifndef DELFECT_QT_HELPERS_H
+#define DELFECT_QT_HELPERS_H
 
-#include "../Stream.h"
+#include <memory>
+#include <future>
 
 namespace deflect
 {
 namespace qt
 {
 
-QmlStreamer::QmlStreamer( const QString& qmlFile,
-                          const std::string& streamHost,
-                          const std::string& streamId )
-    : _impl( new Impl( qmlFile, streamHost, streamId ))
+template<typename T>
+std::future<T> make_ready_future( const T value )
 {
-    connect( _impl.get(), &Impl::streamClosed,
-             this, &QmlStreamer::streamClosed );
+    std::promise<T> promise;
+    promise.set_value( value );
+    return promise.get_future();
 }
 
-QmlStreamer::~QmlStreamer() {}
-
-void QmlStreamer::useAsyncSend( const bool async )
+// missing make_unique() implementation in C++11 standard
+// source: http://herbsutter.com/gotw/_102/
+template<typename T, typename ...Args>
+std::unique_ptr<T> make_unique( Args&& ...args )
 {
-    _impl->useAsyncSend( async );
-}
-
-QQuickItem* QmlStreamer::getRootItem()
-{
-    return _impl->getRootItem();
-}
-
-QQmlEngine* QmlStreamer::getQmlEngine()
-{
-    return _impl->getQmlEngine();
-}
-
-bool QmlStreamer::sendData( const QByteArray data )
-{
-    return _impl->getStream()->sendData( data.constData(), data.size( ));
+    return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
 }
 
 }
 }
+
+#endif

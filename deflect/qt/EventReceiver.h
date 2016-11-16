@@ -38,8 +38,8 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef EVENTRECEIVER_H
-#define EVENTRECEIVER_H
+#ifndef DELFECT_QT_EVENTRECEIVER_H
+#define DELFECT_QT_EVENTRECEIVER_H
 
 #include <QObject>
 #include <QPointF>
@@ -82,13 +82,13 @@ signals:
     void touchPointUpdated( int id, QPointF position );
     void touchPointRemoved( int id, QPointF position );
 
-private slots:
-    void _onEvent( int socket );
-
 private:
     Stream& _stream;
     std::unique_ptr< QSocketNotifier > _notifier;
     std::unique_ptr< QTimer > _timer;
+
+    void _onEvent( int socket );
+    void _stop();
 };
 
 }

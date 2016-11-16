@@ -37,8 +37,8 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef QMLSTREAMER_H
-#define QMLSTREAMER_H
+#ifndef DELFECT_QT_QMLSTREAMER_H
+#define DELFECT_QT_QMLSTREAMER_H
 
 #include <deflect/qt/api.h>
 
