@@ -64,18 +64,38 @@ QuickRenderer::QuickRenderer( QQuickWindow& quickWindow,
     , _renderControl( renderControl )
     , _multithreaded( multithreaded )
     , _renderTarget( target )
-    , _initialized( false )
-{
-    const auto connectionType = multithreaded ?
-                Qt::BlockingQueuedConnection : Qt::DirectConnection;
-
-    connect( this, &QuickRenderer::init, this,
-             &QuickRenderer::_onInit, connectionType );
-    connect( this, &QuickRenderer::stop, this,
-             &QuickRenderer::_onStop, connectionType );
-}
+{}
 
 QuickRenderer::~QuickRenderer() {}
+
+void QuickRenderer::init()
+{
+    if( _renderTarget == RenderTarget::NONE )
+        return;
+
+    // In the OS X multithreaded case, the QOffscreenSurface must be create from
+    // the main/GUI thread because it is backed by an actual window. Failing to
+    // do so results in qWarning: "Attempting to create QWindow-based
+    // QOffscreenSurface outside the gui thread".
+    // This, however, must happen after the GLContext was created (in the render
+    // thread) to retreive the correct surface format (see below).
+
+    QMetaObject::invokeMethod( this, "_createGLContext", _connectionType( ));
+
+    if( _renderTarget == RenderTarget::FBO )
+    {
+        // Pass _context->format(), not format_. Format does not specify and color
+        // buffer sizes, while the context, that has just been created, reports a
+        // format that has these values filled in. Pass this to the offscreen
+        // surface to make sure it will be compatible with the context's
+        // configuration.
+        _offscreenSurface.reset( new QOffscreenSurface );
+        _offscreenSurface->setFormat( _context->format( ));
+        _offscreenSurface->create();
+    }
+
+    QMetaObject::invokeMethod( this, "_initRenderControl", _connectionType( ));
+}
 
 void QuickRenderer::render()
 {
@@ -91,6 +111,11 @@ void QuickRenderer::render()
         _onRender();
 }
 
+void QuickRenderer::stop()
+{
+    QMetaObject::invokeMethod( this, "_onStop", _connectionType( ));
+}
+
 bool QuickRenderer::event( QEvent* e )
 {
     if( e->type() == QEvent::User )
@@ -99,84 +124,6 @@ bool QuickRenderer::event( QEvent* e )
         return true;
     }
     return QObject::event( e );
-}
-
-void QuickRenderer::_onInit()
-{
-    if( _renderTarget == RenderTarget::NONE )
-        return;
-
-    // Qt Quick may need a depth and stencil buffer
-    QSurfaceFormat format_;
-    format_.setDepthBufferSize( 16 );
-    format_.setStencilBufferSize( 8 );
-
-    _context.reset( new QOpenGLContext );
-    _context->setFormat( format_ );
-    _context->create();
-
-    // Test if user has setup shared GL contexts (QtWebEngine::initialize).
-    // If so, setup global share context needed by the Qml WebEngineView.
-    if( QCoreApplication::testAttribute( Qt::AA_ShareOpenGLContexts ))
-#if DEFLECT_USE_QT5GUI
-        qt_gl_set_global_share_context( _context.get( ));
-#else
-        qWarning() << "DeflectQt was not compiled with WebEngineView support";
-#endif
-
-    if( _renderTarget == RenderTarget::FBO )
-    {
-        _offscreenSurface.reset( new QOffscreenSurface );
-        // Pass _context->format(), not format_. Format does not specify and color
-        // buffer sizes, while the context, that has just been created, reports a
-        // format that has these values filled in. Pass this to the offscreen
-        // surface to make sure it will be compatible with the context's
-        // configuration.
-        _offscreenSurface->setFormat( _context->format( ));
-        _offscreenSurface->create();
-    }
-
-    _context->makeCurrent( _getSurface( ));
-    _renderControl.initialize( _context.get( ));
-    _initialized = true;
-}
-
-void QuickRenderer::_onStop()
-{
-    if( _context )
-        _context->makeCurrent( _getSurface( ));
-
-    _renderControl.invalidate();
-
-    _fbo.reset();
-
-    if( _context )
-        _context->doneCurrent();
-
-    _offscreenSurface.reset();
-#if DEFLECT_USE_QT5GUI
-    qt_gl_set_global_share_context( nullptr );
-#endif
-    _context.reset();
-}
-
-void QuickRenderer::_ensureFBO()
-{
-    const auto winSize = _quickWindow.size() * _quickWindow.devicePixelRatio();
-
-    if( !_fbo || _fbo->size() != winSize )
-    {
-        const auto attachment = QOpenGLFramebufferObject::CombinedDepthStencil;
-        _fbo.reset( new QOpenGLFramebufferObject( winSize, attachment ));
-        _quickWindow.setRenderTarget( _fbo.get( ));
-    }
-}
-
-QSurface* QuickRenderer::_getSurface()
-{
-    if( _offscreenSurface )
-        return _offscreenSurface.get();
-    return &_quickWindow;
 }
 
 void QuickRenderer::_onRender()
@@ -203,6 +150,80 @@ void QuickRenderer::_onRender()
     _context->functions()->glFinish();
 
     emit afterRender();
+}
+
+void QuickRenderer::_ensureFBO()
+{
+    const auto winSize = _quickWindow.size() * _quickWindow.devicePixelRatio();
+
+    if( !_fbo || _fbo->size() != winSize )
+    {
+        const auto attachment = QOpenGLFramebufferObject::CombinedDepthStencil;
+        _fbo.reset( new QOpenGLFramebufferObject( winSize, attachment ));
+        _quickWindow.setRenderTarget( _fbo.get( ));
+    }
+}
+
+QSurface* QuickRenderer::_getSurface()
+{
+    if( _offscreenSurface )
+        return _offscreenSurface.get();
+    return &_quickWindow;
+}
+
+Qt::ConnectionType QuickRenderer::_connectionType() const
+{
+    return _multithreaded ? Qt::BlockingQueuedConnection : Qt::DirectConnection;
+}
+
+void QuickRenderer::_createGLContext()
+{
+    // Qt Quick may need a depth and stencil buffer
+    QSurfaceFormat format_;
+    format_.setDepthBufferSize( 16 );
+    format_.setStencilBufferSize( 8 );
+
+    _context.reset( new QOpenGLContext );
+    _context->setFormat( format_ );
+    _context->create();
+
+    // Test if user has setup shared GL contexts (QtWebEngine::initialize).
+    // If so, setup global share context needed by the Qml WebEngineView.
+    if( QCoreApplication::testAttribute( Qt::AA_ShareOpenGLContexts ))
+#if DEFLECT_USE_QT5GUI
+        qt_gl_set_global_share_context( _context.get( ));
+#else
+        qWarning() << "DeflectQt was not compiled with WebEngineView support";
+#endif
+}
+
+void QuickRenderer::_initRenderControl()
+{
+    _context->makeCurrent( _getSurface( ));
+    _renderControl.initialize( _context.get( ));
+    _initialized = true;
+}
+
+void QuickRenderer::_onStop()
+{
+    _initialized = false;
+
+    if( _context )
+        _context->makeCurrent( _getSurface( ));
+
+    _renderControl.invalidate();
+
+    _fbo.reset();
+
+    if( _context )
+        _context->doneCurrent();
+
+    _offscreenSurface.reset();
+
+#if DEFLECT_USE_QT5GUI
+    qt_gl_set_global_share_context( nullptr );
+#endif
+    _context.reset();
 }
 
 }
