@@ -111,11 +111,23 @@ public:
     QOpenGLFramebufferObject* fbo() { return _fbo.get(); }
 
     /**
+     * To be called from GUI/main thread to initialize this object on render
+     * thread. Blocks until operation on render thread is done.
+     */
+    void init();
+
+    /**
      * To be called from GUI/main thread to trigger rendering.
      *
      * This call is blocking until sync() is done in render thread.
      */
     void render();
+
+    /**
+     * To be called from GUI/main thread to stop using this object on the render
+     * thread. Blocks until operation on render thread is done.
+     */
+    void stop();
 
 signals:
     /**
@@ -124,27 +136,7 @@ signals:
      */
     void afterRender();
 
-    /**
-     * To be called from GUI/main thread to initialize this object on render
-     * thread. Blocks until operation on render thread is done.
-     */
-    void init();
-
-    /**
-     * To be called from GUI/main thread to stop using this object on the render
-     * thread. Blocks until operation on render thread is done.
-     */
-    void stop();
-
 private:
-    bool event( QEvent* qtEvent ) final;
-    void _onInit();
-    void _onRender();
-    void _onStop();
-
-    void _ensureFBO();
-    QSurface* _getSurface();
-
     QQuickWindow& _quickWindow;
     QQuickRenderControl& _renderControl;
 
@@ -158,6 +150,20 @@ private:
 
     QMutex _mutex;
     QWaitCondition _cond;
+
+    bool event( QEvent* qtEvent ) final;
+
+    void _onRender();
+    void _ensureFBO();
+    QSurface* _getSurface();
+
+    Qt::ConnectionType _connectionType() const;
+
+private slots:
+    // Called in the render thread
+    void _createGLContext();
+    void _initRenderControl();
+    void _onStop();
 };
 
 }
