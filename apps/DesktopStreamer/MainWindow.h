@@ -44,7 +44,7 @@
 #include <apps/DesktopStreamer/ui_MainWindow.h>
 
 #ifdef __APPLE__
-#  include "AppNapSuspender.h"
+#  include <deflect/AppNapSuspender.h>
 #endif
 
 #ifdef DEFLECT_USE_SERVUS
@@ -89,7 +89,7 @@ private:
     float _averageUpdate;
 
 #ifdef __APPLE__
-    AppNapSuspender _napSuspender;
+    deflect::AppNapSuspender _napSuspender;
 #endif
 
     void _showMultiWindowMode();

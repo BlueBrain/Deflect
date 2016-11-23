@@ -91,6 +91,10 @@ QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
 
     if( !_quickView->load( qmlFile ).get( ))
         throw std::runtime_error( "Failed to setup/load QML" );
+
+#ifdef __APPLE__
+    _napSuspender.suspend();
+#endif
 }
 
 QmlStreamer::Impl::~Impl() {}

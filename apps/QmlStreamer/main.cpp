@@ -17,10 +17,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include <QGuiApplication>
-#include <QCommandLineParser>
 #include <deflect/qt/QmlStreamer.h>
 #include <deflect/version.h>
+
+#include <QCommandLineParser>
+#include <QGuiApplication>
 
 int main( int argc, char** argv )
 {

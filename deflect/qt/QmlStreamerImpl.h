@@ -50,6 +50,9 @@
 #include "QmlStreamer.h"
 #include "../SizeHints.h"
 
+#ifdef __APPLE__
+#  include <deflect/AppNapSuspender.h>
+#endif
 #include <deflect/Stream.h>
 
 namespace deflect
@@ -127,6 +130,10 @@ private:
     bool _mouseMode{ false };
     QPointF _touchStartPos;
     QPointF _touchCurrentPos;
+
+#ifdef __APPLE__
+    AppNapSuspender _napSuspender;
+#endif
 };
 
 }
