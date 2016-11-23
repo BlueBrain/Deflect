@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [139](https://github.com/BlueBrain/Deflect/pull/139):
+  OSX: AppNap is now disabled for all QmlStreamers. The AppNapSuspender class
+  is now available in Deflect library for use in external applications.
 * [137](https://github.com/BlueBrain/Deflect/pull/137):
   Deflect Qt: the offscreen Qml view used by the Qml streamer is now available
   as a separate class.

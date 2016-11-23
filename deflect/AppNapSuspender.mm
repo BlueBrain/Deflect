@@ -34,33 +34,71 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The Ecole Polytechnique Federale de Lausanne.      */
+/* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef APPNAPSUSPENDER_H
-#define APPNAPSUSPENDER_H
+#include "AppNapSuspender.h"
 
-/**
- * Suspend AppNap on OSX >= 10.9.
- */
-class AppNapSuspender
+#include <Foundation/NSProcessInfo.h>
+
+// We check at runtime if beginActivityWithOptions and endActivity
+// are available so that we can also compile using OSX SDK < 10.9
+#pragma clang diagnostic ignored "-Wobjc-method-access"
+
+#ifdef __MAC_OS_X_VERSION_MAX_ALLOWED
+#if __MAC_OS_X_VERSION_MAX_ALLOWED < 1090
+// NSActivityUserInitiated is undefined when compiling with OSX SDK < 10.9
+#define NSActivityUserInitiated (0x00FFFFFFULL | (1ULL << 20))
+#endif
+#endif
+
+namespace deflect
+{
+
+class AppNapSuspender::Impl
 {
 public:
-    /** Constructor. */
-    AppNapSuspender();
+    Impl()
+        : activityId( nil )
+    {}
 
-    /** Destruct the object, resuming AppNap if it was suspended. */
-    ~AppNapSuspender();
-
-    /** Suspend AppNap. */
-    void suspend();
-
-    /** Resume AppNap */
-    void resume();
-
-private:
-    class Impl;
-    Impl* _impl;
+    id<NSObject> activityId;
 };
 
-#endif // APPNAPSUSPENDER_H
+AppNapSuspender::AppNapSuspender() :
+    _impl( new Impl )
+{
+}
+
+AppNapSuspender::~AppNapSuspender()
+{
+    resume();
+    delete _impl;
+}
+
+void AppNapSuspender::suspend()
+{
+    if( _impl->activityId )
+        return;
+
+    if( [[NSProcessInfo processInfo] respondsToSelector:@selector(beginActivityWithOptions:reason:)] )
+    {
+        _impl->activityId = [[NSProcessInfo processInfo] beginActivityWithOptions: NSActivityUserInitiated reason:@"Good reason"];
+        [_impl->activityId retain];
+    }
+}
+
+void AppNapSuspender::resume()
+{
+    if( !_impl->activityId )
+        return;
+
+    if( [[NSProcessInfo processInfo] respondsToSelector:@selector(endActivity:)] )
+    {
+        [[NSProcessInfo processInfo] endActivity:_impl->activityId];
+        [_impl->activityId release];
+        _impl->activityId = nil;
+    }
+}
+
+}

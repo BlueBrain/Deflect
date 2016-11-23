@@ -46,13 +46,11 @@ if(APPLE)
   set(DESKTOPSTREAMER_COPYRIGHT "EPFL/Blue Brain Project ${_CURRENT_YEAR}")
   set(DESKTOPSTREAMER_ICON desktopstreamer.icns)
 
-  list(APPEND DESKTOPSTREAMER_SOURCES AppNapSuspender.mm)
-  list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES "-framework Foundation")
   if(TARGET Qt5::MacExtras)
     list(APPEND DESKTOPSTREAMER_HEADERS DesktopWindowsModel.h)
     list(APPEND DESKTOPSTREAMER_SOURCES DesktopWindowsModel.mm)
     list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES
-      Qt5::MacExtras "-framework AppKit"
+      Qt5::MacExtras "-framework AppKit" "-framework Foundation"
     )
   endif()
   if(OSX_VERSION VERSION_LESS 10.9)

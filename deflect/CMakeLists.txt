@@ -48,6 +48,12 @@ set(DEFLECT_SOURCES
 
 set(DEFLECT_LINK_LIBRARIES PRIVATE Qt5::Concurrent Qt5::Core Qt5::Network)
 
+if(APPLE)
+  list(APPEND DEFLECT_PUBLIC_HEADERS AppNapSuspender.h)
+  list(APPEND DEFLECT_SOURCES AppNapSuspender.mm)
+  list(APPEND DEFLECT_LINK_LIBRARIES PRIVATE "-framework Foundation")
+endif()
+
 if(DEFLECT_USE_LIBJPEGTURBO)
   list(APPEND DEFLECT_PUBLIC_HEADERS
     SegmentDecoder.h
