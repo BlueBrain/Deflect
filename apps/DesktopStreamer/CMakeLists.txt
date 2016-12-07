@@ -1,9 +1,10 @@
 
-# Copyright (c) 2013-2015, EPFL/Blue Brain Project
-#                     Raphael Dumusc <raphael.dumusc@epfl.ch>
+# Copyright (c) 2013-2016, EPFL/Blue Brain Project
+#                          Raphael Dumusc <raphael.dumusc@epfl.ch>
 
 set(DESKTOPSTREAMER_HEADERS
   MainWindow.h
+  nameUtils.h
   Stream.h
 )
 
@@ -21,6 +22,12 @@ set(DESKTOPSTREAMER_LINK_LIBRARIES
   Qt5::Network
   Qt5::Widgets
 )
+
+if(APPLE)
+  list(APPEND DESKTOPSTREAMER_SOURCES nameUtils.mm)
+else()
+  list(APPEND DESKTOPSTREAMER_SOURCES nameUtils.cpp)
+endif()
 
 set(DEFLECT_DESKTOPSTREAMER_HOSTS
     "\
