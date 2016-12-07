@@ -39,6 +39,7 @@
 /*********************************************************************/
 
 #include "MainWindow.h"
+#include "nameUtils.h"
 #include "Stream.h"
 
 #include <deflect/version.h>
@@ -94,7 +95,11 @@ MainWindow::MainWindow()
                 _listView->setEnabled( !text.isEmpty( ));
              });
 
-    _streamIdLineEdit->setText( QHostInfo::localHostName( ));
+    const auto username = nameutils::getFullUsername();
+    if( username.isEmpty( ))
+        _streamIdLineEdit->setText( QHostInfo::localHostName( ));
+    else
+        _streamIdLineEdit->setText( username + "'s Desktop" );
 
     connect( _streamButton, &QPushButton::clicked,
              this, &MainWindow::_update );

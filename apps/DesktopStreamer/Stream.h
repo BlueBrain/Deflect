@@ -37,8 +37,8 @@
 /* or implied, of The Ecole Polytechnique Federal de Lausanne.       */
 /*********************************************************************/
 
-#ifndef STREAM_H
-#define STREAM_H
+#ifndef DESKTOPSTREAMER_STREAM_H
+#define DESKTOPSTREAMER_STREAM_H
 
 #include <deflect/Stream.h> // base class
 #include <QImage> // member

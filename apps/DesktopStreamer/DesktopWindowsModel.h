@@ -17,8 +17,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef DESKTOPWINDOWSMODEL_H
-#define DESKTOPWINDOWSMODEL_H
+#ifndef DESKTOPSTREAMER_DESKTOPWINDOWSMODEL_H
+#define DESKTOPSTREAMER_DESKTOPWINDOWSMODEL_H
 
 #include <QAbstractListModel>
 #include <memory>

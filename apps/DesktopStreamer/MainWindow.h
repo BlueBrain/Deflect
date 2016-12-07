@@ -38,8 +38,8 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef DESKTOPSTREAMER_MAINWINDOW_H
+#define DESKTOPSTREAMER_MAINWINDOW_H
 
 #include <apps/DesktopStreamer/ui_MainWindow.h>
 
