@@ -1,9 +1,8 @@
 # Deflect
 
 Welcome to Deflect, a C++ library for streaming pixels to other Deflect-based
-applications, for example
-[Tide](https://github.com/BlueBrain/Tide).
-Deflect offers a stable API marked with version 1.0 (for the client part).
+applications, for example [Tide](https://github.com/BlueBrain/Tide).
+Deflect offers a stable API marked with version 1.5 (for the client part).
 
 ## Features
 
@@ -11,6 +10,7 @@ Deflect provides the following functionality:
 
 * Stream pixels to a remote Server from one or multiple sources
 * Register for receiving events from the Server
+* Receive keyboard, mouse and multi-point touch gestures from the Server
 * Compressed or uncompressed streaming
 * Fast multi-threaded JPEG compression (using libjpeg-turbo)
 
@@ -32,8 +32,8 @@ The following applications are provided which make use of the streaming API:
   git clone https://github.com/BlueBrain/Deflect.git
   mkdir Deflect/build
   cd Deflect/build
-  cmake ..
-  make
+  cmake -GNinja ..
+  ninja
 ~~~
 
 ## ChangeLog
@@ -47,8 +47,8 @@ system, including all Unix variants. Deflect uses CMake to create a
 platform-specific build environment. The following platforms and build
 environments are tested:
 
-* Linux: Ubuntu 14.04 and RHEL 6 (Makefile, x64)
-* Mac OS X: 10.7 - 10.10 (Makefile, x86_64)
+* Linux: Ubuntu 16.04 and RHEL 6 (Makefile, Ninja; x64)
+* Mac OS X: 10.7 - 10.10 (Makefile, Ninja; x86_64)
 
-The [latest API documentation](http://bluebrain.github.io/Deflect-0.10/index.html)
+The [latest API documentation](http://bluebrain.github.io/Deflect-0.12/index.html)
 can be found on [bluebrain.github.io](http://bluebrain.github.io).

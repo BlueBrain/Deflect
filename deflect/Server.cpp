@@ -44,31 +44,17 @@
 #include "NetworkProtocol.h"
 #include "ServerWorker.h"
 
-#ifdef DEFLECT_USE_SERVUS
-#  include <servus/servus.h>
-#endif
-
 #include <QThread>
 #include <stdexcept>
 
 namespace deflect
 {
 const int Server::defaultPortNumber = DEFAULT_PORT_NUMBER;
-const std::string Server::serviceName = SERVUS_SERVICE_NAME;
 
 class Server::Impl
 {
 public:
-    Impl()
-#ifdef DEFLECT_USE_SERVUS
-        : servus( Server::serviceName )
-#endif
-    {}
-
     FrameDispatcher pixelStreamDispatcher;
-#ifdef DEFLECT_USE_SERVUS
-    servus::Servus servus;
-#endif
 };
 
 Server::Server( const int port )
@@ -79,9 +65,6 @@ Server::Server( const int port )
         const auto err = QString( "could not listen on port: %1" ).arg( port );
         throw std::runtime_error( err.toStdString( ));
     }
-#ifdef DEFLECT_USE_SERVUS
-    _impl->servus.announce( serverPort(), "" );
-#endif
 }
 
 Server::~Server()

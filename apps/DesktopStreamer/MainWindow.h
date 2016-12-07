@@ -47,10 +47,6 @@
 #  include <deflect/AppNapSuspender.h>
 #endif
 
-#ifdef DEFLECT_USE_SERVUS
-#  include <servus/servus.h>
-#endif
-
 #include <QMainWindow>
 #include <QTimer>
 #include <QTime>

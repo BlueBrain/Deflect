@@ -41,6 +41,5 @@
 
 #define NETWORK_PROTOCOL_VERSION    8
 #define DEFAULT_PORT_NUMBER         1701
-#define SERVUS_SERVICE_NAME         "_displaycluster._tcp"
 
 #endif
