@@ -3,16 +3,18 @@ Changelog {#Changelog}
 
 ## Deflect 0.12
 
-### 0.12.0 (git master)
+### 0.12.0 (09-12-2016)
 
+* [143](https://github.com/BlueBrain/Deflect/pull/143):
+  The non-functional Servus dependency has been removed.
 * [142](https://github.com/BlueBrain/Deflect/pull/142):
   The DesktopStreamer app uses the full user name as the default stream name.
 * [139](https://github.com/BlueBrain/Deflect/pull/139):
   OSX: AppNap is now disabled for all QmlStreamers. The AppNapSuspender class
-  is now available in Deflect library for use in external applications.
+  is also available in Deflect library for use in external applications.
 * [137](https://github.com/BlueBrain/Deflect/pull/137):
-  Deflect Qt: the offscreen Qml view used by the Qml streamer is now available
-  as a separate class.
+  Deflect Qt: the offscreen Qml view used by the Qml streamer is available as a
+  separate class.
 * [133](https://github.com/BlueBrain/Deflect/pull/133):
   QmlStreamer: Use asynchronous rendering, add
   deflect::qt::QmlStreamer::useAsyncSend() to enable asynchronous image streaming

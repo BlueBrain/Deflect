@@ -61,9 +61,6 @@ public:
     /** The default port number used for Stream connections. */
     static const int defaultPortNumber;
 
-    /** The zeroconf service name for announcing stream connections. */
-    static const std::string serviceName;
-
     /**
      * Create a new server listening for Stream connections.
      * @param port The port to listen on. Must be available.
