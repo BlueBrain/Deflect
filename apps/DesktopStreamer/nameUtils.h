@@ -17,13 +17,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef NAMEUTILS_H
-#define NAMEUTILS_H
+#pragma once
 
 #include <QString>
 
 /**
- * Cross-plateform utilities to retrieve the name of the user.
+ * Cross-platform utilities to retrieve the name of the user.
  */
 namespace nameutils
 {
@@ -35,5 +34,3 @@ namespace nameutils
 QString getFullUsername();
 
 }
-
-#endif

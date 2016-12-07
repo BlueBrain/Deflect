@@ -96,10 +96,10 @@ MainWindow::MainWindow()
              });
 
     const auto username = nameutils::getFullUsername();
-    if( !username.isEmpty( ))
-        _streamIdLineEdit->setText( username + "'s Desktop" );
-    else
+    if( username.isEmpty( ))
         _streamIdLineEdit->setText( QHostInfo::localHostName( ));
+    else
+        _streamIdLineEdit->setText( username + "'s Desktop" );
 
     connect( _streamButton, &QPushButton::clicked,
              this, &MainWindow::_update );
