@@ -4,6 +4,7 @@
 
 set(DESKTOPSTREAMER_HEADERS
   MainWindow.h
+  nameUtils.h
   Stream.h
 )
 
@@ -21,6 +22,12 @@ set(DESKTOPSTREAMER_LINK_LIBRARIES
   Qt5::Network
   Qt5::Widgets
 )
+
+if(APPLE)
+  list(APPEND DESKTOPSTREAMER_SOURCES nameUtils.mm)
+else()
+  list(APPEND DESKTOPSTREAMER_SOURCES nameUtils.cpp)
+endif()
 
 set(DEFLECT_DESKTOPSTREAMER_HOSTS
     "\

@@ -5,6 +5,8 @@ Changelog {#Changelog}
 
 ### 0.12.0 (git master)
 
+* [141](https://github.com/BlueBrain/Deflect/pull/141):
+  The DesktopStreamer app uses the full user name as the default stream name.
 * [139](https://github.com/BlueBrain/Deflect/pull/139):
   OSX: AppNap is now disabled for all QmlStreamers. The AppNapSuspender class
   is now available in Deflect library for use in external applications.
