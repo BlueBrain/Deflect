@@ -80,7 +80,10 @@ int main( int argc, char** argv )
     readCommandLineArguments( argc, argv );
 
     if( deflectHost == NULL )
+    {
         syntax( argv[0] );
+        return EXIT_FAILURE;
+    }
 
     initGLWindow( argc, argv );
     initDeflectStream();
@@ -88,32 +91,38 @@ int main( int argc, char** argv )
     atexit( cleanup );
     glutMainLoop(); // enter the main loop
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 void readCommandLineArguments( int argc, char** argv )
 {
     for( int i = 1; i < argc; ++i )
     {
-        if( argv[i][0] == '-' )
+        if( std::string( argv[i] ) == "--help" )
+        {
+            syntax( argv[0] );
+            ::exit( EXIT_SUCCESS );
+        }
+        else if( argv[i][0] == '-' )
         {
             switch( argv[i][1] )
             {
-                case 'n':
-                    if( i + 1 < argc )
-                    {
-                        deflectStreamId = argv[i+1];
-                        ++i;
-                    }
-                    break;
-                case 'i':
-                    deflectInteraction = true;
-                    break;
-                case 'u':
-                    deflectCompressImage = false;
-                    break;
-                default:
-                    syntax( argv[0] );
+            case 'n':
+                if( i + 1 < argc )
+                {
+                    deflectStreamId = argv[i+1];
+                    ++i;
+                }
+                break;
+            case 'i':
+                deflectInteraction = true;
+                break;
+            case 'u':
+                deflectCompressImage = false;
+                break;
+            default:
+                syntax( argv[0] );
+                ::exit( EXIT_FAILURE );
             }
         }
         else if( i == argc - 1 )
@@ -167,13 +176,11 @@ void initDeflectStream()
 
 void syntax( char* app )
 {
-    std::cerr << "syntax: " << app << " [options] <host>" << std::endl;
-    std::cerr << "options:" << std::endl;
-    std::cerr << " -n <stream id>     set stream identifier (default: 'SimpleStreamer')" << std::endl;
-    std::cerr << " -i                 enable interaction events (default: OFF)" << std::endl;
-    std::cerr << " -u                 enable uncompressed streaming (default: OFF)" << std::endl;
-
-    exit( 1 );
+    std::cout << "syntax: " << app << " [options] <host>" << std::endl;
+    std::cout << "options:" << std::endl;
+    std::cout << " -n <stream id>     set stream identifier (default: 'SimpleStreamer')" << std::endl;
+    std::cout << " -i                 enable interaction events (default: OFF)" << std::endl;
+    std::cout << " -u                 enable uncompressed streaming (default: OFF)" << std::endl;
 }
 
 void display()
