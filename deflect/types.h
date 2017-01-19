@@ -49,6 +49,9 @@
 namespace deflect
 {
 
+/** The different types of view. */
+enum class View : std::int8_t { MONO, LEFT_EYE, RIGHT_EYE };
+
 class EventReceiver;
 class Frame;
 class FrameDispatcher;

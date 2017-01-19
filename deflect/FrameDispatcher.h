@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -45,7 +45,6 @@
 #include <deflect/Segment.h>
 
 #include <QObject>
-#include <map>
 
 namespace deflect
 {
@@ -87,17 +86,21 @@ public slots:
      * @param uri Identifier for the Stream
      * @param sourceIndex Identifier for the source in this stream
      * @param segment The segment to process
+     * @param view to which the segment belongs
      */
     DEFLECT_API void processSegment( QString uri, size_t sourceIndex,
-                                     deflect::Segment segment );
+                                     deflect::Segment segment,
+                                     deflect::View view );
 
     /**
      * The given source has finished sending segments for the current frame.
      *
      * @param uri Identifier for the Stream
      * @param sourceIndex Identifier for the source in this stream
+     * @param view for which the frame is finished
      */
-    DEFLECT_API void processFrameFinished( QString uri, size_t sourceIndex );
+    DEFLECT_API void processFrameFinished( QString uri, size_t sourceIndex,
+                                           deflect::View view );
 
     /**
      * Delete an entire stream.
@@ -107,9 +110,14 @@ public slots:
     DEFLECT_API void deleteStream( QString uri );
 
     /**
-     * Called by the user to request the dispatching of a new frame.
+     * Request the dispatching of a new frame for any stream (MONO/STEREO).
      *
-     * A sendFrame() signal will be emitted as soon as a frame is available.
+     * A sendFrame() signal will be emitted for each of the view for which a
+     * frame becomes available.
+     *
+     * Stereo LEFT/RIGHT frames will only be be dispatched together when both
+     * are available to ensure that the two eye channels remain synchronized.
+     *
      * @param uri Identifier for the stream
      */
     DEFLECT_API void requestFrame( QString uri );
@@ -120,14 +128,14 @@ signals:
      *
      * @param uri Identifier for the Stream
      */
-    DEFLECT_API void openPixelStream( QString uri );
+    DEFLECT_API void pixelStreamOpened( QString uri );
 
     /**
-     * Notify that a pixel stream has been deleted.
+     * Notify that a pixel stream has been closed.
      *
      * @param uri Identifier for the Stream
      */
-    DEFLECT_API void deletePixelStream( QString uri );
+    DEFLECT_API void pixelStreamClosed( QString uri );
 
     /**
      * Dispatch a full frame.

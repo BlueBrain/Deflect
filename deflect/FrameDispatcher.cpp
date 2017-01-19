@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -43,6 +43,7 @@
 #include "ReceiveBuffer.h"
 
 #include <cassert>
+#include <map>
 
 namespace deflect
 {
@@ -52,26 +53,52 @@ class FrameDispatcher::Impl
 public:
     Impl() {}
 
-    FramePtr consumeLatestFrame( const QString& uri )
+    FramePtr consumeLatestMonoFrame( const QString& uri )
     {
+        const View view = deflect::View::MONO;
+
         FramePtr frame( new Frame );
         frame->uri = uri;
+        frame->view = view;
 
         ReceiveBuffer& buffer = streamBuffers[uri];
-
-        while( buffer.hasCompleteFrame( ))
-            frame->segments = buffer.popFrame();
-
+        while( buffer.hasCompleteFrame( view ))
+            frame->segments = buffer.popFrame( view );
         assert( !frame->segments.empty( ));
 
         // receiver will request a new frame once this frame was consumed
-        buffer.setAllowedToSend( false );
-
+        buffer.setAllowedToSend( false, view );
         return frame;
     }
 
-    typedef std::map<QString, ReceiveBuffer> StreamBuffers;
-    StreamBuffers streamBuffers;
+    std::pair<FramePtr,FramePtr> consumeLatestStereoFrame( const QString& uri )
+    {
+        FramePtr frameLeft( new Frame );
+        frameLeft->uri = uri;
+        frameLeft->view = deflect::View::LEFT_EYE;
+
+        FramePtr frameRight( new Frame );
+        frameRight->uri = uri;
+        frameRight->view = deflect::View::RIGHT_EYE;
+
+        ReceiveBuffer& buffer = streamBuffers[uri];
+
+        while( buffer.hasCompleteFrame( deflect::View::LEFT_EYE ) &&
+               buffer.hasCompleteFrame( deflect::View::RIGHT_EYE ))
+        {
+            frameLeft->segments = buffer.popFrame( deflect::View::LEFT_EYE );
+            frameRight->segments = buffer.popFrame( deflect::View::RIGHT_EYE );
+        }
+        assert( !frameLeft->segments.empty( ));
+        assert( !frameRight->segments.empty( ));
+
+        // receiver will request a new frame once this frame was consumed
+        buffer.setAllowedToSend( false, deflect::View::LEFT_EYE );
+        buffer.setAllowedToSend( false, deflect::View::RIGHT_EYE );
+        return std::make_pair( std::move( frameLeft ), std::move( frameRight ));
+    }
+
+    std::map<QString, ReceiveBuffer> streamBuffers;
 };
 
 FrameDispatcher::FrameDispatcher()
@@ -85,7 +112,7 @@ void FrameDispatcher::addSource( const QString uri, const size_t sourceIndex )
     _impl->streamBuffers[uri].addSource( sourceIndex );
 
     if( _impl->streamBuffers[uri].getSourceCount() == 1 )
-        emit openPixelStream( uri );
+        emit pixelStreamOpened( uri );
 }
 
 void FrameDispatcher::removeSource( const QString uri,
@@ -102,23 +129,40 @@ void FrameDispatcher::removeSource( const QString uri,
 
 void FrameDispatcher::processSegment( const QString uri,
                                       const size_t sourceIndex,
-                                      deflect::Segment segment )
+                                      deflect::Segment segment,
+                                      const deflect::View view )
 {
     if( _impl->streamBuffers.count( uri ))
-        _impl->streamBuffers[uri].insert( segment, sourceIndex );
+        _impl->streamBuffers[uri].insert( segment, sourceIndex, view );
 }
 
 void FrameDispatcher::processFrameFinished( const QString uri,
-                                            const size_t sourceIndex )
+                                            const size_t sourceIndex,
+                                            const deflect::View view )
 {
     if( !_impl->streamBuffers.count( uri ))
         return;
 
     ReceiveBuffer& buffer = _impl->streamBuffers[uri];
-    buffer.finishFrameForSource( sourceIndex );
+    buffer.finishFrameForSource( sourceIndex, view );
 
-    if( buffer.isAllowedToSend() && buffer.hasCompleteFrame( ))
-        emit sendFrame( _impl->consumeLatestFrame( uri ));
+    if( view == deflect::View::MONO )
+    {
+        if( buffer.isAllowedToSend( view ) && buffer.hasCompleteFrame( view ))
+            emit sendFrame( _impl->consumeLatestMonoFrame( uri ));
+    }
+    else
+    {
+        if( buffer.isAllowedToSend( deflect::View::LEFT_EYE ) &&
+            buffer.isAllowedToSend( deflect::View::RIGHT_EYE ) &&
+            buffer.hasCompleteFrame( deflect::View::LEFT_EYE ) &&
+            buffer.hasCompleteFrame( deflect::View::RIGHT_EYE ))
+        {
+            const auto frames = _impl->consumeLatestStereoFrame( uri );
+            emit sendFrame( frames.first );
+            emit sendFrame( frames.second );
+        }
+    }
 }
 
 void FrameDispatcher::deleteStream( const QString uri )
@@ -126,7 +170,7 @@ void FrameDispatcher::deleteStream( const QString uri )
     if( _impl->streamBuffers.count( uri ))
     {
         _impl->streamBuffers.erase( uri );
-        emit deletePixelStream( uri );
+        emit pixelStreamClosed( uri );
     }
 }
 
@@ -136,9 +180,20 @@ void FrameDispatcher::requestFrame( const QString uri )
         return;
 
     ReceiveBuffer& buffer = _impl->streamBuffers[uri];
-    buffer.setAllowedToSend( true );
-    if( buffer.hasCompleteFrame( ))
-        emit sendFrame( _impl->consumeLatestFrame( uri ));
+    buffer.setAllowedToSend( true, deflect::View::MONO );
+    buffer.setAllowedToSend( true, deflect::View::LEFT_EYE );
+    buffer.setAllowedToSend( true, deflect::View::RIGHT_EYE );
+
+    if( buffer.hasCompleteFrame( deflect::View::MONO ))
+        emit sendFrame( _impl->consumeLatestMonoFrame( uri ));
+
+    if( buffer.hasCompleteFrame( deflect::View::LEFT_EYE ) &&
+        buffer.hasCompleteFrame( deflect::View::RIGHT_EYE ))
+    {
+        const auto frames = _impl->consumeLatestStereoFrame( uri );
+        emit sendFrame( frames.first );
+        emit sendFrame( frames.second );
+    }
 }
 
 }

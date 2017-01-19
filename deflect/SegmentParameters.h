@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -46,6 +46,8 @@
     #include <stdint.h>
 #endif
 
+#include <deflect/types.h>
+
 namespace deflect
 {
 
@@ -56,27 +58,18 @@ struct SegmentParameters
 {
     /** @name Coordinates */
     //@{
-    uint32_t x;  /**< The x position in pixels. */
-    uint32_t y;  /**< The y position in pixels. */
+    uint32_t x = 0u;  /**< The x position in pixels. */
+    uint32_t y = 0u;  /**< The y position in pixels. */
     //@}
 
     /** @name Dimensions */
     //@{
-    uint32_t width;   /**< The width in pixels. */
-    uint32_t height;  /**< The height in pixels. */
+    uint32_t width = 0u;   /**< The width in pixels. */
+    uint32_t height = 0u;  /**< The height in pixels. */
     //@}
 
     /** Is the image raw pixel data or compressed in jpeg format */
-    bool compressed;
-
-    /** Default constructor */
-    SegmentParameters()
-        : x( 0 )
-        , y( 0 )
-        , width( 0 )
-        , height( 0 )
-        , compressed( true )
-    {}
+    bool compressed = true;
 };
 
 }

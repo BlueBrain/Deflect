@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -44,23 +44,16 @@
 namespace deflect
 {
 
-ReceiveBuffer::ReceiveBuffer()
-    : _lastFrameComplete( 0 )
-    , _allowedToSend( false )
-{
-}
-
 bool ReceiveBuffer::addSource( const size_t sourceIndex )
 {
     assert( !_sourceBuffers.count( sourceIndex ));
 
     // TODO: This function must return false if the stream was already started!
-    // This requires an full adaptation of the Stream library (DISCL-241)
-    if ( _sourceBuffers.count( sourceIndex ))
+    // This requires a full adaptation of the Stream library (DISCL-241)
+    if( _sourceBuffers.count( sourceIndex ))
         return false;
 
     _sourceBuffers[sourceIndex] = SourceBuffer();
-    _sourceBuffers[sourceIndex].segments.push( Segments( ));
     return true;
 }
 
@@ -74,56 +67,112 @@ size_t ReceiveBuffer::getSourceCount() const
     return _sourceBuffers.size();
 }
 
-void ReceiveBuffer::insert( const Segment& segment, const size_t sourceIndex )
+void ReceiveBuffer::insert( const Segment& segment, const size_t sourceIndex,
+                            const deflect::View view )
 {
     assert( _sourceBuffers.count( sourceIndex ));
 
-    _sourceBuffers[sourceIndex].segments.back().push_back( segment );
+    _sourceBuffers[sourceIndex].insert( segment, view );
 }
 
-void ReceiveBuffer::finishFrameForSource( const size_t sourceIndex )
+void ReceiveBuffer::finishFrameForSource( const size_t sourceIndex,
+                                          const deflect::View view )
 {
     assert( _sourceBuffers.count( sourceIndex ));
 
-    _sourceBuffers[sourceIndex].push();
+    _sourceBuffers[sourceIndex].push( view );
 }
 
-bool ReceiveBuffer::hasCompleteFrame() const
+bool ReceiveBuffer::hasCompleteFrame( const View view ) const
 {
     assert( !_sourceBuffers.empty( ));
+
+    const auto lastCompleteFrameIndex = _getLastCompleteFrameIndex( view );
 
     // Check if all sources for Stream have reached the same index
     for( const auto& kv : _sourceBuffers )
     {
         const auto& buffer = kv.second;
-        if( buffer.backFrameIndex <= _lastFrameComplete )
+        if( buffer.getBackFrameIndex( view ) <= lastCompleteFrameIndex )
             return false;
     }
     return true;
 }
 
-Segments ReceiveBuffer::popFrame()
+Segments ReceiveBuffer::popFrame( const View view )
 {
     Segments frame;
     for( auto& kv : _sourceBuffers )
     {
         auto& buffer = kv.second;
-        frame.insert( frame.end(), buffer.segments.front().begin(),
-                      buffer.segments.front().end( ));
-        buffer.pop();
+        const auto& segments = buffer.getSegments( view );
+        frame.insert( frame.end(), segments.begin(), segments.end( ));
+        buffer.pop( view );
     }
-    ++_lastFrameComplete;
+    _incrementLastFrameComplete( view );
     return frame;
 }
 
-void ReceiveBuffer::setAllowedToSend( const bool enable )
+void ReceiveBuffer::setAllowedToSend( const bool enable, const View view )
 {
-    _allowedToSend = enable;
+    switch( view )
+    {
+    case View::MONO:
+        _allowedToSend = enable;
+        break;
+    case View::LEFT_EYE:
+        _allowedToSendLeft = enable;
+        break;
+    case View::RIGHT_EYE:
+        _allowedToSendRight = enable;
+        break;
+    };
 }
 
-bool ReceiveBuffer::isAllowedToSend() const
+bool ReceiveBuffer::isAllowedToSend( const View view ) const
 {
-    return _allowedToSend;
+    switch( view )
+    {
+    case View::MONO:
+        return _allowedToSend;
+    case View::LEFT_EYE:
+        return _allowedToSendLeft;
+    case View::RIGHT_EYE:
+        return _allowedToSendRight;
+    default:
+        throw std::invalid_argument( "no such view" ); // keep compiler happy
+    };
+}
+
+FrameIndex ReceiveBuffer::_getLastCompleteFrameIndex( const View view ) const
+{
+    switch( view )
+    {
+    case View::MONO:
+        return _lastFrameComplete;
+    case View::LEFT_EYE:
+        return _lastFrameCompleteLeft;
+    case View::RIGHT_EYE:
+        return _lastFrameCompleteRight;
+    default:
+        throw std::invalid_argument( "no such view" ); // keep compiler happy
+    };
+}
+
+void ReceiveBuffer::_incrementLastFrameComplete( const View view )
+{
+    switch( view )
+    {
+    case View::MONO:
+        ++_lastFrameComplete;
+        break;
+    case View::LEFT_EYE:
+        ++_lastFrameCompleteLeft;
+        break;
+    case View::RIGHT_EYE:
+        ++_lastFrameCompleteRight;
+        break;
+    };
 }
 
 }

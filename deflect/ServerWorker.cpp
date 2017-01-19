@@ -61,6 +61,7 @@ ServerWorker::ServerWorker( const int socketDescriptor )
     , _sourceId( socketDescriptor )
     , _clientProtocolVersion( NETWORK_PROTOCOL_VERSION )
     , _registeredToEvents( false )
+    , _activeView( View::MONO )
 {
     if( !_tcpSocket->setSocketDescriptor( socketDescriptor ))
     {
@@ -234,7 +235,7 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME:
-        emit receivedFrameFinished( _streamId, _sourceId );
+        emit receivedFrameFinished( _streamId, _sourceId, _activeView );
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM:
@@ -252,6 +253,14 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
     case MESSAGE_TYPE_DATA:
         emit receivedData( _streamId, byteArray );
         break;
+
+    case MESSAGE_TYPE_IMAGE_VIEW:
+    {
+        const auto view = reinterpret_cast<const View*>( byteArray.data( ));
+        if( *view >= deflect::View::MONO && *view <= deflect::View::RIGHT_EYE )
+            _activeView = *view;
+        break;
+    }
 
     case MESSAGE_TYPE_BIND_EVENTS:
     case MESSAGE_TYPE_BIND_EVENTS_EX:
@@ -287,7 +296,7 @@ void ServerWorker::_handlePixelStreamMessage( const QByteArray& message )
     segment.imageData = message.right( message.size() -
                                        sizeof( SegmentParameters ));
 
-    emit( receivedSegment( _streamId, _sourceId, segment ));
+    emit( receivedSegment( _streamId, _sourceId, segment, _activeView ));
 }
 
 void ServerWorker::_sendProtocolVersion()

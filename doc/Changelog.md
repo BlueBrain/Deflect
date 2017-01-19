@@ -1,6 +1,11 @@
 Changelog {#Changelog}
 ============
 
+## Deflect 0.13 (git master)
+
+* [148](https://github.com/BlueBrain/Deflect/pull/148):
+  Support for streaming stereo 3D content in a frame-sequential manner.
+
 ## Deflect 0.12
 
 ### 0.12.1 (01-02-2017)

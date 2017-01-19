@@ -1,7 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
-/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
-/*                          Daniel.Nachbaur@epfl.ch                  */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -35,93 +34,100 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The University of Texas at Austin.                 */
+/* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#ifndef DEFLECT_SERVER_WORKER_H
-#define DEFLECT_SERVER_WORKER_H
+#include "SourceBuffer.h"
 
-#include <deflect/Event.h>
-#include <deflect/EventReceiver.h>
-#include <deflect/MessageHeader.h>
-#include <deflect/Segment.h>
-#include <deflect/SizeHints.h>
-
-#include <QtNetwork/QTcpSocket>
-#include <QQueue>
+#include <exception>
 
 namespace deflect
 {
 
-class ServerWorker : public EventReceiver
+SourceBuffer::SourceBuffer()
 {
-    Q_OBJECT
-
-public:
-    explicit ServerWorker( int socketDescriptor );
-    ~ServerWorker();
-
-public slots:
-    void processEvent( Event evt ) final;
-
-    void initConnection();
-    void closeConnection( QString uri );
-    void replyToEventRegistration( QString uri, bool success );
-
-signals:
-    void addStreamSource( QString uri, size_t sourceIndex );
-    void removeStreamSource( QString uri, size_t sourceIndex );
-
-    void receivedSegment( QString uri, size_t sourceIndex,
-                          deflect::Segment segment, deflect::View view );
-    void receivedFrameFinished( QString uri, size_t sourceIndex,
-                                deflect::View view );
-
-    void registerToEvents( QString uri, bool exclusive,
-                           deflect::EventReceiver* receiver );
-
-    void receivedSizeHints( QString uri, deflect::SizeHints hints );
-
-    void receivedData( QString uri, QByteArray data );
-
-    void connectionClosed();
-
-    /** @internal */
-    void _dataAvailable();
-
-private slots:
-    void _processMessages();
-
-private:
-    QTcpSocket* _tcpSocket;
-
-    QString _streamId;
-    int _sourceId;
-    int _clientProtocolVersion;
-
-    bool _registeredToEvents;
-    QQueue<Event> _events;
-
-    View _activeView;
-
-    void _receiveMessage();
-    MessageHeader _receiveMessageHeader();
-    QByteArray _receiveMessageBody( int size );
-
-    void _handleMessage( const MessageHeader& messageHeader,
-                         const QByteArray& message );
-    void _parseClientProtocolVersion( const QByteArray& message );
-    void _handlePixelStreamMessage( const QByteArray& message );
-
-    void _sendProtocolVersion();
-    void _sendBindReply( bool successful );
-    void _send( const Event &evt );
-    void _sendQuit();
-    bool _send( const MessageHeader& messageHeader );
-    void _flushSocket();
-    bool _isConnected() const;
-};
-
+    _segmentsMono.push( Segments( ));
+    _segmentsLeft.push( Segments( ));
+    _segmentsRight.push( Segments( ));
 }
 
-#endif
+const Segments& SourceBuffer::getSegments( const View view ) const
+{
+    return _getQueue( view ).front();
+}
+
+FrameIndex SourceBuffer::getBackFrameIndex( const View view ) const
+{
+    switch( view )
+    {
+    case View::MONO:
+        return _backFrameIndexMono;
+    case View::LEFT_EYE:
+        return _backFrameIndexLeft;
+    case View::RIGHT_EYE:
+        return _backFrameIndexRight;
+    default:
+        throw std::invalid_argument( "no such view" ); // keep compiler happy
+    };
+}
+
+void SourceBuffer::pop( const View view )
+{
+    _getQueue( view ).pop();
+}
+
+void SourceBuffer::push( const View view )
+{
+    _getQueue( view ).push( Segments( ));
+
+    switch( view )
+    {
+    case View::MONO:
+        ++_backFrameIndexMono;
+        break;
+    case View::LEFT_EYE:
+        ++_backFrameIndexLeft;
+        break;
+    case View::RIGHT_EYE:
+        ++_backFrameIndexRight;
+        break;
+    };
+}
+
+void SourceBuffer::insert( const Segment& segment, const deflect::View view )
+{
+    _getQueue( view ).back().push_back( segment );
+}
+
+std::queue<Segments>& SourceBuffer::_getQueue( const deflect::View view )
+{
+    switch( view )
+    {
+    case View::MONO:
+        return _segmentsMono;
+    case View::LEFT_EYE:
+        return _segmentsLeft;
+    case View::RIGHT_EYE:
+        return _segmentsRight;
+    default:
+        throw std::invalid_argument( "no such view" ); // keep compiler happy
+    };
+}
+
+const std::queue<Segments>&
+SourceBuffer::_getQueue( const deflect::View view ) const
+{
+    switch( view )
+    {
+    case View::MONO:
+        return _segmentsMono;
+    case View::LEFT_EYE:
+        return _segmentsLeft;
+    case View::RIGHT_EYE:
+        return _segmentsRight;
+    default:
+        throw std::invalid_argument( "no such view" ); // keep compiler happy
+    };
+}
+
+}

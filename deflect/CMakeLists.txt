@@ -1,7 +1,7 @@
 
-# Copyright (c) 2013-2016, EPFL/Blue Brain Project
-#                     Raphael Dumusc <raphael.dumusc@epfl.ch>
-#                     Daniel Nachbaur <daniel.nachbaur@epfl.ch>
+# Copyright (c) 2013-2017, EPFL/Blue Brain Project
+#                          Raphael Dumusc <raphael.dumusc@epfl.ch>
+#                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 
 set(DEFLECT_PUBLIC_HEADERS
   config.h
@@ -26,6 +26,7 @@ set(DEFLECT_HEADERS
   ReceiveBuffer.h
   ServerWorker.h
   Socket.h
+  SourceBuffer.h
   StreamPrivate.h
 )
 
@@ -41,6 +42,7 @@ set(DEFLECT_SOURCES
   Server.cpp
   ServerWorker.cpp
   Socket.cpp
+  SourceBuffer.cpp
   Stream.cpp
   StreamPrivate.cpp
   StreamSendWorker.cpp

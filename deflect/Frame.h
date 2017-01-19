@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2014-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -61,6 +61,9 @@ public:
 
     /** The PixelStream uri to which this frame is associated. */
     QString uri;
+
+    /** The view to which this frame belongs. */
+    View view = View::MONO;
 
     /** Get the total dimensions of this frame. */
     DEFLECT_API QSize computeDimensions() const;

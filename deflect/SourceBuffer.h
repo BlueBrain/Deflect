@@ -1,7 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
-/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
-/*                          Daniel.Nachbaur@epfl.ch                  */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -35,91 +34,58 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The University of Texas at Austin.                 */
+/* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#ifndef DEFLECT_SERVER_WORKER_H
-#define DEFLECT_SERVER_WORKER_H
+#ifndef DEFLECT_SOURCEBUFFER_H
+#define DEFLECT_SOURCEBUFFER_H
 
-#include <deflect/Event.h>
-#include <deflect/EventReceiver.h>
-#include <deflect/MessageHeader.h>
+#include <deflect/api.h>
 #include <deflect/Segment.h>
-#include <deflect/SizeHints.h>
+#include <deflect/types.h>
 
-#include <QtNetwork/QTcpSocket>
-#include <QQueue>
+#include <queue>
 
 namespace deflect
 {
 
-class ServerWorker : public EventReceiver
+using FrameIndex = unsigned int;
+
+/**
+ * Buffer for a single source of segments.
+ */
+class SourceBuffer
 {
-    Q_OBJECT
-
 public:
-    explicit ServerWorker( int socketDescriptor );
-    ~ServerWorker();
+    /** Construct an empty buffer. */
+    SourceBuffer();
 
-public slots:
-    void processEvent( Event evt ) final;
+    /** @return the segments at the front of the queue for a given view. */
+    const Segments& getSegments( View view ) const;
 
-    void initConnection();
-    void closeConnection( QString uri );
-    void replyToEventRegistration( QString uri, bool success );
+    /** @return the frame index of the back of the buffer for a given view. */
+    FrameIndex getBackFrameIndex( View view ) const;
 
-signals:
-    void addStreamSource( QString uri, size_t sourceIndex );
-    void removeStreamSource( QString uri, size_t sourceIndex );
+    /** Insert a segment into the back frame of the appropriate queue. */
+    void insert( const Segment& segment, const View view );
 
-    void receivedSegment( QString uri, size_t sourceIndex,
-                          deflect::Segment segment, deflect::View view );
-    void receivedFrameFinished( QString uri, size_t sourceIndex,
-                                deflect::View view );
+    /** Push a new frame to the back of given view. */
+    void push( const View view );
 
-    void registerToEvents( QString uri, bool exclusive,
-                           deflect::EventReceiver* receiver );
-
-    void receivedSizeHints( QString uri, deflect::SizeHints hints );
-
-    void receivedData( QString uri, QByteArray data );
-
-    void connectionClosed();
-
-    /** @internal */
-    void _dataAvailable();
-
-private slots:
-    void _processMessages();
+    /** Pop the front frame of the buffer for the given view. */
+    void pop( const View view );
 
 private:
-    QTcpSocket* _tcpSocket;
+    /** The collections of segments for each view. */
+    std::queue<Segments> _segmentsMono, _segmentsLeft, _segmentsRight;
 
-    QString _streamId;
-    int _sourceId;
-    int _clientProtocolVersion;
+    /** The current indices of the frame for this source. */
+    FrameIndex _backFrameIndexMono = 0u;
+    FrameIndex _backFrameIndexLeft = 0u;
+    FrameIndex _backFrameIndexRight = 0u;
 
-    bool _registeredToEvents;
-    QQueue<Event> _events;
-
-    View _activeView;
-
-    void _receiveMessage();
-    MessageHeader _receiveMessageHeader();
-    QByteArray _receiveMessageBody( int size );
-
-    void _handleMessage( const MessageHeader& messageHeader,
-                         const QByteArray& message );
-    void _parseClientProtocolVersion( const QByteArray& message );
-    void _handlePixelStreamMessage( const QByteArray& message );
-
-    void _sendProtocolVersion();
-    void _sendBindReply( bool successful );
-    void _send( const Event &evt );
-    void _sendQuit();
-    bool _send( const MessageHeader& messageHeader );
-    void _flushSocket();
-    bool _isConnected() const;
+    std::queue<Segments>& _getQueue( View view );
+    const std::queue<Segments>& _getQueue( View view ) const;
 };
 
 }

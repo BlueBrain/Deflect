@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -42,6 +42,7 @@
 
 #include <cstddef>
 #include <deflect/api.h>
+#include <deflect/types.h>
 
 namespace deflect
 {
@@ -86,9 +87,8 @@ struct ImageWrapper
      * @version 1.0
      */
     DEFLECT_API
-    ImageWrapper( const void* data, const unsigned int width,
-                  const unsigned int height, const PixelFormat format,
-                  const unsigned int x = 0, const unsigned int y = 0 );
+    ImageWrapper( const void* data, unsigned int width, unsigned int height,
+                  PixelFormat format, unsigned int x = 0, unsigned int y = 0 );
 
     /** Pointer to the image data of size getBufferSize(). @version 1.0 */
     const void* const data;
@@ -119,6 +119,12 @@ struct ImageWrapper
                                                100 best, default: 75).
                                                @version 1.0 */
     //@}
+
+    /**
+     * The view that this image represents in stereo 3D streams.
+     * @version 1.6
+     */
+    View view = View::MONO;
 
     /**
      * Get the number of bytes per pixel based on the pixelFormat.

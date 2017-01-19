@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -42,47 +42,15 @@
 
 #include <deflect/api.h>
 #include <deflect/Segment.h>
+#include <deflect/SourceBuffer.h>
 #include <deflect/types.h>
 
 #include <QSize>
 
-#include <queue>
 #include <map>
 
 namespace deflect
 {
-
-typedef unsigned int FrameIndex;
-
-/**
- * Buffer for a single source of segements.
- */
-struct SourceBuffer
-{
-    SourceBuffer() : frontFrameIndex( 0 ), backFrameIndex( 0 ) {}
-
-    /** The current indexes of the frame for this source */
-    FrameIndex frontFrameIndex, backFrameIndex;
-
-    /** The collection of segments */
-    std::queue<Segments> segments;
-
-    /** Pop the first element of the buffer */
-    void pop()
-    {
-        segments.pop();
-        ++frontFrameIndex;
-    }
-
-    /** Push a new element to the back of the buffer */
-    void push()
-    {
-        segments.push( Segments( ));
-        ++backFrameIndex;
-    }
-};
-
-typedef std::map<size_t, SourceBuffer> SourceBufferMap;
 
 /**
  * Buffer Segments from (multiple) sources.
@@ -93,9 +61,6 @@ typedef std::map<size_t, SourceBuffer> SourceBufferMap;
 class ReceiveBuffer
 {
 public:
-    /** Construct a Buffer */
-    DEFLECT_API ReceiveBuffer();
-
     /**
      * Add a source of segments.
      * @param sourceIndex Unique source identifier
@@ -117,34 +82,47 @@ public:
      * Insert a segement for the current frame and source.
      * @param segment The segment to insert
      * @param sourceIndex Unique source identifier
+     * @param view in which the segment should be inserted
      */
-    DEFLECT_API void insert( const Segment& segment, size_t sourceIndex );
+    DEFLECT_API void insert( const Segment& segment, size_t sourceIndex,
+                             deflect::View view = deflect::View::MONO );
 
     /**
      * Call when the source has finished sending segments for the current frame.
      * @param sourceIndex Unique source identifier
+     * @param view for which to finish the frame
      */
-    DEFLECT_API void finishFrameForSource( size_t sourceIndex );
+    DEFLECT_API void finishFrameForSource(
+            size_t sourceIndex, deflect::View view = deflect::View::MONO );
 
     /** Does the Buffer have a new complete frame (from all sources) */
-    DEFLECT_API bool hasCompleteFrame() const;
+    DEFLECT_API bool hasCompleteFrame( View view = deflect::View::MONO ) const;
 
     /**
      * Get the finished frame.
      * @return A collection of segments that form a frame
      */
-    DEFLECT_API Segments popFrame();
+    DEFLECT_API Segments popFrame( View view = deflect::View::MONO );
 
     /** Allow this buffer to be used by the next FrameDispatcher::sendLatestFrame */
-    DEFLECT_API void setAllowedToSend( bool enable );
+    DEFLECT_API void setAllowedToSend( bool enable, View view );
 
     /** @return true if this buffer can be sent by FrameDispatcher */
-    DEFLECT_API bool isAllowedToSend() const;
+    DEFLECT_API bool isAllowedToSend( View view ) const;
 
 private:
-    FrameIndex _lastFrameComplete;
-    SourceBufferMap _sourceBuffers;
-    bool _allowedToSend;
+    std::map<size_t, SourceBuffer> _sourceBuffers;
+
+    FrameIndex _lastFrameComplete = 0u;
+    FrameIndex _lastFrameCompleteLeft = 0u;
+    FrameIndex _lastFrameCompleteRight = 0u;
+
+    bool _allowedToSend = false;
+    bool _allowedToSendLeft = false;
+    bool _allowedToSendRight = false;
+
+    FrameIndex _getLastCompleteFrameIndex( View view ) const;
+    void _incrementLastFrameComplete( View view );
 };
 
 }

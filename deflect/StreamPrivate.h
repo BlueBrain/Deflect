@@ -99,6 +99,9 @@ public:
     /** @sa Stream::finishFrame */
     bool finishFrame();
 
+    /** Send the view for the image to be sent with sendPixelStreamSegment. */
+    bool sendImageView( View view );
+
     /**
      * Send a Segment through the Stream.
      * @param segment An image segment with valid parameters and data
