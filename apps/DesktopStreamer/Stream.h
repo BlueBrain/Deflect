@@ -57,9 +57,10 @@ public:
 
     /**
      * Send an update to the server.
+     * @param quality the quality setting for compression [1; 100]
      * @return an empty string on success, the error message otherwise.
      */
-    std::string update();
+    std::string update( int quality );
 
     /**
      * Process all pending events.

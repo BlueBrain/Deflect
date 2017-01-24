@@ -3,6 +3,11 @@ Changelog {#Changelog}
 
 ## Deflect 0.12
 
+### 0.12.1 (git master)
+
+* [145](https://github.com/BlueBrain/Deflect/pull/145):
+  DesktopStreamer: new slider to adjust the JPEG quality in advanced settings.
+
 ### 0.12.0 (09-12-2016)
 
 * [143](https://github.com/BlueBrain/Deflect/pull/143):
