@@ -120,7 +120,7 @@ bool processEvents( const bool interact )
     return true;
 }
 
-std::string update()
+std::string update( const int quality )
 {
     QPixmap pixmap;
 
@@ -169,6 +169,7 @@ std::string update()
                                         image.width(), image.height(),
                                         deflect::BGRA );
     deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
+    deflectImage.compressionQuality = std::max( 1, std::min( quality, 100 ));
 
     if( !_stream.send( deflectImage ) || !_stream.finishFrame( ))
         return "Streaming failure, connection closed";
@@ -279,9 +280,9 @@ Stream::Stream( const MainWindow& parent, const QPersistentModelIndex window,
 Stream::~Stream()
 {}
 
-std::string Stream::update()
+std::string Stream::update( const int quality )
 {
-    return _impl->update();
+    return _impl->update( quality );
 }
 
 bool Stream::processEvents( const bool interact )

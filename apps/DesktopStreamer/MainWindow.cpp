@@ -48,6 +48,7 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QScreen>
+#include <QToolTip>
 
 #include <algorithm>
 #include <cmath>
@@ -108,6 +109,11 @@ MainWindow::MainWindow()
 
     connect( _remoteControlCheckBox, &QCheckBox::clicked,
              this, &MainWindow::_onStreamEventsBoxClicked );
+
+    connect( _qualitySlider, &QSlider::valueChanged, []( const int value )
+    {
+        QToolTip::showText( QCursor::pos(), QString::number( value ) + "/100" );
+    });
 
     connect( _actionAdvancedSettings, &QAction::triggered,
              this, &MainWindow::_showAdvancedSettings );
@@ -242,6 +248,9 @@ void MainWindow::_showAdvancedSettings( const bool visible )
 
     _streamIdLineEdit->setVisible( visible );
     _streamIdLabel->setVisible( visible );
+
+    _qualitySlider->setVisible( visible );
+    _qualityLabel->setVisible( visible );
 }
 
 void MainWindow::_updateStreams()
@@ -359,12 +368,12 @@ void MainWindow::_shareDesktopUpdate()
 
     for( auto i = _streams.begin(); i != _streams.end(); )
     {
-        const std::string& error = i->second->update();
+        const auto error = i->second->update( _qualitySlider->value( ));
         if( error.empty( ))
             ++i;
         else
         {
-            _statusbar->showMessage( QString( error.c_str( )));
+            _statusbar->showMessage( QString::fromStdString( error ));
             i = _streams.erase( i );
         }
     }
