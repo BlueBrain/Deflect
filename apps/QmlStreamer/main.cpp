@@ -31,7 +31,8 @@ int main( int argc, char** argv )
     app.setQuitOnLastWindowClosed( true );
 
     QCommandLineParser parser;
-    parser.setApplicationDescription( "QmlStreamer example" );
+    parser.setApplicationDescription( "Stream an offscreen QML scene to a remote"
+                                      " host" );
     parser.addHelpOption();
     parser.addVersionOption();
 

@@ -176,11 +176,12 @@ void initDeflectStream()
 
 void syntax( char* app )
 {
-    std::cout << "syntax: " << app << " [options] <host>" << std::endl;
-    std::cout << "options:" << std::endl;
-    std::cout << " -n <stream id>     set stream identifier (default: 'SimpleStreamer')" << std::endl;
-    std::cout << " -i                 enable interaction events (default: OFF)" << std::endl;
-    std::cout << " -u                 enable uncompressed streaming (default: OFF)" << std::endl;
+    std::cout << "Usage: " << app << " [options] <host>" << std::endl;
+    std::cout << "Stream a GLUT teapot to a remote host\n" << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << "  -n <stream id>     set stream identifier (default: 'SimpleStreamer')" << std::endl;
+    std::cout << "  -i                 enable interaction events (default: OFF)" << std::endl;
+    std::cout << "  -u                 enable uncompressed streaming (default: OFF)" << std::endl;
 }
 
 void display()

@@ -1,5 +1,5 @@
 
-# Copyright (c) 2013-2016, EPFL/Blue Brain Project
+# Copyright (c) 2013-2017, EPFL/Blue Brain Project
 #                          Raphael Dumusc <raphael.dumusc@epfl.ch>
 
 set(DESKTOPSTREAMER_HEADERS
@@ -66,7 +66,7 @@ if(MSVC)
   list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES Ws2_32)
 endif()
 
-common_application(${DESKTOPSTREAMER_APP_NAME} GUI NOHELP)
+common_application(${DESKTOPSTREAMER_APP_NAME} GUI)
 
 if(APPLE)
   # create a zip for Puppet deployment
