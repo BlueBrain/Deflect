@@ -5,6 +5,8 @@ Changelog {#Changelog}
 
 ### 0.12.1 (git master)
 
+* [146](https://github.com/BlueBrain/Deflect/pull/146):
+  Unified the command line options and help message of applications.
 * [145](https://github.com/BlueBrain/Deflect/pull/145):
   DesktopStreamer: new slider to adjust the JPEG quality in advanced settings.
 
