@@ -85,17 +85,20 @@ public:
     /** Is the Socket connected */
     DEFLECT_API bool isConnected() const;
 
-    /**
-     * Is there a pending message
-     * @param messageSize Minimum size of the message
-     */
-    bool hasMessage( const size_t messageSize = 0 ) const;
+    /** @return the protocol version of the server. */
+    int32_t getServerProtocolVersion() const;
 
     /**
      * Get the FileDescriptor for the Socket (for use by poll())
      * @return The file descriptor if available, otherwise return -1.
      */
     int getFileDescriptor() const;
+
+    /**
+     * Is there a pending message
+     * @param messageSize Minimum size of the message
+     */
+    bool hasMessage( const size_t messageSize = 0 ) const;
 
     /**
      * Send a message.
@@ -113,9 +116,6 @@ public:
      */
     bool receive( MessageHeader& messageHeader, QByteArray& message );
 
-    /** Get the protocol version of the remote host */
-    int32_t getRemoteProtocolVersion() const;
-
 signals:
     /** Signal that the socket has been disconnected. */
     void disconnected();
@@ -123,13 +123,12 @@ signals:
 private:
     const std::string _host;
     QTcpSocket* _socket;
-    int32_t _remoteProtocolVersion;
     mutable QMutex _socketMutex;
-
-    bool _connect( const std::string &host, const unsigned short port );
-    bool _checkProtocolVersion();
+    int32_t _serverProtocolVersion;
 
     bool _receiveHeader( MessageHeader& messageHeader );
+    bool _connect( const std::string &host, const unsigned short port );
+    bool _receiveProtocolVersion();
 };
 
 }

@@ -59,7 +59,7 @@ const unsigned short Socket::defaultPortNumber = DEFAULT_PORT_NUMBER;
 Socket::Socket( const std::string& host, const unsigned short port )
     : _host( host )
     , _socket( new QTcpSocket( ))
-    , _remoteProtocolVersion( INVALID_NETWORK_PROTOCOL_VERSION )
+    , _serverProtocolVersion( INVALID_NETWORK_PROTOCOL_VERSION )
 {
     // disable warnings which occur if no QCoreApplication is present during
     // _connect(): QObject::connect: Cannot connect (null)::destroyed() to
@@ -89,6 +89,11 @@ const std::string& Socket::getHost() const
 bool Socket::isConnected() const
 {
     return _socket->state() == QTcpSocket::ConnectedState;
+}
+
+int32_t Socket::getServerProtocolVersion() const
+{
+    return _serverProtocolVersion;
 }
 
 int Socket::getFileDescriptor() const
@@ -172,11 +177,6 @@ bool Socket::receive( MessageHeader& messageHeader, QByteArray& message )
     return true;
 }
 
-int32_t Socket::getRemoteProtocolVersion() const
-{
-    return _remoteProtocolVersion;
-}
-
 bool Socket::_receiveHeader( MessageHeader& messageHeader )
 {
     while( _socket->bytesAvailable() < qint64(MessageHeader::serializedSize) )
@@ -193,45 +193,42 @@ bool Socket::_receiveHeader( MessageHeader& messageHeader )
 
 bool Socket::_connect( const std::string& host, const unsigned short port )
 {
-    // make sure we're disconnected
-    _socket->disconnectFromHost();
-
-    // open connection
     _socket->connectToHost( host.c_str(), port );
-
     if( !_socket->waitForConnected( RECEIVE_TIMEOUT_MS ))
     {
-        std::cerr << "could not connect to host " << host << ":" << port
+        std::cerr << "could not connect to " << host << ":" << port
                   << std::endl;
         return false;
     }
 
-    // handshake
-    if( _checkProtocolVersion( ))
-        return true;
+    if( !_receiveProtocolVersion( ))
+    {
+        std::cerr << "server protocol version was not received" << std::endl;
+        _socket->disconnectFromHost();
+        return false;
+    }
 
-    std::cerr << "Protocol version check failed for host: " << host << ":"
-              << port << std::endl;
-    _socket->disconnectFromHost();
-    return false;
+    if( _serverProtocolVersion < NETWORK_PROTOCOL_VERSION )
+    {
+        std::cerr << "server uses unsupported protocol: "
+                  << _serverProtocolVersion << " < "
+                  << NETWORK_PROTOCOL_VERSION << std::endl;
+        _socket->disconnectFromHost();
+        return false;
+    }
+
+    return true;
 }
 
-bool Socket::_checkProtocolVersion()
+bool Socket::_receiveProtocolVersion()
 {
     while( _socket->bytesAvailable() < qint64(sizeof(int32_t)) )
     {
         if( !_socket->waitForReadyRead( RECEIVE_TIMEOUT_MS ))
             return false;
     }
-
-    _socket->read((char *)&_remoteProtocolVersion, sizeof(int32_t));
-
-    if( _remoteProtocolVersion == NETWORK_PROTOCOL_VERSION )
-        return true;
-
-    std::cerr << "unsupported protocol version " << _remoteProtocolVersion
-              << " != " << NETWORK_PROTOCOL_VERSION << std::endl;
-    return false;
+    _socket->read((char*)&_serverProtocolVersion, sizeof(int32_t));
+    return true;
 }
 
 }
