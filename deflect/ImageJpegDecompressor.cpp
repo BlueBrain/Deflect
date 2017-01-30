@@ -62,10 +62,7 @@ QByteArray ImageJpegDecompressor::decompress( const QByteArray& jpegData )
                                    (unsigned long)jpegData.size(), &width,
                                    &height, &jpegSubsamp );
     if( err != 0 )
-    {
-        std::cerr << "libjpeg-turbo header decompression failure" << std::endl;
-        return QByteArray();
-    }
+        throw std::runtime_error( "libjpeg-turbo header decompression failed" );
 
     // decompress image data
     int pixelFormat = TJPF_RGBX; // Format for OpenGL texture (GL_RGBA)
@@ -78,10 +75,7 @@ QByteArray ImageJpegDecompressor::decompress( const QByteArray& jpegData )
                          (unsigned char*)decodedData.data(),
                          width, pitch, height, pixelFormat, flags );
     if( err != 0 )
-    {
-        std::cerr << "libjpeg-turbo image decompression failure" << std::endl;
-        return QByteArray();
-    }
+        throw std::runtime_error( "libjpeg-turbo image decompression failed" );
 
     return decodedData;
 }

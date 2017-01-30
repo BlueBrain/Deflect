@@ -5,6 +5,8 @@ Changelog {#Changelog}
 
 ### 0.12.1 (git master)
 
+* [147](https://github.com/BlueBrain/Deflect/pull/147):
+  Deflect server: better reporting of JPEG decompression errors.
 * [146](https://github.com/BlueBrain/Deflect/pull/146):
   Unified the command line options and help message of applications.
 * [145](https://github.com/BlueBrain/Deflect/pull/145):
