@@ -3,9 +3,11 @@ Changelog {#Changelog}
 
 ## Deflect 0.12
 
-### 0.12.1 (git master)
+### 0.12.1 (01-02-2017)
 
 * [147](https://github.com/BlueBrain/Deflect/pull/147):
+  Improved handling of network protocol updates. Future updates should be
+  possible without breaking any client/server based on this release.
   Deflect server: better reporting of JPEG decompression errors.
 * [146](https://github.com/BlueBrain/Deflect/pull/146):
   Unified the command line options and help message of applications.

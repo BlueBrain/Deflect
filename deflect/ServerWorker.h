@@ -96,6 +96,7 @@ private:
 
     QString _streamId;
     int _sourceId;
+    int _clientProtocolVersion;
 
     bool _registeredToEvents;
     QQueue<Event> _events;
@@ -105,8 +106,9 @@ private:
     QByteArray _receiveMessageBody( int size );
 
     void _handleMessage( const MessageHeader& messageHeader,
-                         const QByteArray& byteArray );
-    void _handlePixelStreamMessage( const QByteArray& byteArray );
+                         const QByteArray& message );
+    void _parseClientProtocolVersion( const QByteArray& message );
+    void _handlePixelStreamMessage( const QByteArray& message );
 
     void _sendProtocolVersion();
     void _sendBindReply( bool successful );

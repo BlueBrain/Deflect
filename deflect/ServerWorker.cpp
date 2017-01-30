@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -47,7 +47,10 @@
 
 #include <QDataStream>
 
-#define RECEIVE_TIMEOUT_MS 3000
+namespace
+{
+const int RECEIVE_TIMEOUT_MS = 3000;
+}
 
 namespace deflect
 {
@@ -56,6 +59,7 @@ ServerWorker::ServerWorker( const int socketDescriptor )
     // Ensure that tcpSocket_ parent is *this* so it gets moved to thread
     : _tcpSocket( new QTcpSocket( this ))
     , _sourceId( socketDescriptor )
+    , _clientProtocolVersion( NETWORK_PROTOCOL_VERSION )
     , _registeredToEvents( false )
 {
     if( !_tcpSocket->setSocketDescriptor( socketDescriptor ))
@@ -223,6 +227,9 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
             return;
         }
         _streamId = uri;
+        // The version is only sent by deflect clients since v. 0.13.0
+        if( !byteArray.isEmpty( ))
+            _parseClientProtocolVersion( byteArray );
         emit addStreamSource( _streamId, _sourceId );
         break;
 
@@ -263,17 +270,22 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
     }
 }
 
-void ServerWorker::_handlePixelStreamMessage( const QByteArray& byteArray )
+void ServerWorker::_parseClientProtocolVersion( const QByteArray& message )
 {
-    const SegmentParameters* parameters =
-            reinterpret_cast< const SegmentParameters* >( byteArray.data( ));
+    bool ok = false;
+    const int version = message.toInt( &ok );
+    if( ok )
+        _clientProtocolVersion = version;
+}
 
+void ServerWorker::_handlePixelStreamMessage( const QByteArray& message )
+{
     Segment segment;
-    segment.parameters = *parameters;
 
-    QByteArray imageData =
-            byteArray.right( byteArray.size() - sizeof( SegmentParameters ));
-    segment.imageData = imageData;
+    const auto data = message.data();
+    segment.parameters = *reinterpret_cast<const SegmentParameters*>( data );
+    segment.imageData = message.right( message.size() -
+                                       sizeof( SegmentParameters ));
 
     emit( receivedSegment( _streamId, _sourceId, segment ));
 }

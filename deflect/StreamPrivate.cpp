@@ -41,6 +41,7 @@
 
 #include "StreamPrivate.h"
 
+#include "NetworkProtocol.h"
 #include "Segment.h"
 #include "SegmentParameters.h"
 #include "SizeHints.h"
@@ -119,8 +120,9 @@ StreamPrivate::~StreamPrivate()
 
 void StreamPrivate::sendOpen()
 {
-    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_OPEN, 0, id );
-    socket.send( mh, QByteArray( ));
+    const auto message = QByteArray::number( NETWORK_PROTOCOL_VERSION );
+    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_OPEN, message.size(), id );
+    socket.send( mh, message );
 }
 
 void StreamPrivate::sendClose()

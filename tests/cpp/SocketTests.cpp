@@ -44,6 +44,7 @@ namespace ut = boost::unit_test;
 #include "MinimalGlobalQtApp.h"
 #include "MockServer.h"
 
+#include <deflect/NetworkProtocol.h>
 #include <deflect/Socket.h>
 
 #include <QThread>
@@ -53,14 +54,14 @@ BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp );
 void testSocketConnect( const int32_t versionOffset )
 {
     QThread thread;
-    MockServer* server = new MockServer( NETWORK_PROTOCOL_VERSION + versionOffset );
+    auto server = new MockServer( NETWORK_PROTOCOL_VERSION + versionOffset );
     server->moveToThread( &thread );
     server->connect( &thread, &QThread::finished, server, &QObject::deleteLater );
     thread.start();
 
     deflect::Socket socket( "localhost", server->serverPort( ));
 
-    BOOST_CHECK( socket.isConnected() == (versionOffset == 0));
+    BOOST_CHECK( socket.isConnected() == (versionOffset >= 0));
 
     thread.quit();
     thread.wait();
