@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -135,4 +135,23 @@ BOOST_AUTO_TEST_CASE( testImageSegmentationWithCompressionAndDecompression )
     BOOST_CHECK_EQUAL_COLLECTIONS( data.data(),
                                    data.data() + segment.imageData.size(),
                                    dataOut, dataOut+segment.imageData.size( ));
+}
+
+BOOST_AUTO_TEST_CASE( testDecompressionOfInvalidData )
+{
+    const QByteArray invalidJpegData{ "notjpeg923%^#8" };
+    deflect::ImageJpegDecompressor decompressor;
+    BOOST_CHECK_THROW( decompressor.decompress( invalidJpegData ),
+                       std::runtime_error );
+
+    deflect::Segment segment;
+    segment.parameters.width = 32;
+    segment.parameters.height = 32;
+    segment.imageData = invalidJpegData;
+
+    deflect::SegmentDecoder decoder;
+    BOOST_CHECK_THROW( decoder.decode( segment ), std::runtime_error );
+
+    BOOST_CHECK_NO_THROW( decoder.startDecoding( segment ));
+    BOOST_CHECK_THROW( decoder.waitDecoding(), std::runtime_error );
 }

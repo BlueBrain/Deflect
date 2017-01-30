@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -69,20 +69,31 @@ SegmentDecoder::SegmentDecoder()
 
 SegmentDecoder::~SegmentDecoder() {}
 
-void decodeSegment( ImageJpegDecompressor* decompressor, Segment* segment )
+void _decodeSegment( ImageJpegDecompressor* decompressor, Segment* segment )
 {
-    QByteArray decodedData = decompressor->decompress( segment->imageData );
+    if( !segment->parameters.compressed )
+        return;
 
-    if( !decodedData.isEmpty( ))
+    QByteArray decodedData;
+    try
     {
-        segment->imageData = decodedData;
-        segment->parameters.compressed = false;
+        decodedData = decompressor->decompress( segment->imageData );
     }
+    catch( const std::runtime_error& )
+    {
+        throw;
+    }
+    const auto& params = segment->parameters;
+    if( (size_t)decodedData.size() != params.height * params.width * 4 )
+        throw std::runtime_error( "unexpected segment size" );
+
+    segment->imageData = decodedData;
+    segment->parameters.compressed = false;
 }
 
 void SegmentDecoder::decode( Segment& segment )
 {
-    decodeSegment( &_impl->decompressor, &segment );
+    _decodeSegment( &_impl->decompressor, &segment );
 }
 
 void SegmentDecoder::startDecoding( Segment& segment )
@@ -95,14 +106,24 @@ void SegmentDecoder::startDecoding( Segment& segment )
         return;
     }
 
-    _impl->decodingFuture = QtConcurrent::run( decodeSegment,
+    _impl->decodingFuture = QtConcurrent::run( _decodeSegment,
                                                &_impl->decompressor,
                                                &segment );
 }
 
 void SegmentDecoder::waitDecoding()
 {
-    _impl->decodingFuture.waitForFinished();
+    try
+    {
+        _impl->decodingFuture.waitForFinished();
+    }
+    catch( const QUnhandledException& )
+    {
+        // Let Qt throws a QUnhandledException and rewrite the error message.
+        // QtConcurrent::run can only forward QException subclasses, which does
+        // not even work on 5.7.1: https://bugreports.qt.io/browse/QTBUG-58021
+        throw std::runtime_error( "Segment decoding failed" );
+    }
 }
 
 bool SegmentDecoder::isRunning() const

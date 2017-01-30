@@ -62,8 +62,8 @@ public:
      * Decompress a Jpeg image
      *
      * @param jpegData The compressed Jpeg data
-     * @return The decompressed image data in (GL_)RGBA format, or an
-     *         empty array if the image could not be decoded.
+     * @return The decompressed image data in (GL_)RGBA format
+     * @throw std::runtime_error if a decompression error occured
      */
     DEFLECT_API QByteArray decompress( const QByteArray& jpegData );
 

@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -64,6 +64,7 @@ public:
      * @param segment The segment to decode. Upon success, its imageData member
      *        will hold the decompressed data and its "compressed" flag will be
      *        set to false.
+     * @throw std::runtime_error if a decompression error occured
      */
     DEFLECT_API void decode( Segment& segment );
 
@@ -79,7 +80,11 @@ public:
      */
     DEFLECT_API void startDecoding( Segment& segment );
 
-    /** Waits for the decoding of a segment to finish, initiated by startDecoding(). */
+    /**
+     * Waits for the decoding of a segment to finish, initiated by
+     * startDecoding().
+     * @throw std::runtime_error if a decompression error occured
+     */
     DEFLECT_API void waitDecoding();
 
     /** Check if the decoding thread is running. */
