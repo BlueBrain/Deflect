@@ -58,56 +58,48 @@ class FrameDispatcher : public QObject
 
 public:
     /** Construct a dispatcher */
-    DEFLECT_API FrameDispatcher();
+    FrameDispatcher();
 
     /** Destructor. */
-    DEFLECT_API ~FrameDispatcher();
+    ~FrameDispatcher();
 
 public slots:
     /**
      * Add a source of Segments for a Stream.
      *
-     * @param uri Identifier for the Stream
+     * @param uri Identifier for the stream
      * @param sourceIndex Identifier for the source in this stream
      */
-    DEFLECT_API void addSource( QString uri, size_t sourceIndex );
+    void addSource( QString uri, size_t sourceIndex );
 
     /**
-     * Add a source of Segments for a Stream.
+     * Remove a source of Segments for a Stream.
      *
-     * @param uri Identifier for the Stream
+     * @param uri Identifier for the stream
      * @param sourceIndex Identifier for the source in this stream
      */
-    DEFLECT_API void removeSource( QString uri, size_t sourceIndex );
+    void removeSource( QString uri, size_t sourceIndex );
 
     /**
-     * Process a new Segement.
+     * Process a new Segment.
      *
-     * @param uri Identifier for the Stream
-     * @param sourceIndex Identifier for the source in this stream
-     * @param segment The segment to process
+     * @param uri Identifier for the stream
+     * @param sourceIndex Identifier for the source in the stream
+     * @param segment to process
      * @param view to which the segment belongs
      */
-    DEFLECT_API void processSegment( QString uri, size_t sourceIndex,
-                                     deflect::Segment segment,
-                                     deflect::View view );
+    void processSegment( QString uri, size_t sourceIndex,
+                         deflect::Segment segment, deflect::View view );
 
     /**
      * The given source has finished sending segments for the current frame.
      *
-     * @param uri Identifier for the Stream
-     * @param sourceIndex Identifier for the source in this stream
+     * @param uri Identifier for the stream
+     * @param sourceIndex Identifier for the source in the stream
      * @param view for which the frame is finished
      */
-    DEFLECT_API void processFrameFinished( QString uri, size_t sourceIndex,
-                                           deflect::View view );
-
-    /**
-     * Delete an entire stream.
-     *
-     * @param uri Identifier for the Stream
-     */
-    DEFLECT_API void deleteStream( QString uri );
+    void processFrameFinished( QString uri, size_t sourceIndex,
+                               deflect::View view );
 
     /**
      * Request the dispatching of a new frame for any stream (MONO/STEREO).
@@ -120,29 +112,36 @@ public slots:
      *
      * @param uri Identifier for the stream
      */
-    DEFLECT_API void requestFrame( QString uri );
+    void requestFrame( QString uri );
+
+    /**
+     * Delete all the buffers for a Stream.
+     *
+     * @param uri Identifier for the stream
+     */
+    void deleteStream( QString uri );
 
 signals:
     /**
      * Notify that a PixelStream has been opened.
      *
-     * @param uri Identifier for the Stream
+     * @param uri Identifier for the stream
      */
-    DEFLECT_API void pixelStreamOpened( QString uri );
+    void pixelStreamOpened( QString uri );
 
     /**
      * Notify that a pixel stream has been closed.
      *
-     * @param uri Identifier for the Stream
+     * @param uri Identifier for the stream
      */
-    DEFLECT_API void pixelStreamClosed( QString uri );
+    void pixelStreamClosed( QString uri );
 
     /**
      * Dispatch a full frame.
      *
-     * @param frame The frame to dispatch
+     * @param frame The latest frame available for a stream
      */
-    DEFLECT_API void sendFrame( deflect::FramePtr frame );
+    void sendFrame( deflect::FramePtr frame );
 
 private:
     class Impl;

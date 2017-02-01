@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE( testRegisterForEventReceivedByServer )
         streamId = id;
         exclusiveBind = exclusive;
         eventReceiver = receiver;
-        server->onEventRegistrationReply( id, true ); // send reply to Stream
+        server->replyToEventRegistration( id, true ); // send reply to Stream
         mutex.lock();
         receivedState = true;
         received.wakeAll();

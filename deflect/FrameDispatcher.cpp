@@ -165,15 +165,6 @@ void FrameDispatcher::processFrameFinished( const QString uri,
     }
 }
 
-void FrameDispatcher::deleteStream( const QString uri )
-{
-    if( _impl->streamBuffers.count( uri ))
-    {
-        _impl->streamBuffers.erase( uri );
-        emit pixelStreamClosed( uri );
-    }
-}
-
 void FrameDispatcher::requestFrame( const QString uri )
 {
     if( !_impl->streamBuffers.count( uri ))
@@ -193,6 +184,15 @@ void FrameDispatcher::requestFrame( const QString uri )
         const auto frames = _impl->consumeLatestStereoFrame( uri );
         emit sendFrame( frames.first );
         emit sendFrame( frames.second );
+    }
+}
+
+void FrameDispatcher::deleteStream( const QString uri )
+{
+    if( _impl->streamBuffers.count( uri ))
+    {
+        _impl->streamBuffers.erase( uri );
+        emit pixelStreamClosed( uri );
     }
 }
 

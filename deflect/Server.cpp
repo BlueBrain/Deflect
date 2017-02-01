@@ -54,7 +54,7 @@ const int Server::defaultPortNumber = DEFAULT_PORT_NUMBER;
 class Server::Impl
 {
 public:
-    FrameDispatcher pixelStreamDispatcher;
+    FrameDispatcher frameDispatcher;
 };
 
 Server::Server( const int port )
@@ -65,6 +65,14 @@ Server::Server( const int port )
         const auto err = QString( "could not listen on port: %1" ).arg( port );
         throw std::runtime_error( err.toStdString( ));
     }
+
+    // Forward FrameDispatcher signals
+    connect( &_impl->frameDispatcher, &FrameDispatcher::pixelStreamOpened,
+             this, &Server::pixelStreamOpened );
+    connect( &_impl->frameDispatcher, &FrameDispatcher::pixelStreamClosed,
+             this, &Server::pixelStreamClosed );
+    connect( &_impl->frameDispatcher, &FrameDispatcher::sendFrame,
+             this, &Server::receivedFrame );
 }
 
 Server::~Server()
@@ -77,21 +85,20 @@ Server::~Server()
             workerThread->wait();
         }
     }
-
-    delete _impl;
 }
 
-FrameDispatcher& Server::getPixelStreamDispatcher()
+void Server::requestFrame( const QString uri )
 {
-    return _impl->pixelStreamDispatcher;
+    _impl->frameDispatcher.requestFrame( uri );
 }
 
-void Server::onPixelStreamerClosed( const QString uri )
+void Server::closePixelStream( const QString uri )
 {
-    emit _pixelStreamerClosed( uri );
+    emit _closePixelStream( uri );
+    _impl->frameDispatcher.deleteStream( uri );
 }
 
-void Server::onEventRegistrationReply( const QString uri, const bool success )
+void Server::replyToEventRegistration( const QString uri, const bool success )
 {
     emit _eventRegistrationReply( uri, success );
 }
@@ -121,26 +128,20 @@ void Server::incomingConnection( const qintptr socketHandle )
              this, &Server::receivedSizeHints );
     connect( worker, &ServerWorker::receivedData,
              this, &Server::receivedData );
-    connect( this, &Server::_pixelStreamerClosed,
+    connect( this, &Server::_closePixelStream,
              worker, &ServerWorker::closeConnection );
     connect( this, &Server::_eventRegistrationReply,
              worker, &ServerWorker::replyToEventRegistration );
 
-    // PixelStreamDispatcher
+    // FrameDispatcher
     connect( worker, &ServerWorker::addStreamSource,
-             &_impl->pixelStreamDispatcher, &FrameDispatcher::addSource );
-    connect( worker,
-             &ServerWorker::receivedSegment,
-             &_impl->pixelStreamDispatcher,
-             &FrameDispatcher::processSegment );
-    connect( worker,
-             &ServerWorker::receivedFrameFinished,
-             &_impl->pixelStreamDispatcher,
-             &FrameDispatcher::processFrameFinished );
-    connect( worker,
-             &ServerWorker::removeStreamSource,
-             &_impl->pixelStreamDispatcher,
-             &FrameDispatcher::removeSource );
+             &_impl->frameDispatcher, &FrameDispatcher::addSource );
+    connect( worker, &ServerWorker::receivedSegment,
+             &_impl->frameDispatcher, &FrameDispatcher::processSegment );
+    connect( worker, &ServerWorker::receivedFrameFinished,
+             &_impl->frameDispatcher, &FrameDispatcher::processFrameFinished );
+    connect( worker, &ServerWorker::removeStreamSource,
+             &_impl->frameDispatcher, &FrameDispatcher::removeSource );
 
     workerThread->start();
 }

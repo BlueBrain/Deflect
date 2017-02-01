@@ -7,7 +7,6 @@ set(DEFLECT_PUBLIC_HEADERS
   config.h
   Event.h
   EventReceiver.h
-  FrameDispatcher.h
   Frame.h
   ImageWrapper.h
   MTQueue.h
@@ -20,6 +19,7 @@ set(DEFLECT_PUBLIC_HEADERS
 )
 
 set(DEFLECT_HEADERS
+  FrameDispatcher.h
   ImageSegmenter.h
   MessageHeader.h
   NetworkProtocol.h
