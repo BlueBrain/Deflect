@@ -247,3 +247,45 @@ BOOST_AUTO_TEST_CASE( TestRemoveSourceWhileStreaming )
     BOOST_CHECK_EQUAL( frameSize.width(), 192 );
     BOOST_CHECK_EQUAL( frameSize.height(), 256 );
 }
+
+BOOST_AUTO_TEST_CASE( TestOneOfTwoSourceStopsSendingSegments )
+{
+    const size_t sourceIndex1 = 46;
+    const size_t sourceIndex2 = 819;
+
+    deflect::ReceiveBuffer buffer;
+    buffer.addSource( sourceIndex1 );
+    buffer.addSource( sourceIndex2 );
+
+    deflect::Segments testSegments = generateTestSegments();
+
+    // First Frame - 2 sources
+    buffer.insert( testSegments[0], sourceIndex1 );
+    buffer.insert( testSegments[1], sourceIndex1 );
+    buffer.insert( testSegments[2], sourceIndex2 );
+    buffer.insert( testSegments[3], sourceIndex2 );
+    BOOST_CHECK( !buffer.hasCompleteFrame( ));
+    buffer.finishFrameForSource(sourceIndex1);
+    BOOST_CHECK( !buffer.hasCompleteFrame( ));
+    buffer.finishFrameForSource( sourceIndex2 );
+    BOOST_CHECK( buffer.hasCompleteFrame( ));
+
+    deflect::Segments segments = buffer.popFrame();
+
+    BOOST_CHECK_EQUAL( segments.size(), 4 );
+    BOOST_CHECK( !buffer.hasCompleteFrame( ));
+
+    // Next frames - one source stops sending segments
+    for( int i = 0; i < 150; ++i )
+    {
+        buffer.insert( testSegments[0], sourceIndex1 );
+        buffer.insert( testSegments[1], sourceIndex1 );
+        BOOST_REQUIRE_NO_THROW( buffer.finishFrameForSource( sourceIndex1 ));
+        BOOST_REQUIRE( !buffer.hasCompleteFrame( ));
+    }
+    // Test buffer exceeds maximum allowed size
+    buffer.insert( testSegments[0], sourceIndex1 );
+    buffer.insert( testSegments[1], sourceIndex1 );
+    BOOST_CHECK_THROW( buffer.finishFrameForSource( sourceIndex1 ),
+                       std::runtime_error );
+}

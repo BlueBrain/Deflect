@@ -75,6 +75,9 @@ public:
     /** Pop the front frame of the buffer for the given view. */
     void pop( const View view );
 
+    /** @return the size of the queue for the given view. */
+    size_t getQueueSize( const View view ) const;
+
 private:
     /** The collections of segments for each view. */
     std::queue<Segments> _segmentsMono, _segmentsLeft, _segmentsRight;

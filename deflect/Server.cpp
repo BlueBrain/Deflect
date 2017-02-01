@@ -73,6 +73,8 @@ Server::Server( const int port )
              this, &Server::pixelStreamClosed );
     connect( &_impl->frameDispatcher, &FrameDispatcher::sendFrame,
              this, &Server::receivedFrame );
+    connect( &_impl->frameDispatcher, &FrameDispatcher::bufferSizeExceeded,
+             this, &Server::closePixelStream );
 }
 
 Server::~Server()

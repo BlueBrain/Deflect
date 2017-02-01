@@ -144,7 +144,15 @@ void FrameDispatcher::processFrameFinished( const QString uri,
         return;
 
     ReceiveBuffer& buffer = _impl->streamBuffers[uri];
-    buffer.finishFrameForSource( sourceIndex, view );
+    try
+    {
+        buffer.finishFrameForSource( sourceIndex, view );
+    }
+    catch( const std::runtime_error& )
+    {
+        emit bufferSizeExceeded( uri );
+        return;
+    }
 
     if( view == deflect::View::MONO )
     {

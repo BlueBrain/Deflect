@@ -41,6 +41,11 @@
 
 #include <cassert>
 
+namespace
+{
+const size_t MAX_QUEUE_SIZE = 150; // stream blocked for ~5 seconds at 30Hz
+}
+
 namespace deflect
 {
 
@@ -79,6 +84,9 @@ void ReceiveBuffer::finishFrameForSource( const size_t sourceIndex,
                                           const deflect::View view )
 {
     assert( _sourceBuffers.count( sourceIndex ));
+
+    if( _sourceBuffers[sourceIndex].getQueueSize( view ) > MAX_QUEUE_SIZE )
+        throw std::runtime_error( "maximum queue size exceeded" );
 
     _sourceBuffers[sourceIndex].push( view );
 }

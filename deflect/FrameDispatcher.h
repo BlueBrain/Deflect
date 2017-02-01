@@ -143,6 +143,13 @@ signals:
      */
     void sendFrame( deflect::FramePtr frame );
 
+    /**
+     * Notify that a pixel stream has exceeded its maximum allowed size.
+     *
+     * @param uri Identifier for the stream
+     */
+    void bufferSizeExceeded( QString uri );
+
 private:
     class Impl;
     std::unique_ptr<Impl> _impl;

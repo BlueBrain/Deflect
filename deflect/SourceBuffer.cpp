@@ -99,6 +99,11 @@ void SourceBuffer::insert( const Segment& segment, const deflect::View view )
     _getQueue( view ).back().push_back( segment );
 }
 
+size_t SourceBuffer::getQueueSize( const View view ) const
+{
+    return _getQueue( view ).size();
+}
+
 std::queue<Segments>& SourceBuffer::_getQueue( const deflect::View view )
 {
     switch( view )

@@ -91,6 +91,7 @@ public:
      * Call when the source has finished sending segments for the current frame.
      * @param sourceIndex Unique source identifier
      * @param view for which to finish the frame
+     * @throw std::runtime_error if the buffer exceeds its maximum size
      */
     DEFLECT_API void finishFrameForSource(
             size_t sourceIndex, deflect::View view = deflect::View::MONO );
