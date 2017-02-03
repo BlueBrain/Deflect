@@ -57,7 +57,8 @@
 
 bool deflectInteraction = false;
 bool deflectCompressImage = true;
-bool deflectStereoStream = false;
+bool deflectStereoStreamLeft = false;
+bool deflectStereoStreamRight = false;
 unsigned int deflectCompressionQuality = 75;
 std::string deflectHost;
 std::string deflectStreamId = "SimpleStreamer";
@@ -100,7 +101,9 @@ void syntax( const int exitStatus )
     std::cout << " -n <stream id>     set stream identifier (default: 'SimpleStreamer')" << std::endl;
     std::cout << " -i                 enable interaction events (default: OFF)" << std::endl;
     std::cout << " -u                 enable uncompressed streaming (default: OFF)" << std::endl;
-    std::cout << " -s                 enable stereo streaming (default: OFF)" << std::endl;
+    std::cout << " -s                 enable stereo streaming, equivalent to -l -r (default: OFF)" << std::endl;
+    std::cout << " -l                 enable stereo streaming, left image only (default: OFF)" << std::endl;
+    std::cout << " -r                 enable stereo streaming, right image only (default: OFF)" << std::endl;
     exit( exitStatus );
 }
 
@@ -129,7 +132,14 @@ void readCommandLineArguments( int argc, char** argv )
                 deflectCompressImage = false;
                 break;
             case 's':
-                deflectStereoStream = true;
+                deflectStereoStreamLeft = true;
+                deflectStereoStreamRight = true;
+                break;
+            case 'l':
+                deflectStereoStreamLeft = true;
+                break;
+            case 'r':
+                deflectStereoStreamRight = true;
                 break;
             case 'h':
                 syntax( EXIT_SUCCESS );
@@ -245,26 +255,48 @@ bool send( const Image& image, const deflect::View view )
             deflectStream->finishFrame();
 }
 
+bool timeout( const float sec )
+{
+    using clock = std::chrono::system_clock;
+    static clock::time_point start = clock::now();
+    return std::chrono::duration<float>{ clock::now() - start }.count() > sec;
+}
+
 void display()
 {
     static Camera camera;
     camera.apply();
 
     bool success = false;
-    if( deflectStereoStream )
+    bool waitToStart = false;
+    static bool deflectFirstEventReceived = false;
+    if( deflectStereoStreamLeft || deflectStereoStreamRight )
     {
-        glClearColor( 0.7, 0.3, 0.3, 1.0 );
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-        glutSolidTeapot( 1.f );
-        const auto leftImage = Image::readGlBuffer();
+        // Poor man's attempt to synchronise the start of separate stereo
+        // streams (waiting on first event from server or 5 sec. timeout).
+        // This does not prevent applications from going quickly out of sync.
+        // Real-world applications need a dedicated synchronization channel to
+        // ensure corresponding left-right views are rendered and sent together.
+        if( !(deflectStereoStreamLeft && deflectStereoStreamRight ))
+            waitToStart = !(deflectFirstEventReceived || timeout( 5 ));
 
-        glClearColor( 0.3, 0.7, 0.3, 1.0 );
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-        glutSolidTeapot( 1.f );
-        const auto rightImage = Image::readGlBuffer();
-
-        success = send( leftImage, deflect::View::LEFT_EYE ) &&
-                  send( rightImage, deflect::View::RIGHT_EYE );
+        if( deflectStereoStreamLeft && !waitToStart )
+        {
+            glClearColor( 0.7, 0.3, 0.3, 1.0 );
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+            glutSolidTeapot( 1.f );
+            const auto leftImage = Image::readGlBuffer();
+            success = send( leftImage, deflect::View::LEFT_EYE );
+        }
+        if( deflectStereoStreamRight && !waitToStart )
+        {
+            glClearColor( 0.3, 0.7, 0.3, 1.0 );
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+            glutSolidTeapot( 1.f );
+            const auto rightImage = Image::readGlBuffer();
+            success = (!deflectStereoStreamLeft || success) &&
+                      send( rightImage, deflect::View::RIGHT_EYE );
+        }
     }
     else
     {
@@ -290,6 +322,8 @@ void display()
         while( deflectStream->hasEvent( ))
         {
             const deflect::Event& event = deflectStream->getEvent();
+
+            deflectFirstEventReceived = true;
 
             switch( event.type )
             {
@@ -338,8 +372,11 @@ void display()
     }
     else
     {
-        camera.angleX += 1.f;
-        camera.angleY += 1.f;
+        if( !waitToStart )
+        {
+            camera.angleX += 1.f;
+            camera.angleY += 1.f;
+        }
     }
 
     if( !success )
@@ -349,7 +386,7 @@ void display()
             std::cout << "Stream closed, exiting." << std::endl;
             exit( EXIT_SUCCESS );
         }
-        else
+        else if( !waitToStart )
         {
             std::cerr << "failure in deflectStreamSend()" << std::endl;
             exit( EXIT_FAILURE );

@@ -40,6 +40,7 @@
 #include "ReceiveBuffer.h"
 
 #include <cassert>
+#include <set>
 
 namespace
 {
@@ -85,37 +86,72 @@ void ReceiveBuffer::finishFrameForSource( const size_t sourceIndex,
 {
     assert( _sourceBuffers.count( sourceIndex ));
 
-    if( _sourceBuffers[sourceIndex].getQueueSize( view ) > MAX_QUEUE_SIZE )
+    auto& buffer = _sourceBuffers[sourceIndex];
+
+    if( buffer.getQueueSize( view ) > MAX_QUEUE_SIZE )
         throw std::runtime_error( "maximum queue size exceeded" );
 
-    _sourceBuffers[sourceIndex].push( view );
+    buffer.push( view );
 }
 
-bool ReceiveBuffer::hasCompleteFrame( const View view ) const
+bool ReceiveBuffer::hasCompleteMonoFrame() const
 {
     assert( !_sourceBuffers.empty( ));
-
-    const auto lastCompleteFrameIndex = _getLastCompleteFrameIndex( view );
 
     // Check if all sources for Stream have reached the same index
     for( const auto& kv : _sourceBuffers )
     {
         const auto& buffer = kv.second;
-        if( buffer.getBackFrameIndex( view ) <= lastCompleteFrameIndex )
+        if( buffer.getBackFrameIndex( View::MONO ) <= _lastFrameComplete )
             return false;
     }
     return true;
 }
 
+bool ReceiveBuffer::hasCompleteStereoFrame() const
+{
+    std::set<size_t> leftSources;
+    std::set<size_t> rightSources;
+
+    for( const auto& kv : _sourceBuffers )
+    {
+        const auto& buffer = kv.second;
+        if( buffer.getBackFrameIndex( View::LEFT_EYE ) > _lastFrameCompleteLeft )
+            leftSources.insert( kv.first );
+        if( buffer.getBackFrameIndex( View::RIGHT_EYE ) > _lastFrameCompleteRight )
+            rightSources.insert( kv.first );
+    }
+
+    if( leftSources.empty() || rightSources.empty( ))
+        return false;
+
+    std::set<size_t> leftAndRight;
+    std::set_intersection( leftSources.begin(), leftSources.end(),
+                           rightSources.begin(), rightSources.end(),
+                           std::inserter( leftAndRight, leftAndRight.end( )));
+
+    // if at least one source sends both left AND right, assume all sources do.
+    if( !leftAndRight.empty( ))
+        return leftAndRight.size() == _sourceBuffers.size();
+
+    // otherwise, assume all streams send either left OR right.
+    return rightSources.size() + leftSources.size() == _sourceBuffers.size();
+}
+
 Segments ReceiveBuffer::popFrame( const View view )
 {
+    const auto lastCompleteFrameIndex = _getLastCompleteFrameIndex( view );
+
     Segments frame;
     for( auto& kv : _sourceBuffers )
     {
         auto& buffer = kv.second;
-        const auto& segments = buffer.getSegments( view );
-        frame.insert( frame.end(), segments.begin(), segments.end( ));
-        buffer.pop( view );
+        if( buffer.getBackFrameIndex( view ) > lastCompleteFrameIndex )
+        {
+            const auto& segments = buffer.getSegments( view );
+            frame.insert( frame.end(), segments.begin(), segments.end( ));
+            buffer.pop( view );
+        }
     }
     _incrementLastFrameComplete( view );
     return frame;

@@ -96,8 +96,11 @@ public:
     DEFLECT_API void finishFrameForSource(
             size_t sourceIndex, deflect::View view = deflect::View::MONO );
 
-    /** Does the Buffer have a new complete frame (from all sources) */
-    DEFLECT_API bool hasCompleteFrame( View view = deflect::View::MONO ) const;
+    /** Does the Buffer have a new complete mono frame (from all sources) */
+    DEFLECT_API bool hasCompleteMonoFrame() const;
+
+    /** Does the Buffer have a new complete stereo frame (from all sources) */
+    DEFLECT_API bool hasCompleteStereoFrame() const;
 
     /**
      * Get the finished frame.

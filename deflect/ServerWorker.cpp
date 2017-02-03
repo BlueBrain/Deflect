@@ -228,7 +228,7 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
             return;
         }
         _streamId = uri;
-        // The version is only sent by deflect clients since v. 0.13.0
+        // The version is only sent by deflect clients since v. 0.12.1
         if( !byteArray.isEmpty( ))
             _parseClientProtocolVersion( byteArray );
         emit addStreamSource( _streamId, _sourceId );
