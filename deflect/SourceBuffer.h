@@ -66,6 +66,9 @@ public:
     /** @return the frame index of the back of the buffer for a given view. */
     FrameIndex getBackFrameIndex( View view ) const;
 
+    /** @return true if the back frame of the given view has no segments. */
+    bool isBackFrameEmpty( View view ) const;
+
     /** Insert a segment into the back frame of the appropriate queue. */
     void insert( const Segment& segment, const View view );
 

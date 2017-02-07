@@ -31,7 +31,7 @@ payload. This message is silently ignored by older Servers.
 
 ## Examples
 
-Example of a stereo 3D client application:
+Example of a stereo 3D client application using the blocking Stream API:
 
     deflect::Stream stream( ... );
 
@@ -43,19 +43,55 @@ Example of a stereo 3D client application:
 
     deflect::ImageWrapper leftImage( data, width, height, deflect::RGBA );
     leftImage.view = deflect::View::LEFT_EYE;
-    deflectStream->send( leftImage ) && deflectStream->finishFrame();
+    deflectStream->send( leftImage );
 
     /** ...render right image... */
 
     deflect::ImageWrapper rightImage( data, width, height, deflect::RGBA );
     rightImage.view = deflect::View::RIGHT_EYE;
-    deflectStream->send( rightImage ) && deflectStream->finishFrame();
+    deflectStream->send( rightImage );
+
+    deflectStream->finishFrame();
 
     /** ...synchronize with other render clients (network barrier)... */
     }
 
-For a more complete example, please refer to the SimpleStreamer application
-source code.
+Example of a stereo 3D client application using the asynchronous Stream API:
+
+    deflect::Stream stream( ... );
+
+    /** ...synchronize start with other render clients (network barrier)... */
+
+    delfect::Stream::Future leftFuture, rightFuture;
+    leftFuture = deflect::qt::make_ready_future<bool>( true );
+    rightFuture = deflect::qt::make_ready_future<bool>( true );
+
+    ImageData leftData, rightData; // must remain valid until sending completes
+
+    renderLoop()
+    {
+    if( !leftFuture.valid() || !leftFuture.get( ))
+       return;
+
+    /** ...render left image... */
+
+    deflect::ImageWrapper leftImage( leftData, width, height, deflect::RGBA );
+    leftImage.view = deflect::View::LEFT_EYE;
+    leftFuture = deflectStream->asyncSend( leftImage );
+
+    if( !rightFuture.valid() || !rightFuture.get( ))
+       return;
+
+    /** ...render right image... */
+
+    deflect::ImageWrapper rightImage( rightData, width, height, deflect::RGBA );
+    rightImage.view = deflect::View::RIGHT_EYE;
+    rightFuture = deflectStream->send( rightImage );
+
+    /** ...synchronize with other render clients (network barrier)... */
+    }
+
+For a complete code example, please refer to the SimpleStreamer application.
 
 ## Issues
 

@@ -235,7 +235,7 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME:
-        emit receivedFrameFinished( _streamId, _sourceId, _activeView );
+        emit receivedFrameFinished( _streamId, _sourceId );
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM:

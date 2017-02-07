@@ -96,10 +96,8 @@ public slots:
      *
      * @param uri Identifier for the stream
      * @param sourceIndex Identifier for the source in the stream
-     * @param view for which the frame is finished
      */
-    void processFrameFinished( QString uri, size_t sourceIndex,
-                               deflect::View view );
+    void processFrameFinished( QString uri, size_t sourceIndex );
 
     /**
      * Request the dispatching of a new frame for any stream (MONO/STEREO).

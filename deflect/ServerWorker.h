@@ -74,8 +74,7 @@ signals:
 
     void receivedSegment( QString uri, size_t sourceIndex,
                           deflect::Segment segment, deflect::View view );
-    void receivedFrameFinished( QString uri, size_t sourceIndex,
-                                deflect::View view );
+    void receivedFrameFinished( QString uri, size_t sourceIndex );
 
     void registerToEvents( QString uri, bool exclusive,
                            deflect::EventReceiver* receiver );

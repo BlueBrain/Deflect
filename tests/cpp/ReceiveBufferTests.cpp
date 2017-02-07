@@ -322,7 +322,7 @@ void _insert( deflect::ReceiveBuffer& buffer, const size_t sourceIndex,
 {
     for( const auto& segment : frame )
         buffer.insert( segment, sourceIndex, view );
-    buffer.finishFrameForSource( sourceIndex, view );
+    buffer.finishFrameForSource( sourceIndex );
 }
 
 void _testStereoBuffer( deflect::ReceiveBuffer& buffer )
@@ -355,6 +355,29 @@ BOOST_AUTO_TEST_CASE( TestStereoOneSource )
     BOOST_CHECK( !buffer.hasCompleteStereoFrame( ));
 
     _insert( buffer, sourceIndex, testSegments, deflect::View::RIGHT_EYE );
+    BOOST_CHECK( buffer.hasCompleteStereoFrame( ));
+
+    _testStereoBuffer( buffer );
+}
+
+BOOST_AUTO_TEST_CASE( TestStereoSingleFinishFrame )
+{
+    const size_t sourceIndex = 46;
+
+    deflect::ReceiveBuffer buffer;
+    buffer.addSource( sourceIndex );
+
+    const deflect::Segments testSegments = generateTestSegments();
+
+    for( const auto& segment : testSegments )
+        buffer.insert( segment, sourceIndex, deflect::View::LEFT_EYE );
+    BOOST_CHECK( !buffer.hasCompleteStereoFrame( ));
+
+    for( const auto& segment : testSegments )
+        buffer.insert( segment, sourceIndex, deflect::View::RIGHT_EYE );
+    BOOST_CHECK( !buffer.hasCompleteStereoFrame( ));
+
+    buffer.finishFrameForSource( sourceIndex );
     BOOST_CHECK( buffer.hasCompleteStereoFrame( ));
 
     _testStereoBuffer( buffer );

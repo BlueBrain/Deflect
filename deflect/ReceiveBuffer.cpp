@@ -39,12 +39,16 @@
 
 #include "ReceiveBuffer.h"
 
+#include <array>
 #include <cassert>
 #include <set>
 
 namespace
 {
 const size_t MAX_QUEUE_SIZE = 150; // stream blocked for ~5 seconds at 30Hz
+const auto views = std::array<deflect::View, 3>{{ deflect::View::MONO,
+                                                  deflect::View::LEFT_EYE,
+                                                  deflect::View::RIGHT_EYE }};
 }
 
 namespace deflect
@@ -81,17 +85,22 @@ void ReceiveBuffer::insert( const Segment& segment, const size_t sourceIndex,
     _sourceBuffers[sourceIndex].insert( segment, view );
 }
 
-void ReceiveBuffer::finishFrameForSource( const size_t sourceIndex,
-                                          const deflect::View view )
+void ReceiveBuffer::finishFrameForSource( const size_t sourceIndex )
 {
     assert( _sourceBuffers.count( sourceIndex ));
 
     auto& buffer = _sourceBuffers[sourceIndex];
 
-    if( buffer.getQueueSize( view ) > MAX_QUEUE_SIZE )
-        throw std::runtime_error( "maximum queue size exceeded" );
+    for( const auto view : views )
+    {
+        if( buffer.isBackFrameEmpty( view ))
+            continue;
 
-    buffer.push( view );
+        if( buffer.getQueueSize( view ) > MAX_QUEUE_SIZE )
+            throw std::runtime_error( "maximum queue size exceeded" );
+
+        buffer.push( view );
+    }
 }
 
 bool ReceiveBuffer::hasCompleteMonoFrame() const

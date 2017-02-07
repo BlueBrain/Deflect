@@ -134,8 +134,7 @@ void FrameDispatcher::processSegment( const QString uri,
 }
 
 void FrameDispatcher::processFrameFinished( const QString uri,
-                                            const size_t sourceIndex,
-                                            const deflect::View view )
+                                            const size_t sourceIndex )
 {
     if( !_impl->streamBuffers.count( uri ))
         return;
@@ -143,7 +142,7 @@ void FrameDispatcher::processFrameFinished( const QString uri,
     ReceiveBuffer& buffer = _impl->streamBuffers[uri];
     try
     {
-        buffer.finishFrameForSource( sourceIndex, view );
+        buffer.finishFrameForSource( sourceIndex );
     }
     catch( const std::runtime_error& )
     {
@@ -151,21 +150,16 @@ void FrameDispatcher::processFrameFinished( const QString uri,
         return;
     }
 
-    if( view == View::MONO )
+    if( buffer.isAllowedToSend( View::MONO ) && buffer.hasCompleteMonoFrame( ))
+        emit sendFrame( _impl->consumeLatestMonoFrame( uri ));
+
+    if( buffer.isAllowedToSend( View::LEFT_EYE ) &&
+        buffer.isAllowedToSend( View::RIGHT_EYE ) &&
+        buffer.hasCompleteStereoFrame( ))
     {
-        if( buffer.isAllowedToSend( view ) && buffer.hasCompleteMonoFrame( ))
-            emit sendFrame( _impl->consumeLatestMonoFrame( uri ));
-    }
-    else
-    {
-        if( buffer.isAllowedToSend( View::LEFT_EYE ) &&
-            buffer.isAllowedToSend( View::RIGHT_EYE ) &&
-            buffer.hasCompleteStereoFrame( ))
-        {
-            const auto frames = _impl->consumeLatestStereoFrame( uri );
-            emit sendFrame( frames.first );
-            emit sendFrame( frames.second );
-        }
+        const auto frames = _impl->consumeLatestStereoFrame( uri );
+        emit sendFrame( frames.first );
+        emit sendFrame( frames.second );
     }
 }
 

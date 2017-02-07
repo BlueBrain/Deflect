@@ -71,6 +71,11 @@ FrameIndex SourceBuffer::getBackFrameIndex( const View view ) const
     };
 }
 
+bool SourceBuffer::isBackFrameEmpty( const View view ) const
+{
+    return _getQueue( view ).back().empty();
+}
+
 void SourceBuffer::pop( const View view )
 {
     _getQueue( view ).pop();
