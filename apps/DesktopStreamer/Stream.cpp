@@ -56,21 +56,25 @@
 
 #define CURSOR_IMAGE_FILE     ":/cursor.png"
 #define CURSOR_IMAGE_SIZE     20
+#define CURSOR_TIMEOUT        1000 /*ms*/
 
 class Stream::Impl
 {
 public:
-    Impl( Stream& stream, const MainWindow& parent,
-          const QPersistentModelIndex window, const int pid )
-    : _stream( stream )
-    , _parent( parent )
-    , _window( window )
-    , _cursor( QImage( CURSOR_IMAGE_FILE ).scaled(
-                   CURSOR_IMAGE_SIZE * parent.devicePixelRatio(),
-                   CURSOR_IMAGE_SIZE * parent.devicePixelRatio(),
-                   Qt::KeepAspectRatio ))
-    , _pid( pid )
-    {}
+Impl( Stream& stream, const MainWindow& parent,
+      const QPersistentModelIndex window, const int pid )
+: _stream( stream )
+, _parent( parent )
+, _window( window )
+, _cursor( QImage( CURSOR_IMAGE_FILE ).scaled(
+               CURSOR_IMAGE_SIZE * parent.devicePixelRatio(),
+               CURSOR_IMAGE_SIZE * parent.devicePixelRatio(),
+               Qt::KeepAspectRatio ))
+, _pid( pid )
+{
+    _mouseActiveTimer.setSingleShot( true );
+    _mouseActiveTimer.setInterval( CURSOR_TIMEOUT );
+}
 
 bool processEvents( const bool interact )
 {
@@ -155,9 +159,19 @@ std::string update( const int quality )
         const QPoint mousePos = ( QCursor::pos() - _windowRect.topLeft( )) *
                                 _parent.devicePixelRatio() -
                                 QPoint( _cursor.width()/2, _cursor.height()/2 );
-        QPainter painter( &image );
-        painter.drawImage( mousePos, _cursor );
-        painter.end(); // Make sure to release the QImage before using it
+        if( mousePos != _mousePos || _mouseActiveTimer.isActive( ))
+        {
+            QPainter painter( &image );
+            painter.drawImage( mousePos, _cursor );
+            painter.end(); // Make sure to release the QImage before using it
+
+            if( mousePos != _mousePos )
+            {
+                _mousePos = mousePos;
+                _mouseActiveTimer.stop();
+                _mouseActiveTimer.start();
+            }
+        }
     }
 
     if( image == _image )
@@ -269,6 +283,9 @@ void _sendMouseDoubleClickEvent( const float, const float ) {}
     typedef std::queue< CGEventRef > EventQueue;
     EventQueue _events;
 #endif
+
+    QTimer _mouseActiveTimer;
+    QPoint _mousePos;
 };
 
 Stream::Stream( const MainWindow& parent, const QPersistentModelIndex window,
