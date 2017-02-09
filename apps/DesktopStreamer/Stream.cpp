@@ -67,8 +67,7 @@ Impl( Stream& stream, const MainWindow& parent,
 , _parent( parent )
 , _window( window )
 , _cursor( QImage( CURSOR_IMAGE_FILE ).scaled(
-               CURSOR_IMAGE_SIZE * parent.devicePixelRatio(),
-               CURSOR_IMAGE_SIZE * parent.devicePixelRatio(),
+               CURSOR_IMAGE_SIZE, CURSOR_IMAGE_SIZE,
                Qt::KeepAspectRatio ))
 , _pid( pid )
 {
