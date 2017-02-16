@@ -44,6 +44,7 @@
 #include <deflect/Segment.h>
 #include <deflect/types.h>
 
+#include <array>
 #include <queue>
 
 namespace deflect
@@ -70,25 +71,23 @@ public:
     bool isBackFrameEmpty( View view ) const;
 
     /** Insert a segment into the back frame of the appropriate queue. */
-    void insert( const Segment& segment, const View view );
+    void insert( const Segment& segment, View view );
 
     /** Push a new frame to the back of given view. */
-    void push( const View view );
+    void push( View view );
 
     /** Pop the front frame of the buffer for the given view. */
-    void pop( const View view );
+    void pop( View view );
 
     /** @return the size of the queue for the given view. */
-    size_t getQueueSize( const View view ) const;
+    size_t getQueueSize( View view ) const;
 
 private:
-    /** The collections of segments for each view. */
-    std::queue<Segments> _segmentsMono, _segmentsLeft, _segmentsRight;
+    /** The collections of segments for each mono/left/right view. */
+    std::queue<Segments> _segments[3];
 
-    /** The current indices of the frame for this source. */
-    FrameIndex _backFrameIndexMono = 0u;
-    FrameIndex _backFrameIndexLeft = 0u;
-    FrameIndex _backFrameIndexRight = 0u;
+    /** The current indices of the mono/left/right frame for this source. */
+    std::array<FrameIndex, 3> _backFrameIndex = { { 0u, 0u, 0u } };
 
     std::queue<Segments>& _getQueue( View view );
     const std::queue<Segments>& _getQueue( View view ) const;

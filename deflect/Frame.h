@@ -63,7 +63,7 @@ public:
     QString uri;
 
     /** The view to which this frame belongs. */
-    View view = View::MONO;
+    View view = View::mono;
 
     /** Get the total dimensions of this frame. */
     DEFLECT_API QSize computeDimensions() const;

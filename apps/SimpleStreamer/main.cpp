@@ -286,7 +286,7 @@ void display()
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             glutSolidTeapot( 1.f );
             const auto leftImage = Image::readGlBuffer();
-            success = send( leftImage, deflect::View::LEFT_EYE );
+            success = send( leftImage, deflect::View::left_eye );
         }
         if( deflectStereoStreamRight && !waitToStart )
         {
@@ -295,7 +295,7 @@ void display()
             glutSolidTeapot( 1.f );
             const auto rightImage = Image::readGlBuffer();
             success = (!deflectStereoStreamLeft || success) &&
-                      send( rightImage, deflect::View::RIGHT_EYE );
+                      send( rightImage, deflect::View::right_eye );
         }
     }
     else
@@ -303,7 +303,7 @@ void display()
         glClearColor( 0.5, 0.5, 0.5, 1.0 );
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glutSolidTeapot( 1.f );
-        success = send( Image::readGlBuffer(), deflect::View::MONO );
+        success = send( Image::readGlBuffer(), deflect::View::mono );
     }
 
     glutSwapBuffers();

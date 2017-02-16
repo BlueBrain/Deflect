@@ -50,7 +50,14 @@ namespace deflect
 {
 
 /** The different types of view. */
-enum class View : std::int8_t { MONO, LEFT_EYE, RIGHT_EYE };
+enum class View : std::uint8_t { mono, left_eye, right_eye };
+
+/** Cast an enum class value to its underlying type. */
+template <typename E>
+constexpr typename std::underlying_type<E>::type as_underlying_type( E e )
+{
+    return static_cast<typename std::underlying_type<E>::type>( e );
+}
 
 class EventReceiver;
 class Frame;

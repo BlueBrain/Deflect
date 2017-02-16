@@ -39,16 +39,15 @@
 
 #include "ReceiveBuffer.h"
 
-#include <array>
 #include <cassert>
 #include <set>
 
 namespace
 {
 const size_t MAX_QUEUE_SIZE = 150; // stream blocked for ~5 seconds at 30Hz
-const auto views = std::array<deflect::View, 3>{{ deflect::View::MONO,
-                                                  deflect::View::LEFT_EYE,
-                                                  deflect::View::RIGHT_EYE }};
+const auto views = std::array<deflect::View, 3>{{ deflect::View::mono,
+                                                  deflect::View::left_eye,
+                                                  deflect::View::right_eye }};
 }
 
 namespace deflect
@@ -78,7 +77,7 @@ size_t ReceiveBuffer::getSourceCount() const
 }
 
 void ReceiveBuffer::insert( const Segment& segment, const size_t sourceIndex,
-                            const deflect::View view )
+                            const View view )
 {
     assert( _sourceBuffers.count( sourceIndex ));
 
@@ -108,10 +107,11 @@ bool ReceiveBuffer::hasCompleteMonoFrame() const
     assert( !_sourceBuffers.empty( ));
 
     // Check if all sources for Stream have reached the same index
+    const auto lastCompleteFrame = _getLastCompleteFrameIndex( View::mono );
     for( const auto& kv : _sourceBuffers )
     {
         const auto& buffer = kv.second;
-        if( buffer.getBackFrameIndex( View::MONO ) <= _lastFrameComplete )
+        if( buffer.getBackFrameIndex( View::mono ) <= lastCompleteFrame )
             return false;
     }
     return true;
@@ -122,12 +122,15 @@ bool ReceiveBuffer::hasCompleteStereoFrame() const
     std::set<size_t> leftSources;
     std::set<size_t> rightSources;
 
+    const auto lastFrameLeft = _getLastCompleteFrameIndex( View::left_eye );
+    const auto lastFrameRight = _getLastCompleteFrameIndex( View::right_eye );
+
     for( const auto& kv : _sourceBuffers )
     {
         const auto& buffer = kv.second;
-        if( buffer.getBackFrameIndex( View::LEFT_EYE ) > _lastFrameCompleteLeft )
+        if( buffer.getBackFrameIndex( View::left_eye ) > lastFrameLeft )
             leftSources.insert( kv.first );
-        if( buffer.getBackFrameIndex( View::RIGHT_EYE ) > _lastFrameCompleteRight )
+        if( buffer.getBackFrameIndex( View::right_eye ) > lastFrameRight )
             rightSources.insert( kv.first );
     }
 
@@ -168,64 +171,22 @@ Segments ReceiveBuffer::popFrame( const View view )
 
 void ReceiveBuffer::setAllowedToSend( const bool enable, const View view )
 {
-    switch( view )
-    {
-    case View::MONO:
-        _allowedToSend = enable;
-        break;
-    case View::LEFT_EYE:
-        _allowedToSendLeft = enable;
-        break;
-    case View::RIGHT_EYE:
-        _allowedToSendRight = enable;
-        break;
-    };
+    _allowedToSend[as_underlying_type(view)] = enable;
 }
 
 bool ReceiveBuffer::isAllowedToSend( const View view ) const
 {
-    switch( view )
-    {
-    case View::MONO:
-        return _allowedToSend;
-    case View::LEFT_EYE:
-        return _allowedToSendLeft;
-    case View::RIGHT_EYE:
-        return _allowedToSendRight;
-    default:
-        throw std::invalid_argument( "no such view" ); // keep compiler happy
-    };
+    return _allowedToSend[as_underlying_type(view)];
 }
 
 FrameIndex ReceiveBuffer::_getLastCompleteFrameIndex( const View view ) const
 {
-    switch( view )
-    {
-    case View::MONO:
-        return _lastFrameComplete;
-    case View::LEFT_EYE:
-        return _lastFrameCompleteLeft;
-    case View::RIGHT_EYE:
-        return _lastFrameCompleteRight;
-    default:
-        throw std::invalid_argument( "no such view" ); // keep compiler happy
-    };
+    return _lastFrameComplete[as_underlying_type(view)];
 }
 
 void ReceiveBuffer::_incrementLastFrameComplete( const View view )
 {
-    switch( view )
-    {
-    case View::MONO:
-        ++_lastFrameComplete;
-        break;
-    case View::LEFT_EYE:
-        ++_lastFrameCompleteLeft;
-        break;
-    case View::RIGHT_EYE:
-        ++_lastFrameCompleteRight;
-        break;
-    };
+    ++_lastFrameComplete[as_underlying_type(view)];
 }
 
 }

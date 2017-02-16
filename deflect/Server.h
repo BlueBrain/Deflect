@@ -82,10 +82,10 @@ public slots:
      * Request the dispatching of the next frame for a given pixel stream.
      *
      * A receivedFrame() signal will subsequently be emitted for each of the
-     * view(s) (MONO or STEREO) for which a frame is or becomes available.
+     * view(s) (mono or stereo) for which a frame is or becomes available.
      *
      * To ensure that the two eye channels remain synchronized, stereo
-     * LEFT/RIGHT frames are dispatched together only when both are available.
+     * left/right frames are dispatched together only when both are available.
      *
      * @param uri Identifier for the stream
      */

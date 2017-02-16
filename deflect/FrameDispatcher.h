@@ -100,12 +100,12 @@ public slots:
     void processFrameFinished( QString uri, size_t sourceIndex );
 
     /**
-     * Request the dispatching of a new frame for any stream (MONO/STEREO).
+     * Request the dispatching of a new frame for any stream (mono/stereo).
      *
      * A sendFrame() signal will be emitted for each of the view for which a
      * frame becomes available.
      *
-     * Stereo LEFT/RIGHT frames will only be be dispatched together when both
+     * Stereo left/right frames will only be be dispatched together when both
      * are available to ensure that the two eye channels remain synchronized.
      *
      * @param uri Identifier for the stream

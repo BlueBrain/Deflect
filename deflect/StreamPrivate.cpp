@@ -141,7 +141,9 @@ bool StreamPrivate::send( const ImageWrapper& image )
         return false;
     }
 
-    sendImageView( image.view );
+    if( !sendImageView( image.view ))
+        return false;
+
     const auto sendFunc = std::bind( &StreamPrivate::sendPixelStreamSegment,
                                      this, std::placeholders::_1 );
     return imageSegmenter.generate( image, sendFunc );

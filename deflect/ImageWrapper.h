@@ -121,10 +121,10 @@ struct ImageWrapper
     //@}
 
     /**
-     * The view that this image represents in stereo 3D streams.
+     * The view that this image represents.
      * @version 1.6
      */
-    View view = View::MONO;
+    View view = View::mono;
 
     /**
      * Get the number of bytes per pixel based on the pixelFormat.

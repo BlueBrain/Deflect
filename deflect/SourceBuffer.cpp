@@ -46,9 +46,9 @@ namespace deflect
 
 SourceBuffer::SourceBuffer()
 {
-    _segmentsMono.push( Segments( ));
-    _segmentsLeft.push( Segments( ));
-    _segmentsRight.push( Segments( ));
+    _getQueue( View::mono ).push( Segments( ));
+    _getQueue( View::left_eye ).push( Segments( ));
+    _getQueue( View::right_eye ).push( Segments( ));
 }
 
 const Segments& SourceBuffer::getSegments( const View view ) const
@@ -58,17 +58,7 @@ const Segments& SourceBuffer::getSegments( const View view ) const
 
 FrameIndex SourceBuffer::getBackFrameIndex( const View view ) const
 {
-    switch( view )
-    {
-    case View::MONO:
-        return _backFrameIndexMono;
-    case View::LEFT_EYE:
-        return _backFrameIndexLeft;
-    case View::RIGHT_EYE:
-        return _backFrameIndexRight;
-    default:
-        throw std::invalid_argument( "no such view" ); // keep compiler happy
-    };
+    return _backFrameIndex[as_underlying_type(view)];
 }
 
 bool SourceBuffer::isBackFrameEmpty( const View view ) const
@@ -84,22 +74,10 @@ void SourceBuffer::pop( const View view )
 void SourceBuffer::push( const View view )
 {
     _getQueue( view ).push( Segments( ));
-
-    switch( view )
-    {
-    case View::MONO:
-        ++_backFrameIndexMono;
-        break;
-    case View::LEFT_EYE:
-        ++_backFrameIndexLeft;
-        break;
-    case View::RIGHT_EYE:
-        ++_backFrameIndexRight;
-        break;
-    };
+    ++_backFrameIndex[as_underlying_type(view)];
 }
 
-void SourceBuffer::insert( const Segment& segment, const deflect::View view )
+void SourceBuffer::insert( const Segment& segment, const View view )
 {
     _getQueue( view ).back().push_back( segment );
 }
@@ -109,35 +87,15 @@ size_t SourceBuffer::getQueueSize( const View view ) const
     return _getQueue( view ).size();
 }
 
-std::queue<Segments>& SourceBuffer::_getQueue( const deflect::View view )
+std::queue<Segments>& SourceBuffer::_getQueue( const View view )
 {
-    switch( view )
-    {
-    case View::MONO:
-        return _segmentsMono;
-    case View::LEFT_EYE:
-        return _segmentsLeft;
-    case View::RIGHT_EYE:
-        return _segmentsRight;
-    default:
-        throw std::invalid_argument( "no such view" ); // keep compiler happy
-    };
+    return _segments[as_underlying_type(view)];
 }
 
 const std::queue<Segments>&
-SourceBuffer::_getQueue( const deflect::View view ) const
+SourceBuffer::_getQueue( const View view ) const
 {
-    switch( view )
-    {
-    case View::MONO:
-        return _segmentsMono;
-    case View::LEFT_EYE:
-        return _segmentsLeft;
-    case View::RIGHT_EYE:
-        return _segmentsRight;
-    default:
-        throw std::invalid_argument( "no such view" ); // keep compiler happy
-    };
+    return _segments[as_underlying_type(view)];
 }
 
 }

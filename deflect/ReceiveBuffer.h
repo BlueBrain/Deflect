@@ -47,6 +47,7 @@
 
 #include <QSize>
 
+#include <array>
 #include <map>
 
 namespace deflect
@@ -85,7 +86,7 @@ public:
      * @param view in which the segment should be inserted
      */
     DEFLECT_API void insert( const Segment& segment, size_t sourceIndex,
-                             deflect::View view = deflect::View::MONO );
+                             View view = View::mono );
 
     /**
      * Call when the source has finished sending segments for the current frame.
@@ -104,7 +105,7 @@ public:
      * Get the finished frame.
      * @return A collection of segments that form a frame
      */
-    DEFLECT_API Segments popFrame( View view = deflect::View::MONO );
+    DEFLECT_API Segments popFrame( View view = View::mono );
 
     /** Allow this buffer to be used by the next FrameDispatcher::sendLatestFrame */
     DEFLECT_API void setAllowedToSend( bool enable, View view );
@@ -115,13 +116,11 @@ public:
 private:
     std::map<size_t, SourceBuffer> _sourceBuffers;
 
-    FrameIndex _lastFrameComplete = 0u;
-    FrameIndex _lastFrameCompleteLeft = 0u;
-    FrameIndex _lastFrameCompleteRight = 0u;
+    /** The current indices of the mono/left/right frame for this source. */
+    std::array<FrameIndex, 3> _lastFrameComplete = { { 0u, 0u, 0u } };
 
-    bool _allowedToSend = false;
-    bool _allowedToSendLeft = false;
-    bool _allowedToSendRight = false;
+    /** Is the mono/left/right channel allowed to send. */
+    std::array<bool, 3> _allowedToSend = { { false, false, false } };
 
     FrameIndex _getLastCompleteFrameIndex( View view ) const;
     void _incrementLastFrameComplete( View view );

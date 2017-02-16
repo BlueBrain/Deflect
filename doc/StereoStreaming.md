@@ -16,7 +16,7 @@ This document describes the stereo streaming support introduced in Deflect 0.13.
 
 New view enum in deflect/types.h:
 
-    enum class View : std::int8_t { MONO, LEFT_EYE, RIGHT_EYE };
+    enum class View : std::int8_t { mono, left_eye, right_eye };
 
 On the client side, no changes to the Stream API. The ImageWrapper takes an
 additional View parameter.
@@ -42,13 +42,13 @@ Example of a stereo 3D client application using the blocking Stream API:
     /** ...render left image... */
 
     deflect::ImageWrapper leftImage( data, width, height, deflect::RGBA );
-    leftImage.view = deflect::View::LEFT_EYE;
+    leftImage.view = deflect::View::left_eye;
     deflectStream->send( leftImage );
 
     /** ...render right image... */
 
     deflect::ImageWrapper rightImage( data, width, height, deflect::RGBA );
-    rightImage.view = deflect::View::RIGHT_EYE;
+    rightImage.view = deflect::View::right_eye;
     deflectStream->send( rightImage );
 
     deflectStream->finishFrame();
@@ -76,7 +76,7 @@ Example of a stereo 3D client application using the asynchronous Stream API:
     /** ...render left image... */
 
     deflect::ImageWrapper leftImage( leftData, width, height, deflect::RGBA );
-    leftImage.view = deflect::View::LEFT_EYE;
+    leftImage.view = deflect::View::left_eye;
     leftFuture = deflectStream->asyncSend( leftImage );
 
     if( !rightFuture.valid() || !rightFuture.get( ))
@@ -85,7 +85,7 @@ Example of a stereo 3D client application using the asynchronous Stream API:
     /** ...render right image... */
 
     deflect::ImageWrapper rightImage( rightData, width, height, deflect::RGBA );
-    rightImage.view = deflect::View::RIGHT_EYE;
+    rightImage.view = deflect::View::right_eye;
     rightFuture = deflectStream->send( rightImage );
 
     /** ...synchronize with other render clients (network barrier)... */

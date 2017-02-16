@@ -61,7 +61,7 @@ ServerWorker::ServerWorker( const int socketDescriptor )
     , _sourceId( socketDescriptor )
     , _clientProtocolVersion( NETWORK_PROTOCOL_VERSION )
     , _registeredToEvents( false )
-    , _activeView( View::MONO )
+    , _activeView( View::mono )
 {
     if( !_tcpSocket->setSocketDescriptor( socketDescriptor ))
     {
@@ -257,7 +257,7 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
     case MESSAGE_TYPE_IMAGE_VIEW:
     {
         const auto view = reinterpret_cast<const View*>( byteArray.data( ));
-        if( *view >= deflect::View::MONO && *view <= deflect::View::RIGHT_EYE )
+        if( *view >= View::mono && *view <= View::right_eye )
             _activeView = *view;
         break;
     }

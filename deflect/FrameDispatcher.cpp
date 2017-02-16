@@ -57,15 +57,15 @@ public:
     {
         FramePtr frame( new Frame );
         frame->uri = uri;
-        frame->view = View::MONO;
+        frame->view = View::mono;
 
         ReceiveBuffer& buffer = streamBuffers[uri];
         while( buffer.hasCompleteMonoFrame( ))
-            frame->segments = buffer.popFrame( View::MONO );
+            frame->segments = buffer.popFrame( View::mono );
         assert( !frame->segments.empty( ));
 
         // receiver will request a new frame once this frame was consumed
-        buffer.setAllowedToSend( false, View::MONO );
+        buffer.setAllowedToSend( false, View::mono );
         return frame;
     }
 
@@ -73,25 +73,25 @@ public:
     {
         FramePtr frameLeft( new Frame );
         frameLeft->uri = uri;
-        frameLeft->view = View::LEFT_EYE;
+        frameLeft->view = View::left_eye;
 
         FramePtr frameRight( new Frame );
         frameRight->uri = uri;
-        frameRight->view = View::RIGHT_EYE;
+        frameRight->view = View::right_eye;
 
         ReceiveBuffer& buffer = streamBuffers[uri];
 
         while( buffer.hasCompleteStereoFrame( ))
         {
-            frameLeft->segments = buffer.popFrame( View::LEFT_EYE );
-            frameRight->segments = buffer.popFrame( View::RIGHT_EYE );
+            frameLeft->segments = buffer.popFrame( View::left_eye );
+            frameRight->segments = buffer.popFrame( View::right_eye );
         }
         assert( !frameLeft->segments.empty( ));
         assert( !frameRight->segments.empty( ));
 
         // receiver will request a new frame once this frame was consumed
-        buffer.setAllowedToSend( false, View::LEFT_EYE );
-        buffer.setAllowedToSend( false, View::RIGHT_EYE );
+        buffer.setAllowedToSend( false, View::left_eye );
+        buffer.setAllowedToSend( false, View::right_eye );
         return std::make_pair( std::move( frameLeft ), std::move( frameRight ));
     }
 
@@ -150,11 +150,11 @@ void FrameDispatcher::processFrameFinished( const QString uri,
         return;
     }
 
-    if( buffer.isAllowedToSend( View::MONO ) && buffer.hasCompleteMonoFrame( ))
+    if( buffer.isAllowedToSend( View::mono ) && buffer.hasCompleteMonoFrame( ))
         emit sendFrame( _impl->consumeLatestMonoFrame( uri ));
 
-    if( buffer.isAllowedToSend( View::LEFT_EYE ) &&
-        buffer.isAllowedToSend( View::RIGHT_EYE ) &&
+    if( buffer.isAllowedToSend( View::left_eye ) &&
+        buffer.isAllowedToSend( View::right_eye ) &&
         buffer.hasCompleteStereoFrame( ))
     {
         const auto frames = _impl->consumeLatestStereoFrame( uri );
@@ -169,9 +169,9 @@ void FrameDispatcher::requestFrame( const QString uri )
         return;
 
     ReceiveBuffer& buffer = _impl->streamBuffers[uri];
-    buffer.setAllowedToSend( true, View::MONO );
-    buffer.setAllowedToSend( true, View::LEFT_EYE );
-    buffer.setAllowedToSend( true, View::RIGHT_EYE );
+    buffer.setAllowedToSend( true, View::mono );
+    buffer.setAllowedToSend( true, View::left_eye );
+    buffer.setAllowedToSend( true, View::right_eye );
 
     if( buffer.hasCompleteMonoFrame( ))
         emit sendFrame( _impl->consumeLatestMonoFrame( uri ));
