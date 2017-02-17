@@ -1,8 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
-/*                     Stefan.Eilemann@epfl.ch                       */
-/*                     Daniel.Nachbaur@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,102 +34,68 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The University of Texas at Austin.                 */
+/* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#ifndef DEFLECT_STREAMPRIVATE_H
-#define DEFLECT_STREAMPRIVATE_H
+#include "SourceBuffer.h"
 
-#include <deflect/api.h>
-
-#include "Event.h"
-#include "MessageHeader.h"
-#include "ImageSegmenter.h"
-#include "Socket.h" // member
-#include "Stream.h" // Stream::Future
-
-#include <functional>
-#include <string>
-#include <memory>
+#include <exception>
 
 namespace deflect
 {
 
-class StreamSendWorker;
-
-/**
- * Private implementation for the Stream class.
- */
-class StreamPrivate
+SourceBuffer::SourceBuffer()
 {
-public:
-    /**
-     * Create a new stream and open a new connection to the deflect::Server.
-     *
-     * @param id the unique stream identifier
-     * @param host Address of the target Server instance.
-     * @param port Port of the target Server instance.
-     */
-    StreamPrivate( const std::string& id, const std::string& host,
-                   unsigned short port );
+    _getQueue( View::mono ).push( Segments( ));
+    _getQueue( View::left_eye ).push( Segments( ));
+    _getQueue( View::right_eye ).push( Segments( ));
+}
 
-    /** Destructor, close the Stream. */
-    ~StreamPrivate();
+const Segments& SourceBuffer::getSegments( const View view ) const
+{
+    return _getQueue( view ).front();
+}
 
-    /** Send the open message to the server. */
-    void sendOpen();
+FrameIndex SourceBuffer::getBackFrameIndex( const View view ) const
+{
+    return _backFrameIndex[as_underlying_type(view)];
+}
 
-    /** Send the quit message to the server. */
-    void sendClose();
+bool SourceBuffer::isBackFrameEmpty( const View view ) const
+{
+    return _getQueue( view ).back().empty();
+}
 
-    /**
-     * Close the stream.
-     * @return true on success or if the Stream was not connected
-     */
-    bool close();
+void SourceBuffer::pop( const View view )
+{
+    _getQueue( view ).pop();
+}
 
-    /** @sa Stream::send */
-    bool send( const ImageWrapper& image );
+void SourceBuffer::push( const View view )
+{
+    _getQueue( view ).push( Segments( ));
+    ++_backFrameIndex[as_underlying_type(view)];
+}
 
-    /** @sa Stream::asyncSend */
-    Stream::Future asyncSend( const ImageWrapper& image );
+void SourceBuffer::insert( const Segment& segment, const View view )
+{
+    _getQueue( view ).back().push_back( segment );
+}
 
-    /** @sa Stream::finishFrame */
-    bool finishFrame();
+size_t SourceBuffer::getQueueSize( const View view ) const
+{
+    return _getQueue( view ).size();
+}
 
-    /** Send the view for the image to be sent with sendPixelStreamSegment. */
-    bool sendImageView( View view );
+std::queue<Segments>& SourceBuffer::_getQueue( const View view )
+{
+    return _segments[as_underlying_type(view)];
+}
 
-    /**
-     * Send a Segment through the Stream.
-     * @param segment An image segment with valid parameters and data
-     * @return true if the message could be sent
-     */
-    DEFLECT_API bool sendPixelStreamSegment( const Segment& segment );
-
-    /** @sa Stream::sendSizeHints */
-    bool sendSizeHints( const SizeHints& hints );
-
-    /** Send a user-defined block of data to the server. */
-    bool send( QByteArray data );
-
-    /** The stream identifier. */
-    const std::string id;
-
-    /** The communication socket instance */
-    Socket socket;
-
-    /** The image segmenter */
-    ImageSegmenter imageSegmenter;
-
-    /** Has a successful event registration reply been received */
-    bool registeredForEvents;
-
-    std::function<void()> disconnectedCallback;
-
-private:
-    std::unique_ptr< StreamSendWorker > _sendWorker;
-};
+const std::queue<Segments>&
+SourceBuffer::_getQueue( const View view ) const
+{
+    return _segments[as_underlying_type(view)];
+}
 
 }
-#endif

@@ -61,6 +61,7 @@ ServerWorker::ServerWorker( const int socketDescriptor )
     , _sourceId( socketDescriptor )
     , _clientProtocolVersion( NETWORK_PROTOCOL_VERSION )
     , _registeredToEvents( false )
+    , _activeView( View::mono )
 {
     if( !_tcpSocket->setSocketDescriptor( socketDescriptor ))
     {
@@ -227,7 +228,7 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
             return;
         }
         _streamId = uri;
-        // The version is only sent by deflect clients since v. 0.13.0
+        // The version is only sent by deflect clients since v. 0.12.1
         if( !byteArray.isEmpty( ))
             _parseClientProtocolVersion( byteArray );
         emit addStreamSource( _streamId, _sourceId );
@@ -252,6 +253,14 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
     case MESSAGE_TYPE_DATA:
         emit receivedData( _streamId, byteArray );
         break;
+
+    case MESSAGE_TYPE_IMAGE_VIEW:
+    {
+        const auto view = reinterpret_cast<const View*>( byteArray.data( ));
+        if( *view >= View::mono && *view <= View::right_eye )
+            _activeView = *view;
+        break;
+    }
 
     case MESSAGE_TYPE_BIND_EVENTS:
     case MESSAGE_TYPE_BIND_EVENTS_EX:
@@ -287,7 +296,7 @@ void ServerWorker::_handlePixelStreamMessage( const QByteArray& message )
     segment.imageData = message.right( message.size() -
                                        sizeof( SegmentParameters ));
 
-    emit( receivedSegment( _streamId, _sourceId, segment ));
+    emit( receivedSegment( _streamId, _sourceId, segment, _activeView ));
 }
 
 void ServerWorker::_sendProtocolVersion()

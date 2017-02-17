@@ -2,15 +2,16 @@
 
 Welcome to Deflect, a C++ library for streaming pixels to other Deflect-based
 applications, for example [Tide](https://github.com/BlueBrain/Tide).
-Deflect offers a stable API marked with version 1.5 (for the client part).
+Deflect offers a stable API marked with version 1.6 (for the client part).
 
 ## Features
 
 Deflect provides the following functionality:
 
 * Stream pixels to a remote Server from one or multiple sources
-* Register for receiving events from the Server
-* Receive keyboard, mouse and multi-point touch gestures from the Server
+* Stream stereo images from a distributed 3D application
+* Receive input events from the Server and send data to it
+* Transmitted events include keyboard, mouse and multi-point touch gestures
 * Compressed or uncompressed streaming
 * Fast multi-threaded JPEG compression (using libjpeg-turbo)
 

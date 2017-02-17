@@ -59,6 +59,7 @@ struct MetaTypeRegistration
         qRegisterMetaType< deflect::SizeHints >( "deflect::SizeHints" );
         qRegisterMetaType< deflect::Event >( "deflect::Event" );
         qRegisterMetaType< deflect::FramePtr >( "deflect::FramePtr" );
+        qRegisterMetaType< deflect::View >( "deflect::View" );
     }
 };
 

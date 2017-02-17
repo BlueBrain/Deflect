@@ -73,11 +73,11 @@ signals:
     void removeStreamSource( QString uri, size_t sourceIndex );
 
     void receivedSegment( QString uri, size_t sourceIndex,
-                           deflect::Segment segment );
+                          deflect::Segment segment, deflect::View view );
     void receivedFrameFinished( QString uri, size_t sourceIndex );
 
     void registerToEvents( QString uri, bool exclusive,
-                           deflect::EventReceiver* receiver);
+                           deflect::EventReceiver* receiver );
 
     void receivedSizeHints( QString uri, deflect::SizeHints hints );
 
@@ -100,6 +100,8 @@ private:
 
     bool _registeredToEvents;
     QQueue<Event> _events;
+
+    View _activeView;
 
     void _receiveMessage();
     MessageHeader _receiveMessageHeader();

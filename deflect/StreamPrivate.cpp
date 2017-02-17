@@ -141,6 +141,9 @@ bool StreamPrivate::send( const ImageWrapper& image )
         return false;
     }
 
+    if( !sendImageView( image.view ))
+        return false;
+
     const auto sendFunc = std::bind( &StreamPrivate::sendPixelStreamSegment,
                                      this, std::placeholders::_1 );
     return imageSegmenter.generate( image, sendFunc );
@@ -159,6 +162,15 @@ bool StreamPrivate::finishFrame()
     // Open a window for the PixelStream
     const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, id );
     return socket.send( mh, QByteArray( ));
+}
+
+bool StreamPrivate::sendImageView( const View view )
+{
+    QByteArray message;
+    message.append( (const char*)( &view ), sizeof(View) );
+
+    const MessageHeader mh( MESSAGE_TYPE_IMAGE_VIEW, message.size(), id );
+    return socket.send( mh, message );
 }
 
 bool StreamPrivate::sendPixelStreamSegment( const Segment& segment )
