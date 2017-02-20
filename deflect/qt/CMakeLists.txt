@@ -33,8 +33,3 @@ common_library(DeflectQt)
 if(DEFLECT_QMLSTREAMER_MULTITHREADED)
   target_compile_definitions(DeflectQt PRIVATE DEFLECTQT_MULTITHREADED)
 endif()
-
-if(TARGET Qt5::Gui)
-  target_include_directories(DeflectQt SYSTEM PRIVATE
-    "$<BUILD_INTERFACE:${Qt5Gui_PRIVATE_INCLUDE_DIRS}>")
-endif()
