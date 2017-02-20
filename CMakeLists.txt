@@ -17,7 +17,7 @@ set(DEFLECT_LICENSE BSD)
 set(DEFLECT_DEB_DEPENDS freeglut3-dev libxi-dev libxmu-dev
   libjpeg-turbo8-dev libturbojpeg
   libboost-program-options-dev libboost-test-dev
-  qtbase5-dev qtbase5-private-dev qtdeclarative5-dev)
+  qtbase5-dev qtdeclarative5-dev)
 set(DEFLECT_PORT_DEPENDS boost freeglut qt5)
 
 include(Common)
@@ -28,7 +28,6 @@ common_find_package(LibJpegTurbo REQUIRED)
 common_find_package(OpenGL)
 common_find_package(Qt5Concurrent REQUIRED SYSTEM)
 common_find_package(Qt5Core REQUIRED)
-common_find_package(Qt5Gui COMPONENTS Private) # For Qml WebEngineView
 if(APPLE)
   common_find_package(Qt5MacExtras)
 endif()

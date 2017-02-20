@@ -1,6 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2016, EPFL/Blue Brain Project                       */
-/*                     Daniel.Nachbaur@epfl.ch                       */
+/* Copyright (c) 2016-2017, EPFL/Blue Brain Project                  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -47,9 +48,12 @@
 #include <QQuickRenderControl>
 #include <QQuickWindow>
 
-#ifdef DEFLECT_USE_QT5GUI
-#  include <QtGui/private/qopenglcontext_p.h>
-#endif
+// Forward-declare the function defined in <QtGui/private/qopenglcontext_p.h> to
+// remove the need for private headers. This internal API should remain stable
+// because it is also used by QtWebengine for the same reason.
+QT_BEGIN_NAMESPACE
+Q_GUI_EXPORT void qt_gl_set_global_share_context( QOpenGLContext* context );
+QT_END_NAMESPACE
 
 namespace deflect
 {
@@ -190,11 +194,7 @@ void QuickRenderer::_createGLContext()
     // Test if user has setup shared GL contexts (QtWebEngine::initialize).
     // If so, setup global share context needed by the Qml WebEngineView.
     if( QCoreApplication::testAttribute( Qt::AA_ShareOpenGLContexts ))
-#if DEFLECT_USE_QT5GUI
         qt_gl_set_global_share_context( _context.get( ));
-#else
-        qWarning() << "DeflectQt was not compiled with WebEngineView support";
-#endif
 }
 
 void QuickRenderer::_initRenderControl()
@@ -220,9 +220,7 @@ void QuickRenderer::_onStop()
 
     _offscreenSurface.reset();
 
-#if DEFLECT_USE_QT5GUI
     qt_gl_set_global_share_context( nullptr );
-#endif
     _context.reset();
 }
 
