@@ -42,7 +42,6 @@
 
 namespace deflect
 {
-
 /**
  * Suspend AppNap on OSX >= 10.9.
  */
@@ -65,7 +64,6 @@ private:
     class Impl;
     Impl* _impl;
 };
-
 }
 
 #endif

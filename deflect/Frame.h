@@ -40,16 +40,15 @@
 #ifndef DEFLECT_FRAME_H
 #define DEFLECT_FRAME_H
 
+#include <deflect/Segment.h>
 #include <deflect/api.h>
 #include <deflect/types.h>
-#include <deflect/Segment.h>
 
 #include <QSize>
 #include <QString>
 
 namespace deflect
 {
-
 /**
  * A frame for a PixelStream.
  */
@@ -68,7 +67,6 @@ public:
     /** Get the total dimensions of this frame. */
     DEFLECT_API QSize computeDimensions() const;
 };
-
 }
 
 #endif

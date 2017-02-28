@@ -43,59 +43,56 @@
 
 namespace deflect
 {
-
 SourceBuffer::SourceBuffer()
 {
-    _getQueue( View::mono ).push( Segments( ));
-    _getQueue( View::left_eye ).push( Segments( ));
-    _getQueue( View::right_eye ).push( Segments( ));
+    _getQueue(View::mono).push(Segments());
+    _getQueue(View::left_eye).push(Segments());
+    _getQueue(View::right_eye).push(Segments());
 }
 
-const Segments& SourceBuffer::getSegments( const View view ) const
+const Segments& SourceBuffer::getSegments(const View view) const
 {
-    return _getQueue( view ).front();
+    return _getQueue(view).front();
 }
 
-FrameIndex SourceBuffer::getBackFrameIndex( const View view ) const
+FrameIndex SourceBuffer::getBackFrameIndex(const View view) const
 {
     return _backFrameIndex[as_underlying_type(view)];
 }
 
-bool SourceBuffer::isBackFrameEmpty( const View view ) const
+bool SourceBuffer::isBackFrameEmpty(const View view) const
 {
-    return _getQueue( view ).back().empty();
+    return _getQueue(view).back().empty();
 }
 
-void SourceBuffer::pop( const View view )
+void SourceBuffer::pop(const View view)
 {
-    _getQueue( view ).pop();
+    _getQueue(view).pop();
 }
 
-void SourceBuffer::push( const View view )
+void SourceBuffer::push(const View view)
 {
-    _getQueue( view ).push( Segments( ));
+    _getQueue(view).push(Segments());
     ++_backFrameIndex[as_underlying_type(view)];
 }
 
-void SourceBuffer::insert( const Segment& segment, const View view )
+void SourceBuffer::insert(const Segment& segment, const View view)
 {
-    _getQueue( view ).back().push_back( segment );
+    _getQueue(view).back().push_back(segment);
 }
 
-size_t SourceBuffer::getQueueSize( const View view ) const
+size_t SourceBuffer::getQueueSize(const View view) const
 {
-    return _getQueue( view ).size();
+    return _getQueue(view).size();
 }
 
-std::queue<Segments>& SourceBuffer::_getQueue( const View view )
-{
-    return _segments[as_underlying_type(view)];
-}
-
-const std::queue<Segments>&
-SourceBuffer::_getQueue( const View view ) const
+std::queue<Segments>& SourceBuffer::_getQueue(const View view)
 {
     return _segments[as_underlying_type(view)];
 }
 
+const std::queue<Segments>& SourceBuffer::_getQueue(const View view) const
+{
+    return _segments[as_underlying_type(view)];
+}
 }

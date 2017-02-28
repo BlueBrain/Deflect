@@ -41,7 +41,7 @@
 #define DEFLECT_EVENT_H
 
 #ifdef _MSC_VER
-#  include <stdint.h>
+#include <stdint.h>
 #endif
 
 #include <deflect/api.h>
@@ -53,7 +53,6 @@ class QDataStream;
 
 namespace deflect
 {
-
 /**
  * A user event within a window.
  *
@@ -79,15 +78,20 @@ namespace deflect
  * - EVT_PRESS               < touch/mouse button press (single touch point)
  * - EVT_MOVE                < touch point/mouse move (single touch point)
  * - EVT_RELEASE             < touch/mouse button release (single touch point)
- * - EVT_WHEEL               < mouse wheel event (no longer sent by Tide >= 1.2, replaced by EVT_PINCH)
+ * - EVT_WHEEL               < mouse wheel event (no longer sent by Tide >= 1.2,
+ *                             replaced by EVT_PINCH)
  *
  * Basic gestures
- * - EVT_CLICK               < tap/click with one or more fingers/buttons (key field contains number of points)
- * - EVT_DOUBLECLICK         < double tap/click with one or more fingers/button (key field contains number of points)
- * - EVT_TAP_AND_HOLD        < tap and hold with one or more fingers/buttons (key field contains number of points)
+ * - EVT_CLICK               < tap/click with one or more fingers/buttons (key
+ *                             field contains number of points)
+ * - EVT_DOUBLECLICK         < double tap/click with one or more fingers/button
+ *                             (key field contains number of points)
+ * - EVT_TAP_AND_HOLD        < tap and hold with one or more fingers/buttons
+ *                             (key field contains number of points)
  *
  * Advanced gestures
- * - EVT_PAN                 < pan with two or more fingers (key field contains number of points)
+ * - EVT_PAN                 < pan with two or more fingers (key field contains
+ *                             number of points)
  * - EVT_PINCH               < pinch with two finger
  * - EVT_SWIPE_LEFT          < swipe left with two fingers
  * - EVT_SWIPE_RIGHT         < swipe right with two fingers
@@ -144,34 +148,40 @@ struct Event
 
     /** @name Mouse and touch events */
     //@{
-    double mouseX;    /**< Normalized X mouse/touch position relative to the window */
-    double mouseY;    /**< Normalized Y mouse/touch position relative to the window */
-    double dx;        /**< Normalized horizontal delta for pan/pinch events / delta in pixels for wheel events */
-    double dy;        /**< Normalized vertical delta for pan/pinch events / delta in pixels for wheel events */
-    bool mouseLeft;   /**< The state of the left mouse button (pressed=true) */
-    bool mouseRight;  /**< The state of the right mouse button (pressed=true) */
-    bool mouseMiddle; /**< The state of the middle mouse button (pressed=true) */
+    double mouseX;    /**< Normalized X mouse/touch position relative to the
+                         window */
+    double mouseY;    /**< Normalized Y mouse/touch position relative to the
+                         window */
+    double dx;        /**< Normalized horizontal delta for pan/pinch events /
+                         delta in pixels for wheel events */
+    double dy;        /**< Normalized vertical delta for pan/pinch events /
+                         delta in pixels for wheel events */
+    bool mouseLeft;   /**< State of the left mouse button (pressed=true) */
+    bool mouseRight;  /**< State of the right mouse button (pressed=true) */
+    bool mouseMiddle; /**< State of the middle mouse button (pressed=true) */
     //@}
 
     /** @name Keyboard events */
     //@{
-    int key;         /**< The key code, see QKeyEvent::key() / number of fingers for gestures / point id for touch events */
-    int modifiers;   /**< The keyboard modifiers, see QKeyEvent::modifiers() */
-    char text[UNICODE_TEXT_SIZE];   /**< Carries unicode for key, see QKeyEvent::text() */
+    int key;       /**< The key code, see QKeyEvent::key() / number of fingers
+                      for gestures / point id for touch events */
+    int modifiers; /**< The keyboard modifiers, see QKeyEvent::modifiers() */
+    char text[UNICODE_TEXT_SIZE]; /**< Carries unicode for key, see
+                                     QKeyEvent::text() */
     //@}
 
     /** Construct a new event. @version 1.0 */
     Event()
-        : type( EVT_NONE )
-        , mouseX( 0 )
-        , mouseY( 0 )
-        , dx( 0 )
-        , dy( 0 )
-        , mouseLeft( false )
-        , mouseRight( false )
-        , mouseMiddle( false )
-        , key( 0 )
-        , modifiers( 0 )
+        : type(EVT_NONE)
+        , mouseX(0)
+        , mouseY(0)
+        , dx(0)
+        , dy(0)
+        , mouseLeft(false)
+        , mouseRight(false)
+        , mouseMiddle(false)
+        , key(0)
+        , modifiers(0)
         , text()
     {
     }
@@ -180,10 +190,10 @@ struct Event
     static const uint32_t serializedSize;
 };
 
-/** Serialization for network, where sizeof(Event) can differ between compilers. */
-DEFLECT_API QDataStream& operator<<( QDataStream& out, const Event& event );
-DEFLECT_API QDataStream& operator>>( QDataStream& in, Event& event );
-
+/** Serialization for network, where sizeof(Event) can differ between compilers.
+ */
+DEFLECT_API QDataStream& operator<<(QDataStream& out, const Event& event);
+DEFLECT_API QDataStream& operator>>(QDataStream& in, Event& event);
 }
 
 #endif

@@ -41,29 +41,29 @@
 
 #include <cstring>
 
-#define DEFAULT_COMPRESSION_QUALITY  75
+#define DEFAULT_COMPRESSION_QUALITY 75
 
 namespace deflect
 {
-
-ImageWrapper::ImageWrapper( const void* data_, const unsigned int width_,
-                            const unsigned int height_,
-                            const PixelFormat format_,
-                            const unsigned int x_, const unsigned int y_ )
-    : data( data_ )
-    , width( width_ )
-    , height( height_ )
-    , pixelFormat( format_ )
-    , x( x_ )
-    , y( y_ )
-    , compressionPolicy( COMPRESSION_AUTO )
-    , compressionQuality( DEFAULT_COMPRESSION_QUALITY )
-{}
+ImageWrapper::ImageWrapper(const void* data_, const unsigned int width_,
+                           const unsigned int height_,
+                           const PixelFormat format_, const unsigned int x_,
+                           const unsigned int y_)
+    : data(data_)
+    , width(width_)
+    , height(height_)
+    , pixelFormat(format_)
+    , x(x_)
+    , y(y_)
+    , compressionPolicy(COMPRESSION_AUTO)
+    , compressionQuality(DEFAULT_COMPRESSION_QUALITY)
+{
+}
 
 unsigned int ImageWrapper::getBytesPerPixel() const
 {
     // enum PixelFormat { RGB, RGBA, ARGB, BGR, BGRA, ABGR };
-    static const unsigned int bytesPerPixel[] = { 3, 4, 4, 3, 4, 4 };
+    static const unsigned int bytesPerPixel[] = {3, 4, 4, 3, 4, 4};
 
     return bytesPerPixel[pixelFormat];
 }
@@ -73,25 +73,24 @@ size_t ImageWrapper::getBufferSize() const
     return width * height * getBytesPerPixel();
 }
 
-void ImageWrapper::swapYAxis( void* data, const unsigned int width,
-                              const unsigned int height,
-                              const unsigned int bpp )
+void ImageWrapper::swapYAxis(void* data, const unsigned int width,
+                             const unsigned int height, const unsigned int bpp)
 {
     unsigned char* src = (unsigned char*)data;
 
-    size_t bytesPerLine = width*bpp;
-    size_t bufferSize = bytesPerLine*height;
+    size_t bytesPerLine = width * bpp;
+    size_t bufferSize = bytesPerLine * height;
 
     unsigned char* tmp = new unsigned char[bufferSize];
 
-    for( size_t y = 0; y < height; ++y )
+    for (size_t y = 0; y < height; ++y)
     {
-        memcpy( (void*)(&tmp[y*bytesPerLine]),
-                (const void*)&src[(height-y-1)*bytesPerLine], bytesPerLine );
+        memcpy((void*)(&tmp[y * bytesPerLine]),
+               (const void*)&src[(height - y - 1) * bytesPerLine],
+               bytesPerLine);
     }
-    memcpy( data, (const void*)tmp, bufferSize );
+    memcpy(data, (const void*)tmp, bufferSize);
 
     delete[] tmp;
 }
-
 }

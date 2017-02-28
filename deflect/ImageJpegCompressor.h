@@ -50,7 +50,6 @@
 
 namespace deflect
 {
-
 /**
  * Perform JPEG compression for a PixelStreamSegment
  */
@@ -67,13 +66,12 @@ public:
      * @param imageRegion The region of the image to be compressed. Must not
      *        exceed image dimensions.
      */
-    DEFLECT_API QByteArray computeJpeg( const ImageWrapper& sourceImage,
-                                        const QRect& imageRegion );
+    DEFLECT_API QByteArray computeJpeg(const ImageWrapper& sourceImage,
+                                       const QRect& imageRegion);
 
 private:
     tjhandle _tjHandle;
 };
-
 }
 
 #endif // IMAGEJPEGCOMPRESSOR_H

@@ -53,67 +53,66 @@ const char* STREAM_ID_ENV_VAR = "DEFLECT_ID";
 const char* STREAM_HOST_ENV_VAR = "DEFLECT_HOST";
 }
 
-BOOST_AUTO_TEST_CASE( testParameterizedConstructorWithValues )
+BOOST_AUTO_TEST_CASE(testParameterizedConstructorWithValues)
 {
-    const deflect::Stream stream( "mystream", "somehost" );
-    BOOST_CHECK_EQUAL( stream.getId(), "mystream" );
-    BOOST_CHECK_EQUAL( stream.getHost(), "somehost" );
+    const deflect::Stream stream("mystream", "somehost");
+    BOOST_CHECK_EQUAL(stream.getId(), "mystream");
+    BOOST_CHECK_EQUAL(stream.getHost(), "somehost");
 }
 
-BOOST_AUTO_TEST_CASE( testDefaultConstructorReadsEnvironmentVariables )
+BOOST_AUTO_TEST_CASE(testDefaultConstructorReadsEnvironmentVariables)
 {
-    qputenv( STREAM_ID_ENV_VAR, "mystream" );
-    qputenv( STREAM_HOST_ENV_VAR, "somehost" );
+    qputenv(STREAM_ID_ENV_VAR, "mystream");
+    qputenv(STREAM_HOST_ENV_VAR, "somehost");
     deflect::Stream stream;
-    BOOST_CHECK_EQUAL( stream.getId(), "mystream" );
-    BOOST_CHECK_EQUAL( stream.getHost(), "somehost" );
-    qunsetenv( STREAM_ID_ENV_VAR );
-    qunsetenv( STREAM_HOST_ENV_VAR );
+    BOOST_CHECK_EQUAL(stream.getId(), "mystream");
+    BOOST_CHECK_EQUAL(stream.getHost(), "somehost");
+    qunsetenv(STREAM_ID_ENV_VAR);
+    qunsetenv(STREAM_HOST_ENV_VAR);
 }
 
-BOOST_AUTO_TEST_CASE( testParameterizedConstructorReadsEnvironmentVariables )
+BOOST_AUTO_TEST_CASE(testParameterizedConstructorReadsEnvironmentVariables)
 {
-    qputenv( STREAM_ID_ENV_VAR, "mystream" );
-    qputenv( STREAM_HOST_ENV_VAR, "somehost" );
-    const deflect::Stream stream( "", "" );
-    BOOST_CHECK_EQUAL( stream.getId(), "mystream" );
-    BOOST_CHECK_EQUAL( stream.getHost(), "somehost" );
-    qunsetenv( STREAM_ID_ENV_VAR );
-    qunsetenv( STREAM_HOST_ENV_VAR );
+    qputenv(STREAM_ID_ENV_VAR, "mystream");
+    qputenv(STREAM_HOST_ENV_VAR, "somehost");
+    const deflect::Stream stream("", "");
+    BOOST_CHECK_EQUAL(stream.getId(), "mystream");
+    BOOST_CHECK_EQUAL(stream.getHost(), "somehost");
+    qunsetenv(STREAM_ID_ENV_VAR);
+    qunsetenv(STREAM_HOST_ENV_VAR);
 }
 
-BOOST_AUTO_TEST_CASE( testWhenSteamHostNotProvidedThenThrow )
+BOOST_AUTO_TEST_CASE(testWhenSteamHostNotProvidedThenThrow)
 {
-    BOOST_REQUIRE( QString( qgetenv( STREAM_HOST_ENV_VAR )).isEmpty( ));
-    BOOST_CHECK_THROW( std::make_shared<deflect::Stream>(),
-                       std::runtime_error );
-    BOOST_CHECK_THROW( deflect::Stream stream( "mystream", "" ),
-                       std::runtime_error );
+    BOOST_REQUIRE(QString(qgetenv(STREAM_HOST_ENV_VAR)).isEmpty());
+    BOOST_CHECK_THROW(std::make_shared<deflect::Stream>(), std::runtime_error);
+    BOOST_CHECK_THROW(deflect::Stream stream("mystream", ""),
+                      std::runtime_error);
 }
 
-BOOST_AUTO_TEST_CASE( testWhenSteamHostProvidedThenNoThrow )
+BOOST_AUTO_TEST_CASE(testWhenSteamHostProvidedThenNoThrow)
 {
-    BOOST_CHECK_NO_THROW( deflect::Stream stream( "mystream", "somehost" ));
-    qputenv( STREAM_HOST_ENV_VAR, "somehost" );
-    BOOST_CHECK_NO_THROW( std::make_shared<deflect::Stream>( ));
-    BOOST_CHECK_NO_THROW( deflect::Stream stream( "mystream", "" ));
-    qunsetenv( STREAM_HOST_ENV_VAR );
+    BOOST_CHECK_NO_THROW(deflect::Stream stream("mystream", "somehost"));
+    qputenv(STREAM_HOST_ENV_VAR, "somehost");
+    BOOST_CHECK_NO_THROW(std::make_shared<deflect::Stream>());
+    BOOST_CHECK_NO_THROW(deflect::Stream stream("mystream", ""));
+    qunsetenv(STREAM_HOST_ENV_VAR);
 }
 
-BOOST_AUTO_TEST_CASE( testWhenNoSteamIdProvidedThenARandomOneIsGenerated )
+BOOST_AUTO_TEST_CASE(testWhenNoSteamIdProvidedThenARandomOneIsGenerated)
 {
-    BOOST_REQUIRE( QString( qgetenv( STREAM_ID_ENV_VAR )).isEmpty( ));
+    BOOST_REQUIRE(QString(qgetenv(STREAM_ID_ENV_VAR)).isEmpty());
     {
-        deflect::Stream stream( "", "somehost" );
-        BOOST_CHECK( !stream.getId().empty( ));
-        BOOST_CHECK_NE( deflect::Stream( "", "host").getId(),
-                        deflect::Stream( "", "host").getId( ));
+        deflect::Stream stream("", "somehost");
+        BOOST_CHECK(!stream.getId().empty());
+        BOOST_CHECK_NE(deflect::Stream("", "host").getId(),
+                       deflect::Stream("", "host").getId());
     }
     {
-        qputenv( STREAM_HOST_ENV_VAR, "somehost" );
+        qputenv(STREAM_HOST_ENV_VAR, "somehost");
         deflect::Stream stream;
-        BOOST_CHECK( !stream.getId().empty( ));
-        BOOST_CHECK_NE( deflect::Stream().getId(), deflect::Stream().getId( ));
-        qunsetenv( STREAM_HOST_ENV_VAR );
+        BOOST_CHECK(!stream.getId().empty());
+        BOOST_CHECK_NE(deflect::Stream().getId(), deflect::Stream().getId());
+        qunsetenv(STREAM_HOST_ENV_VAR);
     }
 }

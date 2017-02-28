@@ -49,18 +49,13 @@
 struct MinimalGlobalQtApp : public boost::noncopyable
 {
     MinimalGlobalQtApp()
-        : app( 0 )
     {
         // need QApplication to instantiate WebkitPixelStreamer
         ut::master_test_suite_t& testSuite = ut::framework::master_test_suite();
-        app = new QCoreApplication( testSuite.argc, testSuite.argv );
+        app = new QCoreApplication(testSuite.argc, testSuite.argv);
     }
-    virtual ~MinimalGlobalQtApp()
-    {
-        delete app;
-    }
-
-    QCoreApplication* app;
+    virtual ~MinimalGlobalQtApp() { delete app; }
+    QCoreApplication* app = nullptr;
 };
 
 #endif

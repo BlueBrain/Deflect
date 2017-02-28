@@ -47,41 +47,40 @@
 #include <deflect/Segment.h>
 #include <deflect/SizeHints.h>
 
-#include <QtNetwork/QTcpSocket>
 #include <QQueue>
+#include <QtNetwork/QTcpSocket>
 
 namespace deflect
 {
-
 class ServerWorker : public EventReceiver
 {
     Q_OBJECT
 
 public:
-    explicit ServerWorker( int socketDescriptor );
+    explicit ServerWorker(int socketDescriptor);
     ~ServerWorker();
 
 public slots:
-    void processEvent( Event evt ) final;
+    void processEvent(Event evt) final;
 
     void initConnection();
-    void closeConnection( QString uri );
-    void replyToEventRegistration( QString uri, bool success );
+    void closeConnection(QString uri);
+    void replyToEventRegistration(QString uri, bool success);
 
 signals:
-    void addStreamSource( QString uri, size_t sourceIndex );
-    void removeStreamSource( QString uri, size_t sourceIndex );
+    void addStreamSource(QString uri, size_t sourceIndex);
+    void removeStreamSource(QString uri, size_t sourceIndex);
 
-    void receivedSegment( QString uri, size_t sourceIndex,
-                          deflect::Segment segment, deflect::View view );
-    void receivedFrameFinished( QString uri, size_t sourceIndex );
+    void receivedSegment(QString uri, size_t sourceIndex,
+                         deflect::Segment segment, deflect::View view);
+    void receivedFrameFinished(QString uri, size_t sourceIndex);
 
-    void registerToEvents( QString uri, bool exclusive,
-                           deflect::EventReceiver* receiver );
+    void registerToEvents(QString uri, bool exclusive,
+                          deflect::EventReceiver* receiver);
 
-    void receivedSizeHints( QString uri, deflect::SizeHints hints );
+    void receivedSizeHints(QString uri, deflect::SizeHints hints);
 
-    void receivedData( QString uri, QByteArray data );
+    void receivedData(QString uri, QByteArray data);
 
     void connectionClosed();
 
@@ -105,22 +104,21 @@ private:
 
     void _receiveMessage();
     MessageHeader _receiveMessageHeader();
-    QByteArray _receiveMessageBody( int size );
+    QByteArray _receiveMessageBody(int size);
 
-    void _handleMessage( const MessageHeader& messageHeader,
-                         const QByteArray& message );
-    void _parseClientProtocolVersion( const QByteArray& message );
-    void _handlePixelStreamMessage( const QByteArray& message );
+    void _handleMessage(const MessageHeader& messageHeader,
+                        const QByteArray& message);
+    void _parseClientProtocolVersion(const QByteArray& message);
+    void _handlePixelStreamMessage(const QByteArray& message);
 
     void _sendProtocolVersion();
-    void _sendBindReply( bool successful );
-    void _send( const Event &evt );
+    void _sendBindReply(bool successful);
+    void _send(const Event& evt);
     void _sendQuit();
-    bool _send( const MessageHeader& messageHeader );
+    bool _send(const MessageHeader& messageHeader);
     void _flushSocket();
     bool _isConnected() const;
 };
-
 }
 
 #endif

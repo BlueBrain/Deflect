@@ -40,30 +40,28 @@
 #ifndef DELFECT_QT_HELPERS_H
 #define DELFECT_QT_HELPERS_H
 
-#include <memory>
 #include <future>
+#include <memory>
 
 namespace deflect
 {
 namespace qt
 {
-
-template<typename T>
-std::future<T> make_ready_future( const T value )
+template <typename T>
+std::future<T> make_ready_future(const T value)
 {
     std::promise<T> promise;
-    promise.set_value( value );
+    promise.set_value(value);
     return promise.get_future();
 }
 
 // missing make_unique() implementation in C++11 standard
 // source: http://herbsutter.com/gotw/_102/
-template<typename T, typename ...Args>
-std::unique_ptr<T> make_unique( Args&& ...args )
+template <typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args)
 {
-    return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
-
 }
 }
 

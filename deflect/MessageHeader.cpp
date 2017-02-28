@@ -43,43 +43,40 @@
 
 namespace deflect
 {
-
-const size_t MessageHeader::serializedSize = sizeof(quint32) + sizeof(qint32) +
-                                             MESSAGE_HEADER_URI_LENGTH;
+const size_t MessageHeader::serializedSize =
+    sizeof(quint32) + sizeof(qint32) + MESSAGE_HEADER_URI_LENGTH;
 
 MessageHeader::MessageHeader()
-    : type( MESSAGE_TYPE_NONE )
-    , size( 0 )
+    : type(MESSAGE_TYPE_NONE)
+    , size(0)
 {
-    memset( uri, '\0', MESSAGE_HEADER_URI_LENGTH );
+    memset(uri, '\0', MESSAGE_HEADER_URI_LENGTH);
 }
 
-MessageHeader::MessageHeader( const MessageType type_, const uint32_t size_,
-                              const std::string& streamUri )
-    : type( type_ )
-    , size( size_ )
+MessageHeader::MessageHeader(const MessageType type_, const uint32_t size_,
+                             const std::string& streamUri)
+    : type(type_)
+    , size(size_)
 {
-    memset( uri, '\0', MESSAGE_HEADER_URI_LENGTH );
+    memset(uri, '\0', MESSAGE_HEADER_URI_LENGTH);
 
     // add the truncated URI to the header
-    const size_t len = streamUri.copy( uri, MESSAGE_HEADER_URI_LENGTH - 1 );
+    const size_t len = streamUri.copy(uri, MESSAGE_HEADER_URI_LENGTH - 1);
     uri[len] = '\0';
 }
-
 }
 
-QDataStream& operator<<( QDataStream& out,
-                         const deflect::MessageHeader& header )
+QDataStream& operator<<(QDataStream& out, const deflect::MessageHeader& header)
 {
     out << (qint32)header.type << (quint32)header.size;
 
-    for( size_t i = 0; i < MESSAGE_HEADER_URI_LENGTH; ++i )
+    for (size_t i = 0; i < MESSAGE_HEADER_URI_LENGTH; ++i)
         out << (quint8)header.uri[i];
 
     return out;
 }
 
-QDataStream& operator>>( QDataStream& in, deflect::MessageHeader& header )
+QDataStream& operator>>(QDataStream& in, deflect::MessageHeader& header)
 {
     qint32 type;
     quint32 size;
@@ -90,7 +87,7 @@ QDataStream& operator>>( QDataStream& in, deflect::MessageHeader& header )
     header.size = size;
 
     quint8 character;
-    for( size_t i = 0; i < MESSAGE_HEADER_URI_LENGTH; ++i )
+    for (size_t i = 0; i < MESSAGE_HEADER_URI_LENGTH; ++i)
     {
         in >> character;
         header.uri[i] = (char)character;
@@ -98,4 +95,3 @@ QDataStream& operator>>( QDataStream& in, deflect::MessageHeader& header )
 
     return in;
 }
-

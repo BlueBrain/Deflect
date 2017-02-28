@@ -40,11 +40,11 @@
 #ifndef DELFECT_QT_QUICKRENDERER_H
 #define DELFECT_QT_QUICKRENDERER_H
 
-#include <memory>
 #include <QMutex>
 #include <QObject>
 #include <QOpenGLFramebufferObject>
 #include <QWaitCondition>
+#include <memory>
 
 QT_FORWARD_DECLARE_CLASS(QOffscreenSurface)
 QT_FORWARD_DECLARE_CLASS(QOpenGLContext)
@@ -56,15 +56,14 @@ namespace deflect
 {
 namespace qt
 {
-
 /**
  * The different targets for rendering.
  */
 enum class RenderTarget
 {
-    WINDOW,   /**< Render inside the window */
-    FBO,      /**< Render inside an FBO (offscreen) */
-    NONE      /**< Only process events without rendering */
+    WINDOW, /**< Render inside the window */
+    FBO,    /**< Render inside an FBO (offscreen) */
+    NONE    /**< Only process events without rendering */
 };
 
 /**
@@ -72,7 +71,8 @@ enum class RenderTarget
  * the surface of the window or to an offscreen surface. Note that this object
  * needs to be moved to a seperate (render)thread to function properly.
  *
- * Inspired by http://doc.qt.io/qt-5/qtquick-rendercontrol-window-multithreaded-cpp.html
+ * Inspired by
+ * http://doc.qt.io/qt-5/qtquick-rendercontrol-window-multithreaded-cpp.html
  */
 class QuickRenderer : public QObject
 {
@@ -93,22 +93,21 @@ public:
      * @param target defines where the rendering should happen. An FBO is
      *               internally created to hold the rendered pixels if needed.
      */
-    QuickRenderer( QQuickWindow& quickWindow,
-                   QQuickRenderControl& renderControl,
-                   bool multithreaded = true,
-                   RenderTarget target = RenderTarget::WINDOW );
+    QuickRenderer(QQuickWindow& quickWindow, QQuickRenderControl& renderControl,
+                  bool multithreaded = true,
+                  RenderTarget target = RenderTarget::WINDOW);
 
     /** Destructor. */
     ~QuickRenderer();
 
     /** @return OpenGL context used for rendering; lives in render thread. */
-    QOpenGLContext* context() { return _context.get(); }
+    QOpenGLContext* context();
 
     /**
      * @return nullptr if target != FBO, otherwise accessible in afterRender();
      *         lives in render thread.
      */
-    QOpenGLFramebufferObject* fbo() { return _fbo.get(); }
+    QOpenGLFramebufferObject* fbo();
 
     /**
      * To be called from GUI/main thread to initialize this object on render
@@ -146,12 +145,12 @@ private:
 
     const bool _multithreaded;
     const RenderTarget _renderTarget;
-    bool _initialized{ false };
+    bool _initialized{false};
 
     QMutex _mutex;
     QWaitCondition _cond;
 
-    bool event( QEvent* qtEvent ) final;
+    bool event(QEvent* qtEvent) final;
 
     void _onRender();
     void _ensureFBO();
@@ -165,7 +164,6 @@ private slots:
     void _initRenderControl();
     void _onStop();
 };
-
 }
 }
 

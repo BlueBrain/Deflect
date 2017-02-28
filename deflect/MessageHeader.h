@@ -42,9 +42,9 @@
 #include <deflect/api.h>
 
 #ifdef _WIN32
-    typedef unsigned __int32 uint32_t;
+typedef unsigned __int32 uint32_t;
 #else
-    #include <stdint.h>
+#include <stdint.h>
 #endif
 
 #include <string>
@@ -53,7 +53,6 @@ class QDataStream;
 
 namespace deflect
 {
-
 /** The message types. */
 enum MessageType
 {
@@ -92,22 +91,21 @@ struct MessageHeader
     DEFLECT_API MessageHeader();
 
     /** Construct a message header with a uri */
-    DEFLECT_API MessageHeader( const MessageType type, const uint32_t size,
-                               const std::string& streamUri = "" );
+    DEFLECT_API MessageHeader(const MessageType type, const uint32_t size,
+                              const std::string& streamUri = "");
 
     /** The size of the QDataStream serialized output. */
     static const size_t serializedSize;
 };
-
 }
 
 /**
  * Serialization for network, where sizeof(MessageHeader) can differ between
  * compilers.
  */
-DEFLECT_API QDataStream& operator<<( QDataStream& out,
-                                     const deflect::MessageHeader& header );
-DEFLECT_API QDataStream& operator>>( QDataStream& in,
-                                     deflect::MessageHeader& header );
+DEFLECT_API QDataStream& operator<<(QDataStream& out,
+                                    const deflect::MessageHeader& header);
+DEFLECT_API QDataStream& operator>>(QDataStream& in,
+                                    deflect::MessageHeader& header);
 
 #endif

@@ -41,8 +41,9 @@
 #define DEFLECT_STREAMEVENTTHREAD_H
 
 #include <deflect/config.h>
-#include <QObject>
+
 #include <QMutex>
+#include <QObject>
 #include <QQueue>
 
 /**
@@ -81,8 +82,7 @@ private:
     std::queue<QByteArray> sendMessagesQueue_;
 
     bool sendMessage_();
-    bool receiveMessage_( MESSAGE_TYPE& type );
-
+    bool receiveMessage_(MESSAGE_TYPE& type);
 };
 
 #endif

@@ -41,11 +41,11 @@
 #define DEFLECT_CONFIG_H
 
 #ifndef NOEXCEPT
-#  ifdef _MSC_VER
-#    define NOEXCEPT
-#  else
-#    define NOEXCEPT noexcept
-#  endif
+#ifdef _MSC_VER
+#define NOEXCEPT
+#else
+#define NOEXCEPT noexcept
+#endif
 #endif
 
 #endif

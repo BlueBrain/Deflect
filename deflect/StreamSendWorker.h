@@ -40,15 +40,14 @@
 #ifndef DEFLECT_STREAMSENDWORKER_H
 #define DEFLECT_STREAMSENDWORKER_H
 
+#include <deque>
 #include <mutex>
 #include <thread>
-#include <deque>
 
 #include "Stream.h" // Stream::Future
 
 namespace deflect
 {
-
 class StreamPrivate;
 
 /**
@@ -58,12 +57,12 @@ class StreamSendWorker
 {
 public:
     /** Create a new stream worker associated to an existing stream object. */
-    explicit StreamSendWorker( StreamPrivate& stream );
+    explicit StreamSendWorker(StreamPrivate& stream);
 
     ~StreamSendWorker();
 
     /** Enqueue an image to be send during the execution of run(). */
-    Stream::Future enqueueImage( const ImageWrapper& image );
+    Stream::Future enqueueImage(const ImageWrapper& image);
 
 private:
     /** Starts asynchronous sending of queued images. */
@@ -72,17 +71,16 @@ private:
     /** Stop the worker and clear any pending image send requests. */
     void _stop();
 
-    using Promise = std::promise< bool >;
-    using PromisePtr = std::shared_ptr< Promise >;
-    using Request = std::pair< PromisePtr, ImageWrapper >;
+    using Promise = std::promise<bool>;
+    using PromisePtr = std::shared_ptr<Promise>;
+    using Request = std::pair<PromisePtr, ImageWrapper>;
 
     StreamPrivate& _stream;
-    std::deque< Request > _requests;
+    std::deque<Request> _requests;
     std::mutex _mutex;
     std::condition_variable _condition;
     bool _running;
     std::thread _thread;
 };
-
 }
 #endif

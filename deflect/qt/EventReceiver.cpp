@@ -46,55 +46,56 @@ namespace deflect
 {
 namespace qt
 {
-
-EventReceiver::EventReceiver( Stream& stream )
+EventReceiver::EventReceiver(Stream& stream)
     : QObject()
-    , _stream( stream )
-    , _notifier( new QSocketNotifier( _stream.getDescriptor(),
-                                      QSocketNotifier::Read ))
-    , _timer( new QTimer )
+    , _stream(stream)
+    , _notifier(
+          new QSocketNotifier(_stream.getDescriptor(), QSocketNotifier::Read))
+    , _timer(new QTimer)
 {
-    connect( _notifier.get(), &QSocketNotifier::activated,
-             this, &EventReceiver::_onEvent );
+    connect(_notifier.get(), &QSocketNotifier::activated, this,
+            &EventReceiver::_onEvent);
 
     // QSocketNotifier sometimes does not fire, help with a timer
-    connect( _timer.get(), &QTimer::timeout,
-             [this] { _onEvent( _stream.getDescriptor( )); });
-    _timer->start( 1 );
+    connect(_timer.get(), &QTimer::timeout,
+            [this] { _onEvent(_stream.getDescriptor()); });
+    _timer->start(1);
 }
 
-EventReceiver::~EventReceiver() {}
-
-inline QPointF _pos( const Event& deflectEvent )
+EventReceiver::~EventReceiver()
 {
-    return QPointF{ deflectEvent.mouseX, deflectEvent.mouseY };
 }
 
-void EventReceiver::_onEvent( const int socket )
+inline QPointF _pos(const Event& deflectEvent)
 {
-    if( socket != _stream.getDescriptor( ))
+    return QPointF{deflectEvent.mouseX, deflectEvent.mouseY};
+}
+
+void EventReceiver::_onEvent(const int socket)
+{
+    if (socket != _stream.getDescriptor())
         return;
 
-    while( _stream.hasEvent( ))
+    while (_stream.hasEvent())
     {
         const Event& deflectEvent = _stream.getEvent();
 
-        switch( deflectEvent.type )
+        switch (deflectEvent.type)
         {
         case Event::EVT_CLOSE:
             _stop();
             return;
         case Event::EVT_PRESS:
-            emit pressed( _pos( deflectEvent ));
+            emit pressed(_pos(deflectEvent));
             break;
         case Event::EVT_RELEASE:
-            emit released( _pos( deflectEvent ));
+            emit released(_pos(deflectEvent));
             break;
         case Event::EVT_MOVE:
-            emit moved( _pos( deflectEvent ));
+            emit moved(_pos(deflectEvent));
             break;
         case Event::EVT_VIEW_SIZE_CHANGED:
-            emit resized( QSize{ int(deflectEvent.dx), int(deflectEvent.dy) } );
+            emit resized(QSize{int(deflectEvent.dx), int(deflectEvent.dy)});
             break;
         case Event::EVT_SWIPE_LEFT:
             emit swipeLeft();
@@ -109,21 +110,21 @@ void EventReceiver::_onEvent( const int socket )
             emit swipeDown();
             break;
         case Event::EVT_KEY_PRESS:
-            emit keyPress( deflectEvent.key, deflectEvent.modifiers,
-                           QString::fromStdString( deflectEvent.text ));
+            emit keyPress(deflectEvent.key, deflectEvent.modifiers,
+                          QString::fromStdString(deflectEvent.text));
             break;
         case Event::EVT_KEY_RELEASE:
-            emit keyRelease( deflectEvent.key, deflectEvent.modifiers,
-                             QString::fromStdString( deflectEvent.text ));
+            emit keyRelease(deflectEvent.key, deflectEvent.modifiers,
+                            QString::fromStdString(deflectEvent.text));
             break;
         case Event::EVT_TOUCH_ADD:
-            emit touchPointAdded( deflectEvent.key, _pos( deflectEvent ));
+            emit touchPointAdded(deflectEvent.key, _pos(deflectEvent));
             break;
         case Event::EVT_TOUCH_UPDATE:
-            emit touchPointUpdated( deflectEvent.key, _pos( deflectEvent ));
+            emit touchPointUpdated(deflectEvent.key, _pos(deflectEvent));
             break;
         case Event::EVT_TOUCH_REMOVE:
-            emit touchPointRemoved( deflectEvent.key, _pos( deflectEvent ));
+            emit touchPointRemoved(deflectEvent.key, _pos(deflectEvent));
             break;
         case Event::EVT_CLICK:
         case Event::EVT_DOUBLECLICK:
@@ -134,17 +135,15 @@ void EventReceiver::_onEvent( const int socket )
         }
     }
 
-    if( !_stream.isConnected( ))
+    if (!_stream.isConnected())
         _stop();
 }
 
 void EventReceiver::_stop()
 {
-    _notifier->setEnabled( false );
+    _notifier->setEnabled(false);
     _timer->stop();
     emit closed();
 }
-
 }
-
 }

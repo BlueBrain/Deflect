@@ -41,24 +41,23 @@
 #include <boost/test/unit_test.hpp>
 namespace ut = boost::unit_test;
 
-#include <deflect/ImageWrapper.h>
 #include <deflect/ImageSegmenter.h>
+#include <deflect/ImageWrapper.h>
 #include <deflect/Segment.h>
 
 #include <QMutex>
 
-static bool append( deflect::Segments& segments,
-                    const deflect::Segment& segment )
+static bool append(deflect::Segments& segments, const deflect::Segment& segment)
 {
     static QMutex lock;
-    QMutexLocker locker( &lock );
-    segments.push_back( segment );
+    QMutexLocker locker(&lock);
+    segments.push_back(segment);
     return true;
 }
 
-
-BOOST_AUTO_TEST_CASE( testImageSegmenterSegmentParameters )
+BOOST_AUTO_TEST_CASE(testImageSegmenterSegmentParameters)
 {
+    // clang-format off
     char data[] =
     {
         1,1,1, 2,2,2, 3,3,3, 4,4,4,
@@ -70,83 +69,85 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterSegmentParameters )
         1,1,1, 2,2,2, 3,3,3, 4,4,4,
         5,5,5, 6,6,6, 7,7,7, 8,8,8
     };
-    deflect::ImageWrapper imageWrapper( data, 4, 8, deflect::RGB );
+    // clang-format on
+
+    deflect::ImageWrapper imageWrapper(data, 4, 8, deflect::RGB);
 
     deflect::Segments segments;
-    const auto appendFunc = std::bind( &append, std::ref( segments ),
-                                       std::placeholders::_1 );
+    const auto appendFunc =
+        std::bind(&append, std::ref(segments), std::placeholders::_1);
 
     {
         deflect::ImageSegmenter segmenter;
 
-        segmenter.generate( imageWrapper, appendFunc );
-        BOOST_REQUIRE_EQUAL( segments.size(), 1 );
+        segmenter.generate(imageWrapper, appendFunc);
+        BOOST_REQUIRE_EQUAL(segments.size(), 1);
 
         deflect::Segment& segment = segments.front();
-        BOOST_CHECK_EQUAL( segment.parameters.x, 0 );
-        BOOST_CHECK_EQUAL( segment.parameters.y, 0 );
-        BOOST_CHECK_EQUAL( segment.parameters.width, 4 );
-        BOOST_CHECK_EQUAL( segment.parameters.height, 8 );
+        BOOST_CHECK_EQUAL(segment.parameters.x, 0);
+        BOOST_CHECK_EQUAL(segment.parameters.y, 0);
+        BOOST_CHECK_EQUAL(segment.parameters.width, 4);
+        BOOST_CHECK_EQUAL(segment.parameters.height, 8);
     }
 
     {
         deflect::ImageSegmenter segmenter;
-        segmenter.setNominalSegmentDimensions( 2, 2 );
+        segmenter.setNominalSegmentDimensions(2, 2);
 
         segments.clear();
-        segmenter.generate( imageWrapper, appendFunc );
-        BOOST_REQUIRE_EQUAL( segments.size(), 8 );
+        segmenter.generate(imageWrapper, appendFunc);
+        BOOST_REQUIRE_EQUAL(segments.size(), 8);
 
         unsigned int i = 0;
-        for( deflect::Segments::const_iterator it = segments.begin();
-             it != segments.end(); ++it, ++i )
+        for (deflect::Segments::const_iterator it = segments.begin();
+             it != segments.end(); ++it, ++i)
         {
             const deflect::Segment& segment = *it;
-            BOOST_CHECK_EQUAL( segment.parameters.x, i%4 );
-            BOOST_CHECK_EQUAL( segment.parameters.y, 2 * ( i/4 ));
-            BOOST_CHECK_EQUAL( segment.parameters.width, 2 );
-            BOOST_CHECK_EQUAL( segment.parameters.height, 2 );
+            BOOST_CHECK_EQUAL(segment.parameters.x, i % 4);
+            BOOST_CHECK_EQUAL(segment.parameters.y, 2 * (i / 4));
+            BOOST_CHECK_EQUAL(segment.parameters.width, 2);
+            BOOST_CHECK_EQUAL(segment.parameters.height, 2);
             ++i;
         }
     }
 
     {
         deflect::ImageSegmenter segmenter;
-        segmenter.setNominalSegmentDimensions( 3, 5 );
+        segmenter.setNominalSegmentDimensions(3, 5);
 
         segments.clear();
-        segmenter.generate( imageWrapper, appendFunc );
-        BOOST_REQUIRE_EQUAL( segments.size(), 4 );
+        segmenter.generate(imageWrapper, appendFunc);
+        BOOST_REQUIRE_EQUAL(segments.size(), 4);
 
         deflect::Segment& segment = segments[0];
-        BOOST_CHECK_EQUAL( segment.parameters.x, 0 );
-        BOOST_CHECK_EQUAL( segment.parameters.y, 0 );
-        BOOST_CHECK_EQUAL( segment.parameters.width, 3 );
-        BOOST_CHECK_EQUAL( segment.parameters.height, 5 );
+        BOOST_CHECK_EQUAL(segment.parameters.x, 0);
+        BOOST_CHECK_EQUAL(segment.parameters.y, 0);
+        BOOST_CHECK_EQUAL(segment.parameters.width, 3);
+        BOOST_CHECK_EQUAL(segment.parameters.height, 5);
 
         segment = segments[1];
-        BOOST_CHECK_EQUAL( segment.parameters.x, 3 );
-        BOOST_CHECK_EQUAL( segment.parameters.y, 0 );
-        BOOST_CHECK_EQUAL( segment.parameters.width, 1 );
-        BOOST_CHECK_EQUAL( segment.parameters.height, 5 );
+        BOOST_CHECK_EQUAL(segment.parameters.x, 3);
+        BOOST_CHECK_EQUAL(segment.parameters.y, 0);
+        BOOST_CHECK_EQUAL(segment.parameters.width, 1);
+        BOOST_CHECK_EQUAL(segment.parameters.height, 5);
 
         segment = segments[2];
-        BOOST_CHECK_EQUAL( segment.parameters.x, 0 );
-        BOOST_CHECK_EQUAL( segment.parameters.y, 5 );
-        BOOST_CHECK_EQUAL( segment.parameters.width, 3 );
-        BOOST_CHECK_EQUAL( segment.parameters.height, 3 );
+        BOOST_CHECK_EQUAL(segment.parameters.x, 0);
+        BOOST_CHECK_EQUAL(segment.parameters.y, 5);
+        BOOST_CHECK_EQUAL(segment.parameters.width, 3);
+        BOOST_CHECK_EQUAL(segment.parameters.height, 3);
 
         segment = segments[3];
-        BOOST_CHECK_EQUAL( segment.parameters.x, 3 );
-        BOOST_CHECK_EQUAL( segment.parameters.y, 5 );
-        BOOST_CHECK_EQUAL( segment.parameters.width, 1 );
-        BOOST_CHECK_EQUAL( segment.parameters.height, 3 );
+        BOOST_CHECK_EQUAL(segment.parameters.x, 3);
+        BOOST_CHECK_EQUAL(segment.parameters.y, 5);
+        BOOST_CHECK_EQUAL(segment.parameters.width, 1);
+        BOOST_CHECK_EQUAL(segment.parameters.height, 3);
     }
 }
 
-
-BOOST_AUTO_TEST_CASE( testImageSegmenterSingleSegmentData )
+BOOST_AUTO_TEST_CASE(testImageSegmenterSingleSegmentData)
 {
+    // clang-format off
     char dataIn[] =
     {
         1,1,1, 2,2,2, 3,3,3, 4,4,4,
@@ -158,27 +159,29 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterSingleSegmentData )
         1,1,1, 2,2,2, 3,3,3, 4,4,4,
         5,5,5, 6,6,6, 7,7,7, 8,8,8
     };
-    deflect::ImageWrapper imageWrapper( dataIn, 4, 8, deflect::RGB );
+    // clang-format on
+
+    deflect::ImageWrapper imageWrapper(dataIn, 4, 8, deflect::RGB);
     imageWrapper.compressionPolicy = deflect::COMPRESSION_OFF;
 
     deflect::ImageSegmenter segmenter;
     deflect::Segments segments;
-    const auto appendFunc = std::bind( &append, std::ref( segments ),
-                                       std::placeholders::_1 );
+    const auto appendFunc =
+        std::bind(&append, std::ref(segments), std::placeholders::_1);
 
-    segmenter.generate( imageWrapper, appendFunc );
-    BOOST_REQUIRE_EQUAL( segments.size(), 1 );
+    segmenter.generate(imageWrapper, appendFunc);
+    BOOST_REQUIRE_EQUAL(segments.size(), 1);
 
     deflect::Segment& segment = segments.front();
     const char* dataOut = segment.imageData.constData();
-    BOOST_CHECK_EQUAL_COLLECTIONS( dataIn, dataIn+imageWrapper.getBufferSize(),
-                                   dataOut,
-                                   dataOut+imageWrapper.getBufferSize( ));
+    BOOST_CHECK_EQUAL_COLLECTIONS(dataIn, dataIn + imageWrapper.getBufferSize(),
+                                  dataOut,
+                                  dataOut + imageWrapper.getBufferSize());
 }
 
-
-BOOST_AUTO_TEST_CASE( testImageSegmenterUniformSegmentationData )
+BOOST_AUTO_TEST_CASE(testImageSegmenterUniformSegmentationData)
 {
+    // clang-format off
     char dataIn[] =
     {
         1,1,1, 2,2,2, 3,3,3, 4,4,4,
@@ -191,7 +194,6 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterUniformSegmentationData )
         5,5,5, 6,6,6, 7,7,7, 8,8,8,
         1,1,1, 2,2,2, 3,3,3, 4,4,4
     };
-
     char dataSegmented[4][24] =
     {
         {
@@ -219,34 +221,35 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterUniformSegmentationData )
         3,3,3, 4,4,4
         }
     };
+    // clang-format on
 
-    deflect::ImageWrapper imageWrapper( dataIn, 4, 8, deflect::RGB );
+    deflect::ImageWrapper imageWrapper(dataIn, 4, 8, deflect::RGB);
     imageWrapper.compressionPolicy = deflect::COMPRESSION_OFF;
 
     deflect::ImageSegmenter segmenter;
     deflect::Segments segments;
-    const auto appendFunc = std::bind( &append, std::ref( segments ),
-                                       std::placeholders::_1 );
+    const auto appendFunc =
+        std::bind(&append, std::ref(segments), std::placeholders::_1);
 
-    segmenter.setNominalSegmentDimensions( 2, 4 );
-    segmenter.generate( imageWrapper, appendFunc );
-    BOOST_REQUIRE_EQUAL( segments.size(), 4 );
+    segmenter.setNominalSegmentDimensions(2, 4);
+    segmenter.generate(imageWrapper, appendFunc);
+    BOOST_REQUIRE_EQUAL(segments.size(), 4);
 
     size_t i = 0;
-    for( deflect::Segments::const_iterator it = segments.begin();
-         it != segments.end(); ++it, ++i )
+    for (deflect::Segments::const_iterator it = segments.begin();
+         it != segments.end(); ++it, ++i)
     {
         const deflect::Segment& segment = *it;
         const char* dataOut = segment.imageData.constData();
-        BOOST_CHECK_EQUAL_COLLECTIONS( dataSegmented[i], dataSegmented[i] + 24,
-                                       dataOut,
-                                       dataOut+segment.imageData.size( ));
+        BOOST_CHECK_EQUAL_COLLECTIONS(dataSegmented[i], dataSegmented[i] + 24,
+                                      dataOut,
+                                      dataOut + segment.imageData.size());
     }
 }
 
-
-BOOST_AUTO_TEST_CASE( testImageSegmenterNonUniformSegmentationData )
+BOOST_AUTO_TEST_CASE(testImageSegmenterNonUniformSegmentationData)
 {
+    // clang-format off
     char dataIn[] =
     {
         1,1,1, 2,2,2, 3,3,3,   4,4,4,
@@ -259,7 +262,6 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterNonUniformSegmentationData )
         5,5,5, 6,6,6, 7,7,7,   8,8,8,
         1,1,1, 2,2,2, 3,3,3,   4,4,4
     };
-
     char dataSegmented0[] =
     {
         1,1,1, 2,2,2, 3,3,3,
@@ -288,34 +290,36 @@ BOOST_AUTO_TEST_CASE( testImageSegmenterNonUniformSegmentationData )
         8,8,8,
         4,4,4
     };
+    // clang-format on
+
     char* dataSegmented[4];
     dataSegmented[0] = dataSegmented0;
     dataSegmented[1] = dataSegmented1;
     dataSegmented[2] = dataSegmented2;
     dataSegmented[3] = dataSegmented3;
 
-
-    deflect::ImageWrapper imageWrapper( dataIn, 4, 8, deflect::RGB );
+    deflect::ImageWrapper imageWrapper(dataIn, 4, 8, deflect::RGB);
     imageWrapper.compressionPolicy = deflect::COMPRESSION_OFF;
 
     deflect::ImageSegmenter segmenter;
     deflect::Segments segments;
-    const auto appendFunc = std::bind( &append, std::ref( segments ),
-                                       std::placeholders::_1 );
+    const auto appendFunc =
+        std::bind(&append, std::ref(segments), std::placeholders::_1);
 
-    segmenter.setNominalSegmentDimensions( 3, 5 );
-    segmenter.generate( imageWrapper, appendFunc );
-    BOOST_REQUIRE_EQUAL( segments.size(), 4 );
+    segmenter.setNominalSegmentDimensions(3, 5);
+    segmenter.generate(imageWrapper, appendFunc);
+    BOOST_REQUIRE_EQUAL(segments.size(), 4);
 
     size_t i = 0;
-    for( deflect::Segments::const_iterator it = segments.begin();
-         it != segments.end(); ++it, ++i )
+    for (deflect::Segments::const_iterator it = segments.begin();
+         it != segments.end(); ++it, ++i)
     {
         const deflect::Segment& segment = *it;
         const char* dataOut = segment.imageData.constData();
-        BOOST_CHECK_EQUAL_COLLECTIONS( dataSegmented[i],
-                                       dataSegmented[i] + segment.imageData.size(),
-                                       dataOut,
-                                       dataOut + segment.imageData.size( ));
+        BOOST_CHECK_EQUAL_COLLECTIONS(dataSegmented[i],
+                                      dataSegmented[i] +
+                                          segment.imageData.size(),
+                                      dataOut,
+                                      dataOut + segment.imageData.size());
     }
 }

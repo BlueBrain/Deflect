@@ -59,49 +59,47 @@ const char* STREAM_ID_ENV_VAR = "DEFLECT_ID";
 const char* STREAM_HOST_ENV_VAR = "DEFLECT_HOST";
 }
 
-std::string _getStreamHost( const std::string& host )
+std::string _getStreamHost(const std::string& host)
 {
-    if( !host.empty( ))
+    if (!host.empty())
         return host;
 
-    const QString streamHost = qgetenv( STREAM_HOST_ENV_VAR ).constData();
-    if( !streamHost.isEmpty( ))
+    const QString streamHost = qgetenv(STREAM_HOST_ENV_VAR).constData();
+    if (!streamHost.isEmpty())
         return streamHost.toStdString();
 
-    throw std::runtime_error( "No host provided" );
+    throw std::runtime_error("No host provided");
 }
 
-std::string _getStreamId( const std::string& id )
+std::string _getStreamId(const std::string& id)
 {
-    if( !id.empty( ))
+    if (!id.empty())
         return id;
 
-    const QString streamId = qgetenv( STREAM_ID_ENV_VAR ).constData();
-    if( !streamId.isEmpty( ))
+    const QString streamId = qgetenv(STREAM_ID_ENV_VAR).constData();
+    if (!streamId.isEmpty())
         return streamId.toStdString();
 
-    return QString( "%1_%2" ).arg( QHostInfo::localHostName(),
-                                   QString::number( rand(), 16 )).toStdString();
+    return QString("%1_%2")
+        .arg(QHostInfo::localHostName(), QString::number(rand(), 16))
+        .toStdString();
 }
 
 namespace deflect
 {
-
-StreamPrivate::StreamPrivate( const std::string& id_,
-                              const std::string& host,
-                              const unsigned short port )
-    : id( _getStreamId( id_ ))
-    , socket( _getStreamHost( host ), port )
-    , registeredForEvents( false )
+StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
+                             const unsigned short port)
+    : id(_getStreamId(id_))
+    , socket(_getStreamHost(host), port)
+    , registeredForEvents(false)
 {
-    imageSegmenter.setNominalSegmentDimensions( SEGMENT_SIZE, SEGMENT_SIZE );
+    imageSegmenter.setNominalSegmentDimensions(SEGMENT_SIZE, SEGMENT_SIZE);
 
-    if( !socket.isConnected( ))
+    if (!socket.isConnected())
         return;
 
-    socket.connect( &socket, &Socket::disconnected, [this]()
-    {
-        if( disconnectedCallback )
+    socket.connect(&socket, &Socket::disconnected, [this]() {
+        if (disconnectedCallback)
             disconnectedCallback();
     });
 
@@ -112,7 +110,7 @@ StreamPrivate::~StreamPrivate()
 {
     _sendWorker.reset();
 
-    if( !socket.isConnected( ))
+    if (!socket.isConnected())
         return;
 
     sendClose();
@@ -120,92 +118,91 @@ StreamPrivate::~StreamPrivate()
 
 void StreamPrivate::sendOpen()
 {
-    const auto message = QByteArray::number( NETWORK_PROTOCOL_VERSION );
-    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_OPEN, message.size(), id );
-    socket.send( mh, message );
+    const auto message = QByteArray::number(NETWORK_PROTOCOL_VERSION);
+    const MessageHeader mh(MESSAGE_TYPE_PIXELSTREAM_OPEN, message.size(), id);
+    socket.send(mh, message);
 }
 
 void StreamPrivate::sendClose()
 {
-    const MessageHeader mh( MESSAGE_TYPE_QUIT, 0, id );
-    socket.send( mh, QByteArray( ));
+    const MessageHeader mh(MESSAGE_TYPE_QUIT, 0, id);
+    socket.send(mh, QByteArray());
 }
 
-bool StreamPrivate::send( const ImageWrapper& image )
+bool StreamPrivate::send(const ImageWrapper& image)
 {
-    if( image.compressionPolicy != COMPRESSION_ON &&
-        image.pixelFormat != RGBA )
+    if (image.compressionPolicy != COMPRESSION_ON && image.pixelFormat != RGBA)
     {
         std::cerr << "Currently, RAW images can only be sent in RGBA format. "
-                 "Other formats support remain to be implemented." << std::endl;
+                     "Other formats support remain to be implemented."
+                  << std::endl;
         return false;
     }
 
-    if( !sendImageView( image.view ))
+    if (!sendImageView(image.view))
         return false;
 
-    const auto sendFunc = std::bind( &StreamPrivate::sendPixelStreamSegment,
-                                     this, std::placeholders::_1 );
-    return imageSegmenter.generate( image, sendFunc );
+    const auto sendFunc = std::bind(&StreamPrivate::sendPixelStreamSegment,
+                                    this, std::placeholders::_1);
+    return imageSegmenter.generate(image, sendFunc);
 }
 
-Stream::Future StreamPrivate::asyncSend( const ImageWrapper& image )
+Stream::Future StreamPrivate::asyncSend(const ImageWrapper& image)
 {
-    if( !_sendWorker )
-        _sendWorker.reset( new StreamSendWorker( *this ));
+    if (!_sendWorker)
+        _sendWorker.reset(new StreamSendWorker(*this));
 
-    return _sendWorker->enqueueImage( image );
+    return _sendWorker->enqueueImage(image);
 }
 
 bool StreamPrivate::finishFrame()
 {
     // Open a window for the PixelStream
-    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, id );
-    return socket.send( mh, QByteArray( ));
+    const MessageHeader mh(MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, id);
+    return socket.send(mh, QByteArray());
 }
 
-bool StreamPrivate::sendImageView( const View view )
+bool StreamPrivate::sendImageView(const View view)
 {
     QByteArray message;
-    message.append( (const char*)( &view ), sizeof(View) );
+    message.append((const char*)(&view), sizeof(View));
 
-    const MessageHeader mh( MESSAGE_TYPE_IMAGE_VIEW, message.size(), id );
-    return socket.send( mh, message );
+    const MessageHeader mh(MESSAGE_TYPE_IMAGE_VIEW, message.size(), id);
+    return socket.send(mh, message);
 }
 
-bool StreamPrivate::sendPixelStreamSegment( const Segment& segment )
+bool StreamPrivate::sendPixelStreamSegment(const Segment& segment)
 {
     // Create message header
-    const uint32_t segmentSize( sizeof( SegmentParameters ) +
-                                segment.imageData.size( ));
-    const MessageHeader mh( MESSAGE_TYPE_PIXELSTREAM, segmentSize, id );
+    const uint32_t segmentSize(sizeof(SegmentParameters) +
+                               segment.imageData.size());
+    const MessageHeader mh(MESSAGE_TYPE_PIXELSTREAM, segmentSize, id);
 
     // This byte array will hold the message to be sent over the socket
     QByteArray message;
 
     // Message payload part 1: segment parameters
-    message.append( (const char*)( &segment.parameters ),
-                    sizeof( SegmentParameters ) );
+    message.append((const char*)(&segment.parameters),
+                   sizeof(SegmentParameters));
 
     // Message payload part 2: image data
-    message.append( segment.imageData );
+    message.append(segment.imageData);
 
-    return socket.send( mh, message );
+    return socket.send(mh, message);
 }
 
-bool StreamPrivate::sendSizeHints( const SizeHints& hints )
+bool StreamPrivate::sendSizeHints(const SizeHints& hints)
 {
-    const MessageHeader mh( MESSAGE_TYPE_SIZE_HINTS, sizeof( hints ), id );
+    const MessageHeader mh(MESSAGE_TYPE_SIZE_HINTS, sizeof(hints), id);
 
     QByteArray message;
-    message.append( (const char*)( &hints ), sizeof( hints ) );
-    return socket.send( mh, message );
+    message.append((const char*)(&hints), sizeof(hints));
+    return socket.send(mh, message);
 }
 
-bool StreamPrivate::send( const QByteArray data )
+bool StreamPrivate::send(const QByteArray data)
 {
-    const MessageHeader mh( MESSAGE_TYPE_DATA, data.size(), id );
-    return socket.send( mh, data );
+    const MessageHeader mh(MESSAGE_TYPE_DATA, data.size(), id);
+    return socket.send(mh, data);
 }
-
 }

@@ -40,15 +40,14 @@
 #ifndef DEFLECT_FRAMEDISPATCHER_H
 #define DEFLECT_FRAMEDISPATCHER_H
 
+#include <deflect/Segment.h>
 #include <deflect/api.h>
 #include <deflect/types.h>
-#include <deflect/Segment.h>
 
 #include <QObject>
 
 namespace deflect
 {
-
 /**
  * Gather segments from multiple sources and dispatch full frames.
  */
@@ -70,7 +69,7 @@ public slots:
      * @param uri Identifier for the stream
      * @param sourceIndex Identifier for the source in this stream
      */
-    void addSource( QString uri, size_t sourceIndex );
+    void addSource(QString uri, size_t sourceIndex);
 
     /**
      * Remove a source of Segments for a Stream.
@@ -78,7 +77,7 @@ public slots:
      * @param uri Identifier for the stream
      * @param sourceIndex Identifier for the source in this stream
      */
-    void removeSource( QString uri, size_t sourceIndex );
+    void removeSource(QString uri, size_t sourceIndex);
 
     /**
      * Process a new Segment.
@@ -88,8 +87,8 @@ public slots:
      * @param segment to process
      * @param view to which the segment belongs
      */
-    void processSegment( QString uri, size_t sourceIndex,
-                         deflect::Segment segment, deflect::View view );
+    void processSegment(QString uri, size_t sourceIndex,
+                        deflect::Segment segment, deflect::View view);
 
     /**
      * The given source has finished sending segments for the current frame.
@@ -97,7 +96,7 @@ public slots:
      * @param uri Identifier for the stream
      * @param sourceIndex Identifier for the source in the stream
      */
-    void processFrameFinished( QString uri, size_t sourceIndex );
+    void processFrameFinished(QString uri, size_t sourceIndex);
 
     /**
      * Request the dispatching of a new frame for any stream (mono/stereo).
@@ -110,14 +109,14 @@ public slots:
      *
      * @param uri Identifier for the stream
      */
-    void requestFrame( QString uri );
+    void requestFrame(QString uri);
 
     /**
      * Delete all the buffers for a Stream.
      *
      * @param uri Identifier for the stream
      */
-    void deleteStream( QString uri );
+    void deleteStream(QString uri);
 
 signals:
     /**
@@ -125,34 +124,33 @@ signals:
      *
      * @param uri Identifier for the stream
      */
-    void pixelStreamOpened( QString uri );
+    void pixelStreamOpened(QString uri);
 
     /**
      * Notify that a pixel stream has been closed.
      *
      * @param uri Identifier for the stream
      */
-    void pixelStreamClosed( QString uri );
+    void pixelStreamClosed(QString uri);
 
     /**
      * Dispatch a full frame.
      *
      * @param frame The latest frame available for a stream
      */
-    void sendFrame( deflect::FramePtr frame );
+    void sendFrame(deflect::FramePtr frame);
 
     /**
      * Notify that a pixel stream has exceeded its maximum allowed size.
      *
      * @param uri Identifier for the stream
      */
-    void bufferSizeExceeded( QString uri );
+    void bufferSizeExceeded(QString uri);
 
 private:
     class Impl;
     std::unique_ptr<Impl> _impl;
 };
-
 }
 
 #endif

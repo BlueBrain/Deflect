@@ -43,58 +43,58 @@ namespace ut = boost::unit_test;
 
 #include <deflect/ImageWrapper.h>
 
-BOOST_AUTO_TEST_CASE( testImageBufferSize )
+BOOST_AUTO_TEST_CASE(testImageBufferSize)
 {
-    char* data = 0;
+    char* data = nullptr;
 
     {
-        deflect::ImageWrapper imageWrapper( data, 7, 5, deflect::ARGB );
-        BOOST_CHECK_EQUAL( imageWrapper.getBufferSize(), 7*5*4 );
+        deflect::ImageWrapper imageWrapper(data, 7, 5, deflect::ARGB);
+        BOOST_CHECK_EQUAL(imageWrapper.getBufferSize(), 7 * 5 * 4);
     }
     {
-        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::ARGB );
-        BOOST_CHECK_EQUAL( imageWrapper.getBufferSize(), 256*512*4 );
+        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::ARGB);
+        BOOST_CHECK_EQUAL(imageWrapper.getBufferSize(), 256 * 512 * 4);
     }
     {
-        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::RGB );
-        BOOST_CHECK_EQUAL( imageWrapper.getBufferSize(), 256*512*3 );
+        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::RGB);
+        BOOST_CHECK_EQUAL(imageWrapper.getBufferSize(), 256 * 512 * 3);
     }
 }
 
-
-BOOST_AUTO_TEST_CASE( testImageBytesPerPixel )
+BOOST_AUTO_TEST_CASE(testImageBytesPerPixel)
 {
-    char* data = 0;
+    char* data = nullptr;
 
     {
-        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::RGB );
-        BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 3 );
+        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::RGB);
+        BOOST_CHECK_EQUAL(imageWrapper.getBytesPerPixel(), 3);
     }
     {
-        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::RGBA );
-        BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 4 );
+        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::RGBA);
+        BOOST_CHECK_EQUAL(imageWrapper.getBytesPerPixel(), 4);
     }
     {
-        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::ARGB );
-        BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 4 );
+        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::ARGB);
+        BOOST_CHECK_EQUAL(imageWrapper.getBytesPerPixel(), 4);
     }
     {
-        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::BGR );
-        BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 3 );
+        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::BGR);
+        BOOST_CHECK_EQUAL(imageWrapper.getBytesPerPixel(), 3);
     }
     {
-        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::BGRA );
-        BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 4 );
+        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::BGRA);
+        BOOST_CHECK_EQUAL(imageWrapper.getBytesPerPixel(), 4);
     }
     {
-        deflect::ImageWrapper imageWrapper( data, 256, 512, deflect::ABGR );
-        BOOST_CHECK_EQUAL( imageWrapper.getBytesPerPixel(), 4 );
+        deflect::ImageWrapper imageWrapper(data, 256, 512, deflect::ABGR);
+        BOOST_CHECK_EQUAL(imageWrapper.getBytesPerPixel(), 4);
     }
 }
 
-BOOST_AUTO_TEST_CASE( testImageReorderGLImageData )
+BOOST_AUTO_TEST_CASE(testImageReorderGLImageData)
 {
     {
+        // clang-format off
         char dataIn[] =
         {
             1,1,1, 2,2,2, 3,3,3, 4,4,4,
@@ -105,13 +105,16 @@ BOOST_AUTO_TEST_CASE( testImageReorderGLImageData )
             5,5,5, 6,6,6, 7,7,7, 8,8,8,
             1,1,1, 2,2,2, 3,3,3, 4,4,4
         };
+        // clang-format on
 
-        deflect::ImageWrapper::swapYAxis( dataIn, 4, 2, 3 );
+        deflect::ImageWrapper::swapYAxis(dataIn, 4, 2, 3);
 
-        BOOST_CHECK_EQUAL_COLLECTIONS( dataIn, dataIn+24, dataOut, dataOut+24 );
+        BOOST_CHECK_EQUAL_COLLECTIONS(dataIn, dataIn + 24, dataOut,
+                                      dataOut + 24);
     }
 
     {
+        // clang-format off
         char dataIn[] =
         {
             1,1,1, 2,2,2,
@@ -126,13 +129,16 @@ BOOST_AUTO_TEST_CASE( testImageReorderGLImageData )
             3,3,3, 4,4,4,
             1,1,1, 2,2,2
         };
+        // clang-format on
 
-        deflect::ImageWrapper::swapYAxis( dataIn, 2, 4, 3 );
+        deflect::ImageWrapper::swapYAxis(dataIn, 2, 4, 3);
 
-        BOOST_CHECK_EQUAL_COLLECTIONS( dataIn, dataIn+24, dataOut, dataOut+24 );
+        BOOST_CHECK_EQUAL_COLLECTIONS(dataIn, dataIn + 24, dataOut,
+                                      dataOut + 24);
     }
 
     {
+        // clang-format off
         char dataIn[] =
         {
             1,1,1,2, 2,2,3,3,
@@ -145,13 +151,16 @@ BOOST_AUTO_TEST_CASE( testImageReorderGLImageData )
             3,4,4,4, 5,5,5,6,
             1,1,1,2, 2,2,3,3
         };
+        // clang-format on
 
-        deflect::ImageWrapper::swapYAxis( dataIn, 2, 3, 4 );
+        deflect::ImageWrapper::swapYAxis(dataIn, 2, 3, 4);
 
-        BOOST_CHECK_EQUAL_COLLECTIONS( dataIn, dataIn+24, dataOut, dataOut+24 );
+        BOOST_CHECK_EQUAL_COLLECTIONS(dataIn, dataIn + 24, dataOut,
+                                      dataOut + 24);
     }
 
     {
+        // clang-format off
         char dataIn[] =
         {
             1,1,1,2, 2,2,3,3,
@@ -164,11 +173,12 @@ BOOST_AUTO_TEST_CASE( testImageReorderGLImageData )
             3,4,4,4, 5,5,5,6,
             6,6,7,7, 7,8,8,8
         };
+        // clang-format on
 
-        deflect::ImageWrapper::swapYAxis( dataIn, 2, 3, 4 );
-        deflect::ImageWrapper::swapYAxis( dataIn, 2, 3, 4 );
+        deflect::ImageWrapper::swapYAxis(dataIn, 2, 3, 4);
+        deflect::ImageWrapper::swapYAxis(dataIn, 2, 3, 4);
 
-        BOOST_CHECK_EQUAL_COLLECTIONS( dataIn, dataIn+24, dataOut, dataOut+24 );
+        BOOST_CHECK_EQUAL_COLLECTIONS(dataIn, dataIn + 24, dataOut,
+                                      dataOut + 24);
     }
-
 }

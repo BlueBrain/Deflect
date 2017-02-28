@@ -44,7 +44,6 @@
 
 namespace deflect
 {
-
 /**
  * A struct that contains hints about minimum, maximum and preferred sizes of a
  * streamer which can be interpreted by the stream server accordingly.
@@ -76,7 +75,7 @@ struct SizeHints
 };
 
 /** @return true if rhs and this are equal for all sizes. */
-inline bool operator == ( const SizeHints& lhs, const SizeHints& rhs ) NOEXCEPT
+inline bool operator==(const SizeHints& lhs, const SizeHints& rhs) NOEXCEPT
 {
     return lhs.minWidth == rhs.minWidth && lhs.minHeight == rhs.minHeight &&
            lhs.maxWidth == rhs.maxWidth && lhs.maxHeight == rhs.maxHeight &&
@@ -85,11 +84,10 @@ inline bool operator == ( const SizeHints& lhs, const SizeHints& rhs ) NOEXCEPT
 }
 
 /** @return true if rhs and this not equal for any size. */
-inline bool operator != ( const SizeHints& lhs, const SizeHints& rhs ) NOEXCEPT
+inline bool operator!=(const SizeHints& lhs, const SizeHints& rhs) NOEXCEPT
 {
     return !(lhs == rhs);
 }
-
 }
 
 #endif

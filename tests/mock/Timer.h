@@ -47,20 +47,11 @@ class Timer
 public:
     using clock = std::chrono::high_resolution_clock;
 
-    void start()
-    {
-        _startTime = clock::now();
-    }
-
-    void restart()
-    {
-        start();
-    }
-
+    void start() { _startTime = clock::now(); }
+    void restart() { start(); }
     float elapsed()
     {
-        const auto now = clock::now();
-        return std::chrono::duration<float>{ now - _startTime }.count();
+        return std::chrono::duration<float>{clock::now() - _startTime}.count();
     }
 
 private:

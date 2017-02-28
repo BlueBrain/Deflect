@@ -42,10 +42,10 @@
 #ifndef DEFLECT_STREAM_H
 #define DEFLECT_STREAM_H
 
-#include <deflect/api.h>
-#include <deflect/types.h>
 #include <deflect/Event.h>
 #include <deflect/ImageWrapper.h>
+#include <deflect/api.h>
+#include <deflect/types.h>
 
 #include <functional>
 #include <future>
@@ -56,7 +56,6 @@ class Application;
 
 namespace deflect
 {
-
 class StreamPrivate;
 
 /**
@@ -104,8 +103,8 @@ public:
      * @throw std::runtime_error if no host was provided.
      * @version 1.0
      */
-    DEFLECT_API Stream( const std::string& id, const std::string& host,
-                        unsigned short port = 1701 );
+    DEFLECT_API Stream(const std::string& id, const std::string& host,
+                       unsigned short port = 1701);
 
     /** Destruct the Stream, closing the connection. @version 1.0 */
     DEFLECT_API virtual ~Stream();
@@ -122,7 +121,7 @@ public:
     /** @name Asynchronous send API */
     //@{
     /** Future signaling success of asyncSend(). @version 1.5 */
-    using Future = std::future< bool >;
+    using Future = std::future<bool>;
 
     /**
      * Send an image and finish the frame asynchronously.
@@ -137,7 +136,7 @@ public:
      * @see send()
      * @version 1.1
      */
-    DEFLECT_API Future asyncSend( const ImageWrapper& image );
+    DEFLECT_API Future asyncSend(const ImageWrapper& image);
     //@}
 
     /** @name Synchronous send API */
@@ -151,7 +150,7 @@ public:
      * @version 1.0
      * @sa finishFrame()
      */
-    DEFLECT_API bool send( const ImageWrapper& image );
+    DEFLECT_API bool send(const ImageWrapper& image);
 
     /**
      * Notify that all the images for this frame have been sent.
@@ -187,7 +186,7 @@ public:
      * @return true if the registration could be or was already established.
      * @version 1.0
      */
-    DEFLECT_API bool registerForEvents( bool exclusive = false );
+    DEFLECT_API bool registerForEvents(bool exclusive = false);
 
     /**
      * Is this stream registered to receive events.
@@ -247,7 +246,7 @@ public:
      * @param hints the new size hints for the host
      * @version 1.2
      */
-    DEFLECT_API void sendSizeHints( const SizeHints& hints );
+    DEFLECT_API void sendSizeHints(const SizeHints& hints);
 
     /**
      * Send data to the Server.
@@ -257,7 +256,7 @@ public:
      * @return true if the data could be sent, false otherwise
      * @version 1.3
      */
-    DEFLECT_API bool sendData( const char* data, size_t count );
+    DEFLECT_API bool sendData(const char* data, size_t count);
 
     /**
      * Set a function to be be called just after the stream gets disconnected.
@@ -265,17 +264,16 @@ public:
      * @note replaces the previous disconnected signal
      * @version 1.5
      */
-    void setDisconnectedCallback( std::function<void()> callback );
+    void setDisconnectedCallback(std::function<void()> callback);
 
 private:
-    Stream( const Stream& ) = delete;
-    const Stream& operator = ( const Stream& ) = delete;
+    Stream(const Stream&) = delete;
+    const Stream& operator=(const Stream&) = delete;
 
-    std::unique_ptr< StreamPrivate > _impl;
+    std::unique_ptr<StreamPrivate> _impl;
 
     friend class ::Application;
 };
-
 }
 
 #endif

@@ -41,21 +41,18 @@
 
 namespace deflect
 {
-
 QSize Frame::computeDimensions() const
 {
-    QSize size( 0, 0 );
+    QSize size(0, 0);
 
-    for( size_t i = 0; i < segments.size(); ++i )
+    for (size_t i = 0; i < segments.size(); ++i)
     {
         const deflect::SegmentParameters& params = segments[i].parameters;
-        size.setWidth( std::max( size.width(),
-                                 (int)( params.width + params.x )));
-        size.setHeight( std::max( size.height(),
-                                  (int)( params.height + params.y )));
+        size.setWidth(std::max(size.width(), (int)(params.width + params.x)));
+        size.setHeight(
+            std::max(size.height(), (int)(params.height + params.y)));
     }
 
     return size;
 }
-
 }

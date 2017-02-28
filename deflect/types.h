@@ -48,15 +48,19 @@
 
 namespace deflect
 {
-
 /** The different types of view. */
-enum class View : std::uint8_t { mono, left_eye, right_eye };
+enum class View : std::uint8_t
+{
+    mono,
+    left_eye,
+    right_eye
+};
 
 /** Cast an enum class value to its underlying type. */
 template <typename E>
-constexpr typename std::underlying_type<E>::type as_underlying_type( E e )
+constexpr typename std::underlying_type<E>::type as_underlying_type(E e)
 {
-    return static_cast<typename std::underlying_type<E>::type>( e );
+    return static_cast<typename std::underlying_type<E>::type>(e);
 }
 
 class EventReceiver;
@@ -73,17 +77,16 @@ struct Segment;
 struct SegmentParameters;
 struct SizeHints;
 
-typedef std::shared_ptr< Frame > FramePtr;
-typedef std::vector< Segment > Segments;
-typedef std::vector< SegmentParameters > SegmentParametersList;
+typedef std::shared_ptr<Frame> FramePtr;
+typedef std::vector<Segment> Segments;
+typedef std::vector<SegmentParameters> SegmentParametersList;
 
 namespace qt
 {
-    class QuickRenderer;
-    class QmlStreamer;
-    class TouchInjector;
+class QuickRenderer;
+class QmlStreamer;
+class TouchInjector;
 }
-
 }
 
 #endif

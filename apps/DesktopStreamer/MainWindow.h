@@ -44,12 +44,12 @@
 #include <apps/DesktopStreamer/ui_MainWindow.h>
 
 #ifdef __APPLE__
-#  include <deflect/AppNapSuspender.h>
+#include <deflect/AppNapSuspender.h>
 #endif
 
 #include <QMainWindow>
-#include <QTimer>
 #include <QTime>
+#include <QTimer>
 #include <map>
 #include <memory>
 
@@ -63,20 +63,23 @@ public:
     MainWindow();
     ~MainWindow();
 
-    const QAbstractItemModel* getItemModel() const { return _listView->model();}
+    const QAbstractItemModel* getItemModel() const
+    {
+        return _listView->model();
+    }
 
 protected:
-    void closeEvent( QCloseEvent* event ) final;
+    void closeEvent(QCloseEvent* event) final;
 
 private slots:
     void _update();
-    void _onStreamEventsBoxClicked( bool checked );
+    void _onStreamEventsBoxClicked(bool checked);
     void _openAboutWidget();
 
 private:
-    typedef std::shared_ptr< Stream > StreamPtr;
-    typedef std::shared_ptr< const Stream > ConstStreamPtr;
-    typedef std::map< QPersistentModelIndex, StreamPtr > StreamMap;
+    typedef std::shared_ptr<Stream> StreamPtr;
+    typedef std::shared_ptr<const Stream> ConstStreamPtr;
+    typedef std::map<QPersistentModelIndex, StreamPtr> StreamMap;
     StreamMap _streams;
     uint32_t _streamID;
 
@@ -91,8 +94,8 @@ private:
     void _showMultiWindowMode();
     void _showSingleWindowMode();
 
-    void _showRemoteControl( bool visible );
-    void _showAdvancedSettings( bool visible );
+    void _showRemoteControl(bool visible);
+    void _showAdvancedSettings(bool visible);
 
     void _startStreaming();
     void _stopStreaming();
@@ -101,7 +104,7 @@ private:
     void _updateSingleStream();
     void _showConnectionErrorStatus();
 
-    void _deselect( ConstStreamPtr stream );
+    void _deselect(ConstStreamPtr stream);
     void _processStreamEvents();
     void _shareDesktopUpdate();
     void _regulateFrameRate();

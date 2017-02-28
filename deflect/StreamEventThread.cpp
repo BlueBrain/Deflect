@@ -69,17 +69,17 @@ void StreamEventThread::run()
 {
     put_flog(LOG_DEBUG, "started");
 
-    while(true)
+    while (true)
     {
         // break here if we had a failure
-        if( !sendMessage_( ))
+        if (!sendMessage_())
             break;
 
         MESSAGE_TYPE type;
-        receiveMessage_( type );
+        receiveMessage_(type);
 
         // make sure the socket is still connected
-        if(socket_->state() != QAbstractSocket::ConnectedState)
+        if (socket_->state() != QAbstractSocket::ConnectedState)
         {
             put_flog(LOG_ERROR, "socket disconnected");
             break;
@@ -92,7 +92,7 @@ void StreamEventThread::run()
         {
             QMutexLocker locker(&disconnectFlagMutex_);
 
-            if(disconnectFlag_ == true)
+            if (disconnectFlag_ == true)
             {
                 break;
             }
@@ -109,7 +109,7 @@ void StreamEventThread::run()
 bool StreamEventThread::queueMessage(QByteArray message)
 {
     // only queue the message if we're connected
-    if(!isConnected())
+    if (!isConnected())
     {
         return false;
     }
@@ -132,18 +132,18 @@ bool StreamEventThread::sendMessage_()
     {
         QMutexLocker locker(&sendMessagesQueueMutex_);
 
-        if(sendMessagesQueue_.size() > 0)
+        if (sendMessagesQueue_.size() > 0)
         {
             sendMessage = sendMessagesQueue_.front();
             sendMessagesQueue_.pop();
         }
     }
 
-    if(!sendMessage.isEmpty())
+    if (!sendMessage.isEmpty())
     {
         bool success = socketSendMessage(sendMessage);
 
-        if(!success)
+        if (!success)
         {
             put_flog(LOG_ERROR, "error sending message");
             return false;
@@ -152,11 +152,11 @@ bool StreamEventThread::sendMessage_()
     return true;
 }
 
-bool StreamEventThread::receiveMessage_( MESSAGE_TYPE& type )
+bool StreamEventThread::receiveMessage_(MESSAGE_TYPE& type)
 {
     type = MESSAGE_TYPE_NONE;
 
-    if(socket_->bytesAvailable() < (int)sizeof(MessageHeader))
+    if (socket_->bytesAvailable() < (int)sizeof(MessageHeader))
         return false;
 
     MessageHeader messageHeader;
@@ -164,7 +164,7 @@ bool StreamEventThread::receiveMessage_( MESSAGE_TYPE& type )
 
     bool success = socketReceiveMessage(messageHeader, message);
 
-    if( !success )
+    if (!success)
     {
         put_flog(LOG_ERROR, "error receiving message");
         return false;
@@ -173,20 +173,21 @@ bool StreamEventThread::receiveMessage_( MESSAGE_TYPE& type )
     type = messageHeader.type;
 
     // handle the message
-    if(type == MESSAGE_TYPE_ACK)
+    if (type == MESSAGE_TYPE_ACK)
     {
     }
-    else if(type == MESSAGE_TYPE_INTERACTION)
+    else if (type == MESSAGE_TYPE_INTERACTION)
     {
-        InteractionState interactionState = *(InteractionState *)(message.data());
+        InteractionState interactionState =
+            *(InteractionState*)(message.data());
         emit received(interactionState);
     }
-    else if(type == MESSAGE_TYPE_BIND_INTERACTION_REPLY)
+    else if (type == MESSAGE_TYPE_BIND_INTERACTION_REPLY)
     {
         bool success = *(bool*)(message.data());
         emit receivedInteractionBindReply(success);
     }
-    else if(type == MESSAGE_TYPE_QUIT)
+    else if (type == MESSAGE_TYPE_QUIT)
     {
         put_flog(LOG_INFO, "Received QUIT - TODO implement this action");
     }
@@ -197,4 +198,3 @@ bool StreamEventThread::receiveMessage_( MESSAGE_TYPE& type )
     }
     return true;
 }
-

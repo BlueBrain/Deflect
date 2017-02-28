@@ -45,18 +45,17 @@
 #include <deflect/api.h>
 
 #include "Event.h"
-#include "MessageHeader.h"
 #include "ImageSegmenter.h"
+#include "MessageHeader.h"
 #include "Socket.h" // member
 #include "Stream.h" // Stream::Future
 
 #include <functional>
-#include <string>
 #include <memory>
+#include <string>
 
 namespace deflect
 {
-
 class StreamSendWorker;
 
 /**
@@ -72,8 +71,8 @@ public:
      * @param host Address of the target Server instance.
      * @param port Port of the target Server instance.
      */
-    StreamPrivate( const std::string& id, const std::string& host,
-                   unsigned short port );
+    StreamPrivate(const std::string& id, const std::string& host,
+                  unsigned short port);
 
     /** Destructor, close the Stream. */
     ~StreamPrivate();
@@ -91,29 +90,29 @@ public:
     bool close();
 
     /** @sa Stream::send */
-    bool send( const ImageWrapper& image );
+    bool send(const ImageWrapper& image);
 
     /** @sa Stream::asyncSend */
-    Stream::Future asyncSend( const ImageWrapper& image );
+    Stream::Future asyncSend(const ImageWrapper& image);
 
     /** @sa Stream::finishFrame */
     bool finishFrame();
 
     /** Send the view for the image to be sent with sendPixelStreamSegment. */
-    bool sendImageView( View view );
+    bool sendImageView(View view);
 
     /**
      * Send a Segment through the Stream.
      * @param segment An image segment with valid parameters and data
      * @return true if the message could be sent
      */
-    DEFLECT_API bool sendPixelStreamSegment( const Segment& segment );
+    DEFLECT_API bool sendPixelStreamSegment(const Segment& segment);
 
     /** @sa Stream::sendSizeHints */
-    bool sendSizeHints( const SizeHints& hints );
+    bool sendSizeHints(const SizeHints& hints);
 
     /** Send a user-defined block of data to the server. */
-    bool send( QByteArray data );
+    bool send(QByteArray data);
 
     /** The stream identifier. */
     const std::string id;
@@ -130,8 +129,7 @@ public:
     std::function<void()> disconnectedCallback;
 
 private:
-    std::unique_ptr< StreamSendWorker > _sendWorker;
+    std::unique_ptr<StreamSendWorker> _sendWorker;
 };
-
 }
 #endif

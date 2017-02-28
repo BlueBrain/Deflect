@@ -43,11 +43,11 @@
 
 namespace deflect
 {
+const uint32_t Event::serializedSize = 3 * sizeof(quint32) +
+                                       4 * sizeof(double) + 3 * sizeof(bool) +
+                                       UNICODE_TEXT_SIZE;
 
-const uint32_t Event::serializedSize = 3*sizeof(quint32) + 4*sizeof(double) +
-                                       3*sizeof(bool) + UNICODE_TEXT_SIZE;
-
-QDataStream& operator<<( QDataStream& out, const deflect::Event& event )
+QDataStream& operator<<(QDataStream& out, const deflect::Event& event)
 {
     out << (qint32)event.type;
 
@@ -58,13 +58,13 @@ QDataStream& operator<<( QDataStream& out, const deflect::Event& event )
 
     out << (qint32)event.key << (qint32)event.modifiers;
 
-    for( size_t i = 0; i < UNICODE_TEXT_SIZE; ++i )
+    for (size_t i = 0; i < UNICODE_TEXT_SIZE; ++i)
         out << (quint8)event.text[i];
 
     return out;
 }
 
-QDataStream& operator>>( QDataStream& in, deflect::Event& event )
+QDataStream& operator>>(QDataStream& in, deflect::Event& event)
 {
     qint32 type;
     in >> type;
@@ -81,7 +81,7 @@ QDataStream& operator>>( QDataStream& in, deflect::Event& event )
     event.modifiers = (int)modifiers;
 
     quint8 character;
-    for( size_t i = 0; i < UNICODE_TEXT_SIZE; ++i )
+    for (size_t i = 0; i < UNICODE_TEXT_SIZE; ++i)
     {
         in >> character;
         event.text[i] = (char)character;
@@ -89,5 +89,4 @@ QDataStream& operator>>( QDataStream& in, deflect::Event& event )
 
     return in;
 }
-
 }

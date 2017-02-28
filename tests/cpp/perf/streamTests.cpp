@@ -56,19 +56,19 @@ namespace ut = boost::unit_test;
 // performance when streaming pixels.
 
 #ifdef _MSC_VER
-#  define WIDTH  (800u)
-#  define HEIGHT (600u)
-#  define NIMAGES (10u)
+#define WIDTH (800u)
+#define HEIGHT (600u)
+#define NIMAGES (10u)
 #else
-#  define WIDTH  (3840u)
-#  define HEIGHT (2160u)
-#  define NIMAGES (100u)
+#define WIDTH (3840u)
+#define HEIGHT (2160u)
+#define NIMAGES (100u)
 #endif
 #define NPIXELS (WIDTH * HEIGHT)
-#define NBYTES  (NPIXELS * 4u)
+#define NBYTES (NPIXELS * 4u)
 // #define NTHREADS 20 // QT default if not defined
 
-BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp );
+BOOST_GLOBAL_FIXTURE(MinimalGlobalQtApp);
 
 class DCThread : public QThread
 {
@@ -76,67 +76,64 @@ class DCThread : public QThread
     {
         Timer timer;
         uint8_t* pixels = new uint8_t[NBYTES];
-        ::memset( pixels, 0, NBYTES );
-        deflect::ImageWrapper image( pixels, WIDTH, HEIGHT, deflect::RGBA );
+        ::memset(pixels, 0, NBYTES);
+        deflect::ImageWrapper image(pixels, WIDTH, HEIGHT, deflect::RGBA);
 
-        deflect::Stream stream( "test", "localhost" );
-        BOOST_CHECK( stream.isConnected( ));
+        deflect::Stream stream("test", "localhost");
+        BOOST_CHECK(stream.isConnected());
 
         image.compressionPolicy = deflect::COMPRESSION_OFF;
         timer.start();
-        for( size_t i = 0; i < NIMAGES; ++i )
+        for (size_t i = 0; i < NIMAGES; ++i)
         {
-            BOOST_CHECK( stream.send( image ));
-            BOOST_CHECK( stream.finishFrame( ));
+            BOOST_CHECK(stream.send(image));
+            BOOST_CHECK(stream.finishFrame());
         }
         float time = timer.elapsed();
-        std::cout << "raw " << NPIXELS / float(1024*1024) / time * NIMAGES
+        std::cout << "raw " << NPIXELS / float(1024 * 1024) / time * NIMAGES
                   << " megapixel/s (" << NIMAGES / time << " FPS)" << std::endl;
-
 
         image.compressionPolicy = deflect::COMPRESSION_ON;
         timer.restart();
-        for( size_t i = 0; i < NIMAGES; ++i )
+        for (size_t i = 0; i < NIMAGES; ++i)
         {
-            BOOST_CHECK( stream.send( image ));
-            BOOST_CHECK( stream.finishFrame( ));
+            BOOST_CHECK(stream.send(image));
+            BOOST_CHECK(stream.finishFrame());
         }
         time = timer.elapsed();
-        std::cout << "blk " << NPIXELS / float(1024*1024) / time * NIMAGES
-                  << " megapixel/s (" << NIMAGES / time << " FPS)"
-                  << std::endl;
+        std::cout << "blk " << NPIXELS / float(1024 * 1024) / time * NIMAGES
+                  << " megapixel/s (" << NIMAGES / time << " FPS)" << std::endl;
 
-        for( size_t i = 0; i < NBYTES; ++i )
-            pixels[i] = uint8_t( qrand( ));
+        for (size_t i = 0; i < NBYTES; ++i)
+            pixels[i] = uint8_t(qrand());
         timer.restart();
-        for( size_t i = 0; i < NIMAGES; ++i )
+        for (size_t i = 0; i < NIMAGES; ++i)
         {
-            BOOST_CHECK( stream.send( image ));
-            BOOST_CHECK( stream.finishFrame( ));
+            BOOST_CHECK(stream.send(image));
+            BOOST_CHECK(stream.finishFrame());
         }
         time = timer.elapsed();
-        std::cout << "rnd " << NPIXELS / float(1024*1024) / time * NIMAGES
-                  << " megapixel/s (" << NIMAGES / time << " FPS)"
-                  << std::endl;
+        std::cout << "rnd " << NPIXELS / float(1024 * 1024) / time * NIMAGES
+                  << " megapixel/s (" << NIMAGES / time << " FPS)" << std::endl;
 
         std::cout << "raw: uncompressed, "
                   << "blk: Compressed blank images, "
                   << "rnd: Compressed random image content" << std::endl;
 
-        delete [] pixels;
+        delete[] pixels;
         QCoreApplication::instance()->exit();
     }
 };
 
-BOOST_AUTO_TEST_CASE( testSocketConnection )
+BOOST_AUTO_TEST_CASE(testSocketConnection)
 {
     deflect::Server server;
 #ifdef NTHREADS
-    QThreadPool::globalInstance()->setMaxThreadCount( NTHREADS );
+    QThreadPool::globalInstance()->setMaxThreadCount(NTHREADS);
 #endif
 
     DCThread thread;
     thread.start();
     QCoreApplication::instance()->exec();
-    BOOST_CHECK( thread.wait( ));
+    BOOST_CHECK(thread.wait());
 }

@@ -52,14 +52,13 @@ namespace deflect
 {
 namespace qt
 {
-
 /**
  * Inject complete QTouchEvent from separate touch added/updated/removed events.
  */
 class TouchInjector : public QObject
 {
     Q_OBJECT
-    Q_DISABLE_COPY( TouchInjector )
+    Q_DISABLE_COPY(TouchInjector)
 
 public:
     /** Function to map normalized coordinates to scene / window coordinates. */
@@ -70,13 +69,13 @@ public:
      * @param target the target QObject that should receive the touch events
      * @param mapFunc the function to generate scene / window coordinates
      */
-    TouchInjector( QObject& target, MapToSceneFunc mapFunc );
+    TouchInjector(QObject& target, MapToSceneFunc mapFunc);
 
     /**
      * Create a touch injector for a QWindow.
      * @param window the target window that should receive the touch events
      */
-    static std::unique_ptr<TouchInjector> create( QWindow& window );
+    static std::unique_ptr<TouchInjector> create(QWindow& window);
 
     /**
      * Insert a new touch point.
@@ -85,7 +84,7 @@ public:
      * @param id the identifier for the point
      * @param position the initial normalized position of the point
      */
-    void addTouchPoint( int id, QPointF position );
+    void addTouchPoint(int id, QPointF position);
 
     /**
      * Update an existing touch point.
@@ -94,7 +93,7 @@ public:
      * @param id the identifier for the point
      * @param position the new normalized position of the point
      */
-    void updateTouchPoint( int id, QPointF position );
+    void updateTouchPoint(int id, QPointF position);
 
     /**
      * Remove an existing touch point.
@@ -103,21 +102,20 @@ public:
      * @param id the identifier for the point
      * @param position the new normalized position of the point
      */
-    void removeTouchPoint( int id, QPointF position );
+    void removeTouchPoint(int id, QPointF position);
 
     /** Remove all touch points. */
     void removeAllTouchPoints();
 
 private:
-    void _handleEvent( const int id, const QPointF& normalizedPos,
-                       const QEvent::Type eventType );
+    void _handleEvent(const int id, const QPointF& normalizedPos,
+                      const QEvent::Type eventType);
 
     QObject& _target;
     MapToSceneFunc _mapToSceneFunction;
     QTouchDevice _device;
     QMap<int, QTouchEvent::TouchPoint> _touchPointMap;
 };
-
 }
 }
 

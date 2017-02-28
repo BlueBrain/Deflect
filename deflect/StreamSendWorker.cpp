@@ -43,12 +43,12 @@
 
 namespace deflect
 {
-
-StreamSendWorker::StreamSendWorker( StreamPrivate& stream )
-    : _stream( stream )
-    , _running( true )
-    , _thread( std::bind( &StreamSendWorker::_run, this ))
-{}
+StreamSendWorker::StreamSendWorker(StreamPrivate& stream)
+    : _stream(stream)
+    , _running(true)
+    , _thread(std::bind(&StreamSendWorker::_run, this))
+{
+}
 
 StreamSendWorker::~StreamSendWorker()
 {
@@ -57,17 +57,17 @@ StreamSendWorker::~StreamSendWorker()
 
 void StreamSendWorker::_run()
 {
-    std::unique_lock<std::mutex> lock( _mutex );
-    while( true )
+    std::unique_lock<std::mutex> lock(_mutex);
+    while (true)
     {
-        while( _requests.empty() && _running )
-            _condition.wait( lock );
-        if( !_running )
+        while (_requests.empty() && _running)
+            _condition.wait(lock);
+        if (!_running)
             break;
 
         const Request& request = _requests.back();
-        request.first->set_value( _stream.send( request.second ) &&
-                                  _stream.finishFrame( ));
+        request.first->set_value(_stream.send(request.second) &&
+                                 _stream.finishFrame());
         _requests.pop_back();
     }
 }
@@ -75,26 +75,25 @@ void StreamSendWorker::_run()
 void StreamSendWorker::_stop()
 {
     {
-        std::lock_guard<std::mutex> lock( _mutex );
+        std::lock_guard<std::mutex> lock(_mutex);
         _running = false;
         _condition.notify_all();
     }
 
     _thread.join();
-    while( !_requests.empty( ))
+    while (!_requests.empty())
     {
-        _requests.back().first->set_value( false );
+        _requests.back().first->set_value(false);
         _requests.pop_back();
     }
 }
 
-Stream::Future StreamSendWorker::enqueueImage( const ImageWrapper& image )
+Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image)
 {
-    std::lock_guard<std::mutex> lock( _mutex );
-    PromisePtr promise( new Promise );
-    _requests.push_back( Request( promise, image ));
+    std::lock_guard<std::mutex> lock(_mutex);
+    PromisePtr promise(new Promise);
+    _requests.push_back(Request(promise, image));
     _condition.notify_all();
     return promise->get_future();
 }
-
 }

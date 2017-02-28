@@ -49,13 +49,10 @@
 
 namespace deflect
 {
-
 class SegmentDecoder::Impl
 {
 public:
-    Impl()
-    {}
-
+    Impl() {}
     /** The decompressor instance */
     ImageJpegDecompressor decompressor;
 
@@ -64,51 +61,54 @@ public:
 };
 
 SegmentDecoder::SegmentDecoder()
-    : _impl( new Impl )
-{}
-
-SegmentDecoder::~SegmentDecoder() {}
-
-void _decodeSegment( ImageJpegDecompressor* decompressor, Segment* segment )
+    : _impl(new Impl)
 {
-    if( !segment->parameters.compressed )
+}
+
+SegmentDecoder::~SegmentDecoder()
+{
+}
+
+void _decodeSegment(ImageJpegDecompressor* decompressor, Segment* segment)
+{
+    if (!segment->parameters.compressed)
         return;
 
     QByteArray decodedData;
     try
     {
-        decodedData = decompressor->decompress( segment->imageData );
+        decodedData = decompressor->decompress(segment->imageData);
     }
-    catch( const std::runtime_error& )
+    catch (const std::runtime_error&)
     {
         throw;
     }
     const auto& params = segment->parameters;
-    if( (size_t)decodedData.size() != params.height * params.width * 4 )
-        throw std::runtime_error( "unexpected segment size" );
+    if ((size_t)decodedData.size() != params.height * params.width * 4)
+        throw std::runtime_error("unexpected segment size");
 
     segment->imageData = decodedData;
     segment->parameters.compressed = false;
 }
 
-void SegmentDecoder::decode( Segment& segment )
+void SegmentDecoder::decode(Segment& segment)
 {
-    _decodeSegment( &_impl->decompressor, &segment );
+    _decodeSegment(&_impl->decompressor, &segment);
 }
 
-void SegmentDecoder::startDecoding( Segment& segment )
+void SegmentDecoder::startDecoding(Segment& segment)
 {
     // drop frames if we're currently processing
-    if( isRunning( ))
+    if (isRunning())
     {
         std::cerr << "Decoding in process, Frame dropped. See if we need to "
-                     "change this..." << std::endl;
+                     "change this..."
+                  << std::endl;
         return;
     }
 
-    _impl->decodingFuture = QtConcurrent::run( _decodeSegment,
-                                               &_impl->decompressor,
-                                               &segment );
+    _impl->decodingFuture =
+        QtConcurrent::run(_decodeSegment, &_impl->decompressor, &segment);
 }
 
 void SegmentDecoder::waitDecoding()
@@ -117,12 +117,12 @@ void SegmentDecoder::waitDecoding()
     {
         _impl->decodingFuture.waitForFinished();
     }
-    catch( const QUnhandledException& )
+    catch (const QUnhandledException&)
     {
         // Let Qt throws a QUnhandledException and rewrite the error message.
         // QtConcurrent::run can only forward QException subclasses, which does
         // not even work on 5.7.1: https://bugreports.qt.io/browse/QTBUG-58021
-        throw std::runtime_error( "Segment decoding failed" );
+        throw std::runtime_error("Segment decoding failed");
     }
 }
 
@@ -130,5 +130,4 @@ bool SegmentDecoder::isRunning() const
 {
     return _impl->decodingFuture.isRunning();
 }
-
 }
