@@ -41,23 +41,23 @@
 
 #include <QTcpSocket>
 
-MockServer::MockServer( const int32_t protocolVersion )
-    : _protocolVersion( protocolVersion )
+MockServer::MockServer(const int32_t protocolVersion)
+    : _protocolVersion(protocolVersion)
 {
-    if( !listen() )
-        qDebug( "MockServer could not start listening!!" );
+    if (!listen())
+        qDebug("MockServer could not start listening!!");
 }
 
 MockServer::~MockServer()
 {
 }
 
-void MockServer::incomingConnection( const qintptr handle )
+void MockServer::incomingConnection(const qintptr handle)
 {
     QTcpSocket tcpSocket;
-    tcpSocket.setSocketDescriptor( handle );
+    tcpSocket.setSocketDescriptor(handle);
 
     // Handshake -> send network protocol version
-    tcpSocket.write( (char*)&_protocolVersion, sizeof( int32_t ));
+    tcpSocket.write((char*)&_protocolVersion, sizeof(int32_t));
     tcpSocket.flush();
 }

@@ -3,6 +3,8 @@ Changelog {#Changelog}
 
 ## Deflect 0.13 (git master)
 
+* [152](https://github.com/BlueBrain/Deflect/pull/152):
+  Changed coding style of the project to conform to new .clang-format rules.
 * [148](https://github.com/BlueBrain/Deflect/pull/148):
   Support for streaming stereo 3D content in a frame-sequential manner.
 

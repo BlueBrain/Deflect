@@ -45,7 +45,6 @@
 
 namespace deflect
 {
-
 /**
  * Decode a Segment's image asynchronously.
  */
@@ -66,7 +65,7 @@ public:
      *        set to false.
      * @throw std::runtime_error if a decompression error occured
      */
-    DEFLECT_API void decode( Segment& segment );
+    DEFLECT_API void decode(Segment& segment);
 
     /**
      * Start decoding a segment.
@@ -78,7 +77,7 @@ public:
      *        until the decoding procedure has completed.
      * @see isRunning()
      */
-    DEFLECT_API void startDecoding( Segment& segment );
+    DEFLECT_API void startDecoding(Segment& segment);
 
     /**
      * Waits for the decoding of a segment to finish, initiated by
@@ -94,7 +93,6 @@ private:
     class Impl;
     std::unique_ptr<Impl> _impl;
 };
-
 }
 
 #endif

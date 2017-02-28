@@ -23,51 +23,54 @@
 #include <QCommandLineParser>
 #include <QGuiApplication>
 
-int main( int argc, char** argv )
+int main(int argc, char** argv)
 {
-    QGuiApplication app( argc,argv );
+    QGuiApplication app(argc, argv);
     QGuiApplication::setApplicationVersion(
-                QString::fromStdString( deflect::Version::getString( )));
-    app.setQuitOnLastWindowClosed( true );
+        QString::fromStdString(deflect::Version::getString()));
+    app.setQuitOnLastWindowClosed(true);
 
     QCommandLineParser parser;
-    parser.setApplicationDescription( "Stream an offscreen QML scene to a remote"
-                                      " host" );
+    parser.setApplicationDescription(
+        "Stream an offscreen QML scene to a remote"
+        " host");
     parser.addHelpOption();
     parser.addVersionOption();
 
-    QCommandLineOption qmlFileOption( "qml", "QML file to load", "qml-file",
-                                      "qrc:/qml/gui.qml" );
-    parser.addOption( qmlFileOption );
+    QCommandLineOption qmlFileOption("qml", "QML file to load", "qml-file",
+                                     "qrc:/qml/gui.qml");
+    parser.addOption(qmlFileOption);
 
-    QCommandLineOption streamHostOption( "host", "Stream target host "
-                                                 "(default: localhost)",
-                                         "host", "localhost" );
-    parser.addOption( streamHostOption );
+    QCommandLineOption streamHostOption("host",
+                                        "Stream target host "
+                                        "(default: localhost)",
+                                        "host", "localhost");
+    parser.addOption(streamHostOption);
 
     // note: the 'name' command line option is already taken by QCoreApplication
-    QCommandLineOption streamNameOption( "streamname", "Stream name (default: "
-                                                 "Qml's root objectName "
-                                                 "property or 'QmlStreamer')",
-                                         "name" );
-    parser.addOption( streamNameOption );
+    QCommandLineOption streamNameOption("streamname",
+                                        "Stream name (default: "
+                                        "Qml's root objectName "
+                                        "property or 'QmlStreamer')",
+                                        "name");
+    parser.addOption(streamNameOption);
 
-    parser.process( app );
+    parser.process(app);
 
-    const QString qmlFile = parser.value( qmlFileOption );
-    const QString streamHost = parser.value( streamHostOption );
-    const QString streamName = parser.value( streamNameOption );
+    const QString qmlFile = parser.value(qmlFileOption);
+    const QString streamHost = parser.value(streamHostOption);
+    const QString streamName = parser.value(streamNameOption);
 
     try
     {
-        std::unique_ptr< deflect::qt::QmlStreamer > streamer(
-             new deflect::qt::QmlStreamer( qmlFile, streamHost.toStdString(),
-                                           streamName.toStdString( )));
-        app.connect( streamer.get(), &deflect::qt::QmlStreamer::streamClosed,
-                     &app, &QCoreApplication::quit );
+        std::unique_ptr<deflect::qt::QmlStreamer> streamer(
+            new deflect::qt::QmlStreamer(qmlFile, streamHost.toStdString(),
+                                         streamName.toStdString()));
+        app.connect(streamer.get(), &deflect::qt::QmlStreamer::streamClosed,
+                    &app, &QCoreApplication::quit);
         return app.exec();
     }
-    catch( const std::runtime_error& exception )
+    catch (const std::runtime_error& exception)
     {
         qWarning() << "QmlStreamer startup failed:" << exception.what();
         return EXIT_FAILURE;

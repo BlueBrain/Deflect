@@ -40,10 +40,10 @@
 #ifndef DESKTOPSTREAMER_STREAM_H
 #define DESKTOPSTREAMER_STREAM_H
 
-#include <deflect/Stream.h> // base class
-#include <QImage> // member
+#include <QImage>                // member
 #include <QPersistentModelIndex> // member
-#include <QRect> // member
+#include <QRect>                 // member
+#include <deflect/Stream.h>      // base class
 
 class MainWindow;
 
@@ -51,8 +51,8 @@ class Stream : public deflect::Stream
 {
 public:
     /** Construct a new stream for the given desktop window. */
-    Stream( const MainWindow& parent, const QPersistentModelIndex window,
-            const std::string& id, const std::string& host, int pid = 0 );
+    Stream(const MainWindow& parent, const QPersistentModelIndex window,
+           const std::string& id, const std::string& host, int pid = 0);
     ~Stream();
 
     /**
@@ -60,7 +60,7 @@ public:
      * @param quality the quality setting for compression [1; 100]
      * @return an empty string on success, the error message otherwise.
      */
-    std::string update( int quality );
+    std::string update(int quality);
 
     /**
      * Process all pending events.
@@ -68,16 +68,16 @@ public:
      * @param interact enable interaction from the server
      * @return true on success, false if the stream should be closed.
      */
-    bool processEvents( bool interact );
+    bool processEvents(bool interact);
 
     const QPersistentModelIndex& getIndex() const;
 
 private:
-    Stream( const Stream& ) = delete;
-    Stream( Stream&& ) = delete;
+    Stream(const Stream&) = delete;
+    Stream(Stream&&) = delete;
 
     class Impl;
-    std::unique_ptr< Impl > _impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 #endif

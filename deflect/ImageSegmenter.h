@@ -52,7 +52,6 @@
 
 namespace deflect
 {
-
 /**
  * Transform images into Segments.
  */
@@ -63,7 +62,7 @@ public:
     DEFLECT_API ImageSegmenter();
 
     /** Function called on each segment. */
-    using Handler = std::function< bool( const Segment& ) >;
+    using Handler = std::function<bool(const Segment&)>;
 
     /**
      * Generate segments.
@@ -77,8 +76,8 @@ public:
      * @return true if all image handlers returned true, false on failure
      * @see setNominalSegmentDimensions()
      */
-    DEFLECT_API bool generate( const ImageWrapper& image,
-                               const Handler& handler );
+    DEFLECT_API bool generate(const ImageWrapper& image,
+                              const Handler& handler);
 
     /**
      * Set the nominal segment dimensions.
@@ -91,24 +90,21 @@ public:
      * @param width The nominal width of the segments to generate (default: 0)
      * @param height The nominal height of the segments to generate (default: 0)
      */
-    DEFLECT_API void setNominalSegmentDimensions( unsigned int width,
-                                                  unsigned int height );
+    DEFLECT_API void setNominalSegmentDimensions(unsigned int width,
+                                                 unsigned int height);
 
 private:
-    SegmentParametersList
-    _generateSegmentParameters( const ImageWrapper& image ) const;
+    SegmentParametersList _generateSegmentParameters(
+        const ImageWrapper& image) const;
 
-    bool _generateJpeg( const ImageWrapper& image,
-                        const Handler& handler);
-    bool _generateRaw( const ImageWrapper& image,
-                       const Handler& handler ) const;
-    void _computeJpeg( Segment& task );
+    bool _generateJpeg(const ImageWrapper& image, const Handler& handler);
+    bool _generateRaw(const ImageWrapper& image, const Handler& handler) const;
+    void _computeJpeg(Segment& task);
 
     unsigned int _nominalSegmentWidth;
     unsigned int _nominalSegmentHeight;
 
-    MTQueue< Segment > _sendQueue;
+    MTQueue<Segment> _sendQueue;
 };
-
 }
 #endif

@@ -46,35 +46,35 @@
 
 namespace deflect
 {
-
 /** Thread-safe multiple producer, multiple consumer queue. */
 template <class T>
 class MTQueue
 {
 public:
     /** @param maxSize maximum size of the queue after which enqueue() blocks */
-    MTQueue( const size_t maxSize = std::numeric_limits< size_t >::max( ))
-        : _maxSize( maxSize )
-    {}
+    MTQueue(const size_t maxSize = std::numeric_limits<size_t>::max())
+        : _maxSize(maxSize)
+    {
+    }
 
     /**
      * Push a new value to the end of the queue. Blocks if maxSize is reached.
      */
-    void enqueue( const T& value )
+    void enqueue(const T& value)
     {
-        std::unique_lock<std::mutex> lock( _mutex );
-        while( _queue.size() >= _maxSize )
-            _full.wait( lock );
-        _queue.push( value );
+        std::unique_lock<std::mutex> lock(_mutex);
+        while (_queue.size() >= _maxSize)
+            _full.wait(lock);
+        _queue.push(value);
         _empty.notify_one();
     }
 
     /** Pop a value from the front of the queue. Blocks if queue is empty. */
     T dequeue()
     {
-        std::unique_lock<std::mutex> lock( _mutex );
-        while( _queue.empty( ))
-            _empty.wait( lock );
+        std::unique_lock<std::mutex> lock(_mutex);
+        while (_queue.empty())
+            _empty.wait(lock);
         T value = _queue.front();
         _queue.pop();
         _full.notify_one();
@@ -84,7 +84,7 @@ public:
     /** Clears the queue. */
     void clear()
     {
-        std::lock_guard<std::mutex> lock( _mutex );
+        std::lock_guard<std::mutex> lock(_mutex);
         _queue = {};
         _full.notify_one();
     }
@@ -92,14 +92,14 @@ public:
     /** @return the current size of the queue. */
     size_t size() const
     {
-        std::lock_guard<std::mutex> lock( _mutex );
+        std::lock_guard<std::mutex> lock(_mutex);
         return _queue.size();
     }
 
     /** @return true if the queue is empty. */
     bool empty() const
     {
-        std::lock_guard<std::mutex> lock( _mutex );
+        std::lock_guard<std::mutex> lock(_mutex);
         return _queue.empty();
     }
 
@@ -110,7 +110,6 @@ private:
     std::condition_variable _empty;
     std::condition_variable _full;
 };
-
 }
 
 #endif

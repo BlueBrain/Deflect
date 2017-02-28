@@ -32,13 +32,13 @@ class DesktopWindowsModel : public QAbstractListModel
 public:
     DesktopWindowsModel();
 
-    int rowCount( const QModelIndex& ) const final;
+    int rowCount(const QModelIndex&) const final;
 
     /** @return application name for Qt::DisplayRole, window preview pixmap for
      *          Qt::DecorationRole, original size pixmap for ROLE_PIXMAP, window
      *          rectangle for ROLE_RECT
      */
-    QVariant data( const QModelIndex& index, int role ) const final;
+    QVariant data(const QModelIndex& index, int role) const final;
 
     enum DataRole
     {
@@ -48,10 +48,10 @@ public:
     };
 
     /** @internal */
-    void addApplication( void* app );
+    void addApplication(void* app);
 
     /** @internal */
-    void removeApplication( void* app );
+    void removeApplication(void* app);
 
     /**
      * Check if the application corresponding to the specified PID is currently
@@ -61,7 +61,7 @@ public:
      * @return true if the application with the PID specified is currently
      *         active. A pid of 0 means the full desktop, always active
      */
-    static bool isActive( int pid );
+    static bool isActive(int pid);
 
     /**
      * Activate the application corresponding to the specified PID. This will
@@ -69,11 +69,11 @@ public:
      *
      * @param pid the application process id
      */
-    static void activate( int pid );
+    static void activate(int pid);
 
 private:
     class Impl;
-    std::unique_ptr< Impl > _impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 #endif

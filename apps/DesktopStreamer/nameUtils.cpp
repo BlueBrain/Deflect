@@ -20,31 +20,29 @@
 #include "nameUtils.h"
 
 #ifndef _WIN32
-#  include <pwd.h>
+#include <pwd.h>
 #endif
 
 namespace nameutils
 {
-
 QString getFullUsername()
 {
 #ifdef _WIN32
-    return qgetenv( "USERNAME" );
+    return qgetenv("USERNAME");
 #else
-    auto username = qgetenv( "USER" );
-    if( username.isEmpty( ))
-        username = qgetenv( "USERNAME" );
-    if( username.isEmpty( ))
+    auto username = qgetenv("USER");
+    if (username.isEmpty())
+        username = qgetenv("USERNAME");
+    if (username.isEmpty())
         return {};
 
-    if( auto userinfo = getpwnam( username.constData( )))
+    if (auto userinfo = getpwnam(username.constData()))
     {
-        const auto fullname = QString{ userinfo->pw_gecos };
-        if( !fullname.isEmpty( ))
+        const auto fullname = QString{userinfo->pw_gecos};
+        if (!fullname.isEmpty())
             return fullname;
     }
     return username;
 #endif
 }
-
 }

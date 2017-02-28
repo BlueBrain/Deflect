@@ -46,7 +46,6 @@
 
 namespace deflect
 {
-
 /**
  * Register types for use in Qt signals/slots
  */
@@ -54,12 +53,12 @@ struct MetaTypeRegistration
 {
     MetaTypeRegistration()
     {
-        qRegisterMetaType< size_t >( "size_t" );
-        qRegisterMetaType< deflect::Segment >( "deflect::Segment" );
-        qRegisterMetaType< deflect::SizeHints >( "deflect::SizeHints" );
-        qRegisterMetaType< deflect::Event >( "deflect::Event" );
-        qRegisterMetaType< deflect::FramePtr >( "deflect::FramePtr" );
-        qRegisterMetaType< deflect::View >( "deflect::View" );
+        qRegisterMetaType<size_t>("size_t");
+        qRegisterMetaType<deflect::Segment>("deflect::Segment");
+        qRegisterMetaType<deflect::SizeHints>("deflect::SizeHints");
+        qRegisterMetaType<deflect::Event>("deflect::Event");
+        qRegisterMetaType<deflect::FramePtr>("deflect::FramePtr");
+        qRegisterMetaType<deflect::View>("deflect::View");
     }
 };
 

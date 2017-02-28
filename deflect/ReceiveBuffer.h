@@ -40,9 +40,9 @@
 #ifndef DEFLECT_RECEIVEBUFFER_H
 #define DEFLECT_RECEIVEBUFFER_H
 
-#include <deflect/api.h>
 #include <deflect/Segment.h>
 #include <deflect/SourceBuffer.h>
+#include <deflect/api.h>
 #include <deflect/types.h>
 
 #include <QSize>
@@ -52,7 +52,6 @@
 
 namespace deflect
 {
-
 /**
  * Buffer Segments from (multiple) sources.
  *
@@ -65,16 +64,17 @@ public:
     /**
      * Add a source of segments.
      * @param sourceIndex Unique source identifier
-     * @return false if the source was already added or if finishFrameForSource()
-     *         has already been called for all existing source (TODO DISCL-241).
+     * @return false if the source was already added or if
+     *         finishFrameForSource() has already been called for all existing
+     *         sources (TODO DISCL-241).
      */
-    DEFLECT_API bool addSource( size_t sourceIndex );
+    DEFLECT_API bool addSource(size_t sourceIndex);
 
     /**
      * Remove a source of segments.
      * @param sourceIndex Unique source identifier
      */
-    DEFLECT_API void removeSource( size_t sourceIndex );
+    DEFLECT_API void removeSource(size_t sourceIndex);
 
     /** Get the number of sources for this Stream */
     DEFLECT_API size_t getSourceCount() const;
@@ -85,15 +85,15 @@ public:
      * @param sourceIndex Unique source identifier
      * @param view in which the segment should be inserted
      */
-    DEFLECT_API void insert( const Segment& segment, size_t sourceIndex,
-                             View view = View::mono );
+    DEFLECT_API void insert(const Segment& segment, size_t sourceIndex,
+                            View view = View::mono);
 
     /**
      * Call when the source has finished sending segments for the current frame.
      * @param sourceIndex Unique source identifier
      * @throw std::runtime_error if the buffer exceeds its maximum size
      */
-    DEFLECT_API void finishFrameForSource( size_t sourceIndex );
+    DEFLECT_API void finishFrameForSource(size_t sourceIndex);
 
     /** Does the Buffer have a new complete mono frame (from all sources) */
     DEFLECT_API bool hasCompleteMonoFrame() const;
@@ -105,27 +105,27 @@ public:
      * Get the finished frame.
      * @return A collection of segments that form a frame
      */
-    DEFLECT_API Segments popFrame( View view = View::mono );
+    DEFLECT_API Segments popFrame(View view = View::mono);
 
-    /** Allow this buffer to be used by the next FrameDispatcher::sendLatestFrame */
-    DEFLECT_API void setAllowedToSend( bool enable, View view );
+    /** Allow this buffer to be used by the next
+     * FrameDispatcher::sendLatestFrame */
+    DEFLECT_API void setAllowedToSend(bool enable, View view);
 
     /** @return true if this buffer can be sent by FrameDispatcher */
-    DEFLECT_API bool isAllowedToSend( View view ) const;
+    DEFLECT_API bool isAllowedToSend(View view) const;
 
 private:
     std::map<size_t, SourceBuffer> _sourceBuffers;
 
     /** The current indices of the mono/left/right frame for this source. */
-    std::array<FrameIndex, 3> _lastFrameComplete = { { 0u, 0u, 0u } };
+    std::array<FrameIndex, 3> _lastFrameComplete = {{0u, 0u, 0u}};
 
     /** Is the mono/left/right channel allowed to send. */
-    std::array<bool, 3> _allowedToSend = { { false, false, false } };
+    std::array<bool, 3> _allowedToSend = {{false, false, false}};
 
-    FrameIndex _getLastCompleteFrameIndex( View view ) const;
-    void _incrementLastFrameComplete( View view );
+    FrameIndex _getLastCompleteFrameIndex(View view) const;
+    void _incrementLastFrameComplete(View view);
 };
-
 }
 
 #endif

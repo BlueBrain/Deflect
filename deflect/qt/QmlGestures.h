@@ -46,7 +46,6 @@ namespace deflect
 {
 namespace qt
 {
-
 /**
  * Expose gesture events as a Qml context property object.
  */
@@ -60,7 +59,6 @@ signals:
     void swipeUp();
     void swipeDown();
 };
-
 }
 }
 

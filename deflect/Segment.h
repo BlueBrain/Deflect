@@ -46,7 +46,6 @@
 
 namespace deflect
 {
-
 struct ImageWrapper;
 
 /**
@@ -63,7 +62,6 @@ struct Segment
     /** @internal raw, uncompressed source image, used for compression */
     const ImageWrapper* sourceImage;
 };
-
 }
 
 #endif

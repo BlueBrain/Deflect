@@ -41,9 +41,9 @@
 #include "QmlStreamerImpl.h"
 
 #include "EventReceiver.h"
-#include "helpers.h"
 #include "QmlGestures.h"
 #include "TouchInjector.h"
+#include "helpers.h"
 
 #include <QCoreApplication>
 #include <QQmlContext>
@@ -52,9 +52,9 @@
 
 namespace
 {
-const std::string DEFAULT_STREAM_ID( "QmlStreamer" );
-const QString GESTURES_CONTEXT_PROPERTY( "deflectgestures" );
-const QString WEBENGINEVIEW_OBJECT_NAME( "webengineview" );
+const std::string DEFAULT_STREAM_ID("QmlStreamer");
+const QString GESTURES_CONTEXT_PROPERTY("deflectgestures");
+const QString WEBENGINEVIEW_OBJECT_NAME("webengineview");
 const int TOUCH_TAPANDHOLD_DIST_PX = 20;
 const int TOUCH_TAPANDHOLD_TIMEOUT_MS = 200;
 #ifdef DEFLECTQT_MULTITHREADED
@@ -68,76 +68,77 @@ namespace deflect
 {
 namespace qt
 {
-
-QmlStreamer::Impl::Impl( const QString& qmlFile, const std::string& streamHost,
-                         const std::string& streamId )
-    : _quickView{ new OffscreenQuickView{ make_unique<QQuickRenderControl>(),
-                                          renderMode }}
-    , _qmlGestures{ new QmlGestures }
-    , _touchInjector{ TouchInjector::create( *_quickView )}
-    , _streamHost( streamHost )
-    , _streamId( streamId )
-    , _sendFuture( make_ready_future( true ))
+QmlStreamer::Impl::Impl(const QString& qmlFile, const std::string& streamHost,
+                        const std::string& streamId)
+    : _quickView{new OffscreenQuickView{make_unique<QQuickRenderControl>(),
+                                        renderMode}}
+    , _qmlGestures{new QmlGestures}
+    , _touchInjector{TouchInjector::create(*_quickView)}
+    , _streamHost{streamHost}
+    , _streamId{streamId}
+    , _sendFuture{make_ready_future(true)}
 {
     _setupMouseModeSwitcher();
     _setupSizeHintsConnections();
 
-    connect( _quickView.get(), &OffscreenQuickView::afterRender,
-             this, &QmlStreamer::Impl::_afterRender );
+    connect(_quickView.get(), &OffscreenQuickView::afterRender, this,
+            &QmlStreamer::Impl::_afterRender);
 
     // Expose stream gestures to qml objects
     auto context = _quickView->getRootContext();
-    context->setContextProperty( GESTURES_CONTEXT_PROPERTY, _qmlGestures.get());
+    context->setContextProperty(GESTURES_CONTEXT_PROPERTY, _qmlGestures.get());
 
-    if( !_quickView->load( qmlFile ).get( ))
-        throw std::runtime_error( "Failed to setup/load QML" );
+    if (!_quickView->load(qmlFile).get())
+        throw std::runtime_error("Failed to setup/load QML");
 
 #ifdef __APPLE__
     _napSuspender.suspend();
 #endif
 }
 
-QmlStreamer::Impl::~Impl() {}
-
-void QmlStreamer::Impl::_afterRender( const QImage image )
+QmlStreamer::Impl::~Impl()
 {
-    if( !_sendFuture.valid() || !_sendFuture.get( ))
+}
+
+void QmlStreamer::Impl::_afterRender(const QImage image)
+{
+    if (!_sendFuture.valid() || !_sendFuture.get())
         return;
 
-    if( !_stream && !_setupDeflectStream( ))
+    if (!_stream && !_setupDeflectStream())
     {
         qWarning() << "Could not setup Deflect stream";
         return;
     }
 
-    if( image.isNull( ))
+    if (image.isNull())
     {
         qDebug() << "Empty image not streamed";
         return;
     }
 
     _image = image;
-    ImageWrapper imageWrapper( _image.constBits(), _image.width(),
-                               _image.height(), BGRA );
+    ImageWrapper imageWrapper(_image.constBits(), _image.width(),
+                              _image.height(), BGRA);
     imageWrapper.compressionPolicy = COMPRESSION_ON;
     imageWrapper.compressionQuality = 80;
 
-    if( _asyncSend )
-        _sendFuture = _stream->asyncSend( imageWrapper );
+    if (_asyncSend)
+        _sendFuture = _stream->asyncSend(imageWrapper);
     else
-        _sendFuture = make_ready_future( _stream->send( imageWrapper ) &&
-                                         _stream->finishFrame( ));
+        _sendFuture = make_ready_future(_stream->send(imageWrapper) &&
+                                        _stream->finishFrame());
 }
 
 void QmlStreamer::Impl::_onStreamClosed()
 {
     // Stop rendering
-    disconnect( _quickView.get(), &OffscreenQuickView::afterRender,
-                this, &QmlStreamer::Impl::_afterRender );
+    disconnect(_quickView.get(), &OffscreenQuickView::afterRender, this,
+               &QmlStreamer::Impl::_afterRender);
     _quickView.reset();
 
     // Terminate the stream
-    if( _sendFuture.valid( ))
+    if (_sendFuture.valid())
         _sendFuture.wait();
     _eventReceiver.reset();
     _stream.reset();
@@ -145,78 +146,79 @@ void QmlStreamer::Impl::_onStreamClosed()
     emit streamClosed();
 }
 
-void QmlStreamer::Impl::_onPressed( const QPointF pos )
+void QmlStreamer::Impl::_onPressed(const QPointF pos)
 {
-    _startMouseModeSwitchDetection( _mapToScene( pos ));
+    _startMouseModeSwitchDetection(_mapToScene(pos));
 }
 
-void QmlStreamer::Impl::_onMoved( const QPointF pos )
+void QmlStreamer::Impl::_onMoved(const QPointF pos)
 {
-    if( _mouseMode )
+    if (_mouseMode)
     {
-        _sendMouseEvent( QEvent::MouseMove, _mapToScene( pos ));
+        _sendMouseEvent(QEvent::MouseMove, _mapToScene(pos));
         return;
     }
-    if( _mouseModeTimer.isActive( ))
-        _touchCurrentPos = _mapToScene( pos );
+    if (_mouseModeTimer.isActive())
+        _touchCurrentPos = _mapToScene(pos);
 }
 
-void QmlStreamer::Impl::_onReleased( const QPointF pos )
+void QmlStreamer::Impl::_onReleased(const QPointF pos)
 {
     _mouseModeTimer.stop();
-    if( _mouseMode )
+    if (_mouseMode)
     {
-        _sendMouseEvent( QEvent::MouseButtonRelease, _mapToScene( pos ));
+        _sendMouseEvent(QEvent::MouseButtonRelease, _mapToScene(pos));
         _switchBackToTouchMode();
     }
 }
 
-void QmlStreamer::Impl::_onKeyPress( int key, int modifiers, QString text )
+void QmlStreamer::Impl::_onKeyPress(int key, int modifiers, QString text)
 {
-    QKeyEvent keyEvent_( QEvent::KeyPress, key,
-                         (Qt::KeyboardModifiers)modifiers, text );
-    _send( keyEvent_ );
+    QKeyEvent keyEvent_(QEvent::KeyPress, key, (Qt::KeyboardModifiers)modifiers,
+                        text);
+    _send(keyEvent_);
 }
 
-void QmlStreamer::Impl::_onKeyRelease( int key, int modifiers, QString text )
+void QmlStreamer::Impl::_onKeyRelease(int key, int modifiers, QString text)
 {
-    QKeyEvent keyEvent_( QEvent::KeyRelease, key,
-                         (Qt::KeyboardModifiers)modifiers, text );
-    _send( keyEvent_ );
+    QKeyEvent keyEvent_(QEvent::KeyRelease, key,
+                        (Qt::KeyboardModifiers)modifiers, text);
+    _send(keyEvent_);
 }
 
-void QmlStreamer::Impl::_send( QKeyEvent& keyEvent_ )
+void QmlStreamer::Impl::_send(QKeyEvent& keyEvent_)
 {
     // Work around missing key event support in Qt for offscreen windows.
 
-    if( _sendToWebengineviewItems( keyEvent_ ))
+    if (_sendToWebengineviewItems(keyEvent_))
         return;
 
     const auto items = _quickView->getRootItem()->findChildren<QQuickItem*>();
-    for( auto item : items )
+    for (auto item : items)
     {
-        if( item->hasFocus( ))
+        if (item->hasFocus())
         {
-            _quickView->sendEvent( item, &keyEvent_ );
-            if( keyEvent_.isAccepted())
+            _quickView->sendEvent(item, &keyEvent_);
+            if (keyEvent_.isAccepted())
                 break;
         }
     }
 }
 
-bool QmlStreamer::Impl::_sendToWebengineviewItems( QKeyEvent& keyEvent_ )
+bool QmlStreamer::Impl::_sendToWebengineviewItems(QKeyEvent& keyEvent_)
 {
     // Special handling for WebEngineView in offscreen Qml windows.
 
     const auto root = _quickView->getRootItem();
-    const auto items = root->findChildren<QQuickItem*>( WEBENGINEVIEW_OBJECT_NAME );
-    for( auto webengineviewItem : items )
+    const auto items =
+        root->findChildren<QQuickItem*>(WEBENGINEVIEW_OBJECT_NAME);
+    for (auto webengineviewItem : items)
     {
-        if( webengineviewItem->hasFocus( ))
+        if (webengineviewItem->hasFocus())
         {
-            for( auto child : webengineviewItem->childItems( ))
-                QCoreApplication::instance()->sendEvent( child, &keyEvent_ );
-            if( keyEvent_.isAccepted( ))
+            for (auto child : webengineviewItem->childItems())
+                QCoreApplication::instance()->sendEvent(child, &keyEvent_);
+            if (keyEvent_.isAccepted())
                 return true;
         }
     }
@@ -225,23 +227,23 @@ bool QmlStreamer::Impl::_sendToWebengineviewItems( QKeyEvent& keyEvent_ )
 
 void QmlStreamer::Impl::_setupSizeHintsConnections()
 {
-    connect( _quickView.get(), &QQuickWindow::minimumWidthChanged,
-             [this]( int size_ ) { _sizeHints.minWidth = size_; } );
-    connect( _quickView.get(), &QQuickWindow::minimumHeightChanged,
-             [this]( int size_ ) { _sizeHints.minHeight = size_; } );
-    connect( _quickView.get(), &QQuickWindow::maximumWidthChanged,
-             [this]( int size_ ) { _sizeHints.maxWidth = size_; } );
-    connect( _quickView.get(), &QQuickWindow::maximumHeightChanged,
-             [this]( int size_ ) { _sizeHints.maxHeight = size_; } );
-    connect( _quickView.get(), &QQuickWindow::widthChanged,
-             [this]( int size_ ) { _sizeHints.preferredWidth = size_; } );
-    connect( _quickView.get(), &QQuickWindow::heightChanged,
-             [this]( int size_ ) { _sizeHints.preferredHeight = size_; } );
+    connect(_quickView.get(), &QQuickWindow::minimumWidthChanged,
+            [this](int size_) { _sizeHints.minWidth = size_; });
+    connect(_quickView.get(), &QQuickWindow::minimumHeightChanged,
+            [this](int size_) { _sizeHints.minHeight = size_; });
+    connect(_quickView.get(), &QQuickWindow::maximumWidthChanged,
+            [this](int size_) { _sizeHints.maxWidth = size_; });
+    connect(_quickView.get(), &QQuickWindow::maximumHeightChanged,
+            [this](int size_) { _sizeHints.maxHeight = size_; });
+    connect(_quickView.get(), &QQuickWindow::widthChanged,
+            [this](int size_) { _sizeHints.preferredWidth = size_; });
+    connect(_quickView.get(), &QQuickWindow::heightChanged,
+            [this](int size_) { _sizeHints.preferredHeight = size_; });
 }
 
 std::string QmlStreamer::Impl::_getDeflectStreamIdentifier() const
 {
-    if( !_streamId.empty( ))
+    if (!_streamId.empty())
         return _streamId;
 
     const auto streamId = _quickView->getRootItem()->objectName().toStdString();
@@ -250,81 +252,81 @@ std::string QmlStreamer::Impl::_getDeflectStreamIdentifier() const
 
 bool QmlStreamer::Impl::_setupDeflectStream()
 {
-    if( !_stream )
-        _stream.reset( new Stream( _getDeflectStreamIdentifier(), _streamHost));
+    if (!_stream)
+        _stream.reset(new Stream(_getDeflectStreamIdentifier(), _streamHost));
 
-    if( !_stream->isConnected( ))
+    if (!_stream->isConnected())
         return false;
 
-    if( !_stream->registerForEvents( ))
+    if (!_stream->registerForEvents())
         return false;
 
-    if( _sizeHints != SizeHints( ))
-        _stream->sendSizeHints( _sizeHints );
+    if (_sizeHints != SizeHints())
+        _stream->sendSizeHints(_sizeHints);
 
-    _eventReceiver.reset( new EventReceiver( *_stream ));
+    _eventReceiver.reset(new EventReceiver(*_stream));
 
     // inject touch events
     _connectTouchInjector();
 
     // used for mouse mode switch for Qml WebengineView
-    connect( _eventReceiver.get(), &EventReceiver::pressed,
-             this, &QmlStreamer::Impl::_onPressed );
-    connect( _eventReceiver.get(), &EventReceiver::released,
-             this, &QmlStreamer::Impl::_onReleased );
-    connect( _eventReceiver.get(), &EventReceiver::moved,
-             this, &QmlStreamer::Impl::_onMoved );
+    connect(_eventReceiver.get(), &EventReceiver::pressed, this,
+            &QmlStreamer::Impl::_onPressed);
+    connect(_eventReceiver.get(), &EventReceiver::released, this,
+            &QmlStreamer::Impl::_onReleased);
+    connect(_eventReceiver.get(), &EventReceiver::moved, this,
+            &QmlStreamer::Impl::_onMoved);
 
     // handle view resize
-    connect( _eventReceiver.get(), &EventReceiver::resized,
-             [this]( const QSize size ) { _quickView->resize( size ); } );
+    connect(_eventReceiver.get(), &EventReceiver::resized,
+            [this](const QSize size) { _quickView->resize(size); });
 
     // inject key events
-    connect( _eventReceiver.get(), &EventReceiver::keyPress,
-             this, &QmlStreamer::Impl::_onKeyPress );
-    connect( _eventReceiver.get(), &EventReceiver::keyRelease,
-             this, &QmlStreamer::Impl::_onKeyRelease );
+    connect(_eventReceiver.get(), &EventReceiver::keyPress, this,
+            &QmlStreamer::Impl::_onKeyPress);
+    connect(_eventReceiver.get(), &EventReceiver::keyRelease, this,
+            &QmlStreamer::Impl::_onKeyRelease);
 
     // Forward gestures to Qml context object
-    connect( _eventReceiver.get(), &EventReceiver::swipeDown,
-             _qmlGestures.get(), &QmlGestures::swipeDown );
-    connect( _eventReceiver.get(), &EventReceiver::swipeUp,
-             _qmlGestures.get(), &QmlGestures::swipeUp );
-    connect( _eventReceiver.get(), &EventReceiver::swipeLeft,
-             _qmlGestures.get(), &QmlGestures::swipeLeft );
-    connect( _eventReceiver.get(), &EventReceiver::swipeRight,
-             _qmlGestures.get(), &QmlGestures::swipeRight );
+    connect(_eventReceiver.get(), &EventReceiver::swipeDown, _qmlGestures.get(),
+            &QmlGestures::swipeDown);
+    connect(_eventReceiver.get(), &EventReceiver::swipeUp, _qmlGestures.get(),
+            &QmlGestures::swipeUp);
+    connect(_eventReceiver.get(), &EventReceiver::swipeLeft, _qmlGestures.get(),
+            &QmlGestures::swipeLeft);
+    connect(_eventReceiver.get(), &EventReceiver::swipeRight,
+            _qmlGestures.get(), &QmlGestures::swipeRight);
 
-    connect( _eventReceiver.get(), &EventReceiver::closed,
-             this, &QmlStreamer::Impl::_onStreamClosed );
+    connect(_eventReceiver.get(), &EventReceiver::closed, this,
+            &QmlStreamer::Impl::_onStreamClosed);
 
     return true;
 }
 
 void QmlStreamer::Impl::_connectTouchInjector()
 {
-    connect( _eventReceiver.get(), &EventReceiver::touchPointAdded,
-             _touchInjector.get(), &TouchInjector::addTouchPoint );
-    connect( _eventReceiver.get(), &EventReceiver::touchPointUpdated,
-             _touchInjector.get(), &TouchInjector::updateTouchPoint );
-    connect( _eventReceiver.get(), &EventReceiver::touchPointRemoved,
-             _touchInjector.get(), &TouchInjector::removeTouchPoint );
+    connect(_eventReceiver.get(), &EventReceiver::touchPointAdded,
+            _touchInjector.get(), &TouchInjector::addTouchPoint);
+    connect(_eventReceiver.get(), &EventReceiver::touchPointUpdated,
+            _touchInjector.get(), &TouchInjector::updateTouchPoint);
+    connect(_eventReceiver.get(), &EventReceiver::touchPointRemoved,
+            _touchInjector.get(), &TouchInjector::removeTouchPoint);
 }
 
 void QmlStreamer::Impl::_setupMouseModeSwitcher()
 {
-    _mouseModeTimer.setSingleShot( true );
-    _mouseModeTimer.setInterval( TOUCH_TAPANDHOLD_TIMEOUT_MS );
-    connect( &_mouseModeTimer, &QTimer::timeout, [this] {
-        if( _touchIsTapAndHold( ))
+    _mouseModeTimer.setSingleShot(true);
+    _mouseModeTimer.setInterval(TOUCH_TAPANDHOLD_TIMEOUT_MS);
+    connect(&_mouseModeTimer, &QTimer::timeout, [this] {
+        if (_touchIsTapAndHold())
             _switchFromTouchToMouseMode();
     });
 }
 
-void QmlStreamer::Impl::_startMouseModeSwitchDetection( const QPointF& pos )
+void QmlStreamer::Impl::_startMouseModeSwitchDetection(const QPointF& pos)
 {
-    const auto item = _quickView->getRootItem()->childAt( pos.x(), pos.y( ));
-    if( item->objectName() == WEBENGINEVIEW_OBJECT_NAME )
+    const auto item = _quickView->getRootItem()->childAt(pos.x(), pos.y());
+    if (item->objectName() == WEBENGINEVIEW_OBJECT_NAME)
     {
         _mouseModeTimer.start();
         _touchStartPos = pos;
@@ -340,10 +342,10 @@ bool QmlStreamer::Impl::_touchIsTapAndHold()
 
 void QmlStreamer::Impl::_switchFromTouchToMouseMode()
 {
-    _eventReceiver->disconnect( _touchInjector.get( ));
+    _eventReceiver->disconnect(_touchInjector.get());
     _touchInjector->removeAllTouchPoints();
     _mouseMode = true;
-    _sendMouseEvent( QEvent::MouseButtonPress, _touchCurrentPos );
+    _sendMouseEvent(QEvent::MouseButtonPress, _touchCurrentPos);
 }
 
 void QmlStreamer::Impl::_switchBackToTouchMode()
@@ -352,19 +354,18 @@ void QmlStreamer::Impl::_switchBackToTouchMode()
     _connectTouchInjector();
 }
 
-QPointF QmlStreamer::Impl::_mapToScene( const QPointF& normalizedPos ) const
+QPointF QmlStreamer::Impl::_mapToScene(const QPointF& normalizedPos) const
 {
-    return { normalizedPos.x() * _quickView->width(),
-             normalizedPos.y() * _quickView->height() };
+    return {normalizedPos.x() * _quickView->width(),
+            normalizedPos.y() * _quickView->height()};
 }
 
-void QmlStreamer::Impl::_sendMouseEvent( const QEvent::Type eventType,
-                                         const QPointF& pos )
+void QmlStreamer::Impl::_sendMouseEvent(const QEvent::Type eventType,
+                                        const QPointF& pos)
 {
-    auto e = new QMouseEvent( eventType, pos, Qt::LeftButton, Qt::LeftButton,
-                              Qt::NoModifier );
-    QCoreApplication::postEvent( _quickView.get(), e );
+    auto e = new QMouseEvent(eventType, pos, Qt::LeftButton, Qt::LeftButton,
+                             Qt::NoModifier);
+    QCoreApplication::postEvent(_quickView.get(), e);
 }
-
 }
 }

@@ -42,8 +42,8 @@
 
 #include "NetworkProtocol.h"
 
-#include <stdint.h>
 #include <iostream>
+#include <stdint.h>
 
 #include <QDataStream>
 
@@ -54,30 +54,29 @@ const int RECEIVE_TIMEOUT_MS = 3000;
 
 namespace deflect
 {
-
-ServerWorker::ServerWorker( const int socketDescriptor )
-    // Ensure that tcpSocket_ parent is *this* so it gets moved to thread
-    : _tcpSocket( new QTcpSocket( this ))
-    , _sourceId( socketDescriptor )
-    , _clientProtocolVersion( NETWORK_PROTOCOL_VERSION )
-    , _registeredToEvents( false )
-    , _activeView( View::mono )
+ServerWorker::ServerWorker(const int socketDescriptor)
+    : _tcpSocket{new QTcpSocket(this)} // Ensure that _tcpSocket parent is
+                                       // *this* so it gets moved to thread
+    , _sourceId{socketDescriptor}
+    , _clientProtocolVersion{NETWORK_PROTOCOL_VERSION}
+    , _registeredToEvents{false}
+    , _activeView{View::mono}
 {
-    if( !_tcpSocket->setSocketDescriptor( socketDescriptor ))
+    if (!_tcpSocket->setSocketDescriptor(socketDescriptor))
     {
         std::cerr << "could not set socket descriptor: "
                   << _tcpSocket->errorString().toStdString() << std::endl;
-        emit( connectionClosed( ));
+        emit(connectionClosed());
         return;
     }
 
-    connect( _tcpSocket, &QTcpSocket::disconnected,
-             this, &ServerWorker::connectionClosed );
+    connect(_tcpSocket, &QTcpSocket::disconnected, this,
+            &ServerWorker::connectionClosed);
 
-    connect( _tcpSocket, &QTcpSocket::readyRead,
-             this, &ServerWorker::_processMessages, Qt::QueuedConnection );
-    connect( this, &ServerWorker::_dataAvailable,
-             this, &ServerWorker::_processMessages, Qt::QueuedConnection );
+    connect(_tcpSocket, &QTcpSocket::readyRead, this,
+            &ServerWorker::_processMessages, Qt::QueuedConnection);
+    connect(this, &ServerWorker::_dataAvailable, this,
+            &ServerWorker::_processMessages, Qt::QueuedConnection);
 }
 
 ServerWorker::~ServerWorker()
@@ -86,18 +85,18 @@ ServerWorker::~ServerWorker()
     // We still want to remove this source so that the stream does not get stuck
     // if other senders are still active / resp. the window gets closed if no
     // more senders contribute to it.
-    if( !_streamId.isEmpty( ))
-        emit removeStreamSource( _streamId, _sourceId );
+    if (!_streamId.isEmpty())
+        emit removeStreamSource(_streamId, _sourceId);
 
-    if( _isConnected( ))
+    if (_isConnected())
         _sendQuit();
 
     delete _tcpSocket;
 }
 
-void ServerWorker::processEvent( const Event evt )
+void ServerWorker::processEvent(const Event evt)
 {
-    _events.enqueue( evt );
+    _events.enqueue(evt);
     emit _dataAvailable();
 }
 
@@ -106,171 +105,170 @@ void ServerWorker::initConnection()
     _sendProtocolVersion();
 }
 
-void ServerWorker::closeConnection( const QString uri )
+void ServerWorker::closeConnection(const QString uri)
 {
-    if( uri != _streamId )
+    if (uri != _streamId)
         return;
 
     Event closeEvent;
     closeEvent.type = Event::EVT_CLOSE;
-    _send( closeEvent );
+    _send(closeEvent);
 
-    emit( connectionClosed( ));
+    emit(connectionClosed());
 }
 
-void ServerWorker::replyToEventRegistration( const QString uri,
-                                             const bool success )
+void ServerWorker::replyToEventRegistration(const QString uri,
+                                            const bool success)
 {
-    if( uri != _streamId )
+    if (uri != _streamId)
         return;
 
     _registeredToEvents = success;
-    _sendBindReply( _registeredToEvents );
+    _sendBindReply(_registeredToEvents);
 }
 
 void ServerWorker::_processMessages()
 {
-    const qint64 headerSize( MessageHeader::serializedSize );
+    const qint64 headerSize(MessageHeader::serializedSize);
 
-    if( _tcpSocket->bytesAvailable() >= headerSize )
+    if (_tcpSocket->bytesAvailable() >= headerSize)
         _receiveMessage();
 
     // Send all events
-    foreach( const Event& evt, _events )
-        _send( evt );
+    foreach (const Event& evt, _events)
+        _send(evt);
     _events.clear();
 
     _tcpSocket->flush();
 
     // Finish reading messages from the socket if connection closed
-    if( !_isConnected( ))
+    if (!_isConnected())
     {
-        while( _tcpSocket->bytesAvailable() >= headerSize )
+        while (_tcpSocket->bytesAvailable() >= headerSize)
             _receiveMessage();
 
-        emit( connectionClosed( ));
+        emit(connectionClosed());
     }
-    else if( _tcpSocket->bytesAvailable() >= headerSize )
+    else if (_tcpSocket->bytesAvailable() >= headerSize)
         emit _dataAvailable();
 }
 
 void ServerWorker::_receiveMessage()
 {
     const MessageHeader mh = _receiveMessageHeader();
-    const QByteArray messageByteArray = _receiveMessageBody( mh.size );
-    _handleMessage( mh, messageByteArray );
+    const QByteArray messageByteArray = _receiveMessageBody(mh.size);
+    _handleMessage(mh, messageByteArray);
 }
 
 MessageHeader ServerWorker::_receiveMessageHeader()
 {
     MessageHeader messageHeader;
 
-    QDataStream stream( _tcpSocket );
+    QDataStream stream(_tcpSocket);
     stream >> messageHeader;
 
     return messageHeader;
 }
 
-QByteArray ServerWorker::_receiveMessageBody( const int size )
+QByteArray ServerWorker::_receiveMessageBody(const int size)
 {
     QByteArray messageByteArray;
 
-    if( size > 0 )
+    if (size > 0)
     {
-        messageByteArray = _tcpSocket->read( size );
+        messageByteArray = _tcpSocket->read(size);
 
-        while( messageByteArray.size() < size )
+        while (messageByteArray.size() < size)
         {
-            if( !_tcpSocket->waitForReadyRead( RECEIVE_TIMEOUT_MS ))
+            if (!_tcpSocket->waitForReadyRead(RECEIVE_TIMEOUT_MS))
             {
                 emit connectionClosed();
                 return QByteArray();
             }
 
             messageByteArray.append(
-                        _tcpSocket->read( size - messageByteArray.size( )));
+                _tcpSocket->read(size - messageByteArray.size()));
         }
     }
 
     return messageByteArray;
 }
 
-void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
-                                   const QByteArray& byteArray )
+void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
+                                  const QByteArray& byteArray)
 {
-    const QString uri( messageHeader.uri );
-    if( uri.isEmpty( ))
+    const QString uri(messageHeader.uri);
+    if (uri.isEmpty())
     {
         std::cerr << "Warning: rejecting streamer with empty id" << std::endl;
-        closeConnection( _streamId );
+        closeConnection(_streamId);
         return;
     }
-    if( uri != _streamId &&
-            messageHeader.type != MESSAGE_TYPE_PIXELSTREAM_OPEN )
+    if (uri != _streamId && messageHeader.type != MESSAGE_TYPE_PIXELSTREAM_OPEN)
     {
         std::cerr << "Warning: ingnoring message with incorrect stream id: '"
                   << messageHeader.uri << "', expected: '"
-                  << _streamId.toStdString() << "'" <<  std::endl;
+                  << _streamId.toStdString() << "'" << std::endl;
         return;
     }
 
-    switch( messageHeader.type )
+    switch (messageHeader.type)
     {
     case MESSAGE_TYPE_QUIT:
-        emit removeStreamSource( _streamId, _sourceId );
+        emit removeStreamSource(_streamId, _sourceId);
         _streamId = QString();
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM_OPEN:
-        if( !_streamId.isEmpty( ))
+        if (!_streamId.isEmpty())
         {
             std::cerr << "Warning: PixelStream already opened!" << std::endl;
             return;
         }
         _streamId = uri;
         // The version is only sent by deflect clients since v. 0.12.1
-        if( !byteArray.isEmpty( ))
-            _parseClientProtocolVersion( byteArray );
-        emit addStreamSource( _streamId, _sourceId );
+        if (!byteArray.isEmpty())
+            _parseClientProtocolVersion(byteArray);
+        emit addStreamSource(_streamId, _sourceId);
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME:
-        emit receivedFrameFinished( _streamId, _sourceId );
+        emit receivedFrameFinished(_streamId, _sourceId);
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM:
-        _handlePixelStreamMessage( byteArray );
+        _handlePixelStreamMessage(byteArray);
         break;
 
     case MESSAGE_TYPE_SIZE_HINTS:
     {
         const SizeHints* hints =
-                reinterpret_cast< const SizeHints* >( byteArray.data( ));
-        emit receivedSizeHints( _streamId, SizeHints( *hints ));
+            reinterpret_cast<const SizeHints*>(byteArray.data());
+        emit receivedSizeHints(_streamId, SizeHints(*hints));
         break;
     }
 
     case MESSAGE_TYPE_DATA:
-        emit receivedData( _streamId, byteArray );
+        emit receivedData(_streamId, byteArray);
         break;
 
     case MESSAGE_TYPE_IMAGE_VIEW:
     {
-        const auto view = reinterpret_cast<const View*>( byteArray.data( ));
-        if( *view >= View::mono && *view <= View::right_eye )
+        const auto view = reinterpret_cast<const View*>(byteArray.data());
+        if (*view >= View::mono && *view <= View::right_eye)
             _activeView = *view;
         break;
     }
 
     case MESSAGE_TYPE_BIND_EVENTS:
     case MESSAGE_TYPE_BIND_EVENTS_EX:
-        if( _registeredToEvents )
+        if (_registeredToEvents)
             std::cerr << "We are already bound!!" << std::endl;
         else
         {
             const bool exclusive =
-                    (messageHeader.type == MESSAGE_TYPE_BIND_EVENTS_EX);
-            emit registerToEvents( _streamId, exclusive, this );
+                (messageHeader.type == MESSAGE_TYPE_BIND_EVENTS_EX);
+            emit registerToEvents(_streamId, exclusive, this);
         }
         break;
 
@@ -279,50 +277,50 @@ void ServerWorker::_handleMessage( const MessageHeader& messageHeader,
     }
 }
 
-void ServerWorker::_parseClientProtocolVersion( const QByteArray& message )
+void ServerWorker::_parseClientProtocolVersion(const QByteArray& message)
 {
     bool ok = false;
-    const int version = message.toInt( &ok );
-    if( ok )
+    const int version = message.toInt(&ok);
+    if (ok)
         _clientProtocolVersion = version;
 }
 
-void ServerWorker::_handlePixelStreamMessage( const QByteArray& message )
+void ServerWorker::_handlePixelStreamMessage(const QByteArray& message)
 {
     Segment segment;
 
     const auto data = message.data();
-    segment.parameters = *reinterpret_cast<const SegmentParameters*>( data );
-    segment.imageData = message.right( message.size() -
-                                       sizeof( SegmentParameters ));
+    segment.parameters = *reinterpret_cast<const SegmentParameters*>(data);
+    segment.imageData =
+        message.right(message.size() - sizeof(SegmentParameters));
 
-    emit( receivedSegment( _streamId, _sourceId, segment, _activeView ));
+    emit(receivedSegment(_streamId, _sourceId, segment, _activeView));
 }
 
 void ServerWorker::_sendProtocolVersion()
 {
     const int32_t protocolVersion = NETWORK_PROTOCOL_VERSION;
-    _tcpSocket->write( (char*)&protocolVersion, sizeof( int32_t ));
+    _tcpSocket->write((char*)&protocolVersion, sizeof(int32_t));
     _flushSocket();
 }
 
-void ServerWorker::_sendBindReply( const bool successful )
+void ServerWorker::_sendBindReply(const bool successful)
 {
-    MessageHeader mh( MESSAGE_TYPE_BIND_EVENTS_REPLY, sizeof( bool ));
-    _send( mh );
+    MessageHeader mh(MESSAGE_TYPE_BIND_EVENTS_REPLY, sizeof(bool));
+    _send(mh);
 
-    _tcpSocket->write( (const char *)&successful, sizeof( bool ));
+    _tcpSocket->write((const char*)&successful, sizeof(bool));
     _flushSocket();
 }
 
-void ServerWorker::_send( const Event& evt )
+void ServerWorker::_send(const Event& evt)
 {
     // send message header
-    MessageHeader mh( MESSAGE_TYPE_EVENT, Event::serializedSize );
-    _send( mh );
+    MessageHeader mh(MESSAGE_TYPE_EVENT, Event::serializedSize);
+    _send(mh);
 
     {
-        QDataStream stream( _tcpSocket );
+        QDataStream stream(_tcpSocket);
         stream << evt;
     }
     _flushSocket();
@@ -330,14 +328,14 @@ void ServerWorker::_send( const Event& evt )
 
 void ServerWorker::_sendQuit()
 {
-    MessageHeader mh( MESSAGE_TYPE_QUIT, 0 );
-    _send( mh );
+    MessageHeader mh(MESSAGE_TYPE_QUIT, 0);
+    _send(mh);
     _flushSocket();
 }
 
-bool ServerWorker::_send( const MessageHeader& messageHeader )
+bool ServerWorker::_send(const MessageHeader& messageHeader)
 {
-    QDataStream stream( _tcpSocket );
+    QDataStream stream(_tcpSocket);
     stream << messageHeader;
 
     return stream.status() == QDataStream::Ok;
@@ -346,7 +344,7 @@ bool ServerWorker::_send( const MessageHeader& messageHeader )
 void ServerWorker::_flushSocket()
 {
     _tcpSocket->flush();
-    while( _tcpSocket->bytesToWrite() > 0 && _isConnected( ))
+    while (_tcpSocket->bytesToWrite() > 0 && _isConnected())
         _tcpSocket->waitForBytesWritten();
 }
 
@@ -354,5 +352,4 @@ bool ServerWorker::_isConnected() const
 {
     return _tcpSocket->state() == QTcpSocket::ConnectedState;
 }
-
 }

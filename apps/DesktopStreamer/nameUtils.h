@@ -27,13 +27,11 @@
  */
 namespace nameutils
 {
-
 /**
  * Retrieve the full name of the user (e.g. "John Doe").
  * @return full name if available, else the basic username or an empty string.
  */
 QString getFullUsername();
-
 }
 
 #endif

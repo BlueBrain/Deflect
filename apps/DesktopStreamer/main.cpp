@@ -44,20 +44,20 @@
 
 #include <QCommandLineParser>
 
-int main( int argc, char* argv[] )
+int main(int argc, char* argv[])
 {
-    QApplication app( argc, argv );
+    QApplication app(argc, argv);
 
     QApplication::setApplicationVersion(
-                QString::fromStdString( deflect::Version::getString( )));
+        QString::fromStdString(deflect::Version::getString()));
 
     QCommandLineParser parser;
-    parser.setApplicationDescription( "Stream your desktop to a remote host" );
+    parser.setApplicationDescription("Stream your desktop to a remote host");
     parser.addHelpOption();
     parser.addVersionOption();
-    parser.process( app );
+    parser.process(app);
 
-    Q_INIT_RESOURCE( resources );
+    Q_INIT_RESOURCE(resources);
 
     MainWindow mainWindow;
     mainWindow.show();

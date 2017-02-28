@@ -56,7 +56,6 @@ class QTcpSocket;
 
 namespace deflect
 {
-
 /**
  * Represent a communication Socket for the Stream Library.
  */
@@ -73,8 +72,8 @@ public:
      * @param host The target host (IP address or hostname)
      * @param port The target port
      */
-    DEFLECT_API Socket( const std::string& host,
-                        unsigned short port = defaultPortNumber );
+    DEFLECT_API Socket(const std::string& host,
+                       unsigned short port = defaultPortNumber);
 
     /** Destruct a Socket, disconnecting from host. */
     DEFLECT_API ~Socket();
@@ -98,7 +97,7 @@ public:
      * Is there a pending message
      * @param messageSize Minimum size of the message
      */
-    bool hasMessage( const size_t messageSize = 0 ) const;
+    bool hasMessage(const size_t messageSize = 0) const;
 
     /**
      * Send a message.
@@ -106,7 +105,7 @@ public:
      * @param message The message data
      * @return true if the message could be sent, false otherwise
      */
-    bool send( const MessageHeader& messageHeader, const QByteArray& message );
+    bool send(const MessageHeader& messageHeader, const QByteArray& message);
 
     /**
      * Receive a message.
@@ -114,7 +113,7 @@ public:
      * @param message The received message data
      * @return true if a message could be received, false otherwise
      */
-    bool receive( MessageHeader& messageHeader, QByteArray& message );
+    bool receive(MessageHeader& messageHeader, QByteArray& message);
 
 signals:
     /** Signal that the socket has been disconnected. */
@@ -126,11 +125,10 @@ private:
     mutable QMutex _socketMutex;
     int32_t _serverProtocolVersion;
 
-    bool _receiveHeader( MessageHeader& messageHeader );
-    bool _connect( const std::string &host, const unsigned short port );
+    bool _receiveHeader(MessageHeader& messageHeader);
+    bool _connect(const std::string& host, const unsigned short port);
     bool _receiveProtocolVersion();
 };
-
 }
 
 #endif

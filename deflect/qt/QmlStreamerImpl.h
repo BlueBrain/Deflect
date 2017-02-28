@@ -43,24 +43,22 @@
 
 #include <QImage>
 #include <QObject>
-#include <QTimer>
 #include <QThread>
+#include <QTimer>
 
+#include "../SizeHints.h"
 #include "OffscreenQuickView.h"
 #include "QmlStreamer.h"
-#include "../SizeHints.h"
 
 #ifdef __APPLE__
-#  include <deflect/AppNapSuspender.h>
+#include <deflect/AppNapSuspender.h>
 #endif
 #include <deflect/Stream.h>
 
 namespace deflect
 {
-
 namespace qt
 {
-
 class EventReceiver;
 class QmlGestures;
 class TouchInjector;
@@ -70,46 +68,45 @@ class QmlStreamer::Impl : public QObject
     Q_OBJECT
 
 public:
-    Impl( const QString& qmlFile, const std::string& streamHost,
-          const std::string& streamId );
+    Impl(const QString& qmlFile, const std::string& streamHost,
+         const std::string& streamId);
     ~Impl();
 
-    void useAsyncSend( const bool async ) { _asyncSend = async; }
+    void useAsyncSend(const bool async) { _asyncSend = async; }
     QQuickItem* getRootItem() { return _quickView->getRootItem(); }
     QQmlEngine* getQmlEngine() { return _quickView->getEngine(); }
     Stream* getStream() { return _stream.get(); }
-
 signals:
     void streamClosed();
 
 private slots:
-    void _afterRender( QImage image );
+    void _afterRender(QImage image);
 
-    void _onPressed( QPointF position );
-    void _onReleased( QPointF position );
-    void _onMoved( QPointF position );
+    void _onPressed(QPointF position);
+    void _onReleased(QPointF position);
+    void _onMoved(QPointF position);
 
-    void _onKeyPress( int key, int modifiers, QString text );
-    void _onKeyRelease( int key, int modifiers, QString text );
+    void _onKeyPress(int key, int modifiers, QString text);
+    void _onKeyRelease(int key, int modifiers, QString text);
 
     void _onStreamClosed();
 
 private:
     void _setupSizeHintsConnections();
-    void _send( QKeyEvent& keyEvent );
-    bool _sendToWebengineviewItems( QKeyEvent& keyEvent );
+    void _send(QKeyEvent& keyEvent);
+    bool _sendToWebengineviewItems(QKeyEvent& keyEvent);
     std::string _getDeflectStreamIdentifier() const;
     bool _setupDeflectStream();
 
     void _connectTouchInjector();
     void _setupMouseModeSwitcher();
-    void _startMouseModeSwitchDetection( const QPointF& pos );
+    void _startMouseModeSwitchDetection(const QPointF& pos);
     bool _touchIsTapAndHold();
     void _switchFromTouchToMouseMode();
     void _switchBackToTouchMode();
-    void _sendMouseEvent( QEvent::Type eventType, const QPointF& pos );
+    void _sendMouseEvent(QEvent::Type eventType, const QPointF& pos);
 
-    QPointF _mapToScene( const QPointF& normalizedPos ) const;
+    QPointF _mapToScene(const QPointF& normalizedPos) const;
 
     std::unique_ptr<OffscreenQuickView> _quickView;
 
@@ -122,12 +119,12 @@ private:
     const std::string _streamId;
     SizeHints _sizeHints;
 
-    bool _asyncSend{ false };
+    bool _asyncSend{false};
     Stream::Future _sendFuture;
     QImage _image;
 
     QTimer _mouseModeTimer;
-    bool _mouseMode{ false };
+    bool _mouseMode{false};
     QPointF _touchStartPos;
     QPointF _touchCurrentPos;
 
@@ -135,7 +132,6 @@ private:
     AppNapSuspender _napSuspender;
 #endif
 };
-
 }
 }
 

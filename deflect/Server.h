@@ -41,15 +41,14 @@
 #ifndef DEFLECT_SERVER_H
 #define DEFLECT_SERVER_H
 
+#include <deflect/SizeHints.h>
 #include <deflect/api.h>
 #include <deflect/types.h>
-#include <deflect/SizeHints.h>
 
 #include <QtNetwork/QTcpServer>
 
 namespace deflect
 {
-
 /**
  * Listen to incoming connections from multiple Stream clients.
  *
@@ -72,7 +71,7 @@ public:
      * @param port The port to listen on. Must be available.
      * @throw std::runtime_error if the server could not be started.
      */
-    explicit Server( int port = defaultPortNumber );
+    explicit Server(int port = defaultPortNumber);
 
     /** Stop the server and close all open pixel stream connections. */
     ~Server();
@@ -89,7 +88,7 @@ public slots:
      *
      * @param uri Identifier for the stream
      */
-    void requestFrame( QString uri );
+    void requestFrame(QString uri);
 
     /**
      * Reply to an event registration request after a registerToEvents() signal.
@@ -97,14 +96,14 @@ public slots:
      * @param uri Identifier for the stream
      * @param success Result of the registration operation
      */
-    void replyToEventRegistration( QString uri, bool success );
+    void replyToEventRegistration(QString uri, bool success);
 
     /**
      * Close a pixel stream, disconnecting the remote client.
      *
      * @param uri Identifier for the stream
      */
-    void closePixelStream( QString uri );
+    void closePixelStream(QString uri);
 
 signals:
     /**
@@ -112,14 +111,14 @@ signals:
      *
      * @param uri Identifier for the stream
      */
-    void pixelStreamOpened( QString uri );
+    void pixelStreamOpened(QString uri);
 
     /**
      * Notify that a pixel stream has been closed.
      *
      * @param uri Identifier for the stream
      */
-    void pixelStreamClosed( QString uri );
+    void pixelStreamClosed(QString uri);
 
     /**
      * Emitted when a full frame has been received from a pixel stream.
@@ -129,7 +128,7 @@ signals:
      *
      * @param frame The latest frame that was received for a stream.
      */
-    void receivedFrame( deflect::FramePtr frame );
+    void receivedFrame(deflect::FramePtr frame);
 
     /**
      * Emitted when a remote client wants to register for receiving events.
@@ -138,8 +137,8 @@ signals:
      * @param exclusive true if the receiver should receive events exclusively
      * @param receiver the event receiver instance
      */
-    void registerToEvents( QString uri, bool exclusive,
-                           deflect::EventReceiver* receiver );
+    void registerToEvents(QString uri, bool exclusive,
+                          deflect::EventReceiver* receiver);
 
     /**
      * Emitted when a remote client sends size hints for displaying the stream.
@@ -147,7 +146,7 @@ signals:
      * @param uri Identifier for the stream
      * @param hints The size hints to apply
      */
-    void receivedSizeHints( QString uri, deflect::SizeHints hints );
+    void receivedSizeHints(QString uri, deflect::SizeHints hints);
 
     /**
      * Emitted when a remote client sends generic data.
@@ -155,20 +154,19 @@ signals:
      * @param uri Identifier for the stream
      * @param data A streamer-specific message
      */
-    void receivedData( QString uri, QByteArray data );
+    void receivedData(QString uri, QByteArray data);
 
 private:
     class Impl;
     std::unique_ptr<Impl> _impl;
 
     /** Re-implemented handling of connections from QTCPSocket. */
-    void incomingConnection( qintptr socketHandle ) final;
+    void incomingConnection(qintptr socketHandle) final;
 
 signals:
-    void _closePixelStream( QString uri );
-    void _eventRegistrationReply( QString uri, bool success );
+    void _closePixelStream(QString uri);
+    void _eventRegistrationReply(QString uri, bool success);
 };
-
 }
 
 #endif

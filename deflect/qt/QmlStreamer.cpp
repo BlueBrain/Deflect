@@ -46,21 +46,20 @@ namespace deflect
 {
 namespace qt
 {
-
-QmlStreamer::QmlStreamer( const QString& qmlFile,
-                          const std::string& streamHost,
-                          const std::string& streamId )
-    : _impl( new Impl( qmlFile, streamHost, streamId ))
+QmlStreamer::QmlStreamer(const QString& qmlFile, const std::string& streamHost,
+                         const std::string& streamId)
+    : _impl(new Impl(qmlFile, streamHost, streamId))
 {
-    connect( _impl.get(), &Impl::streamClosed,
-             this, &QmlStreamer::streamClosed );
+    connect(_impl.get(), &Impl::streamClosed, this, &QmlStreamer::streamClosed);
 }
 
-QmlStreamer::~QmlStreamer() {}
-
-void QmlStreamer::useAsyncSend( const bool async )
+QmlStreamer::~QmlStreamer()
 {
-    _impl->useAsyncSend( async );
+}
+
+void QmlStreamer::useAsyncSend(const bool async)
+{
+    _impl->useAsyncSend(async);
 }
 
 QQuickItem* QmlStreamer::getRootItem()
@@ -73,10 +72,9 @@ QQmlEngine* QmlStreamer::getQmlEngine()
     return _impl->getQmlEngine();
 }
 
-bool QmlStreamer::sendData( const QByteArray data )
+bool QmlStreamer::sendData(const QByteArray data)
 {
-    return _impl->getStream()->sendData( data.constData(), data.size( ));
+    return _impl->getStream()->sendData(data.constData(), data.size());
 }
-
 }
 }

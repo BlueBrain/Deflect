@@ -46,13 +46,13 @@
 #include <string>
 
 #ifdef __APPLE__
-#  include <OpenGL/gl.h>
-#  include <GLUT/glut.h> // GLUT is deprecated in 10.9
-#  pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#include <GLUT/glut.h> // GLUT is deprecated in 10.9
+#include <OpenGL/gl.h>
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #else
-#  include <GL/gl.h>
-#  include <GL/glut.h>
+#include <GL/gl.h>
+#include <GL/glut.h>
 #endif
 
 bool deflectInteraction = false;
@@ -64,64 +64,75 @@ std::string deflectHost;
 std::string deflectStreamId = "SimpleStreamer";
 std::unique_ptr<deflect::Stream> deflectStream;
 
-void syntax( int exitStatus );
-void readCommandLineArguments( int argc, char** argv );
-void initGLWindow( int argc, char** argv );
+void syntax(int exitStatus);
+void readCommandLineArguments(int argc, char** argv);
+void initGLWindow(int argc, char** argv);
 void initDeflectStream();
 void display();
-void reshape( int width, int height );
+void reshape(int width, int height);
 
 void cleanup()
 {
     deflectStream.reset();
 }
 
-int main( int argc, char** argv )
+int main(int argc, char** argv)
 {
-    readCommandLineArguments( argc, argv );
+    readCommandLineArguments(argc, argv);
 
-    if( deflectHost.empty( ))
-        syntax( EXIT_FAILURE );
+    if (deflectHost.empty())
+        syntax(EXIT_FAILURE);
 
-    initGLWindow( argc, argv );
+    initGLWindow(argc, argv);
     initDeflectStream();
 
-    atexit( cleanup );
+    atexit(cleanup);
     glutMainLoop(); // enter the main loop
 
     return EXIT_SUCCESS;
 }
 
-void syntax( const int exitStatus )
+void syntax(const int exitStatus)
 {
     std::cout << "Usage: simplestreamer [options] <host>" << std::endl;
     std::cout << "Stream a GLUT teapot to a remote host\n" << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << " -h, --help         display this help" << std::endl;
-    std::cout << " -n <stream id>     set stream identifier (default: 'SimpleStreamer')" << std::endl;
-    std::cout << " -i                 enable interaction events (default: OFF)" << std::endl;
-    std::cout << " -u                 enable uncompressed streaming (default: OFF)" << std::endl;
-    std::cout << " -s                 enable stereo streaming, equivalent to -l -r (default: OFF)" << std::endl;
-    std::cout << " -l                 enable stereo streaming, left image only (default: OFF)" << std::endl;
-    std::cout << " -r                 enable stereo streaming, right image only (default: OFF)" << std::endl;
-    exit( exitStatus );
+    std::cout << " -n <stream id>     set stream identifier (default: "
+                 "'SimpleStreamer')"
+              << std::endl;
+    std::cout << " -i                 enable interaction events (default: OFF)"
+              << std::endl;
+    std::cout
+        << " -u                 enable uncompressed streaming (default: OFF)"
+        << std::endl;
+    std::cout << " -s                 enable stereo streaming, equivalent to "
+                 "-l -r (default: OFF)"
+              << std::endl;
+    std::cout << " -l                 enable stereo streaming, left image only "
+                 "(default: OFF)"
+              << std::endl;
+    std::cout << " -r                 enable stereo streaming, right image "
+                 "only (default: OFF)"
+              << std::endl;
+    exit(exitStatus);
 }
 
-void readCommandLineArguments( int argc, char** argv )
+void readCommandLineArguments(int argc, char** argv)
 {
-    for( int i = 1; i < argc; ++i )
+    for (int i = 1; i < argc; ++i)
     {
-        if( std::string( argv[i] ) == "--help" )
-            syntax( EXIT_SUCCESS );
+        if (std::string(argv[i]) == "--help")
+            syntax(EXIT_SUCCESS);
 
-        if( argv[i][0] == '-' )
+        if (argv[i][0] == '-')
         {
-            switch( argv[i][1] )
+            switch (argv[i][1])
             {
             case 'n':
-                if( i + 1 < argc )
+                if (i + 1 < argc)
                 {
-                    deflectStreamId = argv[i+1];
+                    deflectStreamId = argv[i + 1];
                     ++i;
                 }
                 break;
@@ -142,54 +153,55 @@ void readCommandLineArguments( int argc, char** argv )
                 deflectStereoStreamRight = true;
                 break;
             case 'h':
-                syntax( EXIT_SUCCESS );
+                syntax(EXIT_SUCCESS);
             default:
-                std::cerr << "Unknown command line option: " << argv[i] << std::endl;
-                ::exit( EXIT_FAILURE );
+                std::cerr << "Unknown command line option: " << argv[i]
+                          << std::endl;
+                ::exit(EXIT_FAILURE);
             }
         }
-        else if( i == argc - 1 )
+        else if (i == argc - 1)
             deflectHost = argv[i];
     }
 }
 
-void initGLWindow( int argc, char** argv )
+void initGLWindow(int argc, char** argv)
 {
     // setup GLUT / OpenGL
-    glutInit( &argc, argv );
-    glutInitDisplayMode( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH );
-    glutInitWindowPosition( 0, 0 );
-    glutInitWindowSize( 1024, 768 );
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+    glutInitWindowPosition(0, 0);
+    glutInitWindowSize(1024, 768);
 
-    glutCreateWindow( "SimpleStreamer" );
+    glutCreateWindow("SimpleStreamer");
 
     // the display function will be called continuously
-    glutDisplayFunc( display );
-    glutIdleFunc( display );
+    glutDisplayFunc(display);
+    glutIdleFunc(display);
 
     // the reshape function will be called on window resize
-    glutReshapeFunc( reshape );
+    glutReshapeFunc(reshape);
 
-    glEnable( GL_DEPTH_TEST );
-    glEnable( GL_LIGHTING );
-    glEnable( GL_LIGHT0 );
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
 }
 
 void initDeflectStream()
 {
-    deflectStream.reset( new deflect::Stream( deflectStreamId, deflectHost ));
-    if( !deflectStream->isConnected( ))
+    deflectStream.reset(new deflect::Stream(deflectStreamId, deflectHost));
+    if (!deflectStream->isConnected())
     {
         std::cerr << "Could not connect to host!" << std::endl;
         deflectStream.reset();
-        exit( EXIT_FAILURE );
+        exit(EXIT_FAILURE);
     }
 
-    if( deflectInteraction && !deflectStream->registerForEvents( ))
+    if (deflectInteraction && !deflectStream->registerForEvents())
     {
         std::cerr << "Could not register for events!" << std::endl;
         deflectStream.reset();
-        exit( EXIT_FAILURE );
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -204,21 +216,21 @@ struct Camera
 
     void apply()
     {
-        glMatrixMode( GL_PROJECTION );
+        glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
 
         const float size = 2.f;
-        glOrtho( -size, size, -size, size, -size, size );
+        glOrtho(-size, size, -size, size, -size, size);
 
-        glMatrixMode( GL_MODELVIEW );
+        glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
-        glTranslatef( offsetX, -offsetY, 0.f );
+        glTranslatef(offsetX, -offsetY, 0.f);
 
-        glRotatef( angleX, 0.f, 1.f, 0.f );
-        glRotatef( angleY, -1.f, 0.f, 0.f );
+        glRotatef(angleX, 0.f, 1.f, 0.f);
+        glRotatef(angleY, -1.f, 0.f, 0.f);
 
-        glScalef( zoom, zoom, zoom );
+        glScalef(zoom, zoom, zoom);
     }
 };
 
@@ -231,35 +243,35 @@ struct Image
     static Image readGlBuffer()
     {
         Image image;
-        image.width = glutGet( GLUT_WINDOW_WIDTH );
-        image.height = glutGet( GLUT_WINDOW_HEIGHT );
-        image.data.resize( image.width * image.height * 4 );
-        glReadPixels( 0, 0, image.width, image.height, GL_RGBA,
-                      GL_UNSIGNED_BYTE, (GLvoid*)image.data.data( ));
+        image.width = glutGet(GLUT_WINDOW_WIDTH);
+        image.height = glutGet(GLUT_WINDOW_HEIGHT);
+        image.data.resize(image.width * image.height * 4);
+        glReadPixels(0, 0, image.width, image.height, GL_RGBA, GL_UNSIGNED_BYTE,
+                     (GLvoid*)image.data.data());
 
-        deflect::ImageWrapper::swapYAxis( image.data.data(), image.width,
-                                          image.height, 4 );
+        deflect::ImageWrapper::swapYAxis(image.data.data(), image.width,
+                                         image.height, 4);
         return image;
     }
 };
 
-bool send( const Image& image, const deflect::View view )
+bool send(const Image& image, const deflect::View view)
 {
-    deflect::ImageWrapper deflectImage( image.data.data(), image.width,
-                                        image.height, deflect::RGBA );
-    deflectImage.compressionPolicy = deflectCompressImage ?
-                deflect::COMPRESSION_ON : deflect::COMPRESSION_OFF;
+    deflect::ImageWrapper deflectImage(image.data.data(), image.width,
+                                       image.height, deflect::RGBA);
+    deflectImage.compressionPolicy = deflectCompressImage
+                                         ? deflect::COMPRESSION_ON
+                                         : deflect::COMPRESSION_OFF;
     deflectImage.compressionQuality = deflectCompressionQuality;
     deflectImage.view = view;
-    return deflectStream->send( deflectImage ) &&
-            deflectStream->finishFrame();
+    return deflectStream->send(deflectImage) && deflectStream->finishFrame();
 }
 
-bool timeout( const float sec )
+bool timeout(const float sec)
 {
     using clock = std::chrono::system_clock;
     static clock::time_point start = clock::now();
-    return std::chrono::duration<float>{ clock::now() - start }.count() > sec;
+    return std::chrono::duration<float>{clock::now() - start}.count() > sec;
 }
 
 void display()
@@ -270,40 +282,40 @@ void display()
     bool success = false;
     bool waitToStart = false;
     static bool deflectFirstEventReceived = false;
-    if( deflectStereoStreamLeft || deflectStereoStreamRight )
+    if (deflectStereoStreamLeft || deflectStereoStreamRight)
     {
         // Poor man's attempt to synchronise the start of separate stereo
         // streams (waiting on first event from server or 5 sec. timeout).
         // This does not prevent applications from going quickly out of sync.
         // Real-world applications need a dedicated synchronization channel to
         // ensure corresponding left-right views are rendered and sent together.
-        if( !(deflectStereoStreamLeft && deflectStereoStreamRight ))
-            waitToStart = !(deflectFirstEventReceived || timeout( 5 ));
+        if (!(deflectStereoStreamLeft && deflectStereoStreamRight))
+            waitToStart = !(deflectFirstEventReceived || timeout(5));
 
-        if( deflectStereoStreamLeft && !waitToStart )
+        if (deflectStereoStreamLeft && !waitToStart)
         {
-            glClearColor( 0.7, 0.3, 0.3, 1.0 );
-            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-            glutSolidTeapot( 1.f );
+            glClearColor(0.7, 0.3, 0.3, 1.0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glutSolidTeapot(1.f);
             const auto leftImage = Image::readGlBuffer();
-            success = send( leftImage, deflect::View::left_eye );
+            success = send(leftImage, deflect::View::left_eye);
         }
-        if( deflectStereoStreamRight && !waitToStart )
+        if (deflectStereoStreamRight && !waitToStart)
         {
-            glClearColor( 0.3, 0.7, 0.3, 1.0 );
-            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-            glutSolidTeapot( 1.f );
+            glClearColor(0.3, 0.7, 0.3, 1.0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glutSolidTeapot(1.f);
             const auto rightImage = Image::readGlBuffer();
             success = (!deflectStereoStreamLeft || success) &&
-                      send( rightImage, deflect::View::right_eye );
+                      send(rightImage, deflect::View::right_eye);
         }
     }
     else
     {
-        glClearColor( 0.5, 0.5, 0.5, 1.0 );
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-        glutSolidTeapot( 1.f );
-        success = send( Image::readGlBuffer(), deflect::View::mono );
+        glClearColor(0.5, 0.5, 0.5, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glutSolidTeapot(1.f);
+        success = send(Image::readGlBuffer(), deflect::View::mono);
     }
 
     glutSwapBuffers();
@@ -311,7 +323,7 @@ void display()
     // increment rotation angle according to interaction, or by a constant rate
     // if interaction is not enabled. Note that mouse position is in normalized
     // window coordinates: (0,0) to (1,1).
-    if( deflectStream->isRegisteredForEvents( ))
+    if (deflectStream->isRegisteredForEvents())
     {
         static float mouseX = 0.f;
         static float mouseY = 0.f;
@@ -319,21 +331,21 @@ void display()
         // Note: there is a risk of missing events since we only process the
         // latest state available. For more advanced applications, event
         // processing should be done in a separate thread.
-        while( deflectStream->hasEvent( ))
+        while (deflectStream->hasEvent())
         {
             const deflect::Event& event = deflectStream->getEvent();
 
             deflectFirstEventReceived = true;
 
-            switch( event.type )
+            switch (event.type)
             {
             case deflect::Event::EVT_CLOSE:
                 std::cout << "Received close..." << std::endl;
-                exit( EXIT_SUCCESS );
+                exit(EXIT_SUCCESS);
             case deflect::Event::EVT_PINCH:
-                camera.zoom += std::copysign( std::sqrt( event.dx * event.dx +
-                                                         event.dy * event.dy ),
-                                              event.dx + event.dy );
+                camera.zoom += std::copysign(std::sqrt(event.dx * event.dx +
+                                                       event.dy * event.dy),
+                                             event.dx + event.dy);
                 break;
             case deflect::Event::EVT_PRESS:
                 mouseX = event.mouseX;
@@ -341,7 +353,7 @@ void display()
                 break;
             case deflect::Event::EVT_MOVE:
             case deflect::Event::EVT_RELEASE:
-                if( event.mouseLeft )
+                if (event.mouseLeft)
                 {
                     camera.angleX += (event.mouseX - mouseX) * 360.f;
                     camera.angleY += (event.mouseY - mouseY) * 360.f;
@@ -356,7 +368,7 @@ void display()
                 mouseY = event.mouseY;
                 break;
             case deflect::Event::EVT_KEY_PRESS:
-                if( event.key == ' ' )
+                if (event.key == ' ')
                 {
                     camera.angleX = 0.f;
                     camera.angleY = 0.f;
@@ -372,30 +384,30 @@ void display()
     }
     else
     {
-        if( !waitToStart )
+        if (!waitToStart)
         {
             camera.angleX += 1.f;
             camera.angleY += 1.f;
         }
     }
 
-    if( !success )
+    if (!success)
     {
-        if( !deflectStream->isConnected( ))
+        if (!deflectStream->isConnected())
         {
             std::cout << "Stream closed, exiting." << std::endl;
-            exit( EXIT_SUCCESS );
+            exit(EXIT_SUCCESS);
         }
-        else if( !waitToStart )
+        else if (!waitToStart)
         {
             std::cerr << "failure in deflectStreamSend()" << std::endl;
-            exit( EXIT_FAILURE );
+            exit(EXIT_FAILURE);
         }
     }
 }
 
-void reshape( int width, int height )
+void reshape(int width, int height)
 {
     // reset the viewport
-    glViewport( 0, 0, width, height );
+    glViewport(0, 0, width, height);
 }

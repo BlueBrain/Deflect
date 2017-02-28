@@ -40,8 +40,8 @@
 #ifndef DEFLECT_SOURCEBUFFER_H
 #define DEFLECT_SOURCEBUFFER_H
 
-#include <deflect/api.h>
 #include <deflect/Segment.h>
+#include <deflect/api.h>
 #include <deflect/types.h>
 
 #include <array>
@@ -49,7 +49,6 @@
 
 namespace deflect
 {
-
 using FrameIndex = unsigned int;
 
 /**
@@ -62,37 +61,36 @@ public:
     SourceBuffer();
 
     /** @return the segments at the front of the queue for a given view. */
-    const Segments& getSegments( View view ) const;
+    const Segments& getSegments(View view) const;
 
     /** @return the frame index of the back of the buffer for a given view. */
-    FrameIndex getBackFrameIndex( View view ) const;
+    FrameIndex getBackFrameIndex(View view) const;
 
     /** @return true if the back frame of the given view has no segments. */
-    bool isBackFrameEmpty( View view ) const;
+    bool isBackFrameEmpty(View view) const;
 
     /** Insert a segment into the back frame of the appropriate queue. */
-    void insert( const Segment& segment, View view );
+    void insert(const Segment& segment, View view);
 
     /** Push a new frame to the back of given view. */
-    void push( View view );
+    void push(View view);
 
     /** Pop the front frame of the buffer for the given view. */
-    void pop( View view );
+    void pop(View view);
 
     /** @return the size of the queue for the given view. */
-    size_t getQueueSize( View view ) const;
+    size_t getQueueSize(View view) const;
 
 private:
     /** The collections of segments for each mono/left/right view. */
     std::queue<Segments> _segments[3];
 
     /** The current indices of the mono/left/right frame for this source. */
-    std::array<FrameIndex, 3> _backFrameIndex = { { 0u, 0u, 0u } };
+    std::array<FrameIndex, 3> _backFrameIndex = {{0u, 0u, 0u}};
 
-    std::queue<Segments>& _getQueue( View view );
-    const std::queue<Segments>& _getQueue( View view ) const;
+    std::queue<Segments>& _getQueue(View view);
+    const std::queue<Segments>& _getQueue(View view) const;
 };
-
 }
 
 #endif

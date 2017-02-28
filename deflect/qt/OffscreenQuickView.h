@@ -41,8 +41,8 @@
 #ifndef DELFECT_QT_OFFSCREENQUICKVIEW_H
 #define DELFECT_QT_OFFSCREENQUICKVIEW_H
 
-#include <future>
 #include <QQuickWindow>
+#include <future>
 
 QT_FORWARD_DECLARE_CLASS(QQmlComponent)
 QT_FORWARD_DECLARE_CLASS(QQmlEngine)
@@ -52,7 +52,6 @@ namespace deflect
 {
 namespace qt
 {
-
 /**
  * The different modes of rendering.
  */
@@ -78,8 +77,8 @@ public:
      * @param control the render control that will be used by the view.
      * @param mode the rendering mode
      */
-    OffscreenQuickView( std::unique_ptr<QQuickRenderControl> control,
-                        RenderMode mode = RenderMode::MULTITHREADED );
+    OffscreenQuickView(std::unique_ptr<QQuickRenderControl> control,
+                       RenderMode mode = RenderMode::MULTITHREADED);
 
     /** Close the view, stopping the rendering. */
     ~OffscreenQuickView();
@@ -89,7 +88,7 @@ public:
      * @param url qml file to load (will happen asynchronously if it is remote).
      * @return a future which will indicate the success of the operation.
      */
-    std::future<bool> load( const QUrl& url );
+    std::future<bool> load(const QUrl& url);
 
     /** @return the root qml item after a successful load, else nullptr. */
     QQuickItem* getRootItem() const;
@@ -108,7 +107,7 @@ signals:
      * @note this signal is emitted from the render thread. It is generally
      *       better to connect to it using an auto (queued) connection.
      */
-    void afterRender( QImage image );
+    void afterRender(QImage image);
 
 private:
     std::unique_ptr<QQuickRenderControl> _renderControl;
@@ -126,7 +125,7 @@ private:
     int _renderTimer = 0;
     int _stopRenderingDelayTimer = 0;
 
-    void timerEvent( QTimerEvent* e ) final;
+    void timerEvent(QTimerEvent* e) final;
 
     void _setupRootItem();
     void _requestRender();
@@ -134,7 +133,6 @@ private:
     void _render();
     void _afterRender();
 };
-
 }
 }
 

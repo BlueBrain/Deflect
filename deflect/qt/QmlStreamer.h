@@ -42,9 +42,9 @@
 
 #include <deflect/qt/api.h>
 
-#include <QString>
-#include <QQuickItem>
 #include <QQmlEngine>
+#include <QQuickItem>
+#include <QString>
 
 #include <memory>
 #include <string>
@@ -53,7 +53,6 @@ namespace deflect
 {
 namespace qt
 {
-
 /** Based on http://doc.qt.io/qt-5/qtquick-rendercontrol-example.html
  *
  * This class renders the given QML file in an offscreen fashion and streams
@@ -87,13 +86,13 @@ public:
      *        this value overrides the 'objectName' property of the root QML
      *        item. If neither is provided, "QmlStreamer" is used instead.
      */
-    QmlStreamer( const QString& qmlFile, const std::string& streamHost,
-                 const std::string& streamId = std::string( ));
+    QmlStreamer(const QString& qmlFile, const std::string& streamHost,
+                const std::string& streamId = std::string());
 
     ~QmlStreamer();
 
     /** Use asynchronous send of images via Deflect stream. Default off. */
-    void useAsyncSend( bool async );
+    void useAsyncSend(bool async);
 
     /** @return the QML root item, might be nullptr if not ready yet. */
     QQuickItem* getRootItem();
@@ -107,19 +106,18 @@ public:
      * @param data the data buffer
      * @return true if the data could be sent, false otherwise
      */
-    bool sendData( QByteArray data );
+    bool sendData(QByteArray data);
 
 signals:
     /** Emitted when the stream has been closed. */
     void streamClosed();
 
 private:
-    QmlStreamer( const QmlStreamer& ) = delete;
-    QmlStreamer operator=( const QmlStreamer& ) = delete;
+    QmlStreamer(const QmlStreamer&) = delete;
+    QmlStreamer operator=(const QmlStreamer&) = delete;
     class Impl;
-    std::unique_ptr< Impl > _impl;
+    std::unique_ptr<Impl> _impl;
 };
-
 }
 }
 

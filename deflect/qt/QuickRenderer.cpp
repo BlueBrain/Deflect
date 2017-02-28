@@ -52,29 +52,41 @@
 // remove the need for private headers. This internal API should remain stable
 // because it is also used by QtWebengine for the same reason.
 QT_BEGIN_NAMESPACE
-Q_GUI_EXPORT void qt_gl_set_global_share_context( QOpenGLContext* context );
+Q_GUI_EXPORT void qt_gl_set_global_share_context(QOpenGLContext* context);
 QT_END_NAMESPACE
 
 namespace deflect
 {
 namespace qt
 {
+QuickRenderer::QuickRenderer(QQuickWindow& quickWindow,
+                             QQuickRenderControl& renderControl,
+                             const bool multithreaded,
+                             const RenderTarget target)
+    : _quickWindow(quickWindow)
+    , _renderControl(renderControl)
+    , _multithreaded(multithreaded)
+    , _renderTarget(target)
+{
+}
 
-QuickRenderer::QuickRenderer( QQuickWindow& quickWindow,
-                              QQuickRenderControl& renderControl,
-                              const bool multithreaded,
-                              const RenderTarget target )
-    : _quickWindow( quickWindow )
-    , _renderControl( renderControl )
-    , _multithreaded( multithreaded )
-    , _renderTarget( target )
-{}
+QuickRenderer::~QuickRenderer()
+{
+}
 
-QuickRenderer::~QuickRenderer() {}
+QOpenGLContext* QuickRenderer::context()
+{
+    return _context.get();
+}
+
+QOpenGLFramebufferObject* QuickRenderer::fbo()
+{
+    return _fbo.get();
+}
 
 void QuickRenderer::init()
 {
-    if( _renderTarget == RenderTarget::NONE )
+    if (_renderTarget == RenderTarget::NONE)
         return;
 
     // In the OS X multithreaded case, the QOffscreenSurface must be create from
@@ -84,32 +96,34 @@ void QuickRenderer::init()
     // This, however, must happen after the GLContext was created (in the render
     // thread) to retreive the correct surface format (see below).
 
-    QMetaObject::invokeMethod( this, "_createGLContext", _connectionType( ));
+    QMetaObject::invokeMethod(this, "_createGLContext", _connectionType());
 
-    if( _renderTarget == RenderTarget::FBO )
+    if (_renderTarget == RenderTarget::FBO)
     {
-        // Pass _context->format(), not format_. Format does not specify and color
-        // buffer sizes, while the context, that has just been created, reports a
+        // Pass _context->format(), not format_. Format does not specify and
+        // color
+        // buffer sizes, while the context, that has just been created, reports
+        // a
         // format that has these values filled in. Pass this to the offscreen
         // surface to make sure it will be compatible with the context's
         // configuration.
-        _offscreenSurface.reset( new QOffscreenSurface );
-        _offscreenSurface->setFormat( _context->format( ));
+        _offscreenSurface.reset(new QOffscreenSurface);
+        _offscreenSurface->setFormat(_context->format());
         _offscreenSurface->create();
     }
 
-    QMetaObject::invokeMethod( this, "_initRenderControl", _connectionType( ));
+    QMetaObject::invokeMethod(this, "_initRenderControl", _connectionType());
 }
 
 void QuickRenderer::render()
 {
-    if( _multithreaded )
+    if (_multithreaded)
     {
-        QMutexLocker lock( &_mutex );
-        QCoreApplication::postEvent( this, new QEvent( QEvent::User ));
+        QMutexLocker lock(&_mutex);
+        QCoreApplication::postEvent(this, new QEvent(QEvent::User));
 
         // the main thread has to be blocked for sync()
-        _cond.wait( &_mutex );
+        _cond.wait(&_mutex);
     }
     else
         _onRender();
@@ -117,36 +131,36 @@ void QuickRenderer::render()
 
 void QuickRenderer::stop()
 {
-    QMetaObject::invokeMethod( this, "_onStop", _connectionType( ));
+    QMetaObject::invokeMethod(this, "_onStop", _connectionType());
 }
 
-bool QuickRenderer::event( QEvent* e )
+bool QuickRenderer::event(QEvent* e)
 {
-    if( e->type() == QEvent::User )
+    if (e->type() == QEvent::User)
     {
         _onRender();
         return true;
     }
-    return QObject::event( e );
+    return QObject::event(e);
 }
 
 void QuickRenderer::_onRender()
 {
-    if( !_initialized || _renderTarget == RenderTarget::NONE )
+    if (!_initialized || _renderTarget == RenderTarget::NONE)
         return;
 
     {
-        QMutexLocker lock( &_mutex );
+        QMutexLocker lock(&_mutex);
 
-        _context->makeCurrent( _getSurface( ));
+        _context->makeCurrent(_getSurface());
 
-        if( _renderTarget == RenderTarget::FBO )
+        if (_renderTarget == RenderTarget::FBO)
             _ensureFBO();
 
         _renderControl.sync();
 
         // unblock gui thread after sync in render thread is done
-        if( _multithreaded )
+        if (_multithreaded)
             _cond.wakeOne();
     }
 
@@ -160,17 +174,17 @@ void QuickRenderer::_ensureFBO()
 {
     const auto winSize = _quickWindow.size() * _quickWindow.devicePixelRatio();
 
-    if( !_fbo || _fbo->size() != winSize )
+    if (!_fbo || _fbo->size() != winSize)
     {
         const auto attachment = QOpenGLFramebufferObject::CombinedDepthStencil;
-        _fbo.reset( new QOpenGLFramebufferObject( winSize, attachment ));
-        _quickWindow.setRenderTarget( _fbo.get( ));
+        _fbo.reset(new QOpenGLFramebufferObject(winSize, attachment));
+        _quickWindow.setRenderTarget(_fbo.get());
     }
 }
 
 QSurface* QuickRenderer::_getSurface()
 {
-    if( _offscreenSurface )
+    if (_offscreenSurface)
         return _offscreenSurface.get();
     return &_quickWindow;
 }
@@ -184,23 +198,23 @@ void QuickRenderer::_createGLContext()
 {
     // Qt Quick may need a depth and stencil buffer
     QSurfaceFormat format_;
-    format_.setDepthBufferSize( 16 );
-    format_.setStencilBufferSize( 8 );
+    format_.setDepthBufferSize(16);
+    format_.setStencilBufferSize(8);
 
-    _context.reset( new QOpenGLContext );
-    _context->setFormat( format_ );
+    _context.reset(new QOpenGLContext);
+    _context->setFormat(format_);
     _context->create();
 
     // Test if user has setup shared GL contexts (QtWebEngine::initialize).
     // If so, setup global share context needed by the Qml WebEngineView.
-    if( QCoreApplication::testAttribute( Qt::AA_ShareOpenGLContexts ))
-        qt_gl_set_global_share_context( _context.get( ));
+    if (QCoreApplication::testAttribute(Qt::AA_ShareOpenGLContexts))
+        qt_gl_set_global_share_context(_context.get());
 }
 
 void QuickRenderer::_initRenderControl()
 {
-    _context->makeCurrent( _getSurface( ));
-    _renderControl.initialize( _context.get( ));
+    _context->makeCurrent(_getSurface());
+    _renderControl.initialize(_context.get());
     _initialized = true;
 }
 
@@ -208,21 +222,20 @@ void QuickRenderer::_onStop()
 {
     _initialized = false;
 
-    if( _context )
-        _context->makeCurrent( _getSurface( ));
+    if (_context)
+        _context->makeCurrent(_getSurface());
 
     _renderControl.invalidate();
 
     _fbo.reset();
 
-    if( _context )
+    if (_context)
         _context->doneCurrent();
 
     _offscreenSurface.reset();
 
-    qt_gl_set_global_share_context( nullptr );
+    qt_gl_set_global_share_context(nullptr);
     _context.reset();
 }
-
 }
 }
