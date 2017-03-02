@@ -69,32 +69,98 @@ SegmentDecoder::~SegmentDecoder()
 {
 }
 
-void _decodeSegment(ImageJpegDecompressor* decompressor, Segment* segment)
+ChromaSubsampling SegmentDecoder::decodeType(const Segment& segment)
 {
-    if (!segment->parameters.compressed)
+    if (segment.parameters.dataType != DataType::jpeg)
+        throw std::runtime_error("Segment is not in JPEG format");
+
+    return _impl->decompressor.decompressHeader(segment.imageData).subsampling;
+}
+
+size_t _getExpectedSize(const DataType dataType,
+                        const SegmentParameters& params)
+{
+    const size_t imageSize = params.height * params.width;
+    switch (dataType)
+    {
+    case DataType::rgba:
+        return imageSize * 4;
+    case DataType::yuv444:
+        return imageSize * 3;
+    case DataType::yuv422:
+        return imageSize * 2;
+    case DataType::yuv420:
+        return imageSize + (imageSize >> 1);
+    default:
+        return 0;
+    };
+}
+
+void _decodeSegment(ImageJpegDecompressor* decompressor, Segment* segment,
+                    const bool skipRgbConversion)
+{
+    if (segment->parameters.dataType != DataType::jpeg)
         return;
 
     QByteArray decodedData;
+    DataType dataType;
     try
     {
-        decodedData = decompressor->decompress(segment->imageData);
+#ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
+        if (skipRgbConversion)
+        {
+            const auto yuv = decompressor->decompressToYUV(segment->imageData);
+            decodedData = yuv.first;
+            switch (yuv.second)
+            {
+            case ChromaSubsampling::YUV444:
+                dataType = DataType::yuv444;
+                break;
+            case ChromaSubsampling::YUV422:
+                dataType = DataType::yuv422;
+                break;
+            case ChromaSubsampling::YUV420:
+                dataType = DataType::yuv420;
+                break;
+            default:
+                throw std::runtime_error("unexpected ChromaSubsampling mode");
+            };
+        }
+        else
+#else
+        Q_UNUSED(skipRgbConversion);
+#endif
+        {
+            decodedData = decompressor->decompress(segment->imageData);
+            dataType = DataType::rgba;
+        }
     }
     catch (const std::runtime_error&)
     {
         throw;
     }
-    const auto& params = segment->parameters;
-    if ((size_t)decodedData.size() != params.height * params.width * 4)
+
+    const auto expectedSize = _getExpectedSize(dataType, segment->parameters);
+    if (size_t(decodedData.size()) != expectedSize)
         throw std::runtime_error("unexpected segment size");
 
     segment->imageData = decodedData;
-    segment->parameters.compressed = false;
+    segment->parameters.dataType = dataType;
 }
 
 void SegmentDecoder::decode(Segment& segment)
 {
-    _decodeSegment(&_impl->decompressor, &segment);
+    _decodeSegment(&_impl->decompressor, &segment, false);
 }
+
+#ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
+
+void SegmentDecoder::decodeToYUV(Segment& segment)
+{
+    _decodeSegment(&_impl->decompressor, &segment, true);
+}
+
+#endif
 
 void SegmentDecoder::startDecoding(Segment& segment)
 {
@@ -108,7 +174,8 @@ void SegmentDecoder::startDecoding(Segment& segment)
     }
 
     _impl->decodingFuture =
-        QtConcurrent::run(_decodeSegment, &_impl->decompressor, &segment);
+        QtConcurrent::run(_decodeSegment, &_impl->decompressor, &segment,
+                          false);
 }
 
 void SegmentDecoder::waitDecoding()

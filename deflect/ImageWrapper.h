@@ -127,6 +127,8 @@ struct ImageWrapper
     unsigned int compressionQuality;     /**< Compression quality (0 worst,
                                               100 best, default: 75).
                                               @version 1.0 */
+    ChromaSubsampling subsampling;       /**< Chrominance sub-sampling.
+                                              (default: YUV444). @version 1.6 */
     //@}
 
     /**

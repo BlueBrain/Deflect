@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2014-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -54,6 +54,14 @@ enum class View : std::uint8_t
     mono,
     left_eye,
     right_eye
+};
+
+/** Sub-sampling of the image chrominance components in YCbCr color space. */
+enum class ChromaSubsampling
+{
+    YUV444, /**< No sub-sampling */
+    YUV422, /**< 50% vertical sub-sampling */
+    YUV420  /**< 50% vertical + horizontal sub-sampling */
 };
 
 /** Cast an enum class value to its underlying type. */

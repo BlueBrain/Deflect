@@ -3,6 +3,11 @@ Changelog {#Changelog}
 
 ## Deflect 0.13 (git master)
 
+* [154](https://github.com/BlueBrain/Deflect/pull/154):
+  On the server side, segments can be decoded to YUV images, saving CPU time by
+  skipping the YUV -> RGB conversion step.
+  Additionally, Stream images can be further compressed using optional
+  [chroma subsampling](ChromaSubsampling.md).
 * [152](https://github.com/BlueBrain/Deflect/pull/152):
   Changed coding style of the project to conform to new .clang-format rules.
 * [148](https://github.com/BlueBrain/Deflect/pull/148):

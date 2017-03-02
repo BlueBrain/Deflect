@@ -41,6 +41,7 @@
 #define DEFLECT_SEGMENTDECODER_H
 
 #include <deflect/api.h>
+#include <deflect/defines.h>
 #include <deflect/types.h>
 
 namespace deflect
@@ -58,14 +59,36 @@ public:
     DEFLECT_API ~SegmentDecoder();
 
     /**
-     * Decode a segment.
+     * Decode the data type of a JPEG segment.
+     *
+     * @param segment The segment to decode.
+     * @throw std::runtime_error if a decompression error occured
+     */
+    DEFLECT_API ChromaSubsampling decodeType(const Segment& segment);
+
+    /**
+     * Decode a JPEG segment to RGB.
      *
      * @param segment The segment to decode. Upon success, its imageData member
-     *        will hold the decompressed data and its "compressed" flag will be
-     *        set to false.
+     *        will hold the decompressed RGB image and its "dataType" flag will
+     *        be set to DataType::rgba.
      * @throw std::runtime_error if a decompression error occured
      */
     DEFLECT_API void decode(Segment& segment);
+
+#ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
+
+    /**
+     * Decode a JPEG segment to YUV, skipping the YUV -> RGB step.
+     *
+     * @param segment The segment to decode. Upon success, its imageData member
+     *        will hold the decompressed YUV image and its "dataType" flag will
+     *        be set to the matching DataType::yuv4**.
+     * @throw std::runtime_error if a decompression error occured
+     */
+    DEFLECT_API void decodeToYUV(Segment& segment);
+
+#endif
 
     /**
      * Start decoding a segment.

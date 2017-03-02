@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -55,7 +55,7 @@ ImageJpegCompressor::~ImageJpegCompressor()
     tjDestroy(_tjHandle);
 }
 
-int getTurboJpegFormat(const PixelFormat pixelFormat)
+int _getTurboJpegFormat(const PixelFormat pixelFormat)
 {
     switch (pixelFormat)
     {
@@ -77,12 +77,28 @@ int getTurboJpegFormat(const PixelFormat pixelFormat)
     }
 }
 
+int _getTurboJpegSubsamp(const ChromaSubsampling subsampling)
+{
+    switch (subsampling)
+    {
+    case ChromaSubsampling::YUV444:
+        return TJSAMP_444;
+    case ChromaSubsampling::YUV422:
+        return TJSAMP_422;
+    case ChromaSubsampling::YUV420:
+        return TJSAMP_420;
+    default:
+        std::cerr << "unknown subsampling format" << std::endl;
+        return TJSAMP_444;
+    }
+}
+
 QByteArray ImageJpegCompressor::computeJpeg(const ImageWrapper& sourceImage,
                                             const QRect& imageRegion)
 {
     // tjCompress API is incorrect and takes a non-const input buffer, even
     // though it does not modify it. It can "safely" be cast to non-const
-    // pointer to comply to the incorrect API.
+    // pointer to comply with the incorrect API.
     unsigned char* tjSrcBuffer = (unsigned char*)sourceImage.data;
     tjSrcBuffer +=
         imageRegion.y() * sourceImage.width * sourceImage.getBytesPerPixel();
@@ -92,10 +108,10 @@ QByteArray ImageJpegCompressor::computeJpeg(const ImageWrapper& sourceImage,
     // assume imageBuffer isn't padded
     const int tjPitch = sourceImage.width * sourceImage.getBytesPerPixel();
     const int tjHeight = imageRegion.height();
-    const int tjPixelFormat = getTurboJpegFormat(sourceImage.pixelFormat);
-    unsigned char* tjJpegBuf = 0;
+    const int tjPixelFormat = _getTurboJpegFormat(sourceImage.pixelFormat);
+    unsigned char* tjJpegBuf = nullptr;
     unsigned long tjJpegSize = 0;
-    const int tjJpegSubsamp = TJSAMP_444;
+    const int tjJpegSubsamp = _getTurboJpegSubsamp(sourceImage.subsampling);
     const int tjJpegQual = sourceImage.compressionQuality;
     const int tjFlags = 0; // or: TJFLAG_BOTTOMUP
 

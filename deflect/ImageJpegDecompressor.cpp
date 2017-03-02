@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -41,6 +41,24 @@
 
 #include <iostream>
 
+namespace
+{
+deflect::ChromaSubsampling _getSubsamp(const int tjJpegSubsamp)
+{
+    switch (tjJpegSubsamp)
+    {
+    case TJSAMP_444:
+        return deflect::ChromaSubsampling::YUV444;
+    case TJSAMP_422:
+        return deflect::ChromaSubsampling::YUV422;
+    case TJSAMP_420:
+        return deflect::ChromaSubsampling::YUV420;
+    default:
+        throw std::runtime_error("unsupported subsampling format");
+    }
+}
+}
+
 namespace deflect
 {
 ImageJpegDecompressor::ImageJpegDecompressor()
@@ -53,29 +71,72 @@ ImageJpegDecompressor::~ImageJpegDecompressor()
     tjDestroy(_tjHandle);
 }
 
-QByteArray ImageJpegDecompressor::decompress(const QByteArray& jpegData)
+JpegHeader ImageJpegDecompressor::decompressHeader(const QByteArray& jpegData)
 {
-    // get information from header
-    int width, height, jpegSubsamp;
+    JpegHeader header;
+    int jpegSubsamp = -1;
+
+#ifdef TJ_NUMCS // introduced with tjDecompressHeader3()
+    int jpegColorspace = -1;
+    int err =
+        tjDecompressHeader3(_tjHandle, (unsigned char*)jpegData.data(),
+                            (unsigned long)jpegData.size(), &header.width,
+                            &header.height, &jpegSubsamp, &jpegColorspace);
+    if (err != 0 || jpegColorspace != TJCS_YCbCr)
+#else
     int err = tjDecompressHeader2(_tjHandle, (unsigned char*)jpegData.data(),
-                                  (unsigned long)jpegData.size(), &width,
-                                  &height, &jpegSubsamp);
+                                  (unsigned long)jpegData.size(), &header.width,
+                                  &header.height, &jpegSubsamp);
     if (err != 0)
+#endif
         throw std::runtime_error("libjpeg-turbo header decompression failed");
 
-    // decompress image data
-    int pixelFormat = TJPF_RGBX; // Format for OpenGL texture (GL_RGBA)
-    int pitch = width * tjPixelSize[pixelFormat];
-    int flags = TJ_FASTUPSAMPLE;
-    QByteArray decodedData(height * pitch, Qt::Uninitialized);
+    header.subsampling = _getSubsamp(jpegSubsamp);
+    return header;
+}
 
-    err = tjDecompress2(_tjHandle, (unsigned char*)jpegData.data(),
-                        (unsigned long)jpegData.size(),
-                        (unsigned char*)decodedData.data(), width, pitch,
-                        height, pixelFormat, flags);
+QByteArray ImageJpegDecompressor::decompress(const QByteArray& jpegData)
+{
+    const auto header = decompressHeader(jpegData);
+    const int pixelFormat = TJPF_RGBX; // Format for OpenGL texture (GL_RGBA)
+    const int pitch = header.width * tjPixelSize[pixelFormat];
+    const int flags = TJ_FASTUPSAMPLE;
+
+    QByteArray decodedData(header.height * pitch, Qt::Uninitialized);
+
+    int err = tjDecompress2(_tjHandle, (unsigned char*)jpegData.data(),
+                            (unsigned long)jpegData.size(),
+                            (unsigned char*)decodedData.data(), header.width,
+                            pitch, header.height, pixelFormat, flags);
     if (err != 0)
         throw std::runtime_error("libjpeg-turbo image decompression failed");
 
     return decodedData;
 }
+
+#ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
+
+ImageJpegDecompressor::YUVData ImageJpegDecompressor::decompressToYUV(
+    const QByteArray& jpegData)
+{
+    const auto header = decompressHeader(jpegData);
+    const int pad = 1; // no padding
+    const int flags = 0;
+    const int jpegSubsamp = int(header.subsampling);
+    const auto decodedSize =
+        tjBufSizeYUV2(header.width, pad, header.height, jpegSubsamp);
+
+    auto decodedData = QByteArray(decodedSize, Qt::Uninitialized);
+
+    int err = tjDecompressToYUV2(_tjHandle, (unsigned char*)jpegData.data(),
+                                 (unsigned long)jpegData.size(),
+                                 (unsigned char*)decodedData.data(),
+                                 header.width, pad, header.height, flags);
+    if (err != 0)
+        throw std::runtime_error("libjpeg-turbo image decompression failed");
+
+    return std::make_pair(std::move(decodedData), header.subsampling);
+}
+
+#endif
 }

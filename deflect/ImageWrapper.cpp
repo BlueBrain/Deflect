@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -57,6 +57,7 @@ ImageWrapper::ImageWrapper(const void* data_, const unsigned int width_,
     , y(y_)
     , compressionPolicy(COMPRESSION_AUTO)
     , compressionQuality(DEFAULT_COMPRESSION_QUALITY)
+    , subsampling(ChromaSubsampling::YUV444)
 {
 }
 

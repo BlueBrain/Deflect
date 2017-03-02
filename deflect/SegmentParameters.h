@@ -51,6 +51,19 @@ typedef unsigned __int32 uint32_t;
 namespace deflect
 {
 /**
+ * The possible formats for segment data.
+ * @version 1.6
+ */
+enum class DataType : std::uint8_t
+{
+    rgba = 0, // equivalent to old compressed=false property
+    jpeg = 1, // equivalent to old compressed=true property
+    yuv444,
+    yuv422,
+    yuv420
+};
+
+/**
  * Parameters for a Frame Segment.
  */
 struct SegmentParameters
@@ -67,8 +80,8 @@ struct SegmentParameters
     uint32_t height = 0u; /**< The height in pixels. */
     //@}
 
-    /** Is the image raw pixel data or compressed in jpeg format */
-    bool compressed = true;
+    /** Data format of the Segment. @version 1.6 */
+    DataType dataType = DataType::jpeg;
 };
 }
 
