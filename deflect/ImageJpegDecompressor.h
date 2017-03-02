@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -41,6 +41,8 @@
 #define DEFLECT_IMAGEJPEGDECOMPRESSOR_H
 
 #include <deflect/api.h>
+#include <deflect/defines.h>
+#include <deflect/types.h>
 
 #include <turbojpeg.h>
 
@@ -48,6 +50,16 @@
 
 namespace deflect
 {
+/**
+ * JPEG header information.
+ */
+struct JpegHeader
+{
+    int width = 0;
+    int height = 0;
+    ChromaSubsampling subsampling;
+};
+
 /**
  * Decompress Jpeg compressed data.
  */
@@ -58,13 +70,37 @@ public:
     DEFLECT_API ~ImageJpegDecompressor();
 
     /**
-     * Decompress a Jpeg image
+     * Decompress the header of a Jpeg image.
+     *
+     * @param jpegData The compressed Jpeg data
+     * @return The decompressed Jpeg header
+     * @throw std::runtime_error if a decompression error occured
+     */
+    DEFLECT_API JpegHeader decompressHeader(const QByteArray& jpegData);
+
+    /**
+     * Decompress a Jpeg image.
      *
      * @param jpegData The compressed Jpeg data
      * @return The decompressed image data in (GL_)RGBA format
      * @throw std::runtime_error if a decompression error occured
      */
     DEFLECT_API QByteArray decompress(const QByteArray& jpegData);
+
+#ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
+
+    using YUVData = std::pair<QByteArray, ChromaSubsampling>;
+
+    /**
+     * Decompress a Jpeg image to YUV, skipping the YUV -> RGBA conversion step.
+     *
+     * @param jpegData The compressed Jpeg data
+     * @return The decompressed image data in YUV format
+     * @throw std::runtime_error if a decompression error occured
+     */
+    DEFLECT_API YUVData decompressToYUV(const QByteArray& jpegData);
+
+#endif
 
 private:
     /** libjpeg-turbo handle for decompression */

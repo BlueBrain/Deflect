@@ -261,7 +261,9 @@ SegmentParametersList ImageSegmenter::_generateSegmentParameters(
                                                  : lastSegmentWidth;
             p.height = (j < numSubdivisionsY - 1) ? _nominalSegmentHeight
                                                   : lastSegmentHeight;
-            p.compressed = (image.compressionPolicy == COMPRESSION_ON);
+            p.dataType = (image.compressionPolicy == COMPRESSION_ON)
+                             ? DataType::jpeg
+                             : DataType::rgba;
 
             parameters.push_back(p);
         }

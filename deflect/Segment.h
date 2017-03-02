@@ -60,7 +60,7 @@ struct Segment
     QByteArray imageData;
 
     /** @internal raw, uncompressed source image, used for compression */
-    const ImageWrapper* sourceImage;
+    const ImageWrapper* sourceImage = nullptr;
 };
 }
 
