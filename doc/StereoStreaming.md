@@ -18,11 +18,22 @@ New view enum in deflect/types.h:
 
     enum class View : std::int8_t { mono, left_eye, right_eye };
 
-On the client side, no changes to the Stream API. The ImageWrapper takes an
-additional View parameter.
+The ImageWrapper takes an additional View parameter.
+
+API changes to the Stream class:
+* asyncSend is deprecated but work as before, but only for mono views
+* send and finish are now asynchronous and return a future instead of bool
+
+The send operation sends one tile of one eye pass to the server. The finishFrame
+operation completes the whole frame for all eye passes, that is, send is
+analogous to an OpenGL draw pass (GL_BACK, GL_BACK_LEFT, GL_BACK_RIGHT), and
+finishFrame is analogous to a swap buffer call, with the extension that all
+client's finish is synchronized by the server.
 
 On the server side, no changes to the Server API (except some cleanups). Each
-Frame dispatched now contains the View information.
+Frame dispatched now contains the View information. A frame is considered
+complete when all connected clients did send a finish.
+
 
 ## Protocol
 
@@ -31,7 +42,7 @@ payload. This message is silently ignored by older Servers.
 
 ## Examples
 
-Example of a stereo 3D client application using the blocking Stream API:
+Example of a stereo 3D client application using synchronous operations:
 
     deflect::Stream stream( ... );
 
@@ -56,17 +67,11 @@ Example of a stereo 3D client application using the blocking Stream API:
     /** ...synchronize with other render clients (network barrier)... */
     }
 
-Example of a stereo 3D client application using the asynchronous Stream API:
+Example of a stereo 3D client application using the asynchronous operations:
 
     deflect::Stream stream( ... );
 
     /** ...synchronize start with other render clients (network barrier)... */
-
-    delfect::Stream::Future leftFuture, rightFuture;
-    leftFuture = deflect::qt::make_ready_future<bool>( true );
-    rightFuture = deflect::qt::make_ready_future<bool>( true );
-
-    ImageData leftData, rightData; // must remain valid until sending completes
 
     renderLoop()
     {
@@ -77,16 +82,15 @@ Example of a stereo 3D client application using the asynchronous Stream API:
 
     deflect::ImageWrapper leftImage( leftData, width, height, deflect::RGBA );
     leftImage.view = deflect::View::left_eye;
-    leftFuture = deflectStream->asyncSend( leftImage );
-
-    if( !rightFuture.valid() || !rightFuture.get( ))
-       return;
+    auto leftFuture = deflectStream->send( leftImage );
 
     /** ...render right image... */
 
     deflect::ImageWrapper rightImage( rightData, width, height, deflect::RGBA );
     rightImage.view = deflect::View::right_eye;
-    rightFuture = deflectStream->send( rightImage );
+    auto rightFuture = deflectStream->send( rightImage );
+
+    deflectStream->finishFrame();
 
     /** ...synchronize with other render clients (network barrier)... */
     }
