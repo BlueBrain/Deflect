@@ -294,8 +294,8 @@ void ServerWorker::_handlePixelStreamMessage(const QByteArray& message)
     segment.parameters = *reinterpret_cast<const SegmentParameters*>(data);
     segment.imageData =
         message.right(message.size() - sizeof(SegmentParameters));
-
-    emit(receivedSegment(_streamId, _sourceId, segment, _activeView));
+    segment.parameters.view = _activeView;
+    emit(receivedSegment(_streamId, _sourceId, segment));
 }
 
 void ServerWorker::_sendProtocolVersion()

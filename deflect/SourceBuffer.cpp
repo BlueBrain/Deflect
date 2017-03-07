@@ -45,54 +45,42 @@ namespace deflect
 {
 SourceBuffer::SourceBuffer()
 {
-    _getQueue(View::mono).push(Segments());
-    _getQueue(View::left_eye).push(Segments());
-    _getQueue(View::right_eye).push(Segments());
+    _segments.push(Segments());
 }
 
-const Segments& SourceBuffer::getSegments(const View view) const
+const Segments& SourceBuffer::getSegments() const
 {
-    return _getQueue(view).front();
+    return _segments.front();
 }
 
-FrameIndex SourceBuffer::getBackFrameIndex(const View view) const
+FrameIndex SourceBuffer::getBackFrameIndex() const
 {
-    return _backFrameIndex[as_underlying_type(view)];
+    return _backFrameIndex;
 }
 
-bool SourceBuffer::isBackFrameEmpty(const View view) const
+bool SourceBuffer::isBackFrameEmpty() const
 {
-    return _getQueue(view).back().empty();
+    return _segments.back().empty();
 }
 
-void SourceBuffer::pop(const View view)
+void SourceBuffer::pop()
 {
-    _getQueue(view).pop();
+    _segments.pop();
 }
 
-void SourceBuffer::push(const View view)
+void SourceBuffer::push()
 {
-    _getQueue(view).push(Segments());
-    ++_backFrameIndex[as_underlying_type(view)];
+    _segments.push(Segments());
+    ++_backFrameIndex;
 }
 
-void SourceBuffer::insert(const Segment& segment, const View view)
+void SourceBuffer::insert(const Segment& segment)
 {
-    _getQueue(view).back().push_back(segment);
+    _segments.back().push_back(segment);
 }
 
-size_t SourceBuffer::getQueueSize(const View view) const
+size_t SourceBuffer::getQueueSize() const
 {
-    return _getQueue(view).size();
-}
-
-std::queue<Segments>& SourceBuffer::_getQueue(const View view)
-{
-    return _segments[as_underlying_type(view)];
-}
-
-const std::queue<Segments>& SourceBuffer::_getQueue(const View view) const
-{
-    return _segments[as_underlying_type(view)];
+    return _segments.size();
 }
 }

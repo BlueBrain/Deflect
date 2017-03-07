@@ -82,6 +82,8 @@ struct SegmentParameters
 
     /** Data format of the Segment. @version 1.6 */
     DataType dataType = DataType::jpeg;
+
+    View view = View::mono; //!< Eye pass for the segment
 };
 }
 

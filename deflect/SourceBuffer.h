@@ -60,36 +60,33 @@ public:
     /** Construct an empty buffer. */
     SourceBuffer();
 
-    /** @return the segments at the front of the queue for a given view. */
-    const Segments& getSegments(View view) const;
+    /** @return the segments at the front of the queue. */
+    const Segments& getSegments() const;
 
-    /** @return the frame index of the back of the buffer for a given view. */
-    FrameIndex getBackFrameIndex(View view) const;
+    /** @return the frame index of the back of the buffer. */
+    FrameIndex getBackFrameIndex() const;
 
-    /** @return true if the back frame of the given view has no segments. */
-    bool isBackFrameEmpty(View view) const;
+    /** @return true if the back frame has no segments. */
+    bool isBackFrameEmpty() const;
 
-    /** Insert a segment into the back frame of the appropriate queue. */
-    void insert(const Segment& segment, View view);
+    /** Insert a segment into the back frame. */
+    void insert(const Segment& segment);
 
-    /** Push a new frame to the back of given view. */
-    void push(View view);
+    /** Push a new frame to the back. */
+    void push();
 
-    /** Pop the front frame of the buffer for the given view. */
-    void pop(View view);
+    /** Pop the front frame. */
+    void pop();
 
-    /** @return the size of the queue for the given view. */
-    size_t getQueueSize(View view) const;
+    /** @return the size of the queue. */
+    size_t getQueueSize() const;
 
 private:
     /** The collections of segments for each mono/left/right view. */
-    std::queue<Segments> _segments[3];
+    std::queue<Segments> _segments;
 
     /** The current indices of the mono/left/right frame for this source. */
-    std::array<FrameIndex, 3> _backFrameIndex = {{0u, 0u, 0u}};
-
-    std::queue<Segments>& _getQueue(View view);
-    const std::queue<Segments>& _getQueue(View view) const;
+    FrameIndex _backFrameIndex = 0u;
 };
 }
 

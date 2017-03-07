@@ -45,6 +45,7 @@
 #include <deflect/types.h>
 
 #include <QObject>
+#include <map>
 
 namespace deflect
 {
@@ -85,10 +86,9 @@ public slots:
      * @param uri Identifier for the stream
      * @param sourceIndex Identifier for the source in the stream
      * @param segment to process
-     * @param view to which the segment belongs
      */
     void processSegment(QString uri, size_t sourceIndex,
-                        deflect::Segment segment, deflect::View view);
+                        deflect::Segment segment);
 
     /**
      * The given source has finished sending segments for the current frame.

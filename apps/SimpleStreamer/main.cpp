@@ -264,7 +264,7 @@ bool send(const Image& image, const deflect::View view)
                                          : deflect::COMPRESSION_OFF;
     deflectImage.compressionQuality = deflectCompressionQuality;
     deflectImage.view = view;
-    return deflectStream->send(deflectImage) && deflectStream->finishFrame();
+    return deflectStream->send(deflectImage);
 }
 
 bool timeout(const float sec)
@@ -318,6 +318,7 @@ void display()
         success = send(Image::readGlBuffer(), deflect::View::mono);
     }
 
+    deflectStream->finishFrame();
     glutSwapBuffers();
 
     // increment rotation angle according to interaction, or by a constant rate
