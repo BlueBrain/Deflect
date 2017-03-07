@@ -79,24 +79,12 @@ BOOST_AUTO_TEST_CASE(TestAllowedToSend)
 {
     deflect::ReceiveBuffer buffer;
 
-    BOOST_CHECK(!buffer.isAllowedToSend(deflect::View::mono));
-    BOOST_CHECK(!buffer.isAllowedToSend(deflect::View::left_eye));
-    BOOST_CHECK(!buffer.isAllowedToSend(deflect::View::right_eye));
+    BOOST_CHECK(!buffer.isAllowedToSend());
 
-    buffer.setAllowedToSend(true, deflect::View::mono);
-    BOOST_CHECK(buffer.isAllowedToSend(deflect::View::mono));
-    buffer.setAllowedToSend(false, deflect::View::mono);
-    BOOST_CHECK(!buffer.isAllowedToSend(deflect::View::mono));
-
-    buffer.setAllowedToSend(true, deflect::View::left_eye);
-    BOOST_CHECK(buffer.isAllowedToSend(deflect::View::left_eye));
-    buffer.setAllowedToSend(false, deflect::View::left_eye);
-    BOOST_CHECK(!buffer.isAllowedToSend(deflect::View::left_eye));
-
-    buffer.setAllowedToSend(true, deflect::View::right_eye);
-    BOOST_CHECK(buffer.isAllowedToSend(deflect::View::right_eye));
-    buffer.setAllowedToSend(false, deflect::View::right_eye);
-    BOOST_CHECK(!buffer.isAllowedToSend(deflect::View::right_eye));
+    buffer.setAllowedToSend(true);
+    BOOST_CHECK(buffer.isAllowedToSend());
+    buffer.setAllowedToSend(false);
+    BOOST_CHECK(!buffer.isAllowedToSend());
 }
 
 BOOST_AUTO_TEST_CASE(TestCompleteAFrame)
@@ -113,18 +101,15 @@ BOOST_AUTO_TEST_CASE(TestCompleteAFrame)
     segment.parameters.height = 256;
 
     buffer.insert(segment, sourceIndex);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex);
-    BOOST_CHECK(buffer.hasCompleteMonoFrame());
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
+    BOOST_CHECK(buffer.hasCompleteFrame());
 
     deflect::Segments segments = buffer.popFrame();
 
     BOOST_CHECK_EQUAL(segments.size(), 1);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     deflect::Frame frame;
     frame.segments = segments;
@@ -133,7 +118,8 @@ BOOST_AUTO_TEST_CASE(TestCompleteAFrame)
     BOOST_CHECK_EQUAL(frameSize.height(), segment.parameters.height);
 }
 
-deflect::Segments generateTestSegments()
+deflect::Segments generateTestSegments(
+    const deflect::View view = deflect::View::mono)
 {
     deflect::Segments segments;
 
@@ -142,24 +128,28 @@ deflect::Segments generateTestSegments()
     segment1.parameters.y = 0;
     segment1.parameters.width = 128;
     segment1.parameters.height = 256;
+    segment1.parameters.view = view;
 
     deflect::Segment segment2;
     segment2.parameters.x = 128;
     segment2.parameters.y = 0;
     segment2.parameters.width = 64;
     segment2.parameters.height = 256;
+    segment2.parameters.view = view;
 
     deflect::Segment segment3;
     segment3.parameters.x = 0;
     segment3.parameters.y = 256;
     segment3.parameters.width = 128;
     segment3.parameters.height = 512;
+    segment3.parameters.view = view;
 
     deflect::Segment segment4;
     segment4.parameters.x = 128;
     segment4.parameters.y = 256;
     segment4.parameters.width = 64;
     segment4.parameters.height = 512;
+    segment4.parameters.view = view;
 
     segments.push_back(segment1);
     segments.push_back(segment2);
@@ -182,14 +172,14 @@ BOOST_AUTO_TEST_CASE(TestCompleteACompositeFrameSingleSource)
     buffer.insert(testSegments[1], sourceIndex);
     buffer.insert(testSegments[2], sourceIndex);
     buffer.insert(testSegments[3], sourceIndex);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex);
-    BOOST_CHECK(buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(buffer.hasCompleteFrame());
 
     deflect::Segments segments = buffer.popFrame();
     BOOST_CHECK_EQUAL(segments.size(), 4);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     deflect::Frame frame;
     frame.segments = segments;
@@ -212,21 +202,21 @@ BOOST_AUTO_TEST_CASE(TestCompleteACompositeFrameMultipleSources)
     buffer.insert(testSegments[0], sourceIndex1);
     buffer.insert(testSegments[1], sourceIndex2);
     buffer.insert(testSegments[2], sourceIndex3);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex1);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex2);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.insert(testSegments[3], sourceIndex3);
     buffer.finishFrameForSource(sourceIndex3);
-    BOOST_CHECK(buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(buffer.hasCompleteFrame());
 
     deflect::Segments segments = buffer.popFrame();
     BOOST_CHECK_EQUAL(segments.size(), 4);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     deflect::Frame frame;
     frame.segments = segments;
@@ -249,29 +239,29 @@ BOOST_AUTO_TEST_CASE(TestRemoveSourceWhileStreaming)
     buffer.insert(testSegments[1], sourceIndex1);
     buffer.insert(testSegments[2], sourceIndex2);
     buffer.insert(testSegments[3], sourceIndex2);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
     buffer.finishFrameForSource(sourceIndex1);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
     buffer.finishFrameForSource(sourceIndex2);
-    BOOST_CHECK(buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(buffer.hasCompleteFrame());
 
     deflect::Segments segments = buffer.popFrame();
 
     BOOST_CHECK_EQUAL(segments.size(), 4);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     // Second frame - 1 source
     buffer.removeSource(sourceIndex2);
 
     buffer.insert(testSegments[0], sourceIndex1);
     buffer.insert(testSegments[1], sourceIndex1);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
     buffer.finishFrameForSource(sourceIndex1);
-    BOOST_CHECK(buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(buffer.hasCompleteFrame());
 
     segments = buffer.popFrame();
     BOOST_CHECK_EQUAL(segments.size(), 2);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     deflect::Frame frame;
     frame.segments = segments;
@@ -294,16 +284,16 @@ BOOST_AUTO_TEST_CASE(TestOneOfTwoSourceStopsSendingSegments)
     buffer.insert(testSegments[1], sourceIndex1);
     buffer.insert(testSegments[2], sourceIndex2);
     buffer.insert(testSegments[3], sourceIndex2);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
     buffer.finishFrameForSource(sourceIndex1);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
     buffer.finishFrameForSource(sourceIndex2);
-    BOOST_CHECK(buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(buffer.hasCompleteFrame());
 
     deflect::Segments segments = buffer.popFrame();
 
     BOOST_CHECK_EQUAL(segments.size(), 4);
-    BOOST_CHECK(!buffer.hasCompleteMonoFrame());
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     // Next frames - one source stops sending segments
     for (int i = 0; i < 150; ++i)
@@ -311,7 +301,7 @@ BOOST_AUTO_TEST_CASE(TestOneOfTwoSourceStopsSendingSegments)
         buffer.insert(testSegments[0], sourceIndex1);
         buffer.insert(testSegments[1], sourceIndex1);
         BOOST_REQUIRE_NO_THROW(buffer.finishFrameForSource(sourceIndex1));
-        BOOST_REQUIRE(!buffer.hasCompleteMonoFrame());
+        BOOST_REQUIRE(!buffer.hasCompleteFrame());
     }
     // Test buffer exceeds maximum allowed size
     buffer.insert(testSegments[0], sourceIndex1);
@@ -321,27 +311,40 @@ BOOST_AUTO_TEST_CASE(TestOneOfTwoSourceStopsSendingSegments)
 }
 
 void _insert(deflect::ReceiveBuffer& buffer, const size_t sourceIndex,
-             const deflect::Segments& frame, const deflect::View view)
+             const deflect::Segments& frame)
 {
     for (const auto& segment : frame)
-        buffer.insert(segment, sourceIndex, view);
-    buffer.finishFrameForSource(sourceIndex);
+        buffer.insert(segment, sourceIndex);
 }
 
 void _testStereoBuffer(deflect::ReceiveBuffer& buffer)
 {
-    const auto leftSegments = buffer.popFrame(deflect::View::left_eye);
-    BOOST_CHECK_EQUAL(leftSegments.size(), 4);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
+    const auto segments = buffer.popFrame();
+    BOOST_CHECK_EQUAL(segments.size(), 8);
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    const auto rightSegments = buffer.popFrame(deflect::View::right_eye);
-    BOOST_CHECK_EQUAL(rightSegments.size(), 4);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
+    size_t left = 0;
+    size_t right = 0;
+    for (const auto segment : segments)
+    {
+        switch (segment.parameters.view)
+        {
+        case deflect::View::left_eye:
+            ++left;
+            break;
+        case deflect::View::right_eye:
+            ++right;
+            break;
+        default:
+            BOOST_CHECK_EQUAL("", "Unexpected eye pass");
+            break;
+        }
+    }
+    BOOST_CHECK_EQUAL(left, 4);
+    BOOST_CHECK_EQUAL(right, 4);
 
     deflect::Frame frame;
-    frame.segments = leftSegments;
-    BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(192, 768));
-    frame.segments = rightSegments;
+    frame.segments = segments;
     BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(192, 768));
 }
 
@@ -352,36 +355,16 @@ BOOST_AUTO_TEST_CASE(TestStereoOneSource)
     deflect::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex);
 
-    deflect::Segments testSegments = generateTestSegments();
+    auto leftSegments = generateTestSegments(deflect::View::left_eye);
+    _insert(buffer, sourceIndex, leftSegments);
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    _insert(buffer, sourceIndex, testSegments, deflect::View::left_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-
-    _insert(buffer, sourceIndex, testSegments, deflect::View::right_eye);
-    BOOST_CHECK(buffer.hasCompleteStereoFrame());
-
-    _testStereoBuffer(buffer);
-}
-
-BOOST_AUTO_TEST_CASE(TestStereoSingleFinishFrame)
-{
-    const size_t sourceIndex = 46;
-
-    deflect::ReceiveBuffer buffer;
-    buffer.addSource(sourceIndex);
-
-    const deflect::Segments testSegments = generateTestSegments();
-
-    for (const auto& segment : testSegments)
-        buffer.insert(segment, sourceIndex, deflect::View::left_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-
-    for (const auto& segment : testSegments)
-        buffer.insert(segment, sourceIndex, deflect::View::right_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
+    auto rightSegments = generateTestSegments(deflect::View::right_eye);
+    _insert(buffer, sourceIndex, rightSegments);
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex);
-    BOOST_CHECK(buffer.hasCompleteStereoFrame());
+    BOOST_CHECK(buffer.hasCompleteFrame());
 
     _testStereoBuffer(buffer);
 }
@@ -395,21 +378,25 @@ BOOST_AUTO_TEST_CASE(TestStereoTwoSourcesScreenSpaceSplit)
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
 
-    const auto testSegments = generateTestSegments();
-    const auto segmentsScreen1 =
-        deflect::Segments{testSegments[0], testSegments[1]};
-    const auto segmentsScreen2 =
-        deflect::Segments{testSegments[2], testSegments[3]};
+    const auto leftSegments = generateTestSegments(deflect::View::left_eye);
+    const auto rightSegments = generateTestSegments(deflect::View::right_eye);
 
-    _insert(buffer, sourceIndex1, segmentsScreen1, deflect::View::left_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-    _insert(buffer, sourceIndex1, segmentsScreen1, deflect::View::right_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
+    _insert(buffer, sourceIndex1, {leftSegments[0], leftSegments[1]});
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    _insert(buffer, sourceIndex2, segmentsScreen2, deflect::View::left_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-    _insert(buffer, sourceIndex2, segmentsScreen2, deflect::View::right_eye);
-    BOOST_CHECK(buffer.hasCompleteStereoFrame());
+    _insert(buffer, sourceIndex1, {rightSegments[0], rightSegments[1]});
+    BOOST_CHECK(!buffer.hasCompleteFrame());
+
+    _insert(buffer, sourceIndex2, {leftSegments[2], leftSegments[3]});
+    BOOST_CHECK(!buffer.hasCompleteFrame());
+    _insert(buffer, sourceIndex2, {rightSegments[2], rightSegments[3]});
+    BOOST_CHECK(!buffer.hasCompleteFrame());
+
+    buffer.finishFrameForSource(sourceIndex1);
+    BOOST_CHECK(!buffer.hasCompleteFrame());
+
+    buffer.finishFrameForSource(sourceIndex2);
+    BOOST_CHECK(buffer.hasCompleteFrame());
 
     _testStereoBuffer(buffer);
 }
@@ -423,12 +410,19 @@ BOOST_AUTO_TEST_CASE(TestStereoTwoSourcesStereoSplit)
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
 
-    const auto testSegments = generateTestSegments();
+    const auto leftSegments = generateTestSegments(deflect::View::left_eye);
+    const auto rightSegments = generateTestSegments(deflect::View::right_eye);
 
-    _insert(buffer, sourceIndex1, testSegments, deflect::View::left_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-    _insert(buffer, sourceIndex2, testSegments, deflect::View::right_eye);
-    BOOST_CHECK(buffer.hasCompleteStereoFrame());
+    _insert(buffer, sourceIndex1, leftSegments);
+    BOOST_CHECK(!buffer.hasCompleteFrame());
+    _insert(buffer, sourceIndex2, rightSegments);
+    BOOST_CHECK(!buffer.hasCompleteFrame());
+
+    buffer.finishFrameForSource(sourceIndex1);
+    BOOST_CHECK(!buffer.hasCompleteFrame());
+
+    buffer.finishFrameForSource(sourceIndex2);
+    BOOST_CHECK(buffer.hasCompleteFrame());
 
     _testStereoBuffer(buffer);
 }
@@ -446,36 +440,28 @@ BOOST_AUTO_TEST_CASE(TestStereoFourSourcesScreenSpaceAndStereoSplit)
     buffer.addSource(sourceIndex3);
     buffer.addSource(sourceIndex4);
 
-    const auto testSegments = generateTestSegments();
-    const auto segmentsScreen1 =
-        deflect::Segments{testSegments[0], testSegments[1]};
-    const auto segmentsScreen2 =
-        deflect::Segments{testSegments[2], testSegments[3]};
+    const auto leftSegments = generateTestSegments(deflect::View::left_eye);
+    const auto rightSegments = generateTestSegments(deflect::View::right_eye);
 
-    _insert(buffer, sourceIndex1, segmentsScreen1, deflect::View::left_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-    _insert(buffer, sourceIndex2, segmentsScreen1, deflect::View::right_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-    _insert(buffer, sourceIndex3, segmentsScreen2, deflect::View::left_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-    _insert(buffer, sourceIndex4, segmentsScreen2, deflect::View::right_eye);
-    BOOST_CHECK(buffer.hasCompleteStereoFrame());
+    _insert(buffer, sourceIndex1, {leftSegments[0], leftSegments[1]});
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    _testStereoBuffer(buffer);
+    _insert(buffer, sourceIndex2, {rightSegments[0], rightSegments[1]});
+    BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    // Random insertion order
-    _insert(buffer, sourceIndex1, segmentsScreen1, deflect::View::left_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-    _insert(buffer, sourceIndex3, segmentsScreen2, deflect::View::left_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-    _insert(buffer, sourceIndex2, segmentsScreen1, deflect::View::right_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-    _insert(buffer, sourceIndex1, segmentsScreen1, deflect::View::left_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-    _insert(buffer, sourceIndex2, segmentsScreen1, deflect::View::right_eye);
-    BOOST_CHECK(!buffer.hasCompleteStereoFrame());
-    _insert(buffer, sourceIndex4, segmentsScreen2, deflect::View::right_eye);
-    BOOST_CHECK(buffer.hasCompleteStereoFrame());
+    _insert(buffer, sourceIndex3, {leftSegments[2], leftSegments[3]});
+    BOOST_CHECK(!buffer.hasCompleteFrame());
+
+    _insert(buffer, sourceIndex4, {rightSegments[2], rightSegments[3]});
+    BOOST_CHECK(!buffer.hasCompleteFrame());
+
+    buffer.finishFrameForSource(sourceIndex1);
+    buffer.finishFrameForSource(sourceIndex3);
+    buffer.finishFrameForSource(sourceIndex4);
+    BOOST_CHECK(!buffer.hasCompleteFrame());
+
+    buffer.finishFrameForSource(sourceIndex2);
+    BOOST_CHECK(buffer.hasCompleteFrame());
 
     _testStereoBuffer(buffer);
 }
