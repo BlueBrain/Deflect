@@ -128,28 +128,28 @@ deflect::Segments generateTestSegments(
     segment1.parameters.y = 0;
     segment1.parameters.width = 128;
     segment1.parameters.height = 256;
-    segment1.parameters.view = view;
+    segment1.view = view;
 
     deflect::Segment segment2;
     segment2.parameters.x = 128;
     segment2.parameters.y = 0;
     segment2.parameters.width = 64;
     segment2.parameters.height = 256;
-    segment2.parameters.view = view;
+    segment2.view = view;
 
     deflect::Segment segment3;
     segment3.parameters.x = 0;
     segment3.parameters.y = 256;
     segment3.parameters.width = 128;
     segment3.parameters.height = 512;
-    segment3.parameters.view = view;
+    segment3.view = view;
 
     deflect::Segment segment4;
     segment4.parameters.x = 128;
     segment4.parameters.y = 256;
     segment4.parameters.width = 64;
     segment4.parameters.height = 512;
-    segment4.parameters.view = view;
+    segment4.view = view;
 
     segments.push_back(segment1);
     segments.push_back(segment2);
@@ -327,7 +327,7 @@ void _testStereoBuffer(deflect::ReceiveBuffer& buffer)
     size_t right = 0;
     for (const auto segment : segments)
     {
-        switch (segment.parameters.view)
+        switch (segment.view)
         {
         case deflect::View::left_eye:
             ++left;

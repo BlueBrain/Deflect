@@ -56,6 +56,8 @@ struct Segment
     /** Parameters of the segment. */
     SegmentParameters parameters;
 
+    View view = View::mono; //!< Eye pass for the segment
+
     /** Image data of the segment. */
     QByteArray imageData;
 
