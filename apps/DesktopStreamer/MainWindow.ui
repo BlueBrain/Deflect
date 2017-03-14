@@ -257,6 +257,32 @@
         </property>
        </widget>
       </item>
+      <item row="7" column="0">
+       <widget class="QLabel" name="_subsamplingLabel">
+        <property name="text">
+         <string>Subsampling</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QComboBox" name="_subsamplingComboBox">
+        <item>
+         <property name="text">
+          <string>YUV444</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>YUV422</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>YUV420</string>
+         </property>
+        </item>
+       </widget>
+      </item>
      </layout>
     </item>
    </layout>

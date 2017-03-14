@@ -126,7 +126,8 @@ public:
         return true;
     }
 
-    std::string update(const int quality)
+    std::string update(const int quality,
+                       const deflect::ChromaSubsampling subsamp)
     {
         QPixmap pixmap;
 
@@ -190,6 +191,7 @@ public:
                                            deflect::BGRA);
         deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
         deflectImage.compressionQuality = std::max(1, std::min(quality, 100));
+        deflectImage.subsampling = subsamp;
 
         if (!_stream.send(deflectImage) || !_stream.finishFrame())
             return "Streaming failure, connection closed";
@@ -306,9 +308,10 @@ Stream::~Stream()
 {
 }
 
-std::string Stream::update(const int quality)
+std::string Stream::update(const int quality,
+                           const deflect::ChromaSubsampling subsamp)
 {
-    return _impl->update(quality);
+    return _impl->update(quality, subsamp);
 }
 
 bool Stream::processEvents(const bool interact)

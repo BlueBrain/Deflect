@@ -250,6 +250,9 @@ void MainWindow::_showAdvancedSettings(const bool visible)
 
     _qualitySlider->setVisible(visible);
     _qualityLabel->setVisible(visible);
+
+    _subsamplingComboBox->setVisible(visible);
+    _subsamplingLabel->setVisible(visible);
 }
 
 void MainWindow::_updateStreams()
@@ -372,7 +375,8 @@ void MainWindow::_shareDesktopUpdate()
 
     for (auto i = _streams.begin(); i != _streams.end();)
     {
-        const auto error = i->second->update(_qualitySlider->value());
+        const auto error =
+            i->second->update(_qualitySlider->value(), _getSubsampling());
         if (error.empty())
             ++i;
         else
@@ -434,6 +438,21 @@ std::string MainWindow::_getStreamHost() const
 
     // user input text, either stored or not entered (yet), no associated data
     return _hostComboBox->currentText().toStdString();
+}
+
+deflect::ChromaSubsampling MainWindow::_getSubsampling() const
+{
+    switch (_subsamplingComboBox->currentIndex())
+    {
+    case 0:
+        return deflect::ChromaSubsampling::YUV444;
+    case 1:
+        return deflect::ChromaSubsampling::YUV422;
+    case 2:
+        return deflect::ChromaSubsampling::YUV420;
+    default:
+        throw std::runtime_error("unsupported subsampling mode");
+    };
 }
 
 void MainWindow::_onStreamEventsBoxClicked(const bool checked)
