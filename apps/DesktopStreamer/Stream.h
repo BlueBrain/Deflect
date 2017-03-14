@@ -57,10 +57,11 @@ public:
 
     /**
      * Send an update to the server.
-     * @param quality the quality setting for compression [1; 100]
+     * @param quality the quality setting for compression [1; 100].
+     * @param subsamp the chrominance subsampling mode.
      * @return an empty string on success, the error message otherwise.
      */
-    std::string update(int quality);
+    std::string update(int quality, deflect::ChromaSubsampling subsamp);
 
     /**
      * Process all pending events.

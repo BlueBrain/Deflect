@@ -47,6 +47,8 @@
 #include <deflect/AppNapSuspender.h>
 #endif
 
+#include <deflect/types.h>
+
 #include <QMainWindow>
 #include <QTime>
 #include <QTimer>
@@ -109,6 +111,7 @@ private:
     void _shareDesktopUpdate();
     void _regulateFrameRate();
     std::string _getStreamHost() const;
+    deflect::ChromaSubsampling _getSubsampling() const;
 };
 
 #endif
