@@ -52,8 +52,6 @@
 #include <memory>
 #include <string>
 
-class Application;
-
 namespace deflect
 {
 class StreamPrivate;
@@ -61,9 +59,9 @@ class StreamPrivate;
 /**
  * Stream visual data to a deflect::Server.
  *
- * A Stream can be subdivided into one or more images. This allows to have
- * different applications each responsible for sending one part of the global
- * image.
+ * A Stream can be subdivided into one or more images and eye passes. This
+ * allows to have different applications each responsible for sending one part
+ * of the global image.
  *
  * The methods in this class are reentrant (all instances are independant) but
  * are not thread-safe.
@@ -124,6 +122,31 @@ public:
     using Future = std::future<bool>;
 
     /**
+     * Send an image asynchronously.
+     *
+     * @param image The image to send. Note that the image is not copied, so the
+     *              referenced must remain valid until the send is finished.
+     * @return true if the image data could be sent, false otherwise
+     * @version 1.0
+     * @sa finishFrame()
+     */
+    DEFLECT_API Future send(const ImageWrapper& image);
+
+    /**
+     * Asynchronously notify that all the images for this frame have been sent.
+     *
+     * This method must be called everytime this Stream instance has finished
+     * sending its image(s) for the current frame. The receiver will display
+     * the images once all the senders which use the same identifier have
+     * finished a frame. This is only to be called once per frame, even for
+     * stereo rendering.
+     *
+     * @sa send()
+     * @version 1.0
+     */
+    DEFLECT_API Future finishFrame();
+
+    /**
      * Send an image and finish the frame asynchronously.
      *
      * The send (and the optional compression) and finishFrame() are executed in
@@ -132,40 +155,14 @@ public:
      *
      * @param image The image to send. Note that the image is not copied, so the
      *              referenced must remain valid until the send is finished
-     * @return true if the image data could be sent, false otherwise
+     * @return true if the image data could be sent, false otherwise.
      * @see send()
      * @version 1.1
      */
-    DEFLECT_API Future asyncSend(const ImageWrapper& image);
-    //@}
+    DEFLECT_API Future sendAndFinish(const ImageWrapper& image);
 
-    /** @name Synchronous send API */
-    //@{
-    /**
-     * Send an image synchronously.
-     *
-     * @note A call to send() while an asyncSend() is pending is undefined.
-     * @param image The image to send
-     * @return true if the image data could be sent, false otherwise
-     * @version 1.0
-     * @sa finishFrame()
-     */
-    DEFLECT_API bool send(const ImageWrapper& image);
-
-    /**
-     * Notify that all the images for this frame have been sent.
-     *
-     * This method must be called everytime this Stream instance has finished
-     * sending its image(s) for the current frame. The receiver will display
-     * the images once all the senders which use the same identifier have
-     * finished a frame.
-     *
-     * @note A call to finishFrame() while an asyncSend() is pending is
-     *       undefined.
-     * @see send()
-     * @version 1.0
-     */
-    DEFLECT_API bool finishFrame();
+    /** @deprecated */
+    Future asyncSend(const ImageWrapper& image) { return sendAndFinish(image); }
     //@}
 
     /**
@@ -240,10 +237,11 @@ public:
     DEFLECT_API Event getEvent();
 
     /**
-     * Send size hints to the stream host to indicate sizes that should be
-     * respected by resize operations on the host side.
+     * Send size hints to the stream server to indicate sizes that should be
+     * respected by resize operations on the server side.
      *
-     * @param hints the new size hints for the host
+     * @note do not use while asynchronous send operations are pending.
+     * @param hints the new size hints for the server
      * @version 1.2
      */
     DEFLECT_API void sendSizeHints(const SizeHints& hints);
@@ -251,6 +249,7 @@ public:
     /**
      * Send data to the Server.
      *
+     * @note do not use while asynchronous send operations are pending.
      * @param data the pointer to the data buffer.
      * @param count the number of bytes to send.
      * @return true if the data could be sent, false otherwise
@@ -271,8 +270,7 @@ private:
     const Stream& operator=(const Stream&) = delete;
 
     std::unique_ptr<StreamPrivate> _impl;
-
-    friend class ::Application;
+    friend class deflect::test::Application;
 };
 }
 

@@ -264,7 +264,7 @@ bool send(const Image& image, const deflect::View view)
                                          : deflect::COMPRESSION_OFF;
     deflectImage.compressionQuality = deflectCompressionQuality;
     deflectImage.view = view;
-    return deflectStream->send(deflectImage);
+    return deflectStream->send(deflectImage).get();
 }
 
 bool timeout(const float sec)

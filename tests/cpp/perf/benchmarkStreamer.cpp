@@ -144,14 +144,10 @@ struct BenchmarkOptions
     unsigned int quality;
 };
 
-static bool append(deflect::Segments& segments, const deflect::Segment& segment)
+namespace deflect
 {
-    static QMutex lock;
-    QMutexLocker locker(&lock);
-    segments.push_back(segment);
-    return true;
-}
-
+namespace test
+{
 /**
  * Stream image segments for benchmarking purposes.
  */
@@ -206,6 +202,8 @@ public:
 
     bool generateJpegSegments()
     {
+        deflect::ImageSegmenter segmenter;
+        segmenter.setNominalSegmentDimensions(512, 512);
         deflect::ImageWrapper deflectImage((const void*)_noiseImage.bits(),
                                            _noiseImage.width(),
                                            _noiseImage.height(), deflect::RGBA);
@@ -213,11 +211,14 @@ public:
         deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
         deflectImage.compressionQuality = _options.quality;
 
-        const auto appendHandler =
-            std::bind(&append, std::ref(_jpegSegments), std::placeholders::_1);
+        static QMutex lock;
+        const auto appendHandler = [&](const deflect::Segment& segment) {
+            QMutexLocker locker(&lock);
+            _jpegSegments.push_back(segment);
+            return true;
+        };
 
-        return _stream->_impl->imageSegmenter.generate(deflectImage,
-                                                       appendHandler);
+        return segmenter.generate(deflectImage, appendHandler);
     }
 
     bool send()
@@ -240,7 +241,8 @@ public:
                                            _noiseImage.height(), deflect::RGBA);
         deflectImage.compressionPolicy = deflect::COMPRESSION_OFF;
 
-        return _stream->send(deflectImage) && _stream->finishFrame();
+        return _stream->send(deflectImage).get() &&
+               _stream->finishFrame().get();
     }
 
     bool sendJpeg()
@@ -251,7 +253,8 @@ public:
         deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
         deflectImage.compressionQuality = _options.quality;
 
-        return _stream->send(deflectImage) && _stream->finishFrame();
+        return _stream->send(deflectImage).get() &&
+               _stream->finishFrame().get();
     }
 
     bool sendPrecompressedJpeg()
@@ -263,7 +266,7 @@ public:
                 return false;
         }
 
-        return _stream->finishFrame();
+        return _stream->finishFrame().get();
     }
 
 private:
@@ -272,6 +275,8 @@ private:
     std::unique_ptr<deflect::Stream> _stream;
     deflect::Segments _jpegSegments;
 };
+}
+}
 
 int main(int argc, char** argv)
 {
@@ -283,7 +288,7 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    Application benchmarkStreamer(options);
+    deflect::test::Application benchmarkStreamer(options);
 
     Timer timer;
     timer.start();

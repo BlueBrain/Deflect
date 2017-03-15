@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
-/*                     Daniel.Nachbaur@epfl.ch                       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -41,6 +41,13 @@
 
 #include "StreamPrivate.h"
 
+#include <iostream>
+
+namespace
+{
+const unsigned int SEGMENT_SIZE = 512;
+}
+
 namespace deflect
 {
 StreamSendWorker::StreamSendWorker(StreamPrivate& stream)
@@ -48,34 +55,62 @@ StreamSendWorker::StreamSendWorker(StreamPrivate& stream)
     , _running(true)
     , _thread(std::bind(&StreamSendWorker::_run, this))
 {
+    _imageSegmenter.setNominalSegmentDimensions(SEGMENT_SIZE, SEGMENT_SIZE);
 }
 
 StreamSendWorker::~StreamSendWorker()
 {
-    _stop();
+    stop();
 }
 
 void StreamSendWorker::_run()
 {
+    const auto sendFunc = std::bind(&StreamPrivate::sendPixelStreamSegment,
+                                    &_stream, std::placeholders::_1);
+
     std::unique_lock<std::mutex> lock(_mutex);
     while (true)
     {
         while (_requests.empty() && _running)
             _condition.wait(lock);
+
         if (!_running)
             break;
 
         const Request& request = _requests.back();
-        request.first->set_value(_stream.send(request.second) &&
-                                 _stream.finishFrame());
+
+        if (request.tasks & Request::TASK_IMAGE)
+        {
+            if (!_stream.sendImageView(request.image.view) ||
+                !_imageSegmenter.generate(request.image, sendFunc))
+            {
+                request.promise->set_value(false);
+                _requests.pop_back();
+                continue;
+            }
+        }
+
+        if (request.tasks & Request::TASK_FINISH)
+        {
+            if (!_stream.sendFinish())
+            {
+                request.promise->set_value(false);
+                _requests.pop_back();
+                continue;
+            }
+        }
+
+        request.promise->set_value(true);
         _requests.pop_back();
     }
 }
 
-void StreamSendWorker::_stop()
+void StreamSendWorker::stop()
 {
     {
         std::lock_guard<std::mutex> lock(_mutex);
+        if (!_running)
+            return;
         _running = false;
         _condition.notify_all();
     }
@@ -83,16 +118,41 @@ void StreamSendWorker::_stop()
     _thread.join();
     while (!_requests.empty())
     {
-        _requests.back().first->set_value(false);
-        _requests.pop_back();
+        _requests.front().promise->set_value(false);
+        _requests.pop_front();
     }
 }
 
-Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image)
+Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
+                                              const bool finish)
 {
-    std::lock_guard<std::mutex> lock(_mutex);
+    if (image.compressionPolicy != COMPRESSION_ON && image.pixelFormat != RGBA)
+    {
+        std::cerr << "Currently, RAW images can only be sent in RGBA format. "
+                     "Other formats support remain to be implemented."
+                  << std::endl;
+        std::promise<bool> promise;
+        promise.set_value(false);
+        return promise.get_future();
+    }
+
+    const uint32_t tasks = finish ? Request::TASK_IMAGE | Request::TASK_FINISH
+                                  : Request::TASK_IMAGE;
     PromisePtr promise(new Promise);
-    _requests.push_back(Request(promise, image));
+
+    std::lock_guard<std::mutex> lock(_mutex);
+    _requests.push_back({promise, image, tasks});
+    _condition.notify_all();
+    return promise->get_future();
+}
+
+Stream::Future StreamSendWorker::enqueueFinish()
+{
+    PromisePtr promise(new Promise);
+
+    std::lock_guard<std::mutex> lock(_mutex);
+    _requests.push_back(
+        {promise, ImageWrapper(nullptr, 0, 0, RGBA), Request::TASK_FINISH});
     _condition.notify_all();
     return promise->get_future();
 }

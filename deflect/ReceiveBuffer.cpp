@@ -52,7 +52,7 @@ bool ReceiveBuffer::addSource(const size_t sourceIndex)
     assert(!_sourceBuffers.count(sourceIndex));
 
     // TODO: This function must return false if the stream was already started!
-    // This requires an full adaptation of the Stream library (DISCL-241)
+    // This requires a full adaptation of the Stream library (DISCL-241)
     if (_sourceBuffers.count(sourceIndex))
         return false;
 

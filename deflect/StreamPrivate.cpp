@@ -54,7 +54,6 @@
 
 namespace
 {
-const unsigned int SEGMENT_SIZE = 512;
 const char* STREAM_ID_ENV_VAR = "DEFLECT_ID";
 const char* STREAM_HOST_ENV_VAR = "DEFLECT_HOST";
 }
@@ -92,9 +91,8 @@ StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
     : id(_getStreamId(id_))
     , socket(_getStreamHost(host), port)
     , registeredForEvents(false)
+    , _sendWorker(*this)
 {
-    imageSegmenter.setNominalSegmentDimensions(SEGMENT_SIZE, SEGMENT_SIZE);
-
     if (!socket.isConnected())
         return;
 
@@ -108,8 +106,7 @@ StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
 
 StreamPrivate::~StreamPrivate()
 {
-    _sendWorker.reset();
-
+    _sendWorker.stop();
     if (!socket.isConnected())
         return;
 
@@ -129,37 +126,19 @@ void StreamPrivate::sendClose()
     socket.send(mh, QByteArray());
 }
 
-bool StreamPrivate::send(const ImageWrapper& image)
+Stream::Future StreamPrivate::send(const ImageWrapper& image)
 {
-    if (image.compressionPolicy != COMPRESSION_ON && image.pixelFormat != RGBA)
-    {
-        std::cerr << "Currently, RAW images can only be sent in RGBA format. "
-                     "Other formats support remain to be implemented."
-                  << std::endl;
-        return false;
-    }
-
-    if (!sendImageView(image.view))
-        return false;
-
-    const auto sendFunc = std::bind(&StreamPrivate::sendPixelStreamSegment,
-                                    this, std::placeholders::_1);
-    return imageSegmenter.generate(image, sendFunc);
+    return _sendWorker.enqueueImage(image, false);
 }
 
-Stream::Future StreamPrivate::asyncSend(const ImageWrapper& image)
+Stream::Future StreamPrivate::sendAndFinish(const ImageWrapper& image)
 {
-    if (!_sendWorker)
-        _sendWorker.reset(new StreamSendWorker(*this));
-
-    return _sendWorker->enqueueImage(image);
+    return _sendWorker.enqueueImage(image, true);
 }
 
-bool StreamPrivate::finishFrame()
+Stream::Future StreamPrivate::finishFrame()
 {
-    // Open a window for the PixelStream
-    const MessageHeader mh(MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, id);
-    return socket.send(mh, QByteArray());
+    return _sendWorker.enqueueFinish();
 }
 
 bool StreamPrivate::sendImageView(const View view)
@@ -189,6 +168,11 @@ bool StreamPrivate::sendPixelStreamSegment(const Segment& segment)
     message.append(segment.imageData);
 
     return socket.send(mh, message);
+}
+
+bool StreamPrivate::sendFinish()
+{
+    return socket.send({MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, id}, {});
 }
 
 bool StreamPrivate::sendSizeHints(const SizeHints& hints)

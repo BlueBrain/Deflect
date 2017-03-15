@@ -84,19 +84,19 @@ const std::string& Stream::getHost() const
     return _impl->socket.getHost();
 }
 
-bool Stream::send(const ImageWrapper& image)
+Stream::Future Stream::send(const ImageWrapper& image)
 {
     return _impl->send(image);
 }
 
-bool Stream::finishFrame()
+Stream::Future Stream::finishFrame()
 {
     return _impl->finishFrame();
 }
 
-Stream::Future Stream::asyncSend(const ImageWrapper& image)
+Stream::Future Stream::sendAndFinish(const ImageWrapper& image)
 {
-    return _impl->asyncSend(image);
+    return _impl->sendAndFinish(image);
 }
 
 bool Stream::registerForEvents(const bool exclusive)

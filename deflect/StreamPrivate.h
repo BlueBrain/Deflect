@@ -45,10 +45,10 @@
 #include <deflect/api.h>
 
 #include "Event.h"
-#include "ImageSegmenter.h"
 #include "MessageHeader.h"
-#include "Socket.h" // member
-#include "Stream.h" // Stream::Future
+#include "Socket.h"           // member
+#include "Stream.h"           // Stream::Future
+#include "StreamSendWorker.h" // member
 
 #include <functional>
 #include <memory>
@@ -56,11 +56,7 @@
 
 namespace deflect
 {
-class StreamSendWorker;
-
-/**
- * Private implementation for the Stream class.
- */
+/** Private implementation for the Stream class. */
 class StreamPrivate
 {
 public:
@@ -90,16 +86,13 @@ public:
     bool close();
 
     /** @sa Stream::send */
-    bool send(const ImageWrapper& image);
+    Stream::Future send(const ImageWrapper& image);
 
-    /** @sa Stream::asyncSend */
-    Stream::Future asyncSend(const ImageWrapper& image);
+    /** @sa Stream::sendAndFinish */
+    Stream::Future sendAndFinish(const ImageWrapper& image);
 
     /** @sa Stream::finishFrame */
-    bool finishFrame();
-
-    /** Send the view for the image to be sent with sendPixelStreamSegment. */
-    bool sendImageView(View view);
+    Stream::Future finishFrame();
 
     /**
      * Send a Segment through the Stream.
@@ -120,16 +113,20 @@ public:
     /** The communication socket instance */
     Socket socket;
 
-    /** The image segmenter */
-    ImageSegmenter imageSegmenter;
-
     /** Has a successful event registration reply been received */
     bool registeredForEvents;
 
     std::function<void()> disconnectedCallback;
 
 private:
-    std::unique_ptr<StreamSendWorker> _sendWorker;
+    friend class StreamSendWorker;
+
+    /** Send the view for the image to be sent with sendPixelStreamSegment. */
+    bool sendImageView(View view);
+
+    bool sendFinish(); //<! Send the finish frame message
+
+    StreamSendWorker _sendWorker;
 };
 }
 #endif
