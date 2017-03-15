@@ -13,7 +13,7 @@ include(GitExternal)
 
 set(DEFLECT_DESCRIPTION "A fast C++ library for streaming pixels and events")
 set(DEFLECT_MAINTAINER "Blue Brain Project <bbp-open-source@googlegroups.com>")
-set(DEFLECT_LICENSE BSD)
+set(DEFLECT_LICENSE LGPL)
 set(DEFLECT_DEB_DEPENDS freeglut3-dev libxi-dev libxmu-dev
   libjpeg-turbo8-dev libturbojpeg
   libboost-program-options-dev libboost-test-dev
@@ -52,12 +52,15 @@ if(Boost_FOUND)
 endif()
 add_subdirectory(doc)
 
+# Name the package "desktopstreamer" instead of "deflect6"
+set(COMMON_PACKAGE_ABI OFF)
+set(CPACK_PACKAGE_NAME "desktopstreamer")
+set(CPACK_PACKAGE_VENDOR "bluebrain.epfl.ch")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "qtbase5-dev, libturbojpeg")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/BlueBrain/Deflect")
+include(CommonCPack) # also includes CommonPackageConfig
+
 set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)
 set(DOXYGEN_MAINPAGE_MD README.md)
 set(DOXYGEN_EXTRA_INPUT ${PROJECT_SOURCE_DIR}/README.md)
 include(DoxygenRule) # must be after all targets
-
-set(CTEST_CUSTOM_WARNING_EXCEPTION ${CTEST_CUSTOM_WARNING_EXCEPTION}
-  # http://public.kitware.com/Bug/view.php?id=10179
-  "ld: warning: duplicate dylib")
-include(CTest)
