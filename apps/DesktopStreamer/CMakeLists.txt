@@ -25,10 +25,10 @@ set(DESKTOPSTREAMER_LINK_LIBRARIES
 
 set(DEFLECT_DESKTOPSTREAMER_HOSTS
     "\
-{\"DisplayWall Ground floor\", \"bbpav02.epfl.ch\"}, \
-{\"DisplayWall 3rd floor\", \"bbpav04.epfl.ch\"}, \
-{\"DisplayWall 5th floor\", \"bbpav05.epfl.ch\"}, \
-{\"DisplayWall 6th floor\", \"bbpav06.epfl.ch\"}"
+{\"DisplayWall Ground floor\", \"bbpav02.bbp.epfl.ch\"}, \
+{\"DisplayWall 3rd floor\", \"bbpav04.bbp.epfl.ch\"}, \
+{\"DisplayWall 5th floor\", \"bbpav05.bbp.epfl.ch\"}, \
+{\"DisplayWall 6th floor\", \"bbpav06.bbp.epfl.ch\"}"
     CACHE STRING "List of default hosts for the DesktopStreamer application"
 )
 set_source_files_properties(MainWindow.cpp PROPERTIES COMPILE_DEFINITIONS
@@ -41,7 +41,6 @@ if(APPLE)
   set(DESKTOPSTREAMER_APP_NAME DesktopStreamer)
   string(TIMESTAMP _CURRENT_YEAR "%Y")
   set(DESKTOPSTREAMER_COPYRIGHT "EPFL/Blue Brain Project ${_CURRENT_YEAR}")
-  set(DESKTOPSTREAMER_ICON desktopstreamer.icns)
 
   list(APPEND DESKTOPSTREAMER_SOURCES nameUtils.mm)
   list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES "-framework Foundation")
@@ -74,6 +73,3 @@ if(APPLE)
     ${DESKTOPSTREAMER_APP_NAME}-${PROJECT_VERSION}.zip ${DESKTOPSTREAMER_APP_NAME}.app
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)" COMPONENT apps)
 endif()
-
-set(CPACK_PACKAGE_LICENSE "LGPL")
-include(CPackConfig)

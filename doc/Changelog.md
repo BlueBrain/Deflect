@@ -3,6 +3,9 @@ Changelog {#Changelog}
 
 ## Deflect 0.13 (git master)
 
+* [156](https://github.com/BlueBrain/Deflect/pull/156):
+  Deflect can be released as a Debian/Ubuntu package. Once installed,
+  DesktopStreamer can be launched from the desktop's applications menu.
 * [157](https://github.com/BlueBrain/Deflect/pull/157):
   Better event registration mechanism, fixes warnings in the multi-client case.
 * [154](https://github.com/BlueBrain/Deflect/pull/154):

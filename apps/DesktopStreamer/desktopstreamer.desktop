@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=DesktopStreamer
+Comment=Stream your desktop
+Keywords=streaming;deflect;
+Exec=desktopstreamer
+Icon=desktopstreamer
+Type=Application
+Categories=Utility;
