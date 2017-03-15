@@ -23,6 +23,7 @@ set(DEFLECT_PORT_DEPENDS boost freeglut qt5)
 include(Common)
 
 common_find_package(Boost COMPONENTS program_options unit_test_framework)
+common_find_package(Extra REQUIRED)
 common_find_package(GLUT)
 common_find_package(LibJpegTurbo REQUIRED)
 common_find_package(OpenGL)

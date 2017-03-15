@@ -44,8 +44,8 @@
 #include <deflect/api.h>
 #include <deflect/types.h>
 
-#include <deflect/MTQueue.h>
 #include <deflect/Segment.h>
+#include <extra/MTQueue.h>
 
 #include <functional>
 #include <vector>
@@ -104,7 +104,7 @@ private:
     unsigned int _nominalSegmentWidth;
     unsigned int _nominalSegmentHeight;
 
-    MTQueue<Segment> _sendQueue;
+    extra::MTQueue<Segment> _sendQueue;
 };
 }
 #endif
