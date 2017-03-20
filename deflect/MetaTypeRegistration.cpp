@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2015, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2014-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -41,6 +41,7 @@
 #include "Event.h"
 #include "Segment.h"
 #include "SizeHints.h"
+#include "types.h"
 
 #include <QMetaType>
 
@@ -54,6 +55,7 @@ struct MetaTypeRegistration
     MetaTypeRegistration()
     {
         qRegisterMetaType<size_t>("size_t");
+        qRegisterMetaType<deflect::BoolPromisePtr>("deflect::BoolPromisePtr");
         qRegisterMetaType<deflect::Segment>("deflect::Segment");
         qRegisterMetaType<deflect::SizeHints>("deflect::SizeHints");
         qRegisterMetaType<deflect::Event>("deflect::Event");

@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -100,11 +100,6 @@ void Server::closePixelStream(const QString uri)
     _impl->frameDispatcher.deleteStream(uri);
 }
 
-void Server::replyToEventRegistration(const QString uri, const bool success)
-{
-    emit _eventRegistrationReply(uri, success);
-}
-
 void Server::incomingConnection(const qintptr socketHandle)
 {
     QThread* workerThread = new QThread(this);
@@ -131,8 +126,6 @@ void Server::incomingConnection(const qintptr socketHandle)
     connect(worker, &ServerWorker::receivedData, this, &Server::receivedData);
     connect(this, &Server::_closePixelStream, worker,
             &ServerWorker::closeConnection);
-    connect(this, &Server::_eventRegistrationReply, worker,
-            &ServerWorker::replyToEventRegistration);
 
     // FrameDispatcher
     connect(worker, &ServerWorker::addStreamSource, &_impl->frameDispatcher,

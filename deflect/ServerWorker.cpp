@@ -117,16 +117,6 @@ void ServerWorker::closeConnection(const QString uri)
     emit(connectionClosed());
 }
 
-void ServerWorker::replyToEventRegistration(const QString uri,
-                                            const bool success)
-{
-    if (uri != _streamId)
-        return;
-
-    _registeredToEvents = success;
-    _sendBindReply(_registeredToEvents);
-}
-
 void ServerWorker::_processMessages()
 {
     const qint64 headerSize(MessageHeader::serializedSize);
@@ -268,7 +258,18 @@ void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
         {
             const bool exclusive =
                 (messageHeader.type == MESSAGE_TYPE_BIND_EVENTS_EX);
-            emit registerToEvents(_streamId, exclusive, this);
+            auto promise = std::make_shared<std::promise<bool>>();
+            auto future = promise->get_future();
+            emit registerToEvents(_streamId, exclusive, this,
+                                  std::move(promise));
+            try
+            {
+                _registeredToEvents = future.get();
+            }
+            catch (...)
+            {
+            }
+            _sendBindReply(_registeredToEvents);
         }
         break;
 
