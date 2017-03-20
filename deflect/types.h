@@ -43,6 +43,7 @@
 
 #include <deflect/config.h>
 
+#include <future>
 #include <memory>
 #include <vector>
 
@@ -85,9 +86,10 @@ struct Segment;
 struct SegmentParameters;
 struct SizeHints;
 
-typedef std::shared_ptr<Frame> FramePtr;
-typedef std::vector<Segment> Segments;
-typedef std::vector<SegmentParameters> SegmentParametersList;
+using BoolPromisePtr = std::shared_ptr<std::promise<bool>>;
+using FramePtr = std::shared_ptr<Frame>;
+using Segments = std::vector<Segment>;
+using SegmentParametersList = std::vector<SegmentParameters>;
 
 namespace qt
 {

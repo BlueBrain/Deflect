@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -46,6 +46,7 @@
 #include <deflect/MessageHeader.h>
 #include <deflect/Segment.h>
 #include <deflect/SizeHints.h>
+#include <deflect/types.h>
 
 #include <QQueue>
 #include <QtNetwork/QTcpSocket>
@@ -65,7 +66,6 @@ public slots:
 
     void initConnection();
     void closeConnection(QString uri);
-    void replyToEventRegistration(QString uri, bool success);
 
 signals:
     void addStreamSource(QString uri, size_t sourceIndex);
@@ -76,7 +76,8 @@ signals:
     void receivedFrameFinished(QString uri, size_t sourceIndex);
 
     void registerToEvents(QString uri, bool exclusive,
-                          deflect::EventReceiver* receiver);
+                          deflect::EventReceiver* receiver,
+                          deflect::BoolPromisePtr success);
 
     void receivedSizeHints(QString uri, deflect::SizeHints hints);
 

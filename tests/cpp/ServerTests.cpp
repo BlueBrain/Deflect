@@ -136,12 +136,12 @@ BOOST_AUTO_TEST_CASE(testRegisterForEventReceivedByServer)
     bool receivedState = false;
     server->connect(server, &deflect::Server::registerToEvents,
                     [&](const QString id, const bool exclusive,
-                        deflect::EventReceiver* receiver) {
+                        deflect::EventReceiver* receiver,
+                        deflect::BoolPromisePtr success) {
                         streamId = id;
                         exclusiveBind = exclusive;
                         eventReceiver = receiver;
-                        // send reply to Stream
-                        server->replyToEventRegistration(id, true);
+                        success->set_value(true);
                         mutex.lock();
                         receivedState = true;
                         received.wakeAll();

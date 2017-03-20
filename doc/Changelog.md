@@ -3,6 +3,8 @@ Changelog {#Changelog}
 
 ## Deflect 0.13 (git master)
 
+* [157](https://github.com/BlueBrain/Deflect/pull/157):
+  Better event registration mechanism, fixes warnings in the multi-client case.
 * [154](https://github.com/BlueBrain/Deflect/pull/154):
   On the server side, segments can be decoded to YUV images, saving CPU time by
   skipping the YUV -> RGB conversion step.

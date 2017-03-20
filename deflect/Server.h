@@ -91,14 +91,6 @@ public slots:
     void requestFrame(QString uri);
 
     /**
-     * Reply to an event registration request after a registerToEvents() signal.
-     *
-     * @param uri Identifier for the stream
-     * @param success Result of the registration operation
-     */
-    void replyToEventRegistration(QString uri, bool success);
-
-    /**
      * Close a pixel stream, disconnecting the remote client.
      *
      * @param uri Identifier for the stream
@@ -136,9 +128,11 @@ signals:
      * @param uri Identifier for the stream
      * @param exclusive true if the receiver should receive events exclusively
      * @param receiver the event receiver instance
+     * @param success the promise that must receive the success of the operation
      */
     void registerToEvents(QString uri, bool exclusive,
-                          deflect::EventReceiver* receiver);
+                          deflect::EventReceiver* receiver,
+                          deflect::BoolPromisePtr success);
 
     /**
      * Emitted when a remote client sends size hints for displaying the stream.
@@ -165,7 +159,6 @@ private:
 
 signals:
     void _closePixelStream(QString uri);
-    void _eventRegistrationReply(QString uri, bool success);
 };
 }
 
