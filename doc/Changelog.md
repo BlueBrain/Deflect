@@ -13,9 +13,8 @@ Changelog {#Changelog}
   skipping the YUV -> RGB conversion step.
   Additionally, Stream images can be further compressed using optional
   [chroma subsampling](ChromaSubsampling.md).
-* [152](https://github.com/BlueBrain/Deflect/pull/152):
-  Changed coding style of the project to conform to new .clang-format rules.
-* [148](https://github.com/BlueBrain/Deflect/pull/148):
+* [148](https://github.com/BlueBrain/Deflect/pull/148),
+  [153](https://github.com/BlueBrain/Deflect/pull/153):
   Support for streaming stereo 3D content in a frame-sequential manner.
 
 ## Deflect 0.12

@@ -241,8 +241,7 @@ public:
                                            _noiseImage.height(), deflect::RGBA);
         deflectImage.compressionPolicy = deflect::COMPRESSION_OFF;
 
-        return _stream->send(deflectImage).get() &&
-               _stream->finishFrame().get();
+        return _stream->sendAndFinish(deflectImage).get();
     }
 
     bool sendJpeg()
@@ -253,8 +252,7 @@ public:
         deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
         deflectImage.compressionQuality = _options.quality;
 
-        return _stream->send(deflectImage).get() &&
-               _stream->finishFrame().get();
+        return _stream->sendAndFinish(deflectImage).get();
     }
 
     bool sendPrecompressedJpeg()

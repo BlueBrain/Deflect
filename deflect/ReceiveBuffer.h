@@ -65,8 +65,8 @@ public:
      * Add a source of segments.
      * @param sourceIndex Unique source identifier
      * @return false if the source was already added or if
-     * finishFrameForSource()
-     *         has already been called for all existing source (TODO DISCL-241).
+     *         finishFrameForSource() has already been called for all existing
+     *         source (TODO DISCL-241).
      */
     DEFLECT_API bool addSource(size_t sourceIndex);
 

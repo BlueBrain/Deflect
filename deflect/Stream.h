@@ -127,7 +127,7 @@ public:
      * @param image The image to send. Note that the image is not copied, so the
      *              referenced must remain valid until the send is finished.
      * @return true if the image data could be sent, false otherwise
-     * @version 1.0
+     * @version 1.6
      * @sa finishFrame()
      */
     DEFLECT_API Future send(const ImageWrapper& image);
@@ -142,7 +142,7 @@ public:
      * stereo rendering.
      *
      * @sa send()
-     * @version 1.0
+     * @version 1.6
      */
     DEFLECT_API Future finishFrame();
 
@@ -157,7 +157,7 @@ public:
      *              referenced must remain valid until the send is finished
      * @return true if the image data could be sent, false otherwise.
      * @see send()
-     * @version 1.1
+     * @version 1.6
      */
     DEFLECT_API Future sendAndFinish(const ImageWrapper& image);
 
