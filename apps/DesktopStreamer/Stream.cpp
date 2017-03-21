@@ -182,6 +182,9 @@ public:
 
         if (image == _image)
             return std::string(); // OPT: Image is unchanged
+
+        if (_lastSend.valid() && !_lastSend.get())
+            return "Streaming failure, connection closed";
         _image = image;
 
         // QImage Format_RGB32 (0xffRRGGBB) corresponds to GL_BGRA ==
@@ -192,9 +195,6 @@ public:
         deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
         deflectImage.compressionQuality = std::max(1, std::min(quality, 100));
         deflectImage.subsampling = subsamp;
-
-        if (_lastSend.valid() && !_lastSend.get())
-            return "Streaming failure, connection closed";
 
         _lastSend = _stream.sendAndFinish(deflectImage);
         return std::string();
