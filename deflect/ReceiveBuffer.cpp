@@ -85,6 +85,9 @@ void ReceiveBuffer::finishFrameForSource(const size_t sourceIndex)
     if (buffer.getQueueSize() > MAX_QUEUE_SIZE)
         throw std::runtime_error("maximum queue size exceeded");
 
+    if (buffer.isBackFrameEmpty())
+        throw std::runtime_error("client sent finish frame without image data");
+
     buffer.push();
 }
 

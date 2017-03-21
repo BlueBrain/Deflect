@@ -318,7 +318,9 @@ void display()
         success = send(Image::readGlBuffer(), deflect::View::mono);
     }
 
-    deflectStream->finishFrame();
+    if (!waitToStart)
+        success = success && deflectStream->finishFrame().get();
+
     glutSwapBuffers();
 
     // increment rotation angle according to interaction, or by a constant rate
