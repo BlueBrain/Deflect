@@ -43,6 +43,7 @@
 #include "ReceiveBuffer.h"
 
 #include <cassert>
+#include <iostream>
 
 namespace deflect
 {
@@ -119,8 +120,10 @@ void FrameDispatcher::processFrameFinished(const QString uri,
     {
         buffer.finishFrameForSource(sourceIndex);
     }
-    catch (const std::runtime_error&)
+    catch (const std::runtime_error& e)
     {
+        std::cerr << "processFrameFinished got exception, closing stream: "
+                  << e.what() << std::endl;
         emit bufferSizeExceeded(uri);
         return;
     }

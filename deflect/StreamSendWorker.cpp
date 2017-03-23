@@ -77,7 +77,7 @@ void StreamSendWorker::_run()
         if (!_running)
             break;
 
-        const Request& request = _requests.back();
+        const Request& request = _requests.front();
 
         if (request.tasks & Request::TASK_IMAGE)
         {
@@ -101,7 +101,7 @@ void StreamSendWorker::_run()
         }
 
         request.promise->set_value(true);
-        _requests.pop_back();
+        _requests.pop_front();
     }
 }
 
