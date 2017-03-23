@@ -68,9 +68,9 @@ void StreamSendWorker::_run()
     const auto sendFunc = std::bind(&StreamPrivate::sendPixelStreamSegment,
                                     &_stream, std::placeholders::_1);
 
-    std::unique_lock<std::mutex> lock(_mutex);
     while (true)
     {
+        std::unique_lock<std::mutex> lock(_mutex);
         while (_requests.empty() && _running)
             _condition.wait(lock);
 
@@ -78,30 +78,33 @@ void StreamSendWorker::_run()
             break;
 
         const Request& request = _requests.front();
+        const ImageWrapper image(request.image);
+        const uint32_t tasks(request.tasks);
+        PromisePtr promise(request.promise);
+        _requests.pop_front();
+        lock.unlock();
 
-        if (request.tasks & Request::TASK_IMAGE)
+        if (tasks & Request::TASK_IMAGE)
         {
-            if (!_stream.sendImageView(request.image.view) ||
-                !_imageSegmenter.generate(request.image, sendFunc))
+            if (!_stream.sendImageView(image.view) ||
+                !_imageSegmenter.generate(image, sendFunc))
             {
-                request.promise->set_value(false);
+                promise->set_value(false);
                 _requests.pop_back();
                 continue;
             }
         }
 
-        if (request.tasks & Request::TASK_FINISH)
+        if (tasks & Request::TASK_FINISH)
         {
             if (!_stream.sendFinish())
             {
-                request.promise->set_value(false);
+                promise->set_value(false);
                 _requests.pop_back();
                 continue;
             }
         }
-
-        request.promise->set_value(true);
-        _requests.pop_front();
+        promise->set_value(true);
     }
 }
 
