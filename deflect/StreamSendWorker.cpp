@@ -63,6 +63,20 @@ StreamSendWorker::~StreamSendWorker()
     stop();
 }
 
+StreamSendWorker::Request::Request(const Request& from)
+    : promise(from.promise)
+    , image(from.image)
+    , tasks(from.tasks)
+{
+}
+
+StreamSendWorker::Request::Request(PromisePtr p, const ImageWrapper& i,
+                                   const uint32_t t)
+    : promise(p)
+    , image(i)
+    , tasks(t)
+{
+}
 void StreamSendWorker::_run()
 {
     const auto sendFunc = std::bind(&StreamPrivate::sendPixelStreamSegment,
@@ -70,6 +84,7 @@ void StreamSendWorker::_run()
 
     while (true)
     {
+        // Copy request, unlock enqueue methods during processing of tasks
         std::unique_lock<std::mutex> lock(_mutex);
         while (_requests.empty() && _running)
             _condition.wait(lock);
@@ -77,34 +92,29 @@ void StreamSendWorker::_run()
         if (!_running)
             break;
 
-        const Request& request = _requests.front();
-        const ImageWrapper image(request.image);
-        const uint32_t tasks(request.tasks);
-        PromisePtr promise(request.promise);
+        const Request request(_requests.front());
         _requests.pop_front();
         lock.unlock();
 
-        if (tasks & Request::TASK_IMAGE)
+        if (request.tasks & Request::TASK_IMAGE)
         {
-            if (!_stream.sendImageView(image.view) ||
-                !_imageSegmenter.generate(image, sendFunc))
+            if (!_stream.sendImageView(request.image.view) ||
+                !_imageSegmenter.generate(request.image, sendFunc))
             {
-                promise->set_value(false);
-                _requests.pop_back();
+                request.promise->set_value(false);
                 continue;
             }
         }
 
-        if (tasks & Request::TASK_FINISH)
+        if (request.tasks & Request::TASK_FINISH)
         {
             if (!_stream.sendFinish())
             {
-                promise->set_value(false);
-                _requests.pop_back();
+                request.promise->set_value(false);
                 continue;
             }
         }
-        promise->set_value(true);
+        request.promise->set_value(true);
     }
 }
 

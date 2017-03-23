@@ -79,6 +79,9 @@ private:
 
     struct Request
     {
+        Request(const Request& from);
+        Request(PromisePtr promise, const ImageWrapper& image, uint32_t tasks);
+
         static const uint32_t TASK_IMAGE = 1;
         static const uint32_t TASK_FINISH = 2;
 
