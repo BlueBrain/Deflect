@@ -69,6 +69,7 @@ namespace ut = boost::unit_test;
 // #define NTHREADS 20 // QT default if not defined
 
 BOOST_GLOBAL_FIXTURE(MinimalGlobalQtApp);
+using Futures = std::vector<deflect::Stream::Future>;
 
 class DCThread : public QThread
 {
@@ -83,35 +84,47 @@ class DCThread : public QThread
         BOOST_CHECK(stream.isConnected());
 
         image.compressionPolicy = deflect::COMPRESSION_OFF;
+        Futures futures;
+        futures.reserve(NIMAGES * 2);
         timer.start();
         for (size_t i = 0; i < NIMAGES; ++i)
         {
-            BOOST_CHECK(stream.send(image));
-            BOOST_CHECK(stream.finishFrame());
+            futures.push_back(stream.send(image));
+            futures.push_back(stream.finishFrame());
         }
+        for (auto& future : futures)
+            BOOST_CHECK(future.get());
         float time = timer.elapsed();
         std::cout << "raw " << NPIXELS / float(1024 * 1024) / time * NIMAGES
                   << " megapixel/s (" << NIMAGES / time << " FPS)" << std::endl;
 
         image.compressionPolicy = deflect::COMPRESSION_ON;
+        futures.clear();
+        futures.reserve(NIMAGES * 2);
         timer.restart();
         for (size_t i = 0; i < NIMAGES; ++i)
         {
-            BOOST_CHECK(stream.send(image));
-            BOOST_CHECK(stream.finishFrame());
+            futures.push_back(stream.send(image));
+            futures.push_back(stream.finishFrame());
         }
+        for (auto& future : futures)
+            BOOST_CHECK(future.get());
         time = timer.elapsed();
         std::cout << "blk " << NPIXELS / float(1024 * 1024) / time * NIMAGES
                   << " megapixel/s (" << NIMAGES / time << " FPS)" << std::endl;
 
         for (size_t i = 0; i < NBYTES; ++i)
             pixels[i] = uint8_t(qrand());
+        futures.clear();
+        futures.reserve(NIMAGES * 2);
         timer.restart();
         for (size_t i = 0; i < NIMAGES; ++i)
         {
-            BOOST_CHECK(stream.send(image));
-            BOOST_CHECK(stream.finishFrame());
+            futures.push_back(stream.send(image));
+            futures.push_back(stream.finishFrame());
         }
+        for (auto& future : futures)
+            BOOST_CHECK(future.get());
         time = timer.elapsed();
         std::cout << "rnd " << NPIXELS / float(1024 * 1024) / time * NIMAGES
                   << " megapixel/s (" << NIMAGES / time << " FPS)" << std::endl;

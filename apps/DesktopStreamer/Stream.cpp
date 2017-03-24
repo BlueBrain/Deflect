@@ -182,19 +182,21 @@ public:
 
         if (image == _image)
             return std::string(); // OPT: Image is unchanged
+
+        if (_lastSend.valid() && !_lastSend.get())
+            return "Streaming failure, connection closed";
         _image = image;
 
         // QImage Format_RGB32 (0xffRRGGBB) corresponds to GL_BGRA ==
         // deflect::BGRA
-        deflect::ImageWrapper deflectImage((const void*)image.bits(),
-                                           image.width(), image.height(),
+        deflect::ImageWrapper deflectImage((const void*)_image.bits(),
+                                           _image.width(), _image.height(),
                                            deflect::BGRA);
         deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
         deflectImage.compressionQuality = std::max(1, std::min(quality, 100));
         deflectImage.subsampling = subsamp;
 
-        if (!_stream.send(deflectImage) || !_stream.finishFrame())
-            return "Streaming failure, connection closed";
+        _lastSend = _stream.sendAndFinish(deflectImage);
         return std::string();
     }
 
@@ -292,6 +294,8 @@ public:
     typedef std::queue<CGEventRef> EventQueue;
     EventQueue _events;
 #endif
+
+    deflect::Stream::Future _lastSend;
 
     QTimer _mouseActiveTimer;
     QPoint _mousePos;

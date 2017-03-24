@@ -61,9 +61,6 @@ public:
     /** The PixelStream uri to which this frame is associated. */
     QString uri;
 
-    /** The view to which this frame belongs. */
-    View view = View::mono;
-
     /** Get the total dimensions of this frame. */
     DEFLECT_API QSize computeDimensions() const;
 };

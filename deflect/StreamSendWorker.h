@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
-/*                     Daniel.Nachbaur@epfl.ch                       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -40,11 +40,12 @@
 #ifndef DEFLECT_STREAMSENDWORKER_H
 #define DEFLECT_STREAMSENDWORKER_H
 
+#include "ImageSegmenter.h" // member
+#include "Stream.h"         // Stream::Future
+
 #include <deque>
 #include <mutex>
 #include <thread>
-
-#include "Stream.h" // Stream::Future
 
 namespace deflect
 {
@@ -62,20 +63,35 @@ public:
     ~StreamSendWorker();
 
     /** Enqueue an image to be send during the execution of run(). */
-    Stream::Future enqueueImage(const ImageWrapper& image);
+    Stream::Future enqueueImage(const ImageWrapper& image, bool finish);
+
+    Stream::Future enqueueFinish(); //!< Enqueue a finishFrame()
+
+    /** Stop the worker and clear any pending image send requests. */
+    void stop();
 
 private:
     /** Starts asynchronous sending of queued images. */
     void _run();
 
-    /** Stop the worker and clear any pending image send requests. */
-    void _stop();
-
     using Promise = std::promise<bool>;
     using PromisePtr = std::shared_ptr<Promise>;
-    using Request = std::pair<PromisePtr, ImageWrapper>;
+
+    struct Request
+    {
+        Request(const Request& from);
+        Request(PromisePtr promise, const ImageWrapper& image, uint32_t tasks);
+
+        static const uint32_t TASK_IMAGE = 1;
+        static const uint32_t TASK_FINISH = 2;
+
+        PromisePtr promise;
+        ImageWrapper image;
+        uint32_t tasks;
+    };
 
     StreamPrivate& _stream;
+    ImageSegmenter _imageSegmenter;
     std::deque<Request> _requests;
     std::mutex _mutex;
     std::condition_variable _condition;

@@ -40,13 +40,9 @@
 #include "ReceiveBuffer.h"
 
 #include <cassert>
-#include <set>
-
 namespace
 {
 const size_t MAX_QUEUE_SIZE = 150; // stream blocked for ~5 seconds at 30Hz
-const auto views = std::array<deflect::View, 3>{
-    {deflect::View::mono, deflect::View::left_eye, deflect::View::right_eye}};
 }
 
 namespace deflect
@@ -74,12 +70,11 @@ size_t ReceiveBuffer::getSourceCount() const
     return _sourceBuffers.size();
 }
 
-void ReceiveBuffer::insert(const Segment& segment, const size_t sourceIndex,
-                           const View view)
+void ReceiveBuffer::insert(const Segment& segment, const size_t sourceIndex)
 {
     assert(_sourceBuffers.count(sourceIndex));
 
-    _sourceBuffers[sourceIndex].insert(segment, view);
+    _sourceBuffers[sourceIndex].insert(segment);
 }
 
 void ReceiveBuffer::finishFrameForSource(const size_t sourceIndex)
@@ -87,103 +82,53 @@ void ReceiveBuffer::finishFrameForSource(const size_t sourceIndex)
     assert(_sourceBuffers.count(sourceIndex));
 
     auto& buffer = _sourceBuffers[sourceIndex];
+    if (buffer.getQueueSize() > MAX_QUEUE_SIZE)
+        throw std::runtime_error("maximum queue size exceeded");
 
-    for (const auto view : views)
-    {
-        if (buffer.isBackFrameEmpty(view))
-            continue;
+    if (buffer.isBackFrameEmpty())
+        throw std::runtime_error("client sent finish frame without image data");
 
-        if (buffer.getQueueSize(view) > MAX_QUEUE_SIZE)
-            throw std::runtime_error("maximum queue size exceeded");
-
-        buffer.push(view);
-    }
+    buffer.push();
 }
 
-bool ReceiveBuffer::hasCompleteMonoFrame() const
+bool ReceiveBuffer::hasCompleteFrame() const
 {
     assert(!_sourceBuffers.empty());
 
     // Check if all sources for Stream have reached the same index
-    const auto lastCompleteFrame = _getLastCompleteFrameIndex(View::mono);
     for (const auto& kv : _sourceBuffers)
     {
         const auto& buffer = kv.second;
-        if (buffer.getBackFrameIndex(View::mono) <= lastCompleteFrame)
+        if (buffer.getBackFrameIndex() <= _lastFrameComplete)
             return false;
     }
     return true;
 }
 
-bool ReceiveBuffer::hasCompleteStereoFrame() const
+Segments ReceiveBuffer::popFrame()
 {
-    std::set<size_t> leftSources;
-    std::set<size_t> rightSources;
-
-    const auto lastFrameLeft = _getLastCompleteFrameIndex(View::left_eye);
-    const auto lastFrameRight = _getLastCompleteFrameIndex(View::right_eye);
-
-    for (const auto& kv : _sourceBuffers)
-    {
-        const auto& buffer = kv.second;
-        if (buffer.getBackFrameIndex(View::left_eye) > lastFrameLeft)
-            leftSources.insert(kv.first);
-        if (buffer.getBackFrameIndex(View::right_eye) > lastFrameRight)
-            rightSources.insert(kv.first);
-    }
-
-    if (leftSources.empty() || rightSources.empty())
-        return false;
-
-    std::set<size_t> leftAndRight;
-    std::set_intersection(leftSources.begin(), leftSources.end(),
-                          rightSources.begin(), rightSources.end(),
-                          std::inserter(leftAndRight, leftAndRight.end()));
-
-    // if at least one source sends both left AND right, assume all sources do.
-    if (!leftAndRight.empty())
-        return leftAndRight.size() == _sourceBuffers.size();
-
-    // otherwise, assume all streams send either left OR right.
-    return rightSources.size() + leftSources.size() == _sourceBuffers.size();
-}
-
-Segments ReceiveBuffer::popFrame(const View view)
-{
-    const auto lastCompleteFrameIndex = _getLastCompleteFrameIndex(view);
-
     Segments frame;
     for (auto& kv : _sourceBuffers)
     {
         auto& buffer = kv.second;
-        if (buffer.getBackFrameIndex(view) > lastCompleteFrameIndex)
+        if (buffer.getBackFrameIndex() > _lastFrameComplete)
         {
-            const auto& segments = buffer.getSegments(view);
+            const auto& segments = buffer.getSegments();
             frame.insert(frame.end(), segments.begin(), segments.end());
-            buffer.pop(view);
+            buffer.pop();
         }
     }
-    _incrementLastFrameComplete(view);
+    ++_lastFrameComplete;
     return frame;
 }
 
-void ReceiveBuffer::setAllowedToSend(const bool enable, const View view)
+void ReceiveBuffer::setAllowedToSend(const bool enable)
 {
-    _allowedToSend[as_underlying_type(view)] = enable;
+    _allowedToSend = enable;
 }
 
-bool ReceiveBuffer::isAllowedToSend(const View view) const
+bool ReceiveBuffer::isAllowedToSend() const
 {
-    return _allowedToSend[as_underlying_type(view)];
-}
-
-FrameIndex ReceiveBuffer::_getLastCompleteFrameIndex(const View view) const
-{
-    return _lastFrameComplete[as_underlying_type(view)];
-}
-
-void ReceiveBuffer::_incrementLastFrameComplete(const View view)
-{
-    ++_lastFrameComplete[as_underlying_type(view)];
+    return _allowedToSend;
 }
 }

@@ -6,6 +6,9 @@ Changelog {#Changelog}
 * [156](https://github.com/BlueBrain/Deflect/pull/156):
   Deflect can be released as a Debian/Ubuntu package. Once installed,
   DesktopStreamer can be launched from the desktop's applications menu.
+* [153](https://github.com/BlueBrain/Deflect/pull/153):
+  - Fix: Stream async send used LIFO queueing, not FIFO
+  - Optimize concurrency of Stream asynchronous send
 * [157](https://github.com/BlueBrain/Deflect/pull/157):
   Better event registration mechanism, fixes warnings in the multi-client case.
 * [154](https://github.com/BlueBrain/Deflect/pull/154):
@@ -13,9 +16,8 @@ Changelog {#Changelog}
   skipping the YUV -> RGB conversion step.
   Additionally, Stream images can be further compressed using optional
   [chroma subsampling](ChromaSubsampling.md).
-* [152](https://github.com/BlueBrain/Deflect/pull/152):
-  Changed coding style of the project to conform to new .clang-format rules.
-* [148](https://github.com/BlueBrain/Deflect/pull/148):
+* [148](https://github.com/BlueBrain/Deflect/pull/148),
+  [153](https://github.com/BlueBrain/Deflect/pull/153):
   Support for streaming stereo 3D content in a frame-sequential manner.
 
 ## Deflect 0.12

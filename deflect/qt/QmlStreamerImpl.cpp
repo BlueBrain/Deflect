@@ -123,11 +123,9 @@ void QmlStreamer::Impl::_afterRender(const QImage image)
     imageWrapper.compressionPolicy = COMPRESSION_ON;
     imageWrapper.compressionQuality = 80;
 
-    if (_asyncSend)
-        _sendFuture = _stream->asyncSend(imageWrapper);
-    else
-        _sendFuture = make_ready_future(_stream->send(imageWrapper) &&
-                                        _stream->finishFrame());
+    _sendFuture = _stream->sendAndFinish(imageWrapper);
+    if (!_asyncSend)
+        _sendFuture.wait();
 }
 
 void QmlStreamer::Impl::_onStreamClosed()
