@@ -40,6 +40,7 @@
 #include "ImageJpegDecompressor.h"
 
 #include <iostream>
+#include <stdexcept>
 
 namespace
 {
