@@ -48,10 +48,10 @@ namespace deflect
 namespace qt
 {
 template <typename T>
-std::future<T> make_ready_future(const T value)
+std::future<T> make_ready_future(T&& value)
 {
     std::promise<T> promise;
-    promise.set_value(value);
+    promise.set_value(std::forward<T>(value));
     return promise.get_future();
 }
 
