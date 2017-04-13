@@ -19,6 +19,7 @@ set(DEFLECT_DEB_DEPENDS freeglut3-dev libxi-dev libxmu-dev
   libboost-program-options-dev libboost-test-dev
   qtbase5-dev qtdeclarative5-dev)
 set(DEFLECT_PORT_DEPENDS boost freeglut qt5)
+set(DEFLECT_BREW_DEPENDS boost freeglut jpeg-turbo qt5)
 
 include(Common)
 
