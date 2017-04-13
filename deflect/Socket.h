@@ -76,7 +76,7 @@ public:
                        unsigned short port = defaultPortNumber);
 
     /** Destruct a Socket, disconnecting from host. */
-    DEFLECT_API ~Socket();
+    DEFLECT_API ~Socket() = default;
 
     /** Get the host passed to the constructor. */
     const std::string& getHost() const;
@@ -121,13 +121,14 @@ signals:
 
 private:
     const std::string _host;
-    QTcpSocket* _socket;
+    QTcpSocket* _socket; // Child QObject
     mutable QMutex _socketMutex;
     int32_t _serverProtocolVersion;
 
     bool _receiveHeader(MessageHeader& messageHeader);
     bool _connect(const std::string& host, const unsigned short port);
     bool _receiveProtocolVersion();
+    bool _write(const QByteArray& data);
 };
 }
 

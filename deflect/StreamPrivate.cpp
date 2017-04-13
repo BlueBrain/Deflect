@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
@@ -41,22 +41,14 @@
 
 #include "StreamPrivate.h"
 
-#include "NetworkProtocol.h"
-#include "Segment.h"
-#include "SegmentParameters.h"
-#include "SizeHints.h"
-#include "Stream.h"
-#include "StreamSendWorker.h"
-
-#include <iostream>
-
 #include <QHostInfo>
+
+#include <stdexcept>
 
 namespace
 {
 const char* STREAM_ID_ENV_VAR = "DEFLECT_ID";
 const char* STREAM_HOST_ENV_VAR = "DEFLECT_HOST";
-}
 
 std::string _getStreamHost(const std::string& host)
 {
@@ -83,15 +75,15 @@ std::string _getStreamId(const std::string& id)
         .arg(QHostInfo::localHostName(), QString::number(rand(), 16))
         .toStdString();
 }
+}
 
 namespace deflect
 {
 StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
                              const unsigned short port)
-    : id(_getStreamId(id_))
-    , socket(_getStreamHost(host), port)
-    , registeredForEvents(false)
-    , _sendWorker(*this)
+    : id{_getStreamId(id_)}
+    , socket{_getStreamHost(host), port}
+    , sendWorker{socket, id}
 {
     if (!socket.isConnected())
         return;
@@ -101,92 +93,14 @@ StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
             disconnectedCallback();
     });
 
-    sendOpen();
+    socket.moveToThread(&sendWorker);
+    sendWorker.start();
+    sendWorker.enqueueOpen().wait();
 }
 
 StreamPrivate::~StreamPrivate()
 {
-    _sendWorker.stop();
-    if (!socket.isConnected())
-        return;
-
-    sendClose();
-}
-
-void StreamPrivate::sendOpen()
-{
-    const auto message = QByteArray::number(NETWORK_PROTOCOL_VERSION);
-    const MessageHeader mh(MESSAGE_TYPE_PIXELSTREAM_OPEN, message.size(), id);
-    socket.send(mh, message);
-}
-
-void StreamPrivate::sendClose()
-{
-    const MessageHeader mh(MESSAGE_TYPE_QUIT, 0, id);
-    socket.send(mh, QByteArray());
-}
-
-Stream::Future StreamPrivate::send(const ImageWrapper& image)
-{
-    return _sendWorker.enqueueImage(image, false);
-}
-
-Stream::Future StreamPrivate::sendAndFinish(const ImageWrapper& image)
-{
-    return _sendWorker.enqueueImage(image, true);
-}
-
-Stream::Future StreamPrivate::finishFrame()
-{
-    return _sendWorker.enqueueFinish();
-}
-
-bool StreamPrivate::sendImageView(const View view)
-{
-    QByteArray message;
-    message.append((const char*)(&view), sizeof(View));
-
-    const MessageHeader mh(MESSAGE_TYPE_IMAGE_VIEW, message.size(), id);
-    return socket.send(mh, message);
-}
-
-bool StreamPrivate::sendPixelStreamSegment(const Segment& segment)
-{
-    // Create message header
-    const uint32_t segmentSize(sizeof(SegmentParameters) +
-                               segment.imageData.size());
-    const MessageHeader mh(MESSAGE_TYPE_PIXELSTREAM, segmentSize, id);
-
-    // This byte array will hold the message to be sent over the socket
-    QByteArray message;
-
-    // Message payload part 1: segment parameters
-    message.append((const char*)(&segment.parameters),
-                   sizeof(SegmentParameters));
-
-    // Message payload part 2: image data
-    message.append(segment.imageData);
-
-    return socket.send(mh, message);
-}
-
-bool StreamPrivate::sendFinish()
-{
-    return socket.send({MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, id}, {});
-}
-
-bool StreamPrivate::sendSizeHints(const SizeHints& hints)
-{
-    const MessageHeader mh(MESSAGE_TYPE_SIZE_HINTS, sizeof(hints), id);
-
-    QByteArray message;
-    message.append((const char*)(&hints), sizeof(hints));
-    return socket.send(mh, message);
-}
-
-bool StreamPrivate::send(const QByteArray data)
-{
-    const MessageHeader mh(MESSAGE_TYPE_DATA, data.size(), id);
-    return socket.send(mh, data);
+    if (socket.isConnected())
+        sendWorker.enqueueClose().wait();
 }
 }

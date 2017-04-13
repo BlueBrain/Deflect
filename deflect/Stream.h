@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
@@ -240,7 +240,7 @@ public:
      * Send size hints to the stream server to indicate sizes that should be
      * respected by resize operations on the server side.
      *
-     * @note do not use while asynchronous send operations are pending.
+     * @note blocks until all pending asynchonous send operations are finished.
      * @param hints the new size hints for the server
      * @version 1.2
      */
@@ -249,7 +249,7 @@ public:
     /**
      * Send data to the Server.
      *
-     * @note do not use while asynchronous send operations are pending.
+     * @note blocks until all pending asynchonous send operations are finished.
      * @param data the pointer to the data buffer.
      * @param count the number of bytes to send.
      * @return true if the data could be sent, false otherwise
@@ -259,11 +259,12 @@ public:
 
     /**
      * Set a function to be be called just after the stream gets disconnected.
+     *
      * @param callback the function to call
      * @note replaces the previous disconnected signal
      * @version 1.5
      */
-    void setDisconnectedCallback(std::function<void()> callback);
+    DEFLECT_API void setDisconnectedCallback(std::function<void()> callback);
 
 private:
     Stream(const Stream&) = delete;

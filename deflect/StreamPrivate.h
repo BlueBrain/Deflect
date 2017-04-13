@@ -1,8 +1,8 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2015, EPFL/Blue Brain Project                  */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
-/*                     Stefan.Eilemann@epfl.ch                       */
-/*                     Daniel.Nachbaur@epfl.ch                       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/*                          Stefan.Eilemann@epfl.ch                  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -42,16 +42,10 @@
 #ifndef DEFLECT_STREAMPRIVATE_H
 #define DEFLECT_STREAMPRIVATE_H
 
-#include <deflect/api.h>
-
-#include "Event.h"
-#include "MessageHeader.h"
 #include "Socket.h"           // member
-#include "Stream.h"           // Stream::Future
 #include "StreamSendWorker.h" // member
 
 #include <functional>
-#include <memory>
 #include <string>
 
 namespace deflect
@@ -73,40 +67,6 @@ public:
     /** Destructor, close the Stream. */
     ~StreamPrivate();
 
-    /** Send the open message to the server. */
-    void sendOpen();
-
-    /** Send the quit message to the server. */
-    void sendClose();
-
-    /**
-     * Close the stream.
-     * @return true on success or if the Stream was not connected
-     */
-    bool close();
-
-    /** @sa Stream::send */
-    Stream::Future send(const ImageWrapper& image);
-
-    /** @sa Stream::sendAndFinish */
-    Stream::Future sendAndFinish(const ImageWrapper& image);
-
-    /** @sa Stream::finishFrame */
-    Stream::Future finishFrame();
-
-    /**
-     * Send a Segment through the Stream.
-     * @param segment An image segment with valid parameters and data
-     * @return true if the message could be sent
-     */
-    DEFLECT_API bool sendPixelStreamSegment(const Segment& segment);
-
-    /** @sa Stream::sendSizeHints */
-    bool sendSizeHints(const SizeHints& hints);
-
-    /** Send a user-defined block of data to the server. */
-    bool send(QByteArray data);
-
     /** The stream identifier. */
     const std::string id;
 
@@ -114,19 +74,13 @@ public:
     Socket socket;
 
     /** Has a successful event registration reply been received */
-    bool registeredForEvents;
+    bool registeredForEvents = false;
 
+    /** Optional callback when the socket is disconnected. */
     std::function<void()> disconnectedCallback;
 
-private:
-    friend class StreamSendWorker;
-
-    /** Send the view for the image to be sent with sendPixelStreamSegment. */
-    bool sendImageView(View view);
-
-    bool sendFinish(); //<! Send the finish frame message
-
-    StreamSendWorker _sendWorker;
+    /** The worker doing all the socket send operations. */
+    StreamSendWorker sendWorker;
 };
 }
 #endif

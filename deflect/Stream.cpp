@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
@@ -42,7 +42,9 @@
 #include "Stream.h"
 #include "StreamPrivate.h"
 
+#include "Event.h"
 #include "ImageWrapper.h"
+#include "MessageHeader.h"
 #include "Segment.h"
 #include "SegmentParameters.h"
 #include "Socket.h"
@@ -86,17 +88,17 @@ const std::string& Stream::getHost() const
 
 Stream::Future Stream::send(const ImageWrapper& image)
 {
-    return _impl->send(image);
+    return _impl->sendWorker.enqueueImage(image, false);
 }
 
 Stream::Future Stream::finishFrame()
 {
-    return _impl->finishFrame();
+    return _impl->sendWorker.enqueueFinish();
 }
 
 Stream::Future Stream::sendAndFinish(const ImageWrapper& image)
 {
-    return _impl->sendAndFinish(image);
+    return _impl->sendWorker.enqueueImage(image, true);
 }
 
 bool Stream::registerForEvents(const bool exclusive)
@@ -111,12 +113,8 @@ bool Stream::registerForEvents(const bool exclusive)
     if (isRegisteredForEvents())
         return true;
 
-    const MessageType type =
-        exclusive ? MESSAGE_TYPE_BIND_EVENTS_EX : MESSAGE_TYPE_BIND_EVENTS;
-    MessageHeader mh(type, 0, _impl->id);
-
     // Send the bind message
-    if (!_impl->socket.send(mh, QByteArray()))
+    if (!_impl->sendWorker.enqueueBindRequest(exclusive).get())
     {
         std::cerr << "deflect::Stream::registerForEvents: sending bind message "
                   << "failed" << std::endl;
@@ -124,6 +122,7 @@ bool Stream::registerForEvents(const bool exclusive)
     }
 
     // Wait for bind reply
+    MessageHeader mh;
     QByteArray message;
     if (!_impl->socket.receive(mh, message))
     {
@@ -185,7 +184,7 @@ Event Stream::getEvent()
 
 void Stream::sendSizeHints(const SizeHints& hints)
 {
-    _impl->sendSizeHints(hints);
+    _impl->sendWorker.enqueueSizeHints(hints);
 }
 
 void Stream::setDisconnectedCallback(const std::function<void()> callback)
@@ -195,6 +194,8 @@ void Stream::setDisconnectedCallback(const std::function<void()> callback)
 
 bool Stream::sendData(const char* data, const size_t count)
 {
-    return _impl->send(QByteArray::fromRawData(data, int(count)));
+    return _impl->sendWorker
+        .enqueueData(QByteArray::fromRawData(data, int(count)))
+        .get();
 }
 }

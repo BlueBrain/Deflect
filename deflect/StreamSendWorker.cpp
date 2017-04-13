@@ -1,6 +1,7 @@
 /*********************************************************************/
 /* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -39,7 +40,9 @@
 
 #include "StreamSendWorker.h"
 
-#include "StreamPrivate.h"
+#include "NetworkProtocol.h"
+#include "Segment.h"
+#include "SizeHints.h"
 
 #include <iostream>
 
@@ -50,10 +53,9 @@ const unsigned int SEGMENT_SIZE = 512;
 
 namespace deflect
 {
-StreamSendWorker::StreamSendWorker(StreamPrivate& stream)
-    : _stream(stream)
-    , _running(true)
-    , _thread(std::bind(&StreamSendWorker::_run, this))
+StreamSendWorker::StreamSendWorker(Socket& socket, const std::string& id)
+    : _socket(socket)
+    , _id(id)
 {
     _imageSegmenter.setNominalSegmentDimensions(SEGMENT_SIZE, SEGMENT_SIZE);
 }
@@ -63,25 +65,9 @@ StreamSendWorker::~StreamSendWorker()
     stop();
 }
 
-StreamSendWorker::Request::Request(const Request& from)
-    : promise(from.promise)
-    , image(from.image)
-    , tasks(from.tasks)
+void StreamSendWorker::run()
 {
-}
-
-StreamSendWorker::Request::Request(PromisePtr p, const ImageWrapper& i,
-                                   const uint32_t t)
-    : promise(p)
-    , image(i)
-    , tasks(t)
-{
-}
-void StreamSendWorker::_run()
-{
-    const auto sendFunc = std::bind(&StreamPrivate::sendPixelStreamSegment,
-                                    &_stream, std::placeholders::_1);
-
+    _running = true;
     while (true)
     {
         // Copy request, unlock enqueue methods during processing of tasks
@@ -92,29 +78,20 @@ void StreamSendWorker::_run()
         if (!_running)
             break;
 
-        const Request request(_requests.front());
+        const auto request = std::move(_requests.front());
         _requests.pop_front();
         lock.unlock();
 
-        if (request.tasks & Request::TASK_IMAGE)
+        bool success = true;
+        for (auto&& task : request.tasks)
         {
-            if (!_stream.sendImageView(request.image.view) ||
-                !_imageSegmenter.generate(request.image, sendFunc))
+            if (!task())
             {
-                request.promise->set_value(false);
-                continue;
+                success = false;
+                break;
             }
         }
-
-        if (request.tasks & Request::TASK_FINISH)
-        {
-            if (!_stream.sendFinish())
-            {
-                request.promise->set_value(false);
-                continue;
-            }
-        }
-        request.promise->set_value(true);
+        request.promise->set_value(success);
     }
 }
 
@@ -128,7 +105,9 @@ void StreamSendWorker::stop()
         _condition.notify_all();
     }
 
-    _thread.join();
+    quit();
+    wait();
+
     while (!_requests.empty())
     {
         _requests.front().promise->set_value(false);
@@ -149,24 +128,93 @@ Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
         return promise.get_future();
     }
 
-    const uint32_t tasks = finish ? Request::TASK_IMAGE | Request::TASK_FINISH
-                                  : Request::TASK_IMAGE;
-    PromisePtr promise(new Promise);
+    auto tasks = std::vector<Task>{[this, image] { return _sendImage(image); }};
+    if (finish)
+        tasks.emplace_back([this] { return _sendFinish(); });
 
-    std::lock_guard<std::mutex> lock(_mutex);
-    _requests.push_back({promise, image, tasks});
-    _condition.notify_all();
-    return promise->get_future();
+    return _enqueueRequest(std::move(tasks));
 }
 
 Stream::Future StreamSendWorker::enqueueFinish()
 {
+    return _enqueueRequest({[this] { return _sendFinish(); }});
+}
+
+Stream::Future StreamSendWorker::enqueueOpen()
+{
+    return _enqueueRequest({[this] {
+        return _send(MESSAGE_TYPE_PIXELSTREAM_OPEN,
+                     QByteArray::number(NETWORK_PROTOCOL_VERSION));
+    }});
+}
+
+Stream::Future StreamSendWorker::enqueueClose()
+{
+    return _enqueueRequest({[this] { return _send(MESSAGE_TYPE_QUIT, {}); }});
+}
+
+Stream::Future StreamSendWorker::enqueueBindRequest(const bool exclusive)
+{
+    return _enqueueRequest({[this, exclusive] {
+        return _send(exclusive ? MESSAGE_TYPE_BIND_EVENTS_EX
+                               : MESSAGE_TYPE_BIND_EVENTS,
+                     {});
+    }});
+}
+
+Stream::Future StreamSendWorker::enqueueSizeHints(const SizeHints& hints)
+{
+    return _enqueueRequest({[this, hints] {
+        return _send(MESSAGE_TYPE_SIZE_HINTS,
+                     QByteArray{(const char*)(&hints), sizeof(SizeHints)});
+    }});
+}
+
+Stream::Future StreamSendWorker::enqueueData(const QByteArray data)
+{
+    return _enqueueRequest(
+        {[this, data] { return _send(MESSAGE_TYPE_DATA, data); }});
+}
+
+Stream::Future StreamSendWorker::_enqueueRequest(std::vector<Task>&& tasks)
+{
     PromisePtr promise(new Promise);
 
     std::lock_guard<std::mutex> lock(_mutex);
-    _requests.push_back(
-        {promise, ImageWrapper(nullptr, 0, 0, RGBA), Request::TASK_FINISH});
+    _requests.push_back({promise, tasks});
     _condition.notify_all();
     return promise->get_future();
+}
+
+bool StreamSendWorker::_sendImage(const ImageWrapper& image)
+{
+    const auto sendFunc =
+        std::bind(&StreamSendWorker::_sendSegment, this, std::placeholders::_1);
+    return _sendImageView(image.view) &&
+           _imageSegmenter.generate(image, sendFunc);
+}
+
+bool StreamSendWorker::_sendImageView(const View view)
+{
+    return _send(MESSAGE_TYPE_IMAGE_VIEW,
+                 QByteArray{(const char*)(&view), sizeof(View)});
+}
+
+bool StreamSendWorker::_sendSegment(const Segment& segment)
+{
+    auto message = QByteArray{(const char*)(&segment.parameters),
+                              sizeof(SegmentParameters)};
+    message.append(segment.imageData);
+    return _send(MESSAGE_TYPE_PIXELSTREAM, message);
+}
+
+bool StreamSendWorker::_sendFinish()
+{
+    return _send(MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, {});
+}
+
+bool StreamSendWorker::_send(const MessageType type, const QByteArray& message)
+{
+    return _socket.send(MessageHeader(type, message.size(), _id), message);
 }
 }
