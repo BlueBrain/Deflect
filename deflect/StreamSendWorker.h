@@ -1,6 +1,7 @@
 /*********************************************************************/
 /* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -41,62 +42,84 @@
 #define DEFLECT_STREAMSENDWORKER_H
 
 #include "ImageSegmenter.h" // member
+#include "MessageHeader.h"  // MessageType
+#include "Socket.h"         // member
 #include "Stream.h"         // Stream::Future
+
+#include <QThread>
 
 #include <deque>
 #include <mutex>
-#include <thread>
 
 namespace deflect
 {
-class StreamPrivate;
-
 /**
- * Worker class that is used to send images that are pushed to a worker queue.
+ * Worker thread class that sends images and messages through a Socket.
+ *
+ * When a QApplication is present, Qt insists that all write operations on
+ * QTcpSocket are done from a single QThread, otherwise a qWarning is issued:
+ * "QSocketNotifier: Socket notifiers cannot be enabled or disabled from another
+ * thread".
+ * To avoid it, the Socket must be moved to the worker thread (moveToThread()).
  */
-class StreamSendWorker
+class StreamSendWorker : public QThread
 {
 public:
-    /** Create a new stream worker associated to an existing stream object. */
-    explicit StreamSendWorker(StreamPrivate& stream);
+    /** Create a new stream worker associated to an existing socket. */
+    StreamSendWorker(Socket& socket, const std::string& id);
 
+    /** Stop and destroy the worker. */
     ~StreamSendWorker();
+
+    /** Stop the worker and clear any pending send tasks. */
+    void stop();
 
     /** Enqueue an image to be send during the execution of run(). */
     Stream::Future enqueueImage(const ImageWrapper& image, bool finish);
-
     Stream::Future enqueueFinish(); //!< Enqueue a finishFrame()
+    Stream::Future enqueueOpen();   //!< Enqueue an open message
+    Stream::Future enqueueClose();  //!< Enqueue a close message
 
-    /** Stop the worker and clear any pending image send requests. */
-    void stop();
+    /** @sa Stream::registerForEvents */
+    Stream::Future enqueueBindRequest(bool exclusive);
+
+    /** @sa Stream::sendSizeHints */
+    Stream::Future enqueueSizeHints(const SizeHints& hints);
+
+    /** @sa Stream::sendData */
+    Stream::Future enqueueData(QByteArray data);
 
 private:
-    /** Starts asynchronous sending of queued images. */
-    void _run();
-
     using Promise = std::promise<bool>;
     using PromisePtr = std::shared_ptr<Promise>;
+    using Task = std::function<bool()>;
 
     struct Request
     {
-        Request(const Request& from);
-        Request(PromisePtr promise, const ImageWrapper& image, uint32_t tasks);
-
-        static const uint32_t TASK_IMAGE = 1;
-        static const uint32_t TASK_FINISH = 2;
-
         PromisePtr promise;
-        ImageWrapper image;
-        uint32_t tasks;
+        std::vector<Task> tasks;
     };
 
-    StreamPrivate& _stream;
+    Socket& _socket;
+    const std::string& _id;
+
     ImageSegmenter _imageSegmenter;
     std::deque<Request> _requests;
     std::mutex _mutex;
     std::condition_variable _condition;
-    bool _running;
-    std::thread _thread;
+    bool _running = false;
+
+    /** Main QThread loop doing asynchronous processing of queued tasks. */
+    void run() final;
+
+    Stream::Future _enqueueRequest(std::vector<Task>&& actions);
+
+    friend class deflect::test::Application; // to send pre-compressed segments
+    bool _sendImage(const ImageWrapper& image);
+    bool _sendImageView(View view);
+    bool _sendSegment(const Segment& segment);
+    bool _sendFinish();
+    bool _send(MessageType type, const QByteArray& message);
 };
 }
 #endif

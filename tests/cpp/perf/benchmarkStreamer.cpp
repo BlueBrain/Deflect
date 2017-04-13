@@ -260,7 +260,7 @@ public:
         for (deflect::Segments::const_iterator it = _jpegSegments.begin();
              it != _jpegSegments.end(); ++it)
         {
-            if (!_stream->_impl->sendPixelStreamSegment(*it))
+            if (!_stream->_impl->sendWorker._sendSegment(*it))
                 return false;
         }
 

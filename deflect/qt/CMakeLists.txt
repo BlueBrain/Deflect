@@ -22,8 +22,8 @@ set(DEFLECTQT_SOURCES
   QmlStreamerImpl.cpp
   QuickRenderer.cpp
   TouchInjector.cpp
-
 )
+
 set(DEFLECTQT_LINK_LIBRARIES
   PUBLIC Deflect Qt5::Quick PRIVATE Qt5::Qml)
 set(DEFLECTQT_INCLUDE_NAME deflect/qt)

@@ -59,7 +59,8 @@ const unsigned short Socket::defaultPortNumber = DEFAULT_PORT_NUMBER;
 
 Socket::Socket(const std::string& host, const unsigned short port)
     : _host(host)
-    , _socket(new QTcpSocket())
+    , _socket(new QTcpSocket(this)) // Ensure that _socket parent is
+                                    // *this* so it gets moved to thread
     , _serverProtocolVersion(INVALID_NETWORK_PROTOCOL_VERSION)
 {
     // disable warnings which occur if no QCoreApplication is present during
@@ -75,11 +76,6 @@ Socket::Socket(const std::string& host, const unsigned short port)
 
     QObject::connect(_socket, &QTcpSocket::disconnected, this,
                      &Socket::disconnected);
-}
-
-Socket::~Socket()
-{
-    delete _socket;
 }
 
 const std::string& Socket::getHost() const
@@ -124,20 +120,8 @@ bool Socket::send(const MessageHeader& messageHeader, const QByteArray& message)
     if (stream.status() != QDataStream::Ok)
         return false;
 
-    bool allSent = true;
-    if (!message.isEmpty())
-    {
-        // Send message data
-        const char* data = message.constData();
-        const int size = message.size();
-
-        int sent = _socket->write(data, size);
-
-        while (sent < size && isConnected())
-            sent += _socket->write(data + sent, size - sent);
-
-        allSent = sent == size;
-    }
+    // send message
+    const bool allSent = _write(message);
 
     // Needed in the absence of event loop, otherwise the reception is frozen.
     while (_socket->bytesToWrite() > 0 && isConnected())
@@ -228,5 +212,24 @@ bool Socket::_receiveProtocolVersion()
     }
     _socket->read((char*)&_serverProtocolVersion, sizeof(int32_t));
     return true;
+}
+
+bool Socket::_write(const QByteArray& message)
+{
+    bool allSent = true;
+    if (!message.isEmpty())
+    {
+        // Send message data
+        const char* data = message.constData();
+        const int size = message.size();
+
+        int sent = _socket->write(data, size);
+
+        while (sent < size && isConnected())
+            sent += _socket->write(data + sent, size - sent);
+
+        allSent = sent == size;
+    }
+    return allSent;
 }
 }

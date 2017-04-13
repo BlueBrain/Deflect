@@ -78,6 +78,12 @@ public:
         _mouseActiveTimer.setInterval(CURSOR_TIMEOUT_MS);
     }
 
+    ~Impl()
+    {
+        if (_lastSend.valid())
+            _lastSend.get();
+    }
+
     bool processEvents(const bool interact)
     {
         while (_stream.hasEvent())
