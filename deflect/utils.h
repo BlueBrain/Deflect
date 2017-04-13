@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,100 +37,20 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_SOCKET_H
-#define DEFLECT_SOCKET_H
-
-#ifdef _WIN32
-typedef __int32 int32_t;
-#endif
-
-#include <deflect/api.h>
-#include <deflect/types.h>
-
-#include <string>
-
-#include <QByteArray>
-#include <QMutex>
-#include <QObject>
-
-class QTcpSocket;
+#ifndef DEFLECT_UTILS_H
+#define DEFLECT_UTILS_H
 
 namespace deflect
 {
 /**
- * Represent a communication Socket for the Stream Library.
+ * Block false warnings issued by the Stream API when used with a QApplication.
+ *
+ * This function installs a custom QtMessageHandler to filter out the specific
+ * QSocketNotifier warnings. Users calling qInstallMessageHandler() with their
+ * own custom handler can't use this function and have to replicate its
+ * behaviour.
  */
-class Socket : public QObject
-{
-    Q_OBJECT
-
-public:
-    /** The default communication port */
-    static const unsigned short defaultPortNumber;
-
-    /**
-     * Construct a Socket and connect to host.
-     * @param host The target host (IP address or hostname)
-     * @param port The target port
-     */
-    DEFLECT_API Socket(const std::string& host,
-                       unsigned short port = defaultPortNumber);
-
-    /** Destruct a Socket, disconnecting from host. */
-    DEFLECT_API ~Socket();
-
-    /** Get the host passed to the constructor. */
-    const std::string& getHost() const;
-
-    /** Is the Socket connected */
-    DEFLECT_API bool isConnected() const;
-
-    /** @return the protocol version of the server. */
-    int32_t getServerProtocolVersion() const;
-
-    /**
-     * Get the FileDescriptor for the Socket (for use by poll())
-     * @return The file descriptor if available, otherwise return -1.
-     */
-    int getFileDescriptor() const;
-
-    /**
-     * Is there a pending message
-     * @param messageSize Minimum size of the message
-     */
-    bool hasMessage(const size_t messageSize = 0) const;
-
-    /**
-     * Send a message.
-     * @param messageHeader The message header
-     * @param message The message data
-     * @return true if the message could be sent, false otherwise
-     */
-    bool send(const MessageHeader& messageHeader, const QByteArray& message);
-
-    /**
-     * Receive a message.
-     * @param messageHeader The received message header
-     * @param message The received message data
-     * @return true if a message could be received, false otherwise
-     */
-    bool receive(MessageHeader& messageHeader, QByteArray& message);
-
-signals:
-    /** Signal that the socket has been disconnected. */
-    void disconnected();
-
-private:
-    const std::string _host;
-    QTcpSocket* _socket;
-    mutable QMutex _socketMutex;
-    int32_t _serverProtocolVersion;
-
-    bool _receiveHeader(MessageHeader& messageHeader);
-    bool _connect(const std::string& host, const unsigned short port);
-    bool _receiveProtocolVersion();
-    bool _write(const QByteArray& data);
-};
+void blockFalseWarnings();
 }
 
 #endif

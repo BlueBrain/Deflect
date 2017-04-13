@@ -16,6 +16,7 @@ set(DEFLECT_PUBLIC_HEADERS
   SizeHints.h
   Stream.h
   types.h
+  utils.h
 )
 
 set(DEFLECT_HEADERS
@@ -46,6 +47,7 @@ set(DEFLECT_SOURCES
   Stream.cpp
   StreamPrivate.cpp
   StreamSendWorker.cpp
+  utils.cpp
 )
 
 set(DEFLECT_LINK_LIBRARIES PRIVATE Qt5::Concurrent Qt5::Core Qt5::Network)

@@ -1,7 +1,7 @@
 /*********************************************************************/
 /* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
 /* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -40,14 +40,16 @@
 
 #include "MainWindow.h"
 
+#include <deflect/utils.h>
 #include <deflect/version.h>
 
 #include <QCommandLineParser>
 
 int main(int argc, char* argv[])
 {
-    QApplication app(argc, argv);
+    deflect::blockFalseWarnings();
 
+    QApplication app(argc, argv);
     QApplication::setApplicationVersion(
         QString::fromStdString(deflect::Version::getString()));
 
