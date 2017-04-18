@@ -3,12 +3,14 @@
 #                          Raphael Dumusc <raphael.dumusc@epfl.ch>
 
 set(DESKTOPSTREAMER_HEADERS
+  defaults.h
   MainWindow.h
   nameUtils.h
   Stream.h
 )
 
 set(DESKTOPSTREAMER_SOURCES
+  defaults.cpp
   main.cpp
   MainWindow.cpp
   MainWindow.ui
@@ -31,8 +33,8 @@ set(DEFLECT_DESKTOPSTREAMER_HOSTS
 {\"DisplayWall 6th floor\", \"bbpav06.bbp.epfl.ch\"}"
     CACHE STRING "List of default hosts for the DesktopStreamer application"
 )
-set_source_files_properties(MainWindow.cpp PROPERTIES COMPILE_DEFINITIONS
-  _HOSTS=${DEFLECT_DESKTOPSTREAMER_HOSTS}
+set_source_files_properties(defaults.cpp PROPERTIES COMPILE_DEFINITIONS
+  _DEFAULT_HOSTS=${DEFLECT_DESKTOPSTREAMER_HOSTS}
 )
 
 set(DESKTOPSTREAMER_APP_NAME desktopstreamer)
@@ -57,6 +59,14 @@ if(APPLE)
   else()
     list(APPEND DESKTOPSTREAMER_LINK_LIBRARIES "-framework CoreGraphics")
   endif()
+
+  # Configure 'defaults.json' and copy it in the app bundle's 'Resources' folder
+  string(REGEX REPLACE "\"," "\":" _JSON_HOSTS ${DEFLECT_DESKTOPSTREAMER_HOSTS})
+  set(_defaults_file ${CMAKE_CURRENT_BINARY_DIR}/defaults.json)
+  configure_file(defaults.json.in ${_defaults_file})
+  list(APPEND DESKTOPSTREAMER_SOURCES ${_defaults_file})
+  set_source_files_properties(${_defaults_file} PROPERTIES
+    MACOSX_PACKAGE_LOCATION Resources)
 else()
   list(APPEND DESKTOPSTREAMER_SOURCES nameUtils.cpp)
 endif()

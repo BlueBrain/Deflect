@@ -1,6 +1,6 @@
 /*********************************************************************/
 /* Copyright (c) 2011-2012, The University of Texas at Austin.       */
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -39,7 +39,9 @@
 /*********************************************************************/
 
 #include "MainWindow.h"
+
 #include "Stream.h"
+#include "defaults.h"
 #include "nameUtils.h"
 
 #include <deflect/version.h>
@@ -69,7 +71,6 @@ typedef __int32 int32_t;
 
 namespace
 {
-const std::vector<std::pair<QString, QString>> defaultHosts = {_HOSTS};
 const QString streamButtonDefaultText = "Stream";
 const QString streamSelected = "Stream selected item(s)";
 const int SHARE_DESKTOP_UPDATE_DELAY = 0;
@@ -83,7 +84,7 @@ MainWindow::MainWindow()
 {
     setupUi(this);
 
-    for (const auto& entry : defaultHosts)
+    for (const auto& entry : defaults::getHosts())
         _hostComboBox->addItem(entry.first, entry.second);
 
     _hostComboBox->setCurrentIndex(-1); // no default host selected initially

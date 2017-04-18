@@ -1,0 +1,5 @@
+{
+    "hosts": [
+        ${_JSON_HOSTS}
+    ]
+}

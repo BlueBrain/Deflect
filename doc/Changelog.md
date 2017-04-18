@@ -3,6 +3,10 @@ Changelog {#Changelog}
 
 ## Deflect 0.13 (git master)
 
+* [161](https://github.com/BlueBrain/Deflect/pull/161):
+  DesktopStreamer OSX: the default hosts are read from a json file in the app
+  bundle. This is useful for external users who want to adapt the official
+  BlueBrain releases to their own needs without recompiling.
 * [156](https://github.com/BlueBrain/Deflect/pull/156):
   Deflect can be released as a Debian/Ubuntu package. Once installed,
   DesktopStreamer can be launched from the desktop's applications menu.
