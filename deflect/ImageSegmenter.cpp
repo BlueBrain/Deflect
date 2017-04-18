@@ -88,7 +88,7 @@ bool ImageSegmenter::_generateJpeg(const ImageWrapper& image,
     // socket lives, and Qt insists on that to not violate this contract.
     bool result = true;
     for (size_t i = 0; i < segments.size(); ++i)
-        if (!handler(_sendQueue.dequeue()))
+        if (!handler(_sendQueue.pop()))
             result = false;
     return result;
 #else
@@ -113,7 +113,7 @@ void ImageSegmenter::_computeJpeg(Segment& segment)
     ImageJpegCompressor compressor;
     segment.imageData =
         compressor.computeJpeg(*segment.sourceImage, imageRegion);
-    _sendQueue.enqueue(segment);
+    _sendQueue.push(segment);
 #endif
 }
 

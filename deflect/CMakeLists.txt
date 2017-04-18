@@ -9,7 +9,6 @@ set(DEFLECT_PUBLIC_HEADERS
   EventReceiver.h
   Frame.h
   ImageWrapper.h
-  MTQueue.h
   Segment.h
   SegmentParameters.h
   Server.h
@@ -48,7 +47,7 @@ set(DEFLECT_SOURCES
   StreamSendWorker.cpp
 )
 
-set(DEFLECT_LINK_LIBRARIES PRIVATE Qt5::Concurrent Qt5::Core Qt5::Network)
+set(DEFLECT_LINK_LIBRARIES PRIVATE Extra Qt5::Concurrent Qt5::Core Qt5::Network)
 
 if(APPLE)
   list(APPEND DEFLECT_PUBLIC_HEADERS AppNapSuspender.h)
