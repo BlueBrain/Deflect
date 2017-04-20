@@ -108,6 +108,7 @@ private:
     std::mutex _mutex;
     std::condition_variable _condition;
     bool _running = false;
+    View _currentView = View::mono;
 
     /** Main QThread loop doing asynchronous processing of queued tasks. */
     void run() final;

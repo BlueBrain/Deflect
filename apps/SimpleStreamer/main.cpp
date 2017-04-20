@@ -59,6 +59,7 @@ bool deflectInteraction = false;
 bool deflectCompressImage = true;
 bool deflectStereoStreamLeft = false;
 bool deflectStereoStreamRight = false;
+bool deflectStereoSideBySide = false;
 unsigned int deflectCompressionQuality = 75;
 std::string deflectHost;
 std::string deflectStreamId = "SimpleStreamer";
@@ -115,6 +116,8 @@ void syntax(const int exitStatus)
     std::cout << " -r                 enable stereo streaming, right image "
                  "only (default: OFF)"
               << std::endl;
+    std::cout << " -2                 enable side-by-side stereo (default: OFF)"
+              << std::endl;
     exit(exitStatus);
 }
 
@@ -151,6 +154,9 @@ void readCommandLineArguments(int argc, char** argv)
                 break;
             case 'r':
                 deflectStereoStreamRight = true;
+                break;
+            case '2':
+                deflectStereoSideBySide = true;
                 break;
             case 'h':
                 syntax(EXIT_SUCCESS);
@@ -253,6 +259,28 @@ struct Image
                                          image.height, 4);
         return image;
     }
+
+    static Image sideBySide(const Image& left, const Image& right)
+    {
+        Image image;
+        image.width = left.width + right.width;
+        image.height = std::max(left.height, right.height);
+        image.data.resize(image.width * image.height * 4);
+        for (uint j = 0; j < left.height; ++j)
+        {
+            const auto lineBegin = left.data.data() + 4 * j * left.width;
+            const auto lineOut = image.data.data() + 4 * j * image.width;
+            std::copy(lineBegin, lineBegin + 4 * left.width, lineOut);
+        }
+        for (uint j = 0; j < right.height; ++j)
+        {
+            const auto lineBegin = right.data.data() + 4 * j * right.width;
+            const auto lineOut =
+                image.data.data() + 4 * j * image.width + 4 * left.width;
+            std::copy(lineBegin, lineBegin + 4 * right.width, lineOut);
+        }
+        return image;
+    }
 };
 
 bool send(const Image& image, const deflect::View view)
@@ -274,6 +302,27 @@ bool timeout(const float sec)
     return std::chrono::duration<float>{clock::now() - start}.count() > sec;
 }
 
+void drawLeft()
+{
+    glClearColor(0.7, 0.3, 0.3, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glutSolidTeapot(1.f);
+}
+
+void drawRight()
+{
+    glClearColor(0.3, 0.7, 0.3, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glutSolidTeapot(1.f);
+}
+
+void drawMono()
+{
+    glClearColor(0.5, 0.5, 0.5, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glutSolidTeapot(1.f);
+}
+
 void display()
 {
     static Camera camera;
@@ -282,7 +331,16 @@ void display()
     bool success = false;
     bool waitToStart = false;
     static bool deflectFirstEventReceived = false;
-    if (deflectStereoStreamLeft || deflectStereoStreamRight)
+    if (deflectStereoSideBySide)
+    {
+        drawLeft();
+        const auto leftImage = Image::readGlBuffer();
+        drawRight();
+        const auto rightImage = Image::readGlBuffer();
+        const auto sideBySideImage = Image::sideBySide(leftImage, rightImage);
+        success = send(sideBySideImage, deflect::View::side_by_side);
+    }
+    else if (deflectStereoStreamLeft || deflectStereoStreamRight)
     {
         // Poor man's attempt to synchronise the start of separate stereo
         // streams (waiting on first event from server or 5 sec. timeout).
@@ -294,17 +352,13 @@ void display()
 
         if (deflectStereoStreamLeft && !waitToStart)
         {
-            glClearColor(0.7, 0.3, 0.3, 1.0);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glutSolidTeapot(1.f);
+            drawLeft();
             const auto leftImage = Image::readGlBuffer();
             success = send(leftImage, deflect::View::left_eye);
         }
         if (deflectStereoStreamRight && !waitToStart)
         {
-            glClearColor(0.3, 0.7, 0.3, 1.0);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glutSolidTeapot(1.f);
+            drawRight();
             const auto rightImage = Image::readGlBuffer();
             success = (!deflectStereoStreamLeft || success) &&
                       send(rightImage, deflect::View::right_eye);
@@ -312,9 +366,7 @@ void display()
     }
     else
     {
-        glClearColor(0.5, 0.5, 0.5, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glutSolidTeapot(1.f);
+        drawMono();
         success = send(Image::readGlBuffer(), deflect::View::mono);
     }
 

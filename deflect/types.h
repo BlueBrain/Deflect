@@ -54,7 +54,8 @@ enum class View : std::uint8_t
 {
     mono,
     left_eye,
-    right_eye
+    right_eye,
+    side_by_side
 };
 
 /** Sub-sampling of the image chrominance components in YCbCr color space. */

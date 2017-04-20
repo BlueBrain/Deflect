@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -48,7 +48,6 @@
 #include <deflect/Segment.h>
 
 #include <functional>
-#include <vector>
 
 namespace deflect
 {
@@ -59,7 +58,7 @@ class ImageSegmenter
 {
 public:
     /** Construct an ImageSegmenter. */
-    DEFLECT_API ImageSegmenter();
+    DEFLECT_API ImageSegmenter() = default;
 
     /** Function called on each segment. */
     using Handler = std::function<bool(const Segment&)>;
@@ -90,19 +89,32 @@ public:
      * @param width The nominal width of the segments to generate (default: 0)
      * @param height The nominal height of the segments to generate (default: 0)
      */
-    DEFLECT_API void setNominalSegmentDimensions(unsigned int width,
-                                                 unsigned int height);
+    DEFLECT_API void setNominalSegmentDimensions(uint width, uint height);
 
 private:
-    SegmentParametersList _generateSegmentParameters(
-        const ImageWrapper& image) const;
+    struct SegmentationInfo
+    {
+        uint width = 0;
+        uint height = 0;
+
+        uint countX = 0;
+        uint countY = 0;
+
+        uint lastWidth = 0;
+        uint lastHeight = 0;
+    };
 
     bool _generateJpeg(const ImageWrapper& image, const Handler& handler);
-    bool _generateRaw(const ImageWrapper& image, const Handler& handler) const;
     void _computeJpeg(Segment& task);
+    bool _generateRaw(const ImageWrapper& image, const Handler& handler) const;
 
-    unsigned int _nominalSegmentWidth;
-    unsigned int _nominalSegmentHeight;
+    Segments _generateSegments(const ImageWrapper& image) const;
+    SegmentParametersList _makeSegmentParameters(
+        const ImageWrapper& image) const;
+    SegmentationInfo _makeSegmentationInfo(const ImageWrapper& image) const;
+
+    uint _nominalSegmentWidth = 0;
+    uint _nominalSegmentHeight = 0;
 
     MTQueue<Segment> _sendQueue;
 };
