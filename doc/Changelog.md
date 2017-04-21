@@ -3,6 +3,8 @@ Changelog {#Changelog}
 
 ## Deflect 0.13 (git master)
 
+* [163](https://github.com/BlueBrain/Deflect/pull/163):
+  Stereo streaming accepts side-by-side images as input.
 * [161](https://github.com/BlueBrain/Deflect/pull/161):
   DesktopStreamer OSX: the default hosts are read from a json file in the app
   bundle. This is useful for external users who want to adapt the official

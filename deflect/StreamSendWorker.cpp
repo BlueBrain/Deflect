@@ -83,7 +83,7 @@ void StreamSendWorker::run()
         lock.unlock();
 
         bool success = true;
-        for (auto&& task : request.tasks)
+        for (auto& task : request.tasks)
         {
             if (!task())
             {
@@ -190,8 +190,7 @@ bool StreamSendWorker::_sendImage(const ImageWrapper& image)
 {
     const auto sendFunc =
         std::bind(&StreamSendWorker::_sendSegment, this, std::placeholders::_1);
-    return _sendImageView(image.view) &&
-           _imageSegmenter.generate(image, sendFunc);
+    return _imageSegmenter.generate(image, sendFunc);
 }
 
 bool StreamSendWorker::_sendImageView(const View view)
@@ -202,6 +201,13 @@ bool StreamSendWorker::_sendImageView(const View view)
 
 bool StreamSendWorker::_sendSegment(const Segment& segment)
 {
+    if (segment.view != _currentView)
+    {
+        if (!_sendImageView(segment.view))
+            return false;
+        _currentView = segment.view;
+    }
+
     auto message = QByteArray{(const char*)(&segment.parameters),
                               sizeof(SegmentParameters)};
     message.append(segment.imageData);

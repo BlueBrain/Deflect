@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -45,16 +45,21 @@
 #include "ImageJpegCompressor.h"
 #endif
 
+#include <QThreadStorage>
 #include <QtConcurrentMap>
-#include <functional>
+
 #include <iostream>
+#include <stdexcept>
 
 namespace deflect
 {
-ImageSegmenter::ImageSegmenter()
-    : _nominalSegmentWidth(0)
-    , _nominalSegmentHeight(0)
+namespace
 {
+bool _isOnRightSideOfSideBySideImage(const Segment& segment)
+{
+    return segment.sourceImage->view == View::side_by_side &&
+           segment.view == View::right_eye;
+}
 }
 
 bool ImageSegmenter::generate(const ImageWrapper& image, const Handler& handler)
@@ -64,28 +69,28 @@ bool ImageSegmenter::generate(const ImageWrapper& image, const Handler& handler)
     return _generateRaw(image, handler);
 }
 
+void ImageSegmenter::setNominalSegmentDimensions(const uint width,
+                                                 const uint height)
+{
+    _nominalSegmentWidth = width;
+    _nominalSegmentHeight = height;
+}
+
 bool ImageSegmenter::_generateJpeg(const ImageWrapper& image,
                                    const Handler& handler)
 {
 #ifdef DEFLECT_USE_LIBJPEGTURBO
-    const SegmentParametersList& params = _generateSegmentParameters(image);
-
     // The resulting Jpeg segments
-    std::vector<Segment> segments;
-    for (const auto& param : params)
-    {
-        Segment segment;
-        segment.parameters = param;
-        segment.sourceImage = &image;
-        segments.push_back(segment);
-    }
+    auto segments = _generateSegments(image);
 
-    // create JPEGs for each segment, in parallel
+    // start creating JPEGs for each segment, in parallel
     QtConcurrent::map(segments, std::bind(&ImageSegmenter::_computeJpeg, this,
                                           std::placeholders::_1));
 
-    // send ready compressed jpeg images from here. It's the thread where the
-    // socket lives, and Qt insists on that to not violate this contract.
+    // Sending compressed jpeg segments while they arrive in the queue.
+    // Note: Qt insists that sending (by calling handler()) should happen
+    // exclusively from the QThread where the socket lives. Sending from the
+    // worker threads triggers a qWarning.
     bool result = true;
     for (size_t i = 0; i < segments.size(); ++i)
         if (!handler(_sendQueue.dequeue()))
@@ -110,9 +115,15 @@ void ImageSegmenter::_computeJpeg(Segment& segment)
                       segment.parameters.y - segment.sourceImage->y,
                       segment.parameters.width, segment.parameters.height);
 
-    ImageJpegCompressor compressor;
+    if (_isOnRightSideOfSideBySideImage(segment))
+        imageRegion.translate(segment.sourceImage->width / 2, 0);
+
+    // turbojpeg handles need to be per thread, and this function is called from
+    // multiple threads by QtConcurrent::map
+    static QThreadStorage<ImageJpegCompressor> compressor;
     segment.imageData =
-        compressor.computeJpeg(*segment.sourceImage, imageRegion);
+        compressor.localData().computeJpeg(*segment.sourceImage, imageRegion);
+    segment.parameters.dataType = DataType::jpeg;
     _sendQueue.enqueue(segment);
 #endif
 }
@@ -120,19 +131,15 @@ void ImageSegmenter::_computeJpeg(Segment& segment)
 bool ImageSegmenter::_generateRaw(const ImageWrapper& image,
                                   const Handler& handler) const
 {
-    const SegmentParametersList& paramList = _generateSegmentParameters(image);
-
-    // resulting Raw segments
-    for (SegmentParametersList::const_iterator it = paramList.begin();
-         it != paramList.end(); ++it)
+    auto segments = _generateSegments(image);
+    for (auto& segment : segments)
     {
-        Segment segment;
-        segment.parameters = *it;
         segment.imageData.reserve(segment.parameters.width *
                                   segment.parameters.height *
                                   image.getBytesPerPixel());
+        segment.parameters.dataType = DataType::rgba;
 
-        if (paramList.size() == 1)
+        if (segments.size() == 1)
         {
             // If we are not segmenting the image, just append the image data
             segment.imageData.append((const char*)image.data,
@@ -141,17 +148,20 @@ bool ImageSegmenter::_generateRaw(const ImageWrapper& image,
         else // Copy the image subregion
         {
             // assume imageBuffer isn't padded
-            const size_t imagePitch = image.width * image.getBytesPerPixel();
-            const size_t offset =
-                segment.parameters.y * imagePitch +
-                segment.parameters.x * image.getBytesPerPixel();
+            const auto bytesPerPixel = image.getBytesPerPixel();
+            const size_t imagePitch = image.width * bytesPerPixel;
+            size_t offset = segment.parameters.y * imagePitch +
+                            segment.parameters.x * bytesPerPixel;
+
+            if (_isOnRightSideOfSideBySideImage(segment))
+                offset += segment.sourceImage->width / 2 * bytesPerPixel;
+
             const char* lineData = (const char*)image.data + offset;
 
-            for (unsigned int i = 0; i < segment.parameters.height; ++i)
+            for (uint i = 0; i < segment.parameters.height; ++i)
             {
-                segment.imageData.append(lineData,
-                                         segment.parameters.width *
-                                             image.getBytesPerPixel());
+                segment.imageData.append(lineData, segment.parameters.width *
+                                                       bytesPerPixel);
                 lineData += imagePitch;
             }
         }
@@ -163,113 +173,92 @@ bool ImageSegmenter::_generateRaw(const ImageWrapper& image,
     return true;
 }
 
-void ImageSegmenter::setNominalSegmentDimensions(const unsigned int width,
-                                                 const unsigned int height)
+Segments ImageSegmenter::_generateSegments(const ImageWrapper& image) const
 {
-    _nominalSegmentWidth = width;
-    _nominalSegmentHeight = height;
-}
-
-#ifdef UNIORM_SEGMENT_WIDTH
-SegmentParametersList ImageSegmenter::generateSegmentParameters(
-    const ImageWrapper& image) const
-{
-    unsigned int numSubdivisionsX = 1;
-    unsigned int numSubdivisionsY = 1;
-
-    unsigned int uniformSegmentWidth = image.width;
-    unsigned int uniformSegmentHeight = image.height;
-
-    bool segmentImage = (nominalSegmentWidth_ > 0 && nominalSegmentHeight_ > 0);
-    if (segmentImage)
+    Segments segments;
+    for (const auto& params : _makeSegmentParameters(image))
     {
-        numSubdivisionsX = (unsigned int)floor(
-            (float)image.width / (float)nominalSegmentWidth_ + 0.5);
-        numSubdivisionsY = (unsigned int)floor(
-            (float)image.height / (float)nominalSegmentHeight_ + 0.5);
-
-        uniformSegmentWidth =
-            (unsigned int)((float)image.width / (float)numSubdivisionsX);
-        uniformSegmentHeight =
-            (unsigned int)((float)image.height / (float)numSubdivisionsY);
+        Segment segment;
+        segment.parameters = params;
+        segment.view =
+            image.view == View::side_by_side ? View::left_eye : image.view;
+        segment.sourceImage = &image;
+        segments.push_back(segment);
     }
 
-    // now, create parameters for each segment
-    SegmentParametersList parameters;
-
-    for (unsigned int i = 0; i < numSubdivisionsX; ++i)
+    if (image.view == View::side_by_side)
     {
-        for (unsigned int j = 0; j < numSubdivisionsY; ++j)
+        if (image.width % 2 != 0)
+            throw std::runtime_error("side_by_side image width must be even!");
+
+        // create copy of segments for right view
+        auto segmentsRight = segments;
+        for (auto& segment : segmentsRight)
+            segment.view = View::right_eye;
+
+        segments.insert(segments.end(), segmentsRight.begin(),
+                        segmentsRight.end());
+    }
+
+    return segments;
+}
+
+SegmentParametersList ImageSegmenter::_makeSegmentParameters(
+    const ImageWrapper& image) const
+{
+    const auto info = _makeSegmentationInfo(image);
+
+    SegmentParametersList parameters;
+    for (uint j = 0; j < info.countY; ++j)
+    {
+        for (uint i = 0; i < info.countX; ++i)
         {
             SegmentParameters p;
-
-            p.x = image.x + i * uniformSegmentWidth;
-            p.y = image.y + j * uniformSegmentHeight;
-            p.width = uniformSegmentWidth;
-            p.height = uniformSegmentHeight;
-            p.compressed = (image.compressionPolicy == COMPRESSION_ON);
-
+            p.x = image.x + i * info.width;
+            p.y = image.y + j * info.height;
+            p.width = (i < info.countX - 1) ? info.width : info.lastWidth;
+            p.height = (j < info.countY - 1) ? info.height : info.lastHeight;
             parameters.push_back(p);
         }
     }
-
     return parameters;
 }
-#else
-SegmentParametersList ImageSegmenter::_generateSegmentParameters(
+
+ImageSegmenter::SegmentationInfo ImageSegmenter::_makeSegmentationInfo(
     const ImageWrapper& image) const
 {
-    unsigned int numSubdivisionsX = 1;
-    unsigned int numSubdivisionsY = 1;
+    const auto imageWidth =
+        image.view == View::side_by_side ? image.width / 2 : image.width;
 
-    unsigned int lastSegmentWidth = image.width;
-    unsigned int lastSegmentHeight = image.height;
+    SegmentationInfo info;
+    info.width = _nominalSegmentWidth;
+    info.height = _nominalSegmentHeight;
 
-    bool segmentImage = (_nominalSegmentWidth > 0 && _nominalSegmentHeight > 0);
-    if (segmentImage)
+    if (_nominalSegmentWidth == 0 || _nominalSegmentHeight == 0)
     {
-        numSubdivisionsX = image.width / _nominalSegmentWidth + 1;
-        numSubdivisionsY = image.height / _nominalSegmentHeight + 1;
-
-        lastSegmentWidth = image.width % _nominalSegmentWidth;
-        lastSegmentHeight = image.height % _nominalSegmentHeight;
-
-        if (lastSegmentWidth == 0)
-        {
-            lastSegmentWidth = _nominalSegmentWidth;
-            --numSubdivisionsX;
-        }
-        if (lastSegmentHeight == 0)
-        {
-            lastSegmentHeight = _nominalSegmentHeight;
-            --numSubdivisionsY;
-        }
+        info.countX = 1;
+        info.countY = 1;
+        info.lastWidth = imageWidth;
+        info.lastHeight = image.height;
+        return info;
     }
 
-    // now, create parameters for each segment
-    SegmentParametersList parameters;
+    info.countX = imageWidth / _nominalSegmentWidth + 1;
+    info.countY = image.height / _nominalSegmentHeight + 1;
 
-    for (unsigned int j = 0; j < numSubdivisionsY; ++j)
+    info.lastWidth = imageWidth % _nominalSegmentWidth;
+    info.lastHeight = image.height % _nominalSegmentHeight;
+
+    if (info.lastWidth == 0)
     {
-        for (unsigned int i = 0; i < numSubdivisionsX; ++i)
-        {
-            SegmentParameters p;
-
-            p.x = image.x + i * _nominalSegmentWidth;
-            p.y = image.y + j * _nominalSegmentHeight;
-            p.width = (i < numSubdivisionsX - 1) ? _nominalSegmentWidth
-                                                 : lastSegmentWidth;
-            p.height = (j < numSubdivisionsY - 1) ? _nominalSegmentHeight
-                                                  : lastSegmentHeight;
-            p.dataType = (image.compressionPolicy == COMPRESSION_ON)
-                             ? DataType::jpeg
-                             : DataType::rgba;
-
-            parameters.push_back(p);
-        }
+        info.lastWidth = _nominalSegmentWidth;
+        --info.countX;
     }
-
-    return parameters;
+    if (info.lastHeight == 0)
+    {
+        info.lastHeight = _nominalSegmentHeight;
+        --info.countY;
+    }
+    return info;
 }
-#endif
 }
