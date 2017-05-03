@@ -203,6 +203,7 @@ void QuickRenderer::_createGLContext()
 
     _context.reset(new QOpenGLContext);
     _context->setFormat(format_);
+    _context->setScreen(_quickWindow.screen()); // needed for multiple X display
     _context->create();
 
     // Test if user has setup shared GL contexts (QtWebEngine::initialize).
