@@ -4,4 +4,4 @@
 
 set(QMLSTREAMER_SOURCES main.cpp resources.qrc)
 set(QMLSTREAMER_LINK_LIBRARIES DeflectQt)
-common_application(qmlstreamer)
+common_application(qmlstreamer NOHELP)
