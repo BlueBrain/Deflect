@@ -85,7 +85,9 @@ OffscreenQuickView::~OffscreenQuickView()
     killTimer(_stopRenderingDelayTimer);
     _stopRenderingDelayTimer = 0;
 
-    _quickRenderer->stop();
+    if (_quickRenderer)
+        _quickRenderer->stop();
+
     if (_quickRendererThread)
     {
         _quickRendererThread->quit();
