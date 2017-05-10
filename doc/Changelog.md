@@ -1,8 +1,9 @@
 Changelog {#Changelog}
 ============
 
-## Deflect 0.13 (git master)
+## Deflect 0.13
 
+### Deflect 0.13.0 (10-05-2017)
 * [163](https://github.com/BlueBrain/Deflect/pull/163):
   Stereo streaming accepts side-by-side images as input.
 * [161](https://github.com/BlueBrain/Deflect/pull/161):
@@ -29,7 +30,6 @@ Changelog {#Changelog}
 ## Deflect 0.12
 
 ### 0.12.1 (01-02-2017)
-
 * [147](https://github.com/BlueBrain/Deflect/pull/147):
   Improved handling of network protocol updates. Future updates should be
   possible without breaking any client/server based on this release.
@@ -40,7 +40,6 @@ Changelog {#Changelog}
   DesktopStreamer: new slider to adjust the JPEG quality in advanced settings.
 
 ### 0.12.0 (09-12-2016)
-
 * [143](https://github.com/BlueBrain/Deflect/pull/143):
   The non-functional Servus dependency has been removed.
 * [142](https://github.com/BlueBrain/Deflect/pull/142):
@@ -102,7 +101,6 @@ Changelog {#Changelog}
 ## Deflect 0.11
 
 ### 0.11.1 (30-06-2016)
-
 * [112](https://github.com/BlueBrain/Deflect/pull/112):
   DesktopStreamer improvements:
   - new "view" menu to show advanced options (stream id, fps), hidden by default
@@ -111,7 +109,6 @@ Changelog {#Changelog}
   - improved resizing policy of the main window
 
 ### 0.11.0 (17-06-2016)
-
 * [111](https://github.com/BlueBrain/Deflect/pull/111):
   DesktopStreamer: bugfix; stop streaming when the server closes the stream
   and the "remote control" option was not enabled.

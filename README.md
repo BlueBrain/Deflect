@@ -4,6 +4,10 @@ Welcome to Deflect, a C++ library for streaming pixels to other Deflect-based
 applications, for example [Tide](https://github.com/BlueBrain/Tide).
 Deflect offers a stable API marked with version 1.6 (for the client part).
 
+## Overview
+
+![Deflect features overview](doc/overview.png)
+
 ## Features
 
 Deflect provides the following functionality:
