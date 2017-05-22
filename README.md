@@ -34,7 +34,7 @@ The following applications are provided which make use of the streaming API:
 ## Building from source
 
 ~~~
-  git clone https://github.com/BlueBrain/Deflect.git
+  git clone --recursive https://github.com/BlueBrain/Deflect.git
   mkdir Deflect/build
   cd Deflect/build
   cmake -GNinja ..
@@ -55,5 +55,5 @@ environments are tested:
 * Linux: Ubuntu 16.04 and RHEL 6 (Makefile, Ninja; x64)
 * Mac OS X: 10.7 - 10.10 (Makefile, Ninja; x86_64)
 
-The [latest API documentation](http://bluebrain.github.io/Deflect-0.12/index.html)
+The [latest API documentation](http://bluebrain.github.io/Deflect-0.13/index.html)
 can be found on [bluebrain.github.io](http://bluebrain.github.io).

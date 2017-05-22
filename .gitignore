@@ -1,7 +1,5 @@
 .DS_Store
-CMake/common
 Makefile
 CMakeLists.txt.user*
 build/
-Servus/
 ___*
