@@ -1,7 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
-/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -38,32 +37,20 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "MainWindow.h"
+#ifndef DEFLECT_UTILS_H
+#define DEFLECT_UTILS_H
 
-#include <deflect/utils.h>
-#include <deflect/version.h>
-
-#include <QCommandLineParser>
-
-int main(int argc, char* argv[])
+namespace deflect
 {
-    deflect::blockFalseWarnings();
-
-    QApplication app(argc, argv);
-    QApplication::setApplicationVersion(
-        QString::fromStdString(deflect::Version::getString()));
-
-    QCommandLineParser parser;
-    parser.setApplicationDescription("Stream your desktop to a remote host");
-    parser.addHelpOption();
-    parser.addVersionOption();
-    parser.process(app);
-
-    Q_INIT_RESOURCE(resources);
-
-    MainWindow mainWindow;
-    mainWindow.show();
-
-    // enter Qt event loop
-    return app.exec();
+/**
+ * Block false warnings issued by the Stream API when used with a QApplication.
+ *
+ * This function installs a custom QtMessageHandler to filter out the specific
+ * QSocketNotifier warnings. Users calling qInstallMessageHandler() with their
+ * own custom handler can't use this function and have to replicate its
+ * behaviour.
+ */
+void blockFalseWarnings();
 }
+
+#endif

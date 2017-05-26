@@ -1,7 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
-/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -38,32 +37,44 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "MainWindow.h"
+#include "utils.h"
 
-#include <deflect/utils.h>
-#include <deflect/version.h>
+#include <QString>
+#include <QtGlobal>
 
-#include <QCommandLineParser>
-
-int main(int argc, char* argv[])
+namespace
 {
-    deflect::blockFalseWarnings();
+const QString socketNotiferMsg{
+    "QSocketNotifier: Socket notifiers cannot be "
+    "enabled or disabled from another thread"};
 
-    QApplication app(argc, argv);
-    QApplication::setApplicationVersion(
-        QString::fromStdString(deflect::Version::getString()));
+void qtMessageLogger(const QtMsgType type, const QMessageLogContext&,
+                     const QString& message)
+{
+    switch (type)
+    {
+    case QtDebugMsg:
+#if QT_VERSION >= 0x050500
+    case QtInfoMsg:
+#endif
+        fprintf(stdout, "%s\n", qPrintable(message));
+        break;
+    case QtWarningMsg:
+        if (message == socketNotiferMsg)
+            return;
+    case QtCriticalMsg:
+    case QtFatalMsg:
+    default:
+        fprintf(stderr, "%s\n", qPrintable(message));
+        break;
+    }
+}
+}
 
-    QCommandLineParser parser;
-    parser.setApplicationDescription("Stream your desktop to a remote host");
-    parser.addHelpOption();
-    parser.addVersionOption();
-    parser.process(app);
-
-    Q_INIT_RESOURCE(resources);
-
-    MainWindow mainWindow;
-    mainWindow.show();
-
-    // enter Qt event loop
-    return app.exec();
+namespace deflect
+{
+void blockFalseWarnings()
+{
+    qInstallMessageHandler(qtMessageLogger);
+}
 }

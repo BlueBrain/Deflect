@@ -18,6 +18,7 @@
  */
 
 #include <deflect/qt/QmlStreamer.h>
+#include <deflect/utils.h>
 #include <deflect/version.h>
 
 #include <QCommandLineParser>
@@ -25,6 +26,8 @@
 
 int main(int argc, char** argv)
 {
+    deflect::blockFalseWarnings();
+
     QGuiApplication app(argc, argv);
     QGuiApplication::setApplicationVersion(
         QString::fromStdString(deflect::Version::getString()));
