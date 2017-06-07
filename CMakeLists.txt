@@ -55,6 +55,11 @@ if(Boost_FOUND)
 endif()
 add_subdirectory(doc)
 
+# Export public package dependencies, used in CommonPackageConfig
+if(TARGET DeflectQt)
+  set(DEFLECT_DEPENDENT_LIBRARIES Qt5Quick)
+endif()
+
 # Name the package "desktopstreamer" instead of "deflect"
 set(CPACK_PACKAGE_NAME "desktopstreamer")
 set(DEFLECT_PACKAGE_DEB_DEPENDS qtbase5-dev libturbojpeg)
