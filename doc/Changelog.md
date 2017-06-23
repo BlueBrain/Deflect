@@ -3,6 +3,11 @@ Changelog {#Changelog}
 
 ## Deflect 0.13
 
+### 0.13.1 (git master)
+
+* [173](https://github.com/BlueBrain/Deflect/pull/173):
+  Fix server: disabling system proxy which are default starting Qt 5.8
+
 ### Deflect 0.13.0 (10-05-2017)
 * [163](https://github.com/BlueBrain/Deflect/pull/163):
   Stereo streaming accepts side-by-side images as input.
