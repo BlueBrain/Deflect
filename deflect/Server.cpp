@@ -44,6 +44,7 @@
 #include "NetworkProtocol.h"
 #include "ServerWorker.h"
 
+#include <QNetworkProxy>
 #include <QThread>
 #include <stdexcept>
 
@@ -60,9 +61,12 @@ public:
 Server::Server(const int port)
     : _impl(new Impl)
 {
+    setProxy(QNetworkProxy::NoProxy);
     if (!listen(QHostAddress::Any, port))
     {
-        const auto err = QString("could not listen on port: %1").arg(port);
+        const auto err = QString("could not listen on port: %1. QTcpServer: %2")
+                             .arg(port)
+                             .arg(QTcpServer::errorString());
         throw std::runtime_error(err.toStdString());
     }
 
