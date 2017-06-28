@@ -69,6 +69,21 @@ bool ImageSegmenter::generate(const ImageWrapper& image, const Handler& handler)
     return _generateRaw(image, handler);
 }
 
+Segment ImageSegmenter::compressSingleSegment(const ImageWrapper& image)
+{
+#ifdef DEFLECT_USE_LIBJPEGTURBO
+    auto segments = _generateSegments(image);
+    if (segments.size() > 1)
+        throw std::runtime_error(
+            "compressSingleSegment only works for small images");
+    ImageSegmenter::_computeJpeg(segments[0], false);
+    return segments[0];
+#else
+    throw std::runtime_error(
+        "LibJpegTurbo not available, needed for compressSingleSegment");
+#endif
+}
+
 void ImageSegmenter::setNominalSegmentDimensions(const uint width,
                                                  const uint height)
 {
@@ -85,7 +100,7 @@ bool ImageSegmenter::_generateJpeg(const ImageWrapper& image,
 
     // start creating JPEGs for each segment, in parallel
     QtConcurrent::map(segments, std::bind(&ImageSegmenter::_computeJpeg, this,
-                                          std::placeholders::_1));
+                                          std::placeholders::_1, true));
 
     // Sending compressed jpeg segments while they arrive in the queue.
     // Note: Qt insists that sending (by calling handler()) should happen
@@ -108,7 +123,7 @@ bool ImageSegmenter::_generateJpeg(const ImageWrapper& image,
 #endif
 }
 
-void ImageSegmenter::_computeJpeg(Segment& segment)
+void ImageSegmenter::_computeJpeg(Segment& segment, const bool sendSegment)
 {
 #ifdef DEFLECT_USE_LIBJPEGTURBO
     QRect imageRegion(segment.parameters.x - segment.sourceImage->x,
@@ -124,7 +139,8 @@ void ImageSegmenter::_computeJpeg(Segment& segment)
     segment.imageData =
         compressor.localData().computeJpeg(*segment.sourceImage, imageRegion);
     segment.parameters.dataType = DataType::jpeg;
-    _sendQueue.enqueue(segment);
+    if (sendSegment)
+        _sendQueue.enqueue(segment);
 #endif
 }
 

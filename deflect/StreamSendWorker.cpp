@@ -49,6 +49,7 @@
 namespace
 {
 const unsigned int SEGMENT_SIZE = 512;
+const unsigned int SMALL_IMAGE_SIZE = 64;
 }
 
 namespace deflect
@@ -128,7 +129,17 @@ Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
         return promise.get_future();
     }
 
-    auto tasks = std::vector<Task>{[this, image] { return _sendImage(image); }};
+    std::vector<Task> tasks;
+
+    if (image.width <= SMALL_IMAGE_SIZE && image.height <= SMALL_IMAGE_SIZE &&
+        image.compressionPolicy == COMPRESSION_ON)
+    {
+        auto segment = _imageSegmenter.compressSingleSegment(image);
+        tasks.emplace_back([this, segment] { return _sendSegment(segment); });
+    }
+    else
+        tasks.emplace_back([this, image] { return _sendImage(image); });
+
     if (finish)
         tasks.emplace_back([this] { return _sendFinish(); });
 

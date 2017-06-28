@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.13.1 (git master)
 
+* [174](https://github.com/BlueBrain/Deflect/pull/174):
+  Performance improvements for sending small images (tested with 64x64):
+  directly compress them in the call thread
 * [173](https://github.com/BlueBrain/Deflect/pull/173):
   Fix server: disabling system proxy which are default starting Qt 5.8
 

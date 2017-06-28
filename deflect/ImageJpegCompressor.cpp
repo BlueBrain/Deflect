@@ -109,14 +109,18 @@ QByteArray ImageJpegCompressor::computeJpeg(const ImageWrapper& sourceImage,
     const int tjPitch = sourceImage.width * sourceImage.getBytesPerPixel();
     const int tjHeight = imageRegion.height();
     const int tjPixelFormat = _getTurboJpegFormat(sourceImage.pixelFormat);
-    unsigned char* tjJpegBuf = nullptr;
-    unsigned long tjJpegSize = 0;
-    const int tjJpegSubsamp = _getTurboJpegSubsamp(sourceImage.subsampling);
-    const int tjJpegQual = sourceImage.compressionQuality;
-    const int tjFlags = 0; // or: TJFLAG_BOTTOMUP
 
+    const int tjJpegSubsamp = _getTurboJpegSubsamp(sourceImage.subsampling);
+    unsigned long tjJpegSize = tjBufSize(tjWidth, tjHeight, tjJpegSubsamp);
+
+    _tjJpegBuf.resize(tjJpegSize);
+
+    const int tjJpegQual = sourceImage.compressionQuality;
+    const int tjFlags = TJFLAG_NOREALLOC; // or: TJFLAG_BOTTOMUP
+
+    auto ptr = _tjJpegBuf.data();
     int err = tjCompress2(_tjHandle, tjSrcBuffer, tjWidth, tjPitch, tjHeight,
-                          tjPixelFormat, &tjJpegBuf, &tjJpegSize, tjJpegSubsamp,
+                          tjPixelFormat, &ptr, &tjJpegSize, tjJpegSubsamp,
                           tjJpegQual, tjFlags);
     if (err != 0)
     {
@@ -124,12 +128,6 @@ QByteArray ImageJpegCompressor::computeJpeg(const ImageWrapper& sourceImage,
         return QByteArray();
     }
 
-    // move the JPEG buffer to a byte array
-    const QByteArray jpegData((char*)tjJpegBuf, tjJpegSize);
-
-    // free the libjpeg-turbo allocated memory
-    tjFree(tjJpegBuf);
-
-    return jpegData;
+    return QByteArray((const char*)ptr, tjJpegSize);
 }
 }
