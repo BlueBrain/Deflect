@@ -71,6 +71,7 @@ public:
 
 private:
     tjhandle _tjHandle;
+    std::vector<unsigned char> _tjJpegBuf;
 };
 }
 

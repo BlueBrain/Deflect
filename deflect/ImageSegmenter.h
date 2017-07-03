@@ -91,6 +91,16 @@ public:
      */
     DEFLECT_API void setNominalSegmentDimensions(uint width, uint height);
 
+    /**
+     * For a small input image (tested with 64x64, possible for <=512 as well),
+     * directly compress it to a single segment which will be enqueued for
+     * sending.
+     *
+     * @param image The image to be compressed
+     * @return the compressed segment
+     */
+    DEFLECT_API Segment compressSingleSegment(const ImageWrapper& image);
+
 private:
     struct SegmentationInfo
     {
@@ -105,7 +115,7 @@ private:
     };
 
     bool _generateJpeg(const ImageWrapper& image, const Handler& handler);
-    void _computeJpeg(Segment& task);
+    void _computeJpeg(Segment& task, bool sendSegment);
     bool _generateRaw(const ImageWrapper& image, const Handler& handler) const;
 
     Segments _generateSegments(const ImageWrapper& image) const;
