@@ -1,5 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2015-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/*                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>*/
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -33,7 +35,7 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The University of Texas at Austin.                 */
+/* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
 #include "Socket.h"
@@ -108,7 +110,8 @@ bool Socket::hasMessage(const size_t messageSize) const
            (int)(MessageHeader::serializedSize + messageSize);
 }
 
-bool Socket::send(const MessageHeader& messageHeader, const QByteArray& message)
+bool Socket::send(const MessageHeader& messageHeader, const QByteArray& message,
+                  const bool waitForBytesWritten)
 {
     QMutexLocker locker(&_socketMutex);
     if (!isConnected())
@@ -123,10 +126,13 @@ bool Socket::send(const MessageHeader& messageHeader, const QByteArray& message)
     // send message
     const bool allSent = _write(message);
 
-    // Needed in the absence of event loop, otherwise the reception is frozen.
-    while (_socket->bytesToWrite() > 0 && isConnected())
-        _socket->waitForBytesWritten();
-
+    if (waitForBytesWritten)
+    {
+        // Needed in the absence of event loop, otherwise the reception is
+        // frozen.
+        while (_socket->bytesToWrite() > 0 && isConnected())
+            _socket->waitForBytesWritten();
+    }
     return allSent;
 }
 

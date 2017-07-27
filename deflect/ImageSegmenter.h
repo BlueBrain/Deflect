@@ -98,6 +98,7 @@ public:
      *
      * @param image The image to be compressed
      * @return the compressed segment
+     * @threadsafe
      */
     DEFLECT_API Segment compressSingleSegment(const ImageWrapper& image);
 

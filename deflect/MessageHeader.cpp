@@ -69,9 +69,7 @@ MessageHeader::MessageHeader(const MessageType type_, const uint32_t size_,
 QDataStream& operator<<(QDataStream& out, const deflect::MessageHeader& header)
 {
     out << (qint32)header.type << (quint32)header.size;
-
-    for (size_t i = 0; i < MESSAGE_HEADER_URI_LENGTH; ++i)
-        out << (quint8)header.uri[i];
+    out.writeRawData(header.uri, MESSAGE_HEADER_URI_LENGTH);
 
     return out;
 }

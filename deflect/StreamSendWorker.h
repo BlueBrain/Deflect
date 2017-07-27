@@ -46,10 +46,16 @@
 #include "Socket.h"         // member
 #include "Stream.h"         // Stream::Future
 
-#include <QThread>
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#endif
+#include "moodycamel/blockingconcurrentqueue.h"
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
-#include <deque>
-#include <mutex>
+#include <QThread>
 
 namespace deflect
 {
@@ -99,29 +105,34 @@ private:
     {
         PromisePtr promise;
         std::vector<Task> tasks;
+        bool isFinish;
     };
 
     Socket& _socket;
     const std::string& _id;
 
     ImageSegmenter _imageSegmenter;
-    std::deque<Request> _requests;
-    std::mutex _mutex;
-    std::condition_variable _condition;
+    moodycamel::BlockingConcurrentQueue<Request> _requests;
     bool _running = false;
     View _currentView = View::mono;
+
+    std::vector<Request> _dequeuedRequests;
+    bool _pendingFinish = false;
+    Request _finishRequest;
 
     /** Main QThread loop doing asynchronous processing of queued tasks. */
     void run() final;
 
-    Stream::Future _enqueueRequest(std::vector<Task>&& actions);
+    Stream::Future _enqueueRequest(std::vector<Task>&& actions,
+                                   bool isFinish = false);
 
     friend class deflect::test::Application; // to send pre-compressed segments
     bool _sendImage(const ImageWrapper& image);
     bool _sendImageView(View view);
     bool _sendSegment(const Segment& segment);
     bool _sendFinish();
-    bool _send(MessageType type, const QByteArray& message);
+    bool _send(MessageType type, const QByteArray& message,
+               bool waitForBytesWritten = true);
 };
 }
 #endif
