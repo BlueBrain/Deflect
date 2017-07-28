@@ -57,7 +57,7 @@ class Server::Impl
 public:
     Impl(QObject* parent)
         : frameDispatcher(
-              new FrameDispatcher(parent)) // we be deleted by parent
+              new FrameDispatcher(parent)) // will be deleted by parent
     {
     }
 

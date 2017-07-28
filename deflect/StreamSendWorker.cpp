@@ -172,12 +172,6 @@ Stream::Future StreamSendWorker::enqueueObserverOpen()
     }});
 }
 
-Stream::Future StreamSendWorker::enqueueObserverClose()
-{
-    return _enqueueRequest(
-        {[this] { return _send(MESSAGE_TYPE_OBSERVER_QUIT, {}); }});
-}
-
 Stream::Future StreamSendWorker::enqueueBindRequest(const bool exclusive)
 {
     return _enqueueRequest({[this, exclusive] {

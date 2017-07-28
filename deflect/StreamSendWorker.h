@@ -76,11 +76,10 @@ public:
 
     /** Enqueue an image to be send during the execution of run(). */
     Stream::Future enqueueImage(const ImageWrapper& image, bool finish);
-    Stream::Future enqueueFinish();        //!< Enqueue a finishFrame()
-    Stream::Future enqueueOpen();          //!< Enqueue an open message
-    Stream::Future enqueueClose();         //!< Enqueue a close message
-    Stream::Future enqueueObserverOpen();  //!< Enqueue an observer open message
-    Stream::Future enqueueObserverClose(); //!< Enqueue a observer close message
+    Stream::Future enqueueFinish();       //!< Enqueue a finishFrame()
+    Stream::Future enqueueOpen();         //!< Enqueue an open message
+    Stream::Future enqueueClose();        //!< Enqueue a close message
+    Stream::Future enqueueObserverOpen(); //!< Enqueue an observer open message
 
     /** @sa Stream::registerForEvents */
     Stream::Future enqueueBindRequest(bool exclusive);

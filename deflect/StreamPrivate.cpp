@@ -84,7 +84,6 @@ StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
     : id{_getStreamId(id_)}
     , socket{_getStreamHost(host), port}
     , sendWorker{socket, id}
-    , _observer(observer)
 {
     if (!socket.isConnected())
         return;
@@ -106,11 +105,6 @@ StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
 StreamPrivate::~StreamPrivate()
 {
     if (socket.isConnected())
-    {
-        if (_observer)
-            sendWorker.enqueueObserverClose().wait();
-        else
-            sendWorker.enqueueClose().wait();
-    }
+        sendWorker.enqueueClose().wait();
 }
 }

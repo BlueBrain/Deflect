@@ -87,8 +87,10 @@ ServerWorker::~ServerWorker()
     // more senders contribute to it.
     if (!_streamId.isEmpty())
     {
-        emit removeStreamSource(_streamId, _sourceId);
-        emit removeObserver(_streamId, _sourceId);
+        if (_observer)
+            emit removeObserver(_streamId);
+        else
+            emit removeStreamSource(_streamId, _sourceId);
     }
 
     if (_isConnected())
@@ -210,7 +212,10 @@ void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
     switch (messageHeader.type)
     {
     case MESSAGE_TYPE_QUIT:
-        emit removeStreamSource(_streamId, _sourceId);
+        if (_observer)
+            emit removeObserver(_streamId);
+        else
+            emit removeStreamSource(_streamId, _sourceId);
         _streamId = QString();
         break;
 
@@ -227,14 +232,10 @@ void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
         emit addStreamSource(_streamId, _sourceId);
         break;
 
-    case MESSAGE_TYPE_OBSERVER_QUIT:
-        emit removeObserver(_streamId, _sourceId);
-        _streamId = QString();
-        break;
-
     case MESSAGE_TYPE_OBSERVER_OPEN:
         _streamId = uri;
-        emit addObserver(_streamId, _sourceId);
+        emit addObserver(_streamId);
+        _observer = true;
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME:

@@ -55,6 +55,16 @@ namespace deflect
 class StreamPrivate;
 
 /**
+ * Connect to a deflect::Server and register for events.
+ *
+ * In case a dedicated event handling w/o the need for streaming images is
+ * required, the Observer class can be used, in contrast to the deflect::Stream.
+ *
+ * On the server side the observer also opens and closes the stream as regular
+ * deflect::Streams would do.
+ *
+ * This class is new since version 1.7 while sharing the same API as
+ * deflect::Stream prior 1.7.
  */
 class Observer
 {
@@ -76,9 +86,8 @@ public:
      * The user can check if the connection was successfully established with
      * isConnected().
      *
-     * Different Streams can contribute to a single window by using the same
-     * identifier. All the Streams which contribute to the same window should be
-     * created before any of them starts sending images.
+     * Different observers and streams can share the same window by using the
+     * same identifier.
      *
      * @param id The identifier for the stream. If left empty, the environment
      *           variable DEFLECT_ID will be used. If both values are empty,
@@ -94,10 +103,13 @@ public:
     DEFLECT_API Observer(const std::string& id, const std::string& host,
                          unsigned short port = 1701);
 
-    /** Destruct the Stream, closing the connection. @version 1.0 */
+    /** Destruct the Observer, closing the connection. @version 1.0 */
     DEFLECT_API virtual ~Observer();
 
-    /** @return true if the stream is connected, false otherwise. @version 1.0*/
+    /**
+     * @return true if the observer is connected, false otherwise.
+     * @version 1.0
+     */
     DEFLECT_API bool isConnected() const;
 
     /** @return the identifier defined by the constructor. @version 1.3 */
@@ -110,7 +122,7 @@ public:
      * Register to receive Events.
      *
      * After registering, the Server application will send Events whenever a
-     * user is interacting with this Stream's window.
+     * user is interacting with this Observers's window.
      *
      * Events can be retrieved using hasEvent() and getEvent().
      *
@@ -120,16 +132,16 @@ public:
      * This method is synchronous and waits for a registration reply from the
      * Server before returning.
      *
-     * @param exclusive Binds only one stream source for the same identifier.
+     * @param exclusive Binds only one observer source for the same identifier.
      * @return true if the registration could be or was already established.
      * @version 1.0
      */
     DEFLECT_API bool registerForEvents(bool exclusive = false);
 
     /**
-     * Is this stream registered to receive events.
+     * Is this observer registered to receive events.
      *
-     * Check if the stream has already successfully registered with
+     * Check if the observer has already successfully registered with
      * registerForEvents().
      *
      * @return true after the Server application has acknowledged the
@@ -142,9 +154,10 @@ public:
      * Get the native descriptor for the data stream.
      *
      * This descriptor can for instance be used by poll() on UNIX systems.
-     * Having this descriptor lets a Stream class user detect when the Stream
+     * Having this descriptor lets a Observer class user detect when the Stream
      * has received any data. The user can the use query the state of the
-     * Stream, for example using hasEvent(), and process the events accordingly.
+     * Observer, for example using hasEvent(), and process the events
+     * accordingly.
      *
      * @return The native descriptor if available; otherwise returns -1.
      * @version 1.0
@@ -178,7 +191,7 @@ public:
     DEFLECT_API Event getEvent();
 
     /**
-     * Set a function to be be called just after the stream gets disconnected.
+     * Set a function to be be called just after the observer gets disconnected.
      *
      * @param callback the function to call
      * @note replaces the previous disconnected signal
@@ -187,7 +200,7 @@ public:
     DEFLECT_API void setDisconnectedCallback(std::function<void()> callback);
 
 protected:
-    Observer(const Stream&) = delete;
+    Observer(const Observer&) = delete;
     const Observer& operator=(const Observer&) = delete;
 
     std::unique_ptr<StreamPrivate> _impl;

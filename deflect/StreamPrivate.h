@@ -82,9 +82,6 @@ public:
 
     /** The worker doing all the socket send operations. */
     StreamSendWorker sendWorker;
-
-private:
-    const bool _observer;
 };
 }
 #endif
