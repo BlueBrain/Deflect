@@ -58,7 +58,7 @@ class FrameDispatcher : public QObject
 
 public:
     /** Construct a dispatcher */
-    FrameDispatcher();
+    FrameDispatcher(QObject* parent);
 
     /** Destructor. */
     ~FrameDispatcher();
@@ -79,6 +79,22 @@ public slots:
      * @param sourceIndex Identifier for the source in this stream
      */
     void removeSource(QString uri, size_t sourceIndex);
+
+    /**
+     * Add a stream source as an observer which does not contribute segments.
+     * Emits pixelStreamOpened() if no other observer or source is present.
+     *
+     * @param uri Identifier for the stream
+     */
+    void addObserver(QString uri);
+
+    /**
+     * Remove a stream observer, emits pixelStreamClosed() if all observers and
+     * sources are gone.
+     *
+     * @param uri Identifier for the stream
+     */
+    void removeObserver(QString uri);
 
     /**
      * Process a new Segment.

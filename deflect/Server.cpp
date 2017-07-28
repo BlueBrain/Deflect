@@ -55,11 +55,17 @@ const int Server::defaultPortNumber = DEFAULT_PORT_NUMBER;
 class Server::Impl
 {
 public:
-    FrameDispatcher frameDispatcher;
+    Impl(QObject* parent)
+        : frameDispatcher(
+              new FrameDispatcher(parent)) // we be deleted by parent
+    {
+    }
+
+    FrameDispatcher* frameDispatcher;
 };
 
 Server::Server(const int port)
-    : _impl(new Impl)
+    : _impl(new Impl(this))
 {
     setProxy(QNetworkProxy::NoProxy);
     if (!listen(QHostAddress::Any, port))
@@ -71,13 +77,13 @@ Server::Server(const int port)
     }
 
     // Forward FrameDispatcher signals
-    connect(&_impl->frameDispatcher, &FrameDispatcher::pixelStreamOpened, this,
+    connect(_impl->frameDispatcher, &FrameDispatcher::pixelStreamOpened, this,
             &Server::pixelStreamOpened);
-    connect(&_impl->frameDispatcher, &FrameDispatcher::pixelStreamClosed, this,
+    connect(_impl->frameDispatcher, &FrameDispatcher::pixelStreamClosed, this,
             &Server::pixelStreamClosed);
-    connect(&_impl->frameDispatcher, &FrameDispatcher::sendFrame, this,
+    connect(_impl->frameDispatcher, &FrameDispatcher::sendFrame, this,
             &Server::receivedFrame);
-    connect(&_impl->frameDispatcher, &FrameDispatcher::bufferSizeExceeded, this,
+    connect(_impl->frameDispatcher, &FrameDispatcher::bufferSizeExceeded, this,
             &Server::closePixelStream);
 }
 
@@ -95,13 +101,13 @@ Server::~Server()
 
 void Server::requestFrame(const QString uri)
 {
-    _impl->frameDispatcher.requestFrame(uri);
+    _impl->frameDispatcher->requestFrame(uri);
 }
 
 void Server::closePixelStream(const QString uri)
 {
     emit _closePixelStream(uri);
-    _impl->frameDispatcher.deleteStream(uri);
+    _impl->frameDispatcher->deleteStream(uri);
 }
 
 void Server::incomingConnection(const qintptr socketHandle)
@@ -132,14 +138,18 @@ void Server::incomingConnection(const qintptr socketHandle)
             &ServerWorker::closeConnection);
 
     // FrameDispatcher
-    connect(worker, &ServerWorker::addStreamSource, &_impl->frameDispatcher,
+    connect(worker, &ServerWorker::addStreamSource, _impl->frameDispatcher,
             &FrameDispatcher::addSource);
-    connect(worker, &ServerWorker::receivedSegment, &_impl->frameDispatcher,
+    connect(worker, &ServerWorker::receivedSegment, _impl->frameDispatcher,
             &FrameDispatcher::processSegment);
     connect(worker, &ServerWorker::receivedFrameFinished,
-            &_impl->frameDispatcher, &FrameDispatcher::processFrameFinished);
-    connect(worker, &ServerWorker::removeStreamSource, &_impl->frameDispatcher,
+            _impl->frameDispatcher, &FrameDispatcher::processFrameFinished);
+    connect(worker, &ServerWorker::removeStreamSource, _impl->frameDispatcher,
             &FrameDispatcher::removeSource);
+    connect(worker, &ServerWorker::addObserver, _impl->frameDispatcher,
+            &FrameDispatcher::addObserver);
+    connect(worker, &ServerWorker::removeObserver, _impl->frameDispatcher,
+            &FrameDispatcher::removeObserver);
 
     workerThread->start();
 }

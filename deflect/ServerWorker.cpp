@@ -86,7 +86,10 @@ ServerWorker::~ServerWorker()
     // if other senders are still active / resp. the window gets closed if no
     // more senders contribute to it.
     if (!_streamId.isEmpty())
+    {
         emit removeStreamSource(_streamId, _sourceId);
+        emit removeObserver(_streamId, _sourceId);
+    }
 
     if (_isConnected())
         _sendQuit();
@@ -194,9 +197,11 @@ void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
         closeConnection(_streamId);
         return;
     }
-    if (uri != _streamId && messageHeader.type != MESSAGE_TYPE_PIXELSTREAM_OPEN)
+    if (uri != _streamId &&
+        messageHeader.type != MESSAGE_TYPE_PIXELSTREAM_OPEN &&
+        messageHeader.type != MESSAGE_TYPE_OBSERVER_OPEN)
     {
-        std::cerr << "Warning: ingnoring message with incorrect stream id: '"
+        std::cerr << "Warning: ignoring message with incorrect stream id: '"
                   << messageHeader.uri << "', expected: '"
                   << _streamId.toStdString() << "'" << std::endl;
         return;
@@ -220,6 +225,16 @@ void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
         if (!byteArray.isEmpty())
             _parseClientProtocolVersion(byteArray);
         emit addStreamSource(_streamId, _sourceId);
+        break;
+
+    case MESSAGE_TYPE_OBSERVER_QUIT:
+        emit removeObserver(_streamId, _sourceId);
+        _streamId = QString();
+        break;
+
+    case MESSAGE_TYPE_OBSERVER_OPEN:
+        _streamId = uri;
+        emit addObserver(_streamId, _sourceId);
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME:

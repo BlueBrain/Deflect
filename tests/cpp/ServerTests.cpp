@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2015, EPFL/Blue Brain Project                       */
-/*                     Daniel.Nachbaur@epfl.ch                       */
+/* Copyright (c) 2015-2017, EPFL/Blue Brain Project                  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -44,6 +44,7 @@ namespace ut = boost::unit_test;
 #include "MinimalGlobalQtApp.h"
 
 #include <deflect/EventReceiver.h>
+#include <deflect/Frame.h>
 #include <deflect/Server.h>
 #include <deflect/Stream.h>
 
@@ -234,4 +235,144 @@ BOOST_AUTO_TEST_CASE(testDataReceivedByServer)
         mutex.unlock();
     }
     BOOST_CHECK(!"reachable");
+}
+
+BOOST_AUTO_TEST_CASE(testOneObserverAndOneStream)
+{
+    QThread serverThread;
+    deflect::Server* server = new deflect::Server(0 /* OS-chosen port */);
+    server->moveToThread(&serverThread);
+    serverThread.connect(&serverThread, &QThread::finished, server,
+                         &deflect::Server::deleteLater);
+    serverThread.start();
+
+    // to wait in this thread until server thread is done with certain
+    // operations
+    QWaitCondition received;
+    QMutex mutex;
+    bool receivedState = false;
+
+    auto processServerMessages = [&] {
+        for (size_t j = 0; j < 20; ++j)
+        {
+            mutex.lock();
+            received.wait(&mutex, 100 /*ms*/);
+            if (receivedState)
+            {
+                mutex.unlock();
+                break;
+            }
+            mutex.unlock();
+        }
+        BOOST_REQUIRE(receivedState);
+        receivedState = false;
+    };
+
+    size_t openedStreams = 0;
+
+    // only continue once we have the stream, whichever comes first
+    server->connect(server, &deflect::Server::pixelStreamOpened,
+                    [&](const QString) {
+                        ++openedStreams;
+                        if (openedStreams == 1)
+                        {
+                            mutex.lock();
+                            receivedState = true;
+                            received.wakeAll();
+                            mutex.unlock();
+                        }
+                    });
+
+    // make sure that we get the close of the stream and the observer
+    server->connect(server, &deflect::Server::pixelStreamClosed,
+                    [&](const QString) {
+                        --openedStreams;
+                        if (openedStreams == 0)
+                        {
+                            mutex.lock();
+                            receivedState = true;
+                            received.wakeAll();
+                            mutex.unlock();
+                        }
+                    });
+
+    // register to events to test the observer's purpose
+    deflect::EventReceiver* eventReceiver = nullptr;
+    server->connect(server, &deflect::Server::registerToEvents,
+                    [&](const QString, const bool,
+                        deflect::EventReceiver* evtReceiver,
+                        deflect::BoolPromisePtr success) {
+                        eventReceiver = evtReceiver;
+                        success->set_value(true);
+                    });
+
+    // handle received frames to test the stream's purpose
+    const size_t expectedFrames = 2;
+    size_t receivedFrames = 0;
+    server->connect(server, &deflect::Server::receivedFrame,
+                    [&](deflect::FramePtr frame) {
+                        BOOST_CHECK_EQUAL(frame->segments.size(), 1);
+                        BOOST_CHECK_EQUAL(frame->uri.toStdString(),
+                                          testStreamId.toStdString());
+                        ++receivedFrames;
+                        mutex.lock();
+                        receivedState = true;
+                        received.wakeAll();
+                        mutex.unlock();
+                    });
+
+    {
+        deflect::Stream stream(testStreamId.toStdString(), "localhost",
+                               server->serverPort());
+        BOOST_REQUIRE(stream.isConnected());
+
+        deflect::Observer observer(testStreamId.toStdString(), "localhost",
+                                   server->serverPort());
+        BOOST_REQUIRE(observer.isConnected());
+
+        BOOST_CHECK(observer.registerForEvents(true));
+
+        // handle connects first before sending and receiving frames
+        processServerMessages();
+
+        const unsigned int width = 4;
+        const unsigned int height = 4;
+        const unsigned int byte = width * height * 4;
+        std::unique_ptr<uint8_t[]> pixels(new uint8_t[byte]);
+        ::memset(pixels.get(), 0, byte);
+        deflect::ImageWrapper image(pixels.get(), width, height, deflect::RGBA);
+
+        deflect::Event event;
+        event.type = deflect::Event::EVT_CLICK;
+
+        // send images and events on the respective sides and test that both
+        // are received accordingly
+        for (size_t i = 0; i < expectedFrames; ++i)
+        {
+            receivedState = false;
+            stream.sendAndFinish(image).wait();
+            server->requestFrame(testStreamId);
+            event.key = i;
+            eventReceiver->processEvent(event);
+
+            // process event sending first before receiving in observer
+            processServerMessages();
+
+            while (!observer.hasEvent())
+                ;
+
+            const auto receivedEvent = observer.getEvent();
+            BOOST_CHECK_EQUAL(receivedEvent.key, event.key);
+            BOOST_CHECK_EQUAL(receivedEvent.type, event.type);
+        }
+    }
+
+    // handle close of streamer and observer
+    processServerMessages();
+
+    serverThread.quit();
+    serverThread.wait();
+
+    BOOST_CHECK_EQUAL(openedStreams, 0);
+    BOOST_CHECK_EQUAL(receivedFrames, expectedFrames);
 }

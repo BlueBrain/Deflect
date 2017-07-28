@@ -164,6 +164,20 @@ Stream::Future StreamSendWorker::enqueueClose()
     return _enqueueRequest({[this] { return _send(MESSAGE_TYPE_QUIT, {}); }});
 }
 
+Stream::Future StreamSendWorker::enqueueObserverOpen()
+{
+    return _enqueueRequest({[this] {
+        return _send(MESSAGE_TYPE_OBSERVER_OPEN,
+                     QByteArray::number(NETWORK_PROTOCOL_VERSION));
+    }});
+}
+
+Stream::Future StreamSendWorker::enqueueObserverClose()
+{
+    return _enqueueRequest(
+        {[this] { return _send(MESSAGE_TYPE_OBSERVER_QUIT, {}); }});
+}
+
 Stream::Future StreamSendWorker::enqueueBindRequest(const bool exclusive)
 {
     return _enqueueRequest({[this, exclusive] {

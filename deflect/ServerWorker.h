@@ -71,6 +71,9 @@ signals:
     void addStreamSource(QString uri, size_t sourceIndex);
     void removeStreamSource(QString uri, size_t sourceIndex);
 
+    void addObserver(QString uri, size_t sourceIndex);
+    void removeObserver(QString uri, size_t sourceIndex);
+
     void receivedSegment(QString uri, size_t sourceIndex,
                          deflect::Segment segment);
     void receivedFrameFinished(QString uri, size_t sourceIndex);

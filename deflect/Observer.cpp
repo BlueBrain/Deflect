@@ -39,50 +39,134 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "Stream.h"
+#include "Observer.h"
 #include "StreamPrivate.h"
+
+#include <QDataStream>
+
+#include <cassert>
+#include <iostream>
 
 namespace deflect
 {
-Stream::Stream()
-    : Observer(new StreamPrivate("", "", Socket::defaultPortNumber, false))
+Observer::Observer()
+    : _impl(new StreamPrivate("", "", Socket::defaultPortNumber, true))
 {
 }
 
-Stream::Stream(const std::string& id, const std::string& host,
-               const unsigned short port)
-    : Observer(new StreamPrivate(id, host, port, false))
+Observer::Observer(const std::string& id, const std::string& host,
+                   const unsigned short port)
+    : _impl(new StreamPrivate(id, host, port, true))
 {
 }
 
-Stream::~Stream()
+Observer::Observer(StreamPrivate* impl)
+    : _impl(impl)
 {
 }
 
-Stream::Future Stream::send(const ImageWrapper& image)
+Observer::~Observer()
 {
-    return _impl->sendWorker.enqueueImage(image, false);
 }
 
-Stream::Future Stream::finishFrame()
+bool Observer::isConnected() const
 {
-    return _impl->sendWorker.enqueueFinish();
+    return _impl->socket.isConnected();
 }
 
-Stream::Future Stream::sendAndFinish(const ImageWrapper& image)
+const std::string& Observer::getId() const
 {
-    return _impl->sendWorker.enqueueImage(image, true);
+    return _impl->id;
 }
 
-void Stream::sendSizeHints(const SizeHints& hints)
+const std::string& Observer::getHost() const
 {
-    _impl->sendWorker.enqueueSizeHints(hints);
+    return _impl->socket.getHost();
 }
 
-bool Stream::sendData(const char* data, const size_t count)
+bool Observer::registerForEvents(const bool exclusive)
 {
-    return _impl->sendWorker
-        .enqueueData(QByteArray::fromRawData(data, int(count)))
-        .get();
+    if (!isConnected())
+    {
+        std::cerr << "deflect::Stream::registerForEvents: Stream is not "
+                  << "connected, operation failed" << std::endl;
+        return false;
+    }
+
+    if (isRegisteredForEvents())
+        return true;
+
+    // Send the bind message
+    if (!_impl->sendWorker.enqueueBindRequest(exclusive).get())
+    {
+        std::cerr << "deflect::Stream::registerForEvents: sending bind message "
+                  << "failed" << std::endl;
+        return false;
+    }
+
+    // Wait for bind reply
+    MessageHeader mh;
+    QByteArray message;
+    if (!_impl->socket.receive(mh, message))
+    {
+        std::cerr << "deflect::Stream::registerForEvents: receive bind reply "
+                  << "failed" << std::endl;
+        return false;
+    }
+    if (mh.type != MESSAGE_TYPE_BIND_EVENTS_REPLY)
+    {
+        std::cerr << "deflect::Stream::registerForEvents: received unexpected "
+                  << "message type (" << int(mh.type) << ")" << std::endl;
+        return false;
+    }
+    _impl->registeredForEvents = *(bool*)(message.data());
+
+    return isRegisteredForEvents();
+}
+
+bool Observer::isRegisteredForEvents() const
+{
+    return _impl->registeredForEvents;
+}
+
+int Observer::getDescriptor() const
+{
+    return _impl->socket.getFileDescriptor();
+}
+
+bool Observer::hasEvent() const
+{
+    return _impl->socket.hasMessage(Event::serializedSize);
+}
+
+Event Observer::getEvent()
+{
+    MessageHeader mh;
+    QByteArray message;
+    if (!_impl->socket.receive(mh, message))
+    {
+        std::cerr << "deflect::Stream::getEvent: receive failed" << std::endl;
+        return Event();
+    }
+    if (mh.type != MESSAGE_TYPE_EVENT)
+    {
+        std::cerr << "deflect::Stream::getEvent: received unexpected message "
+                  << "type (" << int(mh.type) << ")" << std::endl;
+        return Event();
+    }
+
+    assert((size_t)message.size() == Event::serializedSize);
+
+    Event event;
+    {
+        QDataStream stream(message);
+        stream >> event;
+    }
+    return event;
+}
+
+void Observer::setDisconnectedCallback(const std::function<void()> callback)
+{
+    _impl->disconnectedCallback = callback;
 }
 }

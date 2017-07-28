@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael.Dumusc@epfl.ch                   */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* Redistribution and use in source and binary forms, with or        */
@@ -67,7 +67,9 @@ enum MessageType
     MESSAGE_TYPE_QUIT = 12,
     MESSAGE_TYPE_SIZE_HINTS = 13,
     MESSAGE_TYPE_DATA = 14,
-    MESSAGE_TYPE_IMAGE_VIEW = 15
+    MESSAGE_TYPE_IMAGE_VIEW = 15,
+    MESSAGE_TYPE_OBSERVER_OPEN = 16,
+    MESSAGE_TYPE_OBSERVER_QUIT = 17
 };
 
 #define MESSAGE_HEADER_URI_LENGTH 64

@@ -93,8 +93,6 @@ void ReceiveBuffer::finishFrameForSource(const size_t sourceIndex)
 
 bool ReceiveBuffer::hasCompleteFrame() const
 {
-    assert(!_sourceBuffers.empty());
-
     // Check if all sources for Stream have reached the same index
     for (const auto& kv : _sourceBuffers)
     {
@@ -102,7 +100,7 @@ bool ReceiveBuffer::hasCompleteFrame() const
         if (buffer.getBackFrameIndex() <= _lastFrameComplete)
             return false;
     }
-    return true;
+    return !_sourceBuffers.empty();
 }
 
 Segments ReceiveBuffer::popFrame()
