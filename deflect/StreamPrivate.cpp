@@ -80,7 +80,7 @@ std::string _getStreamId(const std::string& id)
 namespace deflect
 {
 StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
-                             const unsigned short port)
+                             const unsigned short port, const bool observer)
     : id{_getStreamId(id_)}
     , socket{_getStreamHost(host), port}
     , sendWorker{socket, id}
@@ -95,7 +95,11 @@ StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
 
     socket.moveToThread(&sendWorker);
     sendWorker.start();
-    sendWorker.enqueueOpen().wait();
+
+    if (observer)
+        sendWorker.enqueueObserverOpen().wait();
+    else
+        sendWorker.enqueueOpen().wait();
 }
 
 StreamPrivate::~StreamPrivate()

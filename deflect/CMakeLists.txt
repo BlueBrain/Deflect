@@ -10,6 +10,7 @@ set(DEFLECT_PUBLIC_HEADERS
   Frame.h
   ImageWrapper.h
   MTQueue.h
+  Observer.h
   Segment.h
   SegmentParameters.h
   Server.h
@@ -38,6 +39,7 @@ set(DEFLECT_SOURCES
   ImageWrapper.cpp
   MessageHeader.cpp
   MetaTypeRegistration.cpp
+  Observer.cpp
   ReceiveBuffer.cpp
   Server.cpp
   ServerWorker.cpp

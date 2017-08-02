@@ -71,10 +71,12 @@ public:
 
     typedef std::map<QString, ReceiveBuffer> StreamBuffers;
     StreamBuffers streamBuffers;
+    std::map<QString, size_t> observers;
 };
 
-FrameDispatcher::FrameDispatcher()
-    : _impl(new Impl)
+FrameDispatcher::FrameDispatcher(QObject* parent)
+    : QObject(parent)
+    , _impl(new Impl)
 {
 }
 
@@ -86,8 +88,11 @@ void FrameDispatcher::addSource(const QString uri, const size_t sourceIndex)
 {
     _impl->streamBuffers[uri].addSource(sourceIndex);
 
-    if (_impl->streamBuffers[uri].getSourceCount() == 1)
+    if (_impl->streamBuffers[uri].getSourceCount() == 1 &&
+        _impl->observers[uri] == 0)
+    {
         emit pixelStreamOpened(uri);
+    }
 }
 
 void FrameDispatcher::removeSource(const QString uri, const size_t sourceIndex)
@@ -97,8 +102,27 @@ void FrameDispatcher::removeSource(const QString uri, const size_t sourceIndex)
 
     _impl->streamBuffers[uri].removeSource(sourceIndex);
 
-    if (_impl->streamBuffers[uri].getSourceCount() == 0)
-        deleteStream(uri);
+    deleteStream(uri);
+}
+
+void FrameDispatcher::addObserver(const QString uri)
+{
+    ++_impl->observers[uri];
+
+    if (_impl->observers[uri] == 1 &&
+        (!_impl->streamBuffers.count(uri) ||
+         _impl->streamBuffers[uri].getSourceCount() == 0))
+    {
+        emit pixelStreamOpened(uri);
+    }
+}
+
+void FrameDispatcher::removeObserver(QString uri)
+{
+    if (_impl->observers[uri] > 0)
+        --_impl->observers[uri];
+
+    deleteStream(uri);
 }
 
 void FrameDispatcher::processSegment(const QString uri,
@@ -145,10 +169,13 @@ void FrameDispatcher::requestFrame(const QString uri)
 
 void FrameDispatcher::deleteStream(const QString uri)
 {
-    if (_impl->streamBuffers.count(uri))
+    if (_impl->streamBuffers[uri].getSourceCount() == 0 &&
+        _impl->streamBuffers.count(uri))
     {
         _impl->streamBuffers.erase(uri);
-        emit pixelStreamClosed(uri);
+
+        if (_impl->observers[uri] == 0)
+            emit pixelStreamClosed(uri);
     }
 }
 }

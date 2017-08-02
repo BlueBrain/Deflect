@@ -60,9 +60,10 @@ public:
      * @param id the unique stream identifier
      * @param host Address of the target Server instance.
      * @param port Port of the target Server instance.
+     * @param observer If the stream is used as a pure observer or not.
      */
     StreamPrivate(const std::string& id, const std::string& host,
-                  unsigned short port);
+                  unsigned short port, bool observer);
 
     /** Destructor, close the Stream. */
     ~StreamPrivate();

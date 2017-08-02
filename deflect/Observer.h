@@ -39,27 +39,34 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_STREAM_H
-#define DEFLECT_STREAM_H
+#ifndef DEFLECT_OBSERVER_H
+#define DEFLECT_OBSERVER_H
 
-#include <deflect/ImageWrapper.h>
-#include <deflect/Observer.h>
+#include <deflect/Event.h>
 #include <deflect/api.h>
 #include <deflect/types.h>
 
+#include <functional>
+#include <memory>
+#include <string>
+
 namespace deflect
 {
+class StreamPrivate;
+
 /**
- * Stream visual data to a deflect::Server.
+ * Connect to a deflect::Server and register for events.
  *
- * A Stream can be subdivided into one or more images and eye passes. This
- * allows to have different applications each responsible for sending one part
- * of the global image.
+ * In case a dedicated event handling w/o the need for streaming images is
+ * required, the Observer class can be used, in contrast to the deflect::Stream.
  *
- * The methods in this class are reentrant (all instances are independant) but
- * are not thread-safe.
+ * On the server side the observer also opens and closes the stream as regular
+ * deflect::Streams would do.
+ *
+ * This class is new since version 1.7 while sharing the same API as
+ * deflect::Stream prior 1.7.
  */
-class Stream : public Observer
+class Observer
 {
 public:
     /**
@@ -71,7 +78,7 @@ public:
      * @throw std::runtime_error if DEFLECT_HOST was not provided.
      * @version 1.3
      */
-    DEFLECT_API Stream();
+    DEFLECT_API Observer();
 
     /**
      * Open a new connection to the Server.
@@ -79,9 +86,8 @@ public:
      * The user can check if the connection was successfully established with
      * isConnected().
      *
-     * Different Streams can contribute to a single window by using the same
-     * identifier. All the Streams which contribute to the same window should be
-     * created before any of them starts sending images.
+     * Different observers and streams can share the same window by using the
+     * same identifier.
      *
      * @param id The identifier for the stream. If left empty, the environment
      *           variable DEFLECT_ID will be used. If both values are empty,
@@ -94,87 +100,112 @@ public:
      * @throw std::runtime_error if no host was provided.
      * @version 1.0
      */
-    DEFLECT_API Stream(const std::string& id, const std::string& host,
-                       unsigned short port = 1701);
+    DEFLECT_API Observer(const std::string& id, const std::string& host,
+                         unsigned short port = 1701);
 
-    /** Destruct the Stream, closing the connection. @version 1.0 */
-    DEFLECT_API virtual ~Stream();
-
-    /** @name Asynchronous send API */
-    //@{
-    /** Future signaling success of asyncSend(). @version 1.5 */
-    using Future = std::future<bool>;
+    /** Destruct the Observer, closing the connection. @version 1.0 */
+    DEFLECT_API virtual ~Observer();
 
     /**
-     * Send an image asynchronously.
-     *
-     * @param image The image to send. Note that the image is not copied, so the
-     *              referenced must remain valid until the send is finished.
-     * @return true if the image data could be sent, false otherwise
-     * @version 1.6
-     * @sa finishFrame()
+     * @return true if the observer is connected, false otherwise.
+     * @version 1.0
      */
-    DEFLECT_API Future send(const ImageWrapper& image);
+    DEFLECT_API bool isConnected() const;
+
+    /** @return the identifier defined by the constructor. @version 1.3 */
+    DEFLECT_API const std::string& getId() const;
+
+    /** @return the host defined by the constructor. @version 1.3 */
+    DEFLECT_API const std::string& getHost() const;
 
     /**
-     * Asynchronously notify that all the images for this frame have been sent.
+     * Register to receive Events.
      *
-     * This method must be called everytime this Stream instance has finished
-     * sending its image(s) for the current frame. The receiver will display
-     * the images once all the senders which use the same identifier have
-     * finished a frame. This is only to be called once per frame, even for
-     * stereo rendering.
+     * After registering, the Server application will send Events whenever a
+     * user is interacting with this Observers's window.
      *
-     * @sa send()
-     * @version 1.6
+     * Events can be retrieved using hasEvent() and getEvent().
+     *
+     * The current registration status can be checked with
+     * isRegisteredForEvents().
+     *
+     * This method is synchronous and waits for a registration reply from the
+     * Server before returning.
+     *
+     * @param exclusive Binds only one observer source for the same identifier.
+     * @return true if the registration could be or was already established.
+     * @version 1.0
      */
-    DEFLECT_API Future finishFrame();
+    DEFLECT_API bool registerForEvents(bool exclusive = false);
 
     /**
-     * Send an image and finish the frame asynchronously.
+     * Is this observer registered to receive events.
      *
-     * The send (and the optional compression) and finishFrame() are executed in
-     * a different thread. The result of this operation can be obtained by the
-     * returned future object.
+     * Check if the observer has already successfully registered with
+     * registerForEvents().
      *
-     * @param image The image to send. Note that the image is not copied, so the
-     *              referenced must remain valid until the send is finished
-     * @return true if the image data could be sent, false otherwise.
-     * @see send()
-     * @version 1.6
+     * @return true after the Server application has acknowledged the
+     *         registration request, false otherwise
+     * @version 1.0
      */
-    DEFLECT_API Future sendAndFinish(const ImageWrapper& image);
-
-    /** @deprecated */
-    Future asyncSend(const ImageWrapper& image) { return sendAndFinish(image); }
-    //@}
+    DEFLECT_API bool isRegisteredForEvents() const;
 
     /**
-     * Send size hints to the stream server to indicate sizes that should be
-     * respected by resize operations on the server side.
+     * Get the native descriptor for the data stream.
      *
-     * @note blocks until all pending asynchonous send operations are finished.
-     * @param hints the new size hints for the server
-     * @version 1.2
+     * This descriptor can for instance be used by poll() on UNIX systems.
+     * Having this descriptor lets a Observer class user detect when the Stream
+     * has received any data. The user can the use query the state of the
+     * Observer, for example using hasEvent(), and process the events
+     * accordingly.
+     *
+     * @return The native descriptor if available; otherwise returns -1.
+     * @version 1.0
      */
-    DEFLECT_API void sendSizeHints(const SizeHints& hints);
+    DEFLECT_API int getDescriptor() const;
 
     /**
-     * Send data to the Server.
+     * Check if a new Event is available.
      *
-     * @note blocks until all pending asynchonous send operations are finished.
-     * @param data the pointer to the data buffer.
-     * @param count the number of bytes to send.
-     * @return true if the data could be sent, false otherwise
-     * @version 1.3
+     * This method is non-blocking. Use this method prior to calling getEvent(),
+     * for example as the condition for a while() loop to process all pending
+     * events.
+     *
+     * @return True if an Event is available, false otherwise
+     * @version 1.0
      */
-    DEFLECT_API bool sendData(const char* data, size_t count);
+    DEFLECT_API bool hasEvent() const;
 
-private:
-    Stream(const Stream&) = delete;
-    const Stream& operator=(const Stream&) = delete;
+    /**
+     * Get the next Event.
+     *
+     * This method is synchronous and waits until an Event is available before
+     * returning (or a 1 second timeout occurs).
+     *
+     * Check if an Event is available with hasEvent() before calling this
+     * method.
+     *
+     * @return The next Event if available, otherwise an empty (default) Event.
+     * @version 1.0
+     */
+    DEFLECT_API Event getEvent();
 
-    friend class deflect::test::Application;
+    /**
+     * Set a function to be be called just after the observer gets disconnected.
+     *
+     * @param callback the function to call
+     * @note replaces the previous disconnected signal
+     * @version 1.5
+     */
+    DEFLECT_API void setDisconnectedCallback(std::function<void()> callback);
+
+protected:
+    Observer(const Observer&) = delete;
+    const Observer& operator=(const Observer&) = delete;
+
+    std::unique_ptr<StreamPrivate> _impl;
+
+    Observer(StreamPrivate* impl);
 };
 }
 
