@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2016, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2016-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -47,14 +47,6 @@ namespace deflect
 {
 namespace qt
 {
-template <typename T>
-std::future<T> make_ready_future(T&& value)
-{
-    std::promise<T> promise;
-    promise.set_value(std::forward<T>(value));
-    return promise.get_future();
-}
-
 // missing make_unique() implementation in C++11 standard
 // source: http://herbsutter.com/gotw/_102/
 template <typename T, typename... Args>

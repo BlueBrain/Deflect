@@ -76,7 +76,7 @@ Segment ImageSegmenter::compressSingleSegment(const ImageWrapper& image)
     if (segments.size() > 1)
         throw std::runtime_error(
             "compressSingleSegment only works for small images");
-    ImageSegmenter::_computeJpeg(segments[0], false);
+    _computeJpeg(segments[0], false);
     return segments[0];
 #else
     throw std::runtime_error(
@@ -234,7 +234,7 @@ SegmentParametersList ImageSegmenter::_makeSegmentParameters(
             p.y = image.y + j * info.height;
             p.width = (i < info.countX - 1) ? info.width : info.lastWidth;
             p.height = (j < info.countY - 1) ? info.height : info.lastHeight;
-            parameters.push_back(p);
+            parameters.emplace_back(p);
         }
     }
     return parameters;

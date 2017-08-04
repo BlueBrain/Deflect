@@ -48,6 +48,7 @@ namespace ut = boost::unit_test;
 #include <deflect/Server.h>
 #include <deflect/Stream.h>
 
+#include <cmath>
 #include <iostream>
 
 #include <QMutex>
@@ -368,6 +369,155 @@ BOOST_AUTO_TEST_CASE(testOneObserverAndOneStream)
     }
 
     // handle close of streamer and observer
+    processServerMessages();
+
+    serverThread.quit();
+    serverThread.wait();
+
+    BOOST_CHECK_EQUAL(openedStreams, 0);
+    BOOST_CHECK_EQUAL(receivedFrames, expectedFrames);
+}
+
+BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
+{
+    QThread serverThread;
+    deflect::Server* server = new deflect::Server(0 /* OS-chosen port */);
+    server->moveToThread(&serverThread);
+    serverThread.connect(&serverThread, &QThread::finished, server,
+                         &deflect::Server::deleteLater);
+    serverThread.start();
+
+    // to wait in this thread until server thread is done with certain
+    // operations
+    QWaitCondition received;
+    QMutex mutex;
+    bool receivedState = false;
+
+    auto processServerMessages = [&] {
+        for (size_t j = 0; j < 20; ++j)
+        {
+            mutex.lock();
+            received.wait(&mutex, 100 /*ms*/);
+            if (receivedState)
+            {
+                mutex.unlock();
+                break;
+            }
+            mutex.unlock();
+        }
+        BOOST_REQUIRE(receivedState);
+        receivedState = false;
+    };
+
+    const unsigned int segmentSize = 64;
+    const unsigned int width = 1920;
+    const unsigned int height = 1088;
+
+    struct Segment
+    {
+        unsigned int x;
+        unsigned int y;
+    };
+    std::vector<Segment> segments;
+    for (unsigned int i = 0; i < width; i += segmentSize)
+    {
+        for (unsigned int j = 0; j < height; j += segmentSize)
+            segments.emplace_back(Segment{i, j});
+    }
+
+    const unsigned int numSegments = segments.size();
+    BOOST_REQUIRE_EQUAL(numSegments,
+                        std::ceil((float)width / segmentSize) *
+                            std::ceil((float)height / segmentSize));
+
+    const std::vector<uint8_t> pixels(segmentSize * segmentSize * 4, 42);
+
+    size_t openedStreams = 0;
+    // only continue once we have the stream
+    server->connect(server, &deflect::Server::pixelStreamOpened,
+                    [&](const QString) {
+                        ++openedStreams;
+                        if (openedStreams == 1)
+                        {
+                            mutex.lock();
+                            receivedState = true;
+                            received.wakeAll();
+                            mutex.unlock();
+                        }
+                    });
+
+    // make sure that we get the close of the stream
+    server->connect(server, &deflect::Server::pixelStreamClosed,
+                    [&](const QString) {
+                        --openedStreams;
+                        if (openedStreams == 0)
+                        {
+                            mutex.lock();
+                            receivedState = true;
+                            received.wakeAll();
+                            mutex.unlock();
+                        }
+                    });
+
+    // handle received frames to test the stream's purpose
+    const size_t expectedFrames = 10;
+    size_t receivedFrames = 0;
+    server->connect(server, &deflect::Server::receivedFrame,
+                    [&](deflect::FramePtr frame) {
+                        BOOST_CHECK_EQUAL(frame->segments.size(), numSegments);
+                        BOOST_CHECK_EQUAL(frame->uri.toStdString(),
+                                          testStreamId.toStdString());
+                        const auto dim = frame->computeDimensions();
+                        BOOST_CHECK_EQUAL(dim.width(), width);
+                        BOOST_CHECK_EQUAL(dim.height(), height);
+                        ++receivedFrames;
+                        mutex.lock();
+                        receivedState = true;
+                        received.wakeAll();
+                        mutex.unlock();
+                    });
+
+    {
+        deflect::Stream stream(testStreamId.toStdString(), "localhost",
+                               server->serverPort());
+        BOOST_REQUIRE(stream.isConnected());
+
+        // handle connects first before sending and receiving frames
+        processServerMessages();
+
+        std::mutex testMutex; // BOOST_CHECK is not thread-safe
+        for (size_t i = 0; i < expectedFrames; ++i)
+        {
+            receivedState = false;
+
+// to make coverage report work; otherwise fails for unknown reasons
+#ifdef NDEBUG
+#pragma omp parallel for
+#endif
+            for (int j = 0; j < int(segments.size()); ++j)
+            {
+                deflect::ImageWrapper deflectImage((const void*)pixels.data(),
+                                                   segmentSize, segmentSize,
+                                                   deflect::RGBA, segments[j].x,
+                                                   segments[j].y);
+                deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
+
+                const bool success = stream.send(deflectImage).get();
+
+                std::lock_guard<std::mutex> lock(testMutex);
+                BOOST_CHECK(success);
+            }
+
+            BOOST_CHECK(stream.finishFrame().get());
+
+            server->requestFrame(testStreamId);
+
+            // process frame receive
+            processServerMessages();
+        }
+    }
+
+    // handle close of streamer
     processServerMessages();
 
     serverThread.quit();

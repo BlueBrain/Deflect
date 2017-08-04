@@ -73,6 +73,14 @@ constexpr typename std::underlying_type<E>::type as_underlying_type(E e)
     return static_cast<typename std::underlying_type<E>::type>(e);
 }
 
+template <typename T>
+std::future<T> make_ready_future(T&& value)
+{
+    std::promise<T> promise;
+    promise.set_value(std::forward<T>(value));
+    return promise.get_future();
+}
+
 class EventReceiver;
 class Frame;
 class FrameDispatcher;
