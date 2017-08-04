@@ -158,9 +158,7 @@ Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
         std::cerr << "Currently, RAW images can only be sent in RGBA format. "
                      "Other formats support remain to be implemented."
                   << std::endl;
-        std::promise<bool> promise;
-        promise.set_value(false);
-        return promise.get_future();
+        return make_ready_future(false);
     }
 
     std::vector<Task> tasks;
@@ -170,13 +168,12 @@ Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
     {
         auto segment = _imageSegmenter.compressSingleSegment(image);
         tasks.emplace_back([this, segment] { return _sendSegment(segment); });
-        _requests.enqueue({nullptr, tasks, false});
 
         // as we expect to encounter a lot of these small sends, be optimistic
         // and fulfill the promise already to reduce load in the send thread
-        std::promise<bool> promise;
-        promise.set_value(true);
-        return promise.get_future();
+        // (c.f. lock ops performance on KNL)
+        _requests.enqueue({nullptr, tasks, false});
+        return make_ready_future(true);
     }
     else
         tasks.emplace_back([this, image] { return _sendImage(image); });

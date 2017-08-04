@@ -48,6 +48,7 @@ namespace ut = boost::unit_test;
 #include <deflect/Server.h>
 #include <deflect/Stream.h>
 
+#include <cmath>
 #include <iostream>
 
 #include <QMutex>
@@ -410,7 +411,7 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
 
     const unsigned int segmentSize = 64;
     const unsigned int width = 1920;
-    const unsigned int height = 1080;
+    const unsigned int height = 1088;
 
     struct Segment
     {
@@ -418,16 +419,18 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
         unsigned int y;
     };
     std::vector<Segment> segments;
-    for (unsigned int i = 0; i < width + segmentSize - 1; i += segmentSize)
+    for (unsigned int i = 0; i < width; i += segmentSize)
     {
-        for (unsigned int j = 0; j < height + segmentSize - 1; j += segmentSize)
+        for (unsigned int j = 0; j < height; j += segmentSize)
             segments.emplace_back(Segment{i, j});
     }
-    const unsigned int numSegments = segments.size();
 
-    const unsigned int byte = segmentSize * segmentSize * 4;
-    std::unique_ptr<uint8_t[]> pixels(new uint8_t[byte]);
-    ::memset(pixels.get(), 0, byte);
+    const unsigned int numSegments = segments.size();
+    BOOST_REQUIRE_EQUAL(numSegments,
+                        std::ceil((float)width / segmentSize) *
+                            std::ceil((float)height / segmentSize));
+
+    const std::vector<uint8_t> pixels(segmentSize * segmentSize * 4, 42);
 
     size_t openedStreams = 0;
     // only continue once we have the stream
@@ -464,6 +467,9 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
                         BOOST_CHECK_EQUAL(frame->segments.size(), numSegments);
                         BOOST_CHECK_EQUAL(frame->uri.toStdString(),
                                           testStreamId.toStdString());
+                        const auto dim = frame->computeDimensions();
+                        BOOST_CHECK_EQUAL(dim.width(), width);
+                        BOOST_CHECK_EQUAL(dim.height(), height);
                         ++receivedFrames;
                         mutex.lock();
                         receivedState = true;
@@ -490,7 +496,7 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
 #endif
             for (int j = 0; j < int(segments.size()); ++j)
             {
-                deflect::ImageWrapper deflectImage((const void*)pixels.get(),
+                deflect::ImageWrapper deflectImage((const void*)pixels.data(),
                                                    segmentSize, segmentSize,
                                                    deflect::RGBA, segments[j].x,
                                                    segments[j].y);
