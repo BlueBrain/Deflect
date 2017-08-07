@@ -163,16 +163,17 @@ Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
 
     std::vector<Task> tasks;
 
-    if (image.width <= SMALL_IMAGE_SIZE && image.height <= SMALL_IMAGE_SIZE &&
-        image.compressionPolicy == COMPRESSION_ON)
+    if (image.width <= SMALL_IMAGE_SIZE && image.height <= SMALL_IMAGE_SIZE)
     {
-        auto segment = _imageSegmenter.compressSingleSegment(image);
+        auto segment = _imageSegmenter.createSingleSegment(image);
         tasks.emplace_back([this, segment] { return _sendSegment(segment); });
 
         // as we expect to encounter a lot of these small sends, be optimistic
         // and fulfill the promise already to reduce load in the send thread
         // (c.f. lock ops performance on KNL)
         _requests.enqueue({nullptr, tasks, false});
+        if (finish)
+            return enqueueFinish();
         return make_ready_future(true);
     }
     else

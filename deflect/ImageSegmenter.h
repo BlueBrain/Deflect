@@ -100,7 +100,7 @@ public:
      * @return the compressed segment
      * @threadsafe
      */
-    DEFLECT_API Segment compressSingleSegment(const ImageWrapper& image);
+    DEFLECT_API Segment createSingleSegment(const ImageWrapper& image);
 
 private:
     struct SegmentationInfo
