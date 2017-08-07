@@ -149,27 +149,6 @@ public:
     Future asyncSend(const ImageWrapper& image) { return sendAndFinish(image); }
     //@}
 
-    /**
-     * Send size hints to the stream server to indicate sizes that should be
-     * respected by resize operations on the server side.
-     *
-     * @note blocks until all pending asynchonous send operations are finished.
-     * @param hints the new size hints for the server
-     * @version 1.2
-     */
-    DEFLECT_API void sendSizeHints(const SizeHints& hints);
-
-    /**
-     * Send data to the Server.
-     *
-     * @note blocks until all pending asynchonous send operations are finished.
-     * @param data the pointer to the data buffer.
-     * @param count the number of bytes to send.
-     * @return true if the data could be sent, false otherwise
-     * @version 1.3
-     */
-    DEFLECT_API bool sendData(const char* data, size_t count);
-
 private:
     Stream(const Stream&) = delete;
     const Stream& operator=(const Stream&) = delete;

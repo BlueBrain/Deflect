@@ -169,4 +169,16 @@ void Observer::setDisconnectedCallback(const std::function<void()> callback)
 {
     _impl->disconnectedCallback = callback;
 }
+
+void Observer::sendSizeHints(const SizeHints& hints)
+{
+    _impl->sendWorker.enqueueSizeHints(hints);
+}
+
+bool Observer::sendData(const char* data, const size_t count)
+{
+    return _impl->sendWorker
+        .enqueueData(QByteArray::fromRawData(data, int(count)))
+        .get();
+}
 }
