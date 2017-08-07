@@ -161,11 +161,25 @@ Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
         return make_ready_future(false);
     }
 
+    if (image.compressionPolicy == COMPRESSION_ON)
+    {
+        if (image.compressionQuality < 1 || image.compressionQuality > 100)
+        {
+            std::cerr
+                << "JPEG compression quality must be between 1 and 100, got "
+                << image.compressionQuality << std::endl;
+            return make_ready_future(false);
+        }
+    }
+
     std::vector<Task> tasks;
 
     if (image.width <= SMALL_IMAGE_SIZE && image.height <= SMALL_IMAGE_SIZE)
     {
         auto segment = _imageSegmenter.createSingleSegment(image);
+        if (segment.imageData.isEmpty())
+            return make_ready_future(false);
+
         tasks.emplace_back([this, segment] { return _sendSegment(segment); });
 
         // as we expect to encounter a lot of these small sends, be optimistic
@@ -257,6 +271,12 @@ bool StreamSendWorker::_sendImageView(const View view)
 
 bool StreamSendWorker::_sendSegment(const Segment& segment)
 {
+    if (segment.imageData.isEmpty())
+    {
+        std::cerr << "Encountered empty image data for segment" << std::endl;
+        return false;
+    }
+
     if (segment.view != _currentView)
     {
         if (!_sendImageView(segment.view))

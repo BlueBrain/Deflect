@@ -5,6 +5,8 @@ Changelog {#Changelog}
 
 ### 0.14.0 (git master)
 
+* [177](https://github.com/BlueBrain/Deflect/pull/177):
+  Catch errors regarding invalid JPEG quality values
 * [176](https://github.com/BlueBrain/Deflect/pull/176):
   OPT: Lock-free request queueing for multi-threaded stream clients (e.g. KNL)
 * [175](https://github.com/BlueBrain/Deflect/pull/175):

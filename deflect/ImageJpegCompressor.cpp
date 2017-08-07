@@ -100,6 +100,14 @@ QByteArray ImageJpegCompressor::computeJpeg(const ImageWrapper& sourceImage,
     // though it does not modify it. It can "safely" be cast to non-const
     // pointer to comply with the incorrect API.
     unsigned char* tjSrcBuffer = (unsigned char*)sourceImage.data;
+    if (!tjSrcBuffer)
+    {
+        std::cerr
+            << "libjpeg-turbo image conversion failure: source image is NULL"
+            << std::endl;
+        return QByteArray();
+    }
+
     tjSrcBuffer +=
         imageRegion.y() * sourceImage.width * sourceImage.getBytesPerPixel();
     tjSrcBuffer += imageRegion.x() * sourceImage.getBytesPerPixel();
@@ -124,7 +132,8 @@ QByteArray ImageJpegCompressor::computeJpeg(const ImageWrapper& sourceImage,
                           tjJpegQual, tjFlags);
     if (err != 0)
     {
-        std::cerr << "libjpeg-turbo image conversion failure" << std::endl;
+        std::cerr << "libjpeg-turbo image conversion failure: "
+                  << tjGetErrorStr() << std::endl;
         return QByteArray();
     }
 

@@ -116,3 +116,61 @@ BOOST_AUTO_TEST_CASE(testWhenNoSteamIdProvidedThenARandomOneIsGenerated)
         qunsetenv(STREAM_HOST_ENV_VAR);
     }
 }
+
+// Note: the following send tests only work as the small segment send does not
+// need the sendWorker thread to be present. So fortunate for us we can skip
+// setting up a stream server.
+BOOST_AUTO_TEST_CASE(testSendUncompressedRGBA)
+{
+    deflect::Stream stream("id", "dummyhost");
+    std::vector<unsigned char> pixels(4 * 4 * 4);
+
+    deflect::ImageWrapper image(pixels.data(), 4, 4, deflect::RGBA);
+    image.compressionPolicy = deflect::COMPRESSION_OFF;
+    BOOST_CHECK(stream.send(image).get());
+}
+
+BOOST_AUTO_TEST_CASE(testErrorOnUnsupportedUncompressedFormats)
+{
+    deflect::Stream stream("id", "dummyhost");
+    std::vector<unsigned char> pixels(4 * 4 * 4);
+
+    const auto allFormats = {deflect::RGB, deflect::ARGB, deflect::BGR,
+                             deflect::BGRA, deflect::ABGR};
+    for (const auto format : allFormats)
+    {
+        deflect::ImageWrapper image(pixels.data(), 4, 4, format);
+        image.compressionPolicy = deflect::COMPRESSION_OFF;
+        BOOST_CHECK(!stream.send(image).get());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testErrorOnNullUncompressedImage)
+{
+    deflect::Stream stream("id", "dummyhost");
+    deflect::ImageWrapper nullImage(nullptr, 4, 4, deflect::ARGB);
+    nullImage.compressionPolicy = deflect::COMPRESSION_ON;
+    BOOST_CHECK(!stream.send(nullImage).get());
+}
+
+BOOST_AUTO_TEST_CASE(testErrorOnInvalidJpegCompressionValues)
+{
+    deflect::Stream stream("id", "dummyhost");
+    std::vector<unsigned char> pixels(4 * 4 * 4);
+    deflect::ImageWrapper imageWrapper(pixels.data(), 4, 4, deflect::ARGB);
+    imageWrapper.compressionPolicy = deflect::COMPRESSION_ON;
+    imageWrapper.compressionQuality = 0;
+    BOOST_CHECK(!stream.send(imageWrapper).get());
+
+    imageWrapper.compressionQuality = 101;
+    BOOST_CHECK(!stream.send(imageWrapper).get());
+
+    imageWrapper.compressionQuality = 1;
+    BOOST_CHECK(stream.send(imageWrapper).get());
+
+    imageWrapper.compressionQuality = 75;
+    BOOST_CHECK(stream.send(imageWrapper).get());
+
+    imageWrapper.compressionQuality = 100;
+    BOOST_CHECK(stream.send(imageWrapper).get());
+}
