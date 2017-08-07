@@ -69,19 +69,33 @@ bool ImageSegmenter::generate(const ImageWrapper& image, const Handler& handler)
     return _generateRaw(image, handler);
 }
 
-Segment ImageSegmenter::compressSingleSegment(const ImageWrapper& image)
+Segment ImageSegmenter::createSingleSegment(const ImageWrapper& image)
 {
-#ifdef DEFLECT_USE_LIBJPEGTURBO
     auto segments = _generateSegments(image);
     if (segments.size() > 1)
         throw std::runtime_error(
-            "compressSingleSegment only works for small images");
-    _computeJpeg(segments[0], false);
-    return segments[0];
+            "createSingleSegment only works for small images");
+
+    auto& segment = segments[0];
+
+    if (image.compressionPolicy == COMPRESSION_OFF)
+    {
+        segment.imageData.reserve(segment.parameters.width *
+                                  segment.parameters.height *
+                                  image.getBytesPerPixel());
+        segment.parameters.dataType = DataType::rgba;
+        segment.imageData.append((const char*)image.data,
+                                 int(image.getBufferSize()));
+    }
+    else
+#ifdef DEFLECT_USE_LIBJPEGTURBO
+        _computeJpeg(segment, false);
 #else
-    throw std::runtime_error(
-        "LibJpegTurbo not available, needed for compressSingleSegment");
+        throw std::runtime_error(
+            "LibJpegTurbo not available, needed for createSingleSegment");
 #endif
+
+    return segment;
 }
 
 void ImageSegmenter::setNominalSegmentDimensions(const uint width,
