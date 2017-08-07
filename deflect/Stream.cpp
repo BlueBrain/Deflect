@@ -73,16 +73,4 @@ Stream::Future Stream::sendAndFinish(const ImageWrapper& image)
 {
     return _impl->sendWorker.enqueueImage(image, true);
 }
-
-void Stream::sendSizeHints(const SizeHints& hints)
-{
-    _impl->sendWorker.enqueueSizeHints(hints);
-}
-
-bool Stream::sendData(const char* data, const size_t count)
-{
-    return _impl->sendWorker
-        .enqueueData(QByteArray::fromRawData(data, int(count)))
-        .get();
-}
 }
