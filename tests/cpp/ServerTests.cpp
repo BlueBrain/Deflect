@@ -526,3 +526,71 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
     BOOST_CHECK_EQUAL(openedStreams, 0);
     BOOST_CHECK_EQUAL(receivedFrames, expectedFrames);
 }
+
+BOOST_AUTO_TEST_CASE(testCompressionErrorForBigNullImage)
+{
+    QThread serverThread;
+    deflect::Server* server = new deflect::Server(0 /* OS-chosen port */);
+    server->moveToThread(&serverThread);
+    serverThread.connect(&serverThread, &QThread::finished, server,
+                         &deflect::Server::deleteLater);
+    serverThread.start();
+
+    // to wait in this thread until server thread is done with certain
+    // operations
+    QWaitCondition received;
+    QMutex mutex;
+    bool receivedState = false;
+
+    auto processServerMessages = [&] {
+        for (size_t j = 0; j < 20; ++j)
+        {
+            mutex.lock();
+            received.wait(&mutex, 100 /*ms*/);
+            if (receivedState)
+            {
+                mutex.unlock();
+                break;
+            }
+            mutex.unlock();
+        }
+        BOOST_REQUIRE(receivedState);
+        receivedState = false;
+    };
+
+    // only continue once we have the stream
+    server->connect(server, &deflect::Server::pixelStreamOpened,
+                    [&](const QString) {
+                        mutex.lock();
+                        receivedState = true;
+                        received.wakeAll();
+                        mutex.unlock();
+                    });
+
+    // make sure that we get the close of the stream
+    server->connect(server, &deflect::Server::pixelStreamClosed,
+                    [&](const QString) {
+                        mutex.lock();
+                        receivedState = true;
+                        received.wakeAll();
+                        mutex.unlock();
+                    });
+
+    {
+        deflect::Stream stream(testStreamId.toStdString(), "localhost",
+                               server->serverPort());
+        BOOST_REQUIRE(stream.isConnected());
+
+        processServerMessages();
+
+        deflect::ImageWrapper bigImage(nullptr, 1000, 1000, deflect::ARGB);
+        bigImage.compressionPolicy = deflect::COMPRESSION_ON;
+        BOOST_CHECK(!stream.send(bigImage).get());
+    }
+
+    // handle close of streamer
+    processServerMessages();
+
+    serverThread.quit();
+    serverThread.wait();
+}

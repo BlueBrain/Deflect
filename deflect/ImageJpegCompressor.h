@@ -65,6 +65,7 @@ public:
      * @param sourceImage The source image containing uncompressed image data.
      * @param imageRegion The region of the image to be compressed. Must not
      *        exceed image dimensions.
+     * @return compressed image if successful, otherwise QByteArray.isEmpty()
      */
     DEFLECT_API QByteArray computeJpeg(const ImageWrapper& sourceImage,
                                        const QRect& imageRegion);

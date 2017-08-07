@@ -124,7 +124,7 @@ struct ImageWrapper
     //@{
     CompressionPolicy compressionPolicy; /**< Is the image to be compressed
                                               (default: auto). @version 1.0 */
-    unsigned int compressionQuality;     /**< Compression quality (0 worst,
+    unsigned int compressionQuality;     /**< Compression quality (1 worst,
                                               100 best, default: 75).
                                               @version 1.0 */
     ChromaSubsampling subsampling;       /**< Chrominance sub-sampling.
