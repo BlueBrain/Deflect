@@ -167,16 +167,15 @@ Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
 {
     if (_pendingFinish)
     {
-        return make_exception_future<bool>(std::make_exception_ptr(
-            std::runtime_error("Pending finish, no send allowed")));
+        return make_exception_future<bool>(
+            std::runtime_error("Pending finish, no send allowed"));
     }
 
     if (image.compressionPolicy != COMPRESSION_ON && image.pixelFormat != RGBA)
     {
-        return make_exception_future<bool>(
-            std::make_exception_ptr(std::invalid_argument(
-                "Currently, RAW images can only be sent in RGBA format. Other "
-                "formats support remain to be implemented.")));
+        return make_exception_future<bool>(std::invalid_argument(
+            "Currently, RAW images can only be sent in RGBA format. Other "
+            "formats support remain to be implemented."));
     }
 
     if (image.compressionPolicy == COMPRESSION_ON)
@@ -187,7 +186,7 @@ Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
             msg << "JPEG compression quality must be between 1 and 100, got "
                 << image.compressionQuality << std::endl;
             return make_exception_future<bool>(
-                std::make_exception_ptr(std::invalid_argument(msg.str())));
+                std::invalid_argument(msg.str()));
         }
     }
 

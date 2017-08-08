@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Daniel.Nachbaur@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,40 +37,77 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#define BOOST_TEST_MODULE Socket
-#include <boost/test/unit_test.hpp>
-namespace ut = boost::unit_test;
+#ifndef DEFLECT_DEFLECTSERVER_H
+#define DEFLECT_DEFLECTSERVER_H
 
-#include "MinimalDeflectServer.h"
-#include "MinimalGlobalQtApp.h"
+#ifdef _WIN32
+typedef __int32 int32_t;
+#endif
 
-#include <deflect/Socket.h>
+#include <QMutex>
+#include <QThread>
+#include <QWaitCondition>
 
-BOOST_GLOBAL_FIXTURE(MinimalGlobalQtApp);
+#include <deflect/EventReceiver.h>
+#include <deflect/Server.h>
 
-void testSocketConnect(const int32_t versionOffset)
+class DeflectServer
 {
-    MinimalDeflectServer server(versionOffset);
+public:
+    explicit DeflectServer();
+    ~DeflectServer();
 
-    deflect::Socket socket("localhost", server.serverPort());
+    quint16 serverPort() const { return _server->serverPort(); }
+    void requestFrame(QString uri) { _server->requestFrame(uri); }
+    void waitForMessage();
 
-    BOOST_CHECK(socket.isConnected() == (versionOffset >= 0));
-}
+    size_t getReceivedFrames() const { return _receivedFrames; }
+    size_t getOpenedStreams() const { return _openedStreams; }
+    using SizeHintsCallback =
+        std::function<void(const QString id, const deflect::SizeHints hints)>;
+    void setSizeHintsCallback(const SizeHintsCallback& callback)
+    {
+        _sizeHintsCallback = callback;
+    }
 
-BOOST_AUTO_TEST_CASE(
-    testSocketConnectionValidWhenReturnedCorrectNetworkProtocolVersion)
-{
-    testSocketConnect(0);
-}
+    using RegisterToEventsCallback =
+        std::function<void(const QString, const bool, deflect::EventReceiver*)>;
+    void setRegisterToEventsCallback(const RegisterToEventsCallback& callback)
+    {
+        _registerToEventsCallback = callback;
+    }
 
-BOOST_AUTO_TEST_CASE(
-    testSocketConnectionInvalidWhenReturnedLowerNetworkProtocolVersion)
-{
-    testSocketConnect(-1);
-}
+    using DataReceivedCallback = std::function<void(const QString, QByteArray)>;
+    void setDataReceivedCallback(const DataReceivedCallback& callback)
+    {
+        _dataReceivedCallback = callback;
+    }
 
-BOOST_AUTO_TEST_CASE(
-    testSocketConnectionInvalidWhenReturnedHigherNetworkProtocolVersion)
-{
-    testSocketConnect(1);
-}
+    using FrameReceivedCallback = std::function<void(deflect::FramePtr)>;
+    void setFrameReceivedCallback(const FrameReceivedCallback& callback)
+    {
+        _frameReceivedCallback = callback;
+    }
+
+    void processEvent(const deflect::Event& event);
+
+private:
+    QThread _thread;
+    deflect::Server* _server;
+
+    bool _receivedState{false};
+    QWaitCondition _received;
+    QMutex _mutex;
+
+    size_t _openedStreams{0};
+    size_t _receivedFrames{0};
+
+    SizeHintsCallback _sizeHintsCallback;
+    RegisterToEventsCallback _registerToEventsCallback;
+    DataReceivedCallback _dataReceivedCallback;
+    FrameReceivedCallback _frameReceivedCallback;
+
+    deflect::EventReceiver* _eventReceiver{nullptr};
+};
+
+#endif

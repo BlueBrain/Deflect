@@ -44,8 +44,8 @@
 
 namespace deflect
 {
-Stream::Stream()
-    : Observer(new StreamPrivate("", "", Socket::defaultPortNumber, false))
+Stream::Stream(const unsigned short port)
+    : Observer(new StreamPrivate("", "", port, false))
 {
 }
 

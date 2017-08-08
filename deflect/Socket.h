@@ -66,16 +66,12 @@ class Socket : public QObject
     Q_OBJECT
 
 public:
-    /** The default communication port */
-    static const unsigned short defaultPortNumber;
-
     /**
      * Construct a Socket and connect to host.
      * @param host The target host (IP address or hostname)
      * @param port The target port
      */
-    DEFLECT_API Socket(const std::string& host,
-                       unsigned short port = defaultPortNumber);
+    DEFLECT_API Socket(const std::string& host, unsigned short port);
 
     /** Destruct a Socket, disconnecting from host. */
     DEFLECT_API ~Socket() = default;

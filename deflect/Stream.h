@@ -68,10 +68,12 @@ public:
      * DEFLECT_HOST  The address of the target Server instance (required).
      * DEFLECT_ID    The identifier for the stream. If not provided, a random
      *               unique identifier will be used.
-     * @throw std::runtime_error if DEFLECT_HOST was not provided.
+     * @param port Port of the Server instance, default 1701.
+     * @throw std::runtime_error if DEFLECT_HOST was not provided or no
+     *                           connection to server could be established
      * @version 1.3
      */
-    DEFLECT_API Stream();
+    DEFLECT_API explicit Stream(unsigned short port = defaultPortNumber);
 
     /**
      * Open a new connection to the Server.
@@ -91,11 +93,12 @@ public:
      *             "192.168.1.83". If left empty, the environment variable
      *             DEFLECT_HOST will be used instead.
      * @param port Port of the Server instance, default 1701.
-     * @throw std::runtime_error if no host was provided.
+     * @throw std::runtime_error if no host was provided or no
+     *                           connection to server could be established
      * @version 1.0
      */
     DEFLECT_API Stream(const std::string& id, const std::string& host,
-                       unsigned short port = 1701);
+                       unsigned short port = defaultPortNumber);
 
     /** Destruct the Stream, closing the connection. @version 1.0 */
     DEFLECT_API virtual ~Stream();
