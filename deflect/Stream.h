@@ -111,6 +111,10 @@ public:
      * @param image The image to send. Note that the image is not copied, so the
      *              referenced must remain valid until the send is finished.
      * @return true if the image data could be sent, false otherwise
+     * @throw std::invalid_argument if RGBA and uncompressed
+     * @throw std::invalid_argument if invalid JPEG compression arguments
+     * @throw std::runtime_error if pending finishFrame() has not been completed
+     * @throw std::runtime_error if JPEG compression failed
      * @version 1.6
      * @sa finishFrame()
      */
@@ -140,6 +144,10 @@ public:
      * @param image The image to send. Note that the image is not copied, so the
      *              referenced must remain valid until the send is finished
      * @return true if the image data could be sent, false otherwise.
+     * @throw std::invalid_argument if RGBA and uncompressed
+     * @throw std::invalid_argument if invalid JPEG compression arguments
+     * @throw std::runtime_error if pending finishFrame() has not been completed
+     * @throw std::runtime_error if JPEG compression failed
      * @see send()
      * @version 1.6
      */

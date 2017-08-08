@@ -63,6 +63,9 @@ struct Segment
 
     /** @internal raw, uncompressed source image, used for compression */
     const ImageWrapper* sourceImage = nullptr;
+
+    /** @internal holds potential exception from compression thread */
+    std::exception_ptr exception;
 };
 }
 

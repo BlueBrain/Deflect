@@ -98,6 +98,9 @@ public:
      *
      * @param image The image to be compressed
      * @return the compressed segment
+     * @throw std::invalid_argument if image is too big or invalid JPEG
+     *                              compression arguments
+     * @throw std::runtime_error if JPEG compression failed
      * @threadsafe
      */
     DEFLECT_API Segment createSingleSegment(const ImageWrapper& image);

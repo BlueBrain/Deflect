@@ -42,6 +42,7 @@
 #include "ImageWrapper.h"
 
 #include <iostream>
+#include <sstream>
 
 namespace deflect
 {
@@ -72,7 +73,8 @@ int _getTurboJpegFormat(const PixelFormat pixelFormat)
     case ABGR:
         return TJPF_XBGR;
     default:
-        std::cerr << "unknown pixel format" << std::endl;
+        throw std::invalid_argument("unknown pixel format " +
+                                    std::to_string((int)pixelFormat));
         return TJPF_RGB;
     }
 }
@@ -88,7 +90,8 @@ int _getTurboJpegSubsamp(const ChromaSubsampling subsampling)
     case ChromaSubsampling::YUV420:
         return TJSAMP_420;
     default:
-        std::cerr << "unknown subsampling format" << std::endl;
+        throw std::invalid_argument("unknown subsampling format " +
+                                    std::to_string((int)subsampling));
         return TJSAMP_444;
     }
 }
@@ -101,12 +104,8 @@ QByteArray ImageJpegCompressor::computeJpeg(const ImageWrapper& sourceImage,
     // pointer to comply with the incorrect API.
     unsigned char* tjSrcBuffer = (unsigned char*)sourceImage.data;
     if (!tjSrcBuffer)
-    {
-        std::cerr
-            << "libjpeg-turbo image conversion failure: source image is NULL"
-            << std::endl;
-        return QByteArray();
-    }
+        throw std::invalid_argument(
+            "libjpeg-turbo image conversion failure: source image is NULL");
 
     tjSrcBuffer +=
         imageRegion.y() * sourceImage.width * sourceImage.getBytesPerPixel();
@@ -132,9 +131,9 @@ QByteArray ImageJpegCompressor::computeJpeg(const ImageWrapper& sourceImage,
                           tjJpegQual, tjFlags);
     if (err != 0)
     {
-        std::cerr << "libjpeg-turbo image conversion failure: "
-                  << tjGetErrorStr() << std::endl;
-        return QByteArray();
+        std::stringstream msg;
+        msg << "libjpeg-turbo image conversion failure: " << tjGetErrorStr();
+        throw std::runtime_error(msg.str());
     }
 
     return QByteArray((const char*)ptr, tjJpegSize);

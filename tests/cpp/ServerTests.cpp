@@ -585,7 +585,7 @@ BOOST_AUTO_TEST_CASE(testCompressionErrorForBigNullImage)
 
         deflect::ImageWrapper bigImage(nullptr, 1000, 1000, deflect::ARGB);
         bigImage.compressionPolicy = deflect::COMPRESSION_ON;
-        BOOST_CHECK(!stream.send(bigImage).get());
+        BOOST_CHECK_THROW(stream.send(bigImage).get(), std::invalid_argument);
     }
 
     // handle close of streamer
