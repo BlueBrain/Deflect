@@ -81,6 +81,14 @@ std::future<T> make_ready_future(T&& value)
     return promise.get_future();
 }
 
+template <typename T>
+std::future<T> make_exception_future(std::exception_ptr exc)
+{
+    std::promise<T> promise;
+    promise.set_exception(exc);
+    return promise.get_future();
+}
+
 class EventReceiver;
 class Frame;
 class FrameDispatcher;

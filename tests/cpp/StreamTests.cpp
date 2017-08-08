@@ -141,7 +141,23 @@ BOOST_AUTO_TEST_CASE(testErrorOnUnsupportedUncompressedFormats)
     {
         deflect::ImageWrapper image(pixels.data(), 4, 4, format);
         image.compressionPolicy = deflect::COMPRESSION_OFF;
-        BOOST_CHECK(!stream.send(image).get());
+        BOOST_CHECK_THROW(stream.send(image).get(), std::invalid_argument);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testSuccessOnCompressedFormats)
+{
+    deflect::Stream stream("id", "dummyhost");
+    std::vector<unsigned char> pixels(4 * 4 * 4);
+
+    std::vector<deflect::PixelFormat> unsupportedUncompressedFormats = {
+        deflect::RGB, deflect::ARGB, deflect::BGR, deflect::BGRA,
+        deflect::ABGR};
+    for (const auto format : unsupportedUncompressedFormats)
+    {
+        deflect::ImageWrapper image(pixels.data(), 4, 4, format);
+        image.compressionPolicy = deflect::COMPRESSION_ON;
+        BOOST_CHECK(stream.send(image).get());
     }
 }
 
@@ -150,7 +166,7 @@ BOOST_AUTO_TEST_CASE(testErrorOnNullUncompressedImage)
     deflect::Stream stream("id", "dummyhost");
     deflect::ImageWrapper nullImage(nullptr, 4, 4, deflect::ARGB);
     nullImage.compressionPolicy = deflect::COMPRESSION_ON;
-    BOOST_CHECK(!stream.send(nullImage).get());
+    BOOST_CHECK_THROW(stream.send(nullImage).get(), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_CASE(testErrorOnInvalidJpegCompressionValues)
@@ -160,10 +176,10 @@ BOOST_AUTO_TEST_CASE(testErrorOnInvalidJpegCompressionValues)
     deflect::ImageWrapper imageWrapper(pixels.data(), 4, 4, deflect::ARGB);
     imageWrapper.compressionPolicy = deflect::COMPRESSION_ON;
     imageWrapper.compressionQuality = 0;
-    BOOST_CHECK(!stream.send(imageWrapper).get());
+    BOOST_CHECK_THROW(stream.send(imageWrapper).get(), std::invalid_argument);
 
     imageWrapper.compressionQuality = 101;
-    BOOST_CHECK(!stream.send(imageWrapper).get());
+    BOOST_CHECK_THROW(stream.send(imageWrapper).get(), std::invalid_argument);
 
     imageWrapper.compressionQuality = 1;
     BOOST_CHECK(stream.send(imageWrapper).get());

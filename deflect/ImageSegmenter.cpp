@@ -88,12 +88,16 @@ Segment ImageSegmenter::createSingleSegment(const ImageWrapper& image)
                                  int(image.getBufferSize()));
     }
     else
+    {
 #ifdef DEFLECT_USE_LIBJPEGTURBO
         _computeJpeg(segment, false);
+        if (segment.exception)
+            std::rethrow_exception(segment.exception);
 #else
         throw std::runtime_error(
             "LibJpegTurbo not available, needed for createSingleSegment");
 #endif
+    }
 
     return segment;
 }
@@ -150,8 +154,17 @@ void ImageSegmenter::_computeJpeg(Segment& segment, const bool sendSegment)
     // turbojpeg handles need to be per thread, and this function is called from
     // multiple threads by QtConcurrent::map
     static QThreadStorage<ImageJpegCompressor> compressor;
-    segment.imageData =
-        compressor.localData().computeJpeg(*segment.sourceImage, imageRegion);
+    try
+    {
+        segment.imageData =
+            compressor.localData().computeJpeg(*segment.sourceImage,
+                                               imageRegion);
+    }
+    catch (...)
+    {
+        segment.exception = std::current_exception();
+    }
+
     segment.parameters.dataType = DataType::jpeg;
     if (sendSegment)
         _sendQueue.enqueue(segment);
@@ -219,7 +232,8 @@ Segments ImageSegmenter::_generateSegments(const ImageWrapper& image) const
     if (image.view == View::side_by_side)
     {
         if (image.width % 2 != 0)
-            throw std::runtime_error("side_by_side image width must be even!");
+            throw std::invalid_argument(
+                "side_by_side image width must be even!");
 
         // create copy of segments for right view
         auto segmentsRight = segments;

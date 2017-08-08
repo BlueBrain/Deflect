@@ -45,6 +45,7 @@
 #include "SizeHints.h"
 
 #include <iostream>
+#include <sstream>
 
 namespace
 {
@@ -108,23 +109,37 @@ void StreamSendWorker::run()
             if (request.isFinish)
             {
                 if (_pendingFinish)
-                    throw std::runtime_error("Already have pending finish");
+                {
+                    if (request.promise)
+                        request.promise->set_exception(std::make_exception_ptr(
+                            std::runtime_error("Already have pending finish")));
+                    continue;
+                }
 
                 _finishRequest = request;
                 _pendingFinish = true;
                 continue;
             }
 
-            for (auto& task : request.tasks)
+            try
             {
-                if (!task())
+                for (auto& task : request.tasks)
                 {
-                    success = false;
-                    break;
+                    if (!task())
+                    {
+                        success = false;
+                        break;
+                    }
                 }
+
+                if (request.promise)
+                    request.promise->set_value(success);
             }
-            if (request.promise)
-                request.promise->set_value(success);
+            catch (...)
+            {
+                if (request.promise)
+                    request.promise->set_exception(std::current_exception());
+            }
         }
     }
 }
@@ -151,24 +166,28 @@ Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
                                               const bool finish)
 {
     if (_pendingFinish)
-        throw(std::runtime_error{"Pending finish, no send allowed"});
+    {
+        return make_exception_future<bool>(std::make_exception_ptr(
+            std::runtime_error("Pending finish, no send allowed")));
+    }
 
     if (image.compressionPolicy != COMPRESSION_ON && image.pixelFormat != RGBA)
     {
-        std::cerr << "Currently, RAW images can only be sent in RGBA format. "
-                     "Other formats support remain to be implemented."
-                  << std::endl;
-        return make_ready_future(false);
+        return make_exception_future<bool>(
+            std::make_exception_ptr(std::invalid_argument(
+                "Currently, RAW images can only be sent in RGBA format. Other "
+                "formats support remain to be implemented.")));
     }
 
     if (image.compressionPolicy == COMPRESSION_ON)
     {
         if (image.compressionQuality < 1 || image.compressionQuality > 100)
         {
-            std::cerr
-                << "JPEG compression quality must be between 1 and 100, got "
+            std::stringstream msg;
+            msg << "JPEG compression quality must be between 1 and 100, got "
                 << image.compressionQuality << std::endl;
-            return make_ready_future(false);
+            return make_exception_future<bool>(
+                std::make_exception_ptr(std::invalid_argument(msg.str())));
         }
     }
 
@@ -176,19 +195,25 @@ Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
 
     if (image.width <= SMALL_IMAGE_SIZE && image.height <= SMALL_IMAGE_SIZE)
     {
-        auto segment = _imageSegmenter.createSingleSegment(image);
-        if (segment.imageData.isEmpty())
-            return make_ready_future(false);
+        try
+        {
+            auto segment = _imageSegmenter.createSingleSegment(image);
 
-        tasks.emplace_back([this, segment] { return _sendSegment(segment); });
+            tasks.emplace_back(
+                [this, segment] { return _sendSegment(segment); });
 
-        // as we expect to encounter a lot of these small sends, be optimistic
-        // and fulfill the promise already to reduce load in the send thread
-        // (c.f. lock ops performance on KNL)
-        _requests.enqueue({nullptr, tasks, false});
-        if (finish)
-            return enqueueFinish();
-        return make_ready_future(true);
+            // as we expect to encounter a lot of these small sends, be
+            // optimistic and fulfill the promise already to reduce load in the
+            // send thread (c.f. lock ops performance on KNL)
+            _requests.enqueue({nullptr, tasks, false});
+            if (finish)
+                return enqueueFinish();
+            return make_ready_future(true);
+        }
+        catch (...)
+        {
+            return make_exception_future<bool>(std::current_exception());
+        }
     }
     else
         tasks.emplace_back([this, image] { return _sendImage(image); });
@@ -271,11 +296,8 @@ bool StreamSendWorker::_sendImageView(const View view)
 
 bool StreamSendWorker::_sendSegment(const Segment& segment)
 {
-    if (segment.imageData.isEmpty())
-    {
-        std::cerr << "Encountered empty image data for segment" << std::endl;
-        return false;
-    }
+    if (segment.exception)
+        std::rethrow_exception(segment.exception);
 
     if (segment.view != _currentView)
     {
