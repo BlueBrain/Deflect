@@ -86,7 +86,8 @@ StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
     , sendWorker{socket, id}
 {
     if (!socket.isConnected())
-        return;
+        throw std::runtime_error(
+            "Connection to deflect server could not be established");
 
     socket.connect(&socket, &Socket::disconnected, [this]() {
         if (disconnectedCallback)

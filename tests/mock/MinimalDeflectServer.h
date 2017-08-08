@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Daniel.Nachbaur@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,40 +37,23 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#define BOOST_TEST_MODULE Socket
-#include <boost/test/unit_test.hpp>
-namespace ut = boost::unit_test;
+#ifndef DEFLECT_MINIMAL_DEFLECTSERVER_H
+#define DEFLECT_MINIMAL_DEFLECTSERVER_H
 
-#include "MinimalDeflectServer.h"
-#include "MinimalGlobalQtApp.h"
+#include "MockServer.h"
 
-#include <deflect/Socket.h>
+#include <QThread>
 
-BOOST_GLOBAL_FIXTURE(MinimalGlobalQtApp);
-
-void testSocketConnect(const int32_t versionOffset)
+class MinimalDeflectServer
 {
-    MinimalDeflectServer server(versionOffset);
+public:
+    explicit MinimalDeflectServer(int32_t versionOffset = 0);
+    ~MinimalDeflectServer();
 
-    deflect::Socket socket("localhost", server.serverPort());
+    quint16 serverPort() const { return _server->serverPort(); }
+private:
+    QThread _thread;
+    MockServer* _server;
+};
 
-    BOOST_CHECK(socket.isConnected() == (versionOffset >= 0));
-}
-
-BOOST_AUTO_TEST_CASE(
-    testSocketConnectionValidWhenReturnedCorrectNetworkProtocolVersion)
-{
-    testSocketConnect(0);
-}
-
-BOOST_AUTO_TEST_CASE(
-    testSocketConnectionInvalidWhenReturnedLowerNetworkProtocolVersion)
-{
-    testSocketConnect(-1);
-}
-
-BOOST_AUTO_TEST_CASE(
-    testSocketConnectionInvalidWhenReturnedHigherNetworkProtocolVersion)
-{
-    testSocketConnect(1);
-}
+#endif

@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Daniel.Nachbaur@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,40 +37,21 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#define BOOST_TEST_MODULE Socket
-#include <boost/test/unit_test.hpp>
-namespace ut = boost::unit_test;
-
 #include "MinimalDeflectServer.h"
-#include "MinimalGlobalQtApp.h"
 
-#include <deflect/Socket.h>
+#include <deflect/NetworkProtocol.h>
 
-BOOST_GLOBAL_FIXTURE(MinimalGlobalQtApp);
-
-void testSocketConnect(const int32_t versionOffset)
+MinimalDeflectServer::MinimalDeflectServer(const int32_t versionOffset)
 {
-    MinimalDeflectServer server(versionOffset);
-
-    deflect::Socket socket("localhost", server.serverPort());
-
-    BOOST_CHECK(socket.isConnected() == (versionOffset >= 0));
+    _server = new MockServer(NETWORK_PROTOCOL_VERSION + versionOffset);
+    _server->moveToThread(&_thread);
+    _server->connect(&_thread, &QThread::finished, _server,
+                     &QObject::deleteLater);
+    _thread.start();
 }
 
-BOOST_AUTO_TEST_CASE(
-    testSocketConnectionValidWhenReturnedCorrectNetworkProtocolVersion)
+MinimalDeflectServer::~MinimalDeflectServer()
 {
-    testSocketConnect(0);
-}
-
-BOOST_AUTO_TEST_CASE(
-    testSocketConnectionInvalidWhenReturnedLowerNetworkProtocolVersion)
-{
-    testSocketConnect(-1);
-}
-
-BOOST_AUTO_TEST_CASE(
-    testSocketConnectionInvalidWhenReturnedHigherNetworkProtocolVersion)
-{
-    testSocketConnect(1);
+    _thread.quit();
+    _thread.wait();
 }

@@ -41,6 +41,9 @@
 #include <boost/test/unit_test.hpp>
 namespace ut = boost::unit_test;
 
+#include "MinimalDeflectServer.h"
+#include "MinimalGlobalQtApp.h"
+
 #include <deflect/Stream.h>
 
 #include <QString>
@@ -53,66 +56,77 @@ const char* STREAM_ID_ENV_VAR = "DEFLECT_ID";
 const char* STREAM_HOST_ENV_VAR = "DEFLECT_HOST";
 }
 
-BOOST_AUTO_TEST_CASE(testParameterizedConstructorWithValues)
+BOOST_AUTO_TEST_CASE(testConstructionWithNoServer)
 {
-    const deflect::Stream stream("mystream", "somehost");
-    BOOST_CHECK_EQUAL(stream.getId(), "mystream");
-    BOOST_CHECK_EQUAL(stream.getHost(), "somehost");
+    BOOST_CHECK_THROW(deflect::Stream("id", "localhost"), std::runtime_error);
 }
+
+BOOST_GLOBAL_FIXTURE(MinimalGlobalQtApp);
+BOOST_FIXTURE_TEST_SUITE(server, MinimalDeflectServer)
 
 BOOST_AUTO_TEST_CASE(testDefaultConstructorReadsEnvironmentVariables)
 {
     qputenv(STREAM_ID_ENV_VAR, "mystream");
-    qputenv(STREAM_HOST_ENV_VAR, "somehost");
-    deflect::Stream stream;
+    qputenv(STREAM_HOST_ENV_VAR, "localhost");
+    deflect::Stream stream(serverPort());
     BOOST_CHECK_EQUAL(stream.getId(), "mystream");
-    BOOST_CHECK_EQUAL(stream.getHost(), "somehost");
+    BOOST_CHECK_EQUAL(stream.getHost(), "localhost");
     qunsetenv(STREAM_ID_ENV_VAR);
     qunsetenv(STREAM_HOST_ENV_VAR);
+}
+
+BOOST_AUTO_TEST_CASE(testParameterizedConstructorWithValues)
+{
+    const deflect::Stream stream("mystream", "localhost", serverPort());
+    BOOST_CHECK_EQUAL(stream.getId(), "mystream");
+    BOOST_CHECK_EQUAL(stream.getHost(), "localhost");
 }
 
 BOOST_AUTO_TEST_CASE(testParameterizedConstructorReadsEnvironmentVariables)
 {
     qputenv(STREAM_ID_ENV_VAR, "mystream");
-    qputenv(STREAM_HOST_ENV_VAR, "somehost");
-    const deflect::Stream stream("", "");
+    qputenv(STREAM_HOST_ENV_VAR, "localhost");
+    const deflect::Stream stream("", "", serverPort());
     BOOST_CHECK_EQUAL(stream.getId(), "mystream");
-    BOOST_CHECK_EQUAL(stream.getHost(), "somehost");
+    BOOST_CHECK_EQUAL(stream.getHost(), "localhost");
     qunsetenv(STREAM_ID_ENV_VAR);
     qunsetenv(STREAM_HOST_ENV_VAR);
 }
 
-BOOST_AUTO_TEST_CASE(testWhenSteamHostNotProvidedThenThrow)
+BOOST_AUTO_TEST_CASE(testWhenStreamHostNotProvidedThenThrow)
 {
     BOOST_REQUIRE(QString(qgetenv(STREAM_HOST_ENV_VAR)).isEmpty());
     BOOST_CHECK_THROW(std::make_shared<deflect::Stream>(), std::runtime_error);
-    BOOST_CHECK_THROW(deflect::Stream stream("mystream", ""),
+    BOOST_CHECK_THROW(deflect::Stream stream("mystream", "", serverPort()),
                       std::runtime_error);
 }
 
-BOOST_AUTO_TEST_CASE(testWhenSteamHostProvidedThenNoThrow)
+BOOST_AUTO_TEST_CASE(testWhenStreamHostProvidedThenNoThrow)
 {
-    BOOST_CHECK_NO_THROW(deflect::Stream stream("mystream", "somehost"));
-    qputenv(STREAM_HOST_ENV_VAR, "somehost");
-    BOOST_CHECK_NO_THROW(std::make_shared<deflect::Stream>());
-    BOOST_CHECK_NO_THROW(deflect::Stream stream("mystream", ""));
+    BOOST_CHECK_NO_THROW(
+        deflect::Stream stream("mystream", "localhost", serverPort()));
+    qputenv(STREAM_HOST_ENV_VAR, "localhost");
+    BOOST_CHECK_NO_THROW(
+        std::make_shared<deflect::Stream>("", "", serverPort()));
+    BOOST_CHECK_NO_THROW(deflect::Stream stream("mystream", "", serverPort()));
     qunsetenv(STREAM_HOST_ENV_VAR);
 }
 
-BOOST_AUTO_TEST_CASE(testWhenNoSteamIdProvidedThenARandomOneIsGenerated)
+BOOST_AUTO_TEST_CASE(testWhenNoStreamIdProvidedThenARandomOneIsGenerated)
 {
     BOOST_REQUIRE(QString(qgetenv(STREAM_ID_ENV_VAR)).isEmpty());
     {
-        deflect::Stream stream("", "somehost");
+        deflect::Stream stream("", "localhost", serverPort());
         BOOST_CHECK(!stream.getId().empty());
-        BOOST_CHECK_NE(deflect::Stream("", "host").getId(),
-                       deflect::Stream("", "host").getId());
+        BOOST_CHECK_NE(deflect::Stream("", "localhost", serverPort()).getId(),
+                       deflect::Stream("", "localhost", serverPort()).getId());
     }
     {
-        qputenv(STREAM_HOST_ENV_VAR, "somehost");
-        deflect::Stream stream;
+        qputenv(STREAM_HOST_ENV_VAR, "localhost");
+        deflect::Stream stream("", "", serverPort());
         BOOST_CHECK(!stream.getId().empty());
-        BOOST_CHECK_NE(deflect::Stream().getId(), deflect::Stream().getId());
+        BOOST_CHECK_NE(deflect::Stream("", "", serverPort()).getId(),
+                       deflect::Stream("", "", serverPort()).getId());
         qunsetenv(STREAM_HOST_ENV_VAR);
     }
 }
@@ -122,7 +136,7 @@ BOOST_AUTO_TEST_CASE(testWhenNoSteamIdProvidedThenARandomOneIsGenerated)
 // setting up a stream server.
 BOOST_AUTO_TEST_CASE(testSendUncompressedRGBA)
 {
-    deflect::Stream stream("id", "dummyhost");
+    deflect::Stream stream("id", "localhost", serverPort());
     std::vector<unsigned char> pixels(4 * 4 * 4);
 
     deflect::ImageWrapper image(pixels.data(), 4, 4, deflect::RGBA);
@@ -132,7 +146,7 @@ BOOST_AUTO_TEST_CASE(testSendUncompressedRGBA)
 
 BOOST_AUTO_TEST_CASE(testErrorOnUnsupportedUncompressedFormats)
 {
-    deflect::Stream stream("id", "dummyhost");
+    deflect::Stream stream("id", "localhost", serverPort());
     std::vector<unsigned char> pixels(4 * 4 * 4);
 
     const auto allFormats = {deflect::RGB, deflect::ARGB, deflect::BGR,
@@ -147,7 +161,7 @@ BOOST_AUTO_TEST_CASE(testErrorOnUnsupportedUncompressedFormats)
 
 BOOST_AUTO_TEST_CASE(testSuccessOnCompressedFormats)
 {
-    deflect::Stream stream("id", "dummyhost");
+    deflect::Stream stream("id", "localhost", serverPort());
     std::vector<unsigned char> pixels(4 * 4 * 4);
 
     std::vector<deflect::PixelFormat> unsupportedUncompressedFormats = {
@@ -163,7 +177,7 @@ BOOST_AUTO_TEST_CASE(testSuccessOnCompressedFormats)
 
 BOOST_AUTO_TEST_CASE(testErrorOnNullUncompressedImage)
 {
-    deflect::Stream stream("id", "dummyhost");
+    deflect::Stream stream("id", "localhost", serverPort());
     deflect::ImageWrapper nullImage(nullptr, 4, 4, deflect::ARGB);
     nullImage.compressionPolicy = deflect::COMPRESSION_ON;
     BOOST_CHECK_THROW(stream.send(nullImage).get(), std::invalid_argument);
@@ -171,7 +185,7 @@ BOOST_AUTO_TEST_CASE(testErrorOnNullUncompressedImage)
 
 BOOST_AUTO_TEST_CASE(testErrorOnInvalidJpegCompressionValues)
 {
-    deflect::Stream stream("id", "dummyhost");
+    deflect::Stream stream("id", "localhost", serverPort());
     std::vector<unsigned char> pixels(4 * 4 * 4);
     deflect::ImageWrapper imageWrapper(pixels.data(), 4, 4, deflect::ARGB);
     imageWrapper.compressionPolicy = deflect::COMPRESSION_ON;
@@ -190,3 +204,5 @@ BOOST_AUTO_TEST_CASE(testErrorOnInvalidJpegCompressionValues)
     imageWrapper.compressionQuality = 100;
     BOOST_CHECK(stream.send(imageWrapper).get());
 }
+
+BOOST_AUTO_TEST_SUITE_END()

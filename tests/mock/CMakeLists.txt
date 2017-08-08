@@ -6,16 +6,21 @@
 # Generates a mock library used by the cpp unit tests.
 
 set(DEFLECTMOCK_HEADERS
+  DeflectServer.h
   MinimalGlobalQtApp.h
+  MinimalDeflectServer.h
   MockServer.h
   Timer.h
 )
 
 set(DEFLECTMOCK_SOURCES
+  DeflectServer.cpp
+  MinimalDeflectServer.cpp
   MockServer.cpp
 )
 
-set(DEFLECTMOCK_LINK_LIBRARIES Qt5::Core Qt5::Network)
+set(DEFLECTMOCK_LINK_LIBRARIES Deflect ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+  Qt5::Core Qt5::Network)
 
 set(DEFLECTMOCK_INCLUDE_NAME deflect/mock)
 set(DEFLECTMOCK_OMIT_LIBRARY_HEADER ON)

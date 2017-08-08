@@ -57,8 +57,6 @@ const int RECEIVE_TIMEOUT_MS = 1000;
 
 namespace deflect
 {
-const unsigned short Socket::defaultPortNumber = DEFAULT_PORT_NUMBER;
-
 Socket::Socket(const std::string& host, const unsigned short port)
     : _host(host)
     , _socket(new QTcpSocket(this)) // Ensure that _socket parent is

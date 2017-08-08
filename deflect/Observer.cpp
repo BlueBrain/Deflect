@@ -40,6 +40,7 @@
 /*********************************************************************/
 
 #include "Observer.h"
+#include "NetworkProtocol.h"
 #include "StreamPrivate.h"
 
 #include <QDataStream>
@@ -49,8 +50,10 @@
 
 namespace deflect
 {
-Observer::Observer()
-    : _impl(new StreamPrivate("", "", Socket::defaultPortNumber, true))
+const unsigned short Observer::defaultPortNumber = DEFAULT_PORT_NUMBER;
+
+Observer::Observer(const unsigned short port)
+    : _impl(new StreamPrivate("", "", port, true))
 {
 }
 

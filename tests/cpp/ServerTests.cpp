@@ -41,19 +41,13 @@
 #include <boost/test/unit_test.hpp>
 namespace ut = boost::unit_test;
 
+#include "DeflectServer.h"
 #include "MinimalGlobalQtApp.h"
 
-#include <deflect/EventReceiver.h>
 #include <deflect/Frame.h>
-#include <deflect/Server.h>
 #include <deflect/Stream.h>
 
 #include <cmath>
-#include <iostream>
-
-#include <QMutex>
-#include <QThread>
-#include <QWaitCondition>
 
 namespace
 {
@@ -62,279 +56,105 @@ const QString testStreamId("teststream");
 
 BOOST_GLOBAL_FIXTURE(MinimalGlobalQtApp);
 
+BOOST_FIXTURE_TEST_SUITE(server, DeflectServer)
+
 BOOST_AUTO_TEST_CASE(testSizeHintsReceivedByServer)
 {
-    QThread serverThread;
-    deflect::Server* server = new deflect::Server(0 /* OS-chosen port */);
-    server->moveToThread(&serverThread);
-    serverThread.connect(&serverThread, &QThread::finished, server,
-                         &deflect::Server::deleteLater);
-    serverThread.start();
-
-    QWaitCondition received;
-    QMutex mutex;
-
     deflect::SizeHints testHints;
     testHints.maxWidth = 500;
     testHints.preferredHeight = 200;
 
-    QString streamId;
-    deflect::SizeHints sizeHints;
-
-    bool receivedState = false;
-    server->connect(server, &deflect::Server::receivedSizeHints,
-                    [&](const QString id, const deflect::SizeHints hints) {
-                        streamId = id;
-                        sizeHints = hints;
-                        mutex.lock();
-                        receivedState = true;
-                        received.wakeAll();
-                        mutex.unlock();
-                    });
+    bool received = false;
+    setSizeHintsCallback([&](const QString id, const deflect::SizeHints hints) {
+        BOOST_CHECK_EQUAL(id.toStdString(), testStreamId.toStdString());
+        BOOST_CHECK(hints == testHints);
+        received = true;
+    });
 
     {
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
-                               server->serverPort());
+                               serverPort());
         BOOST_CHECK(stream.isConnected());
         stream.sendSizeHints(testHints);
-
-        for (size_t i = 0; i < 20; ++i)
-        {
-            mutex.lock();
-            received.wait(&mutex, 100 /*ms*/);
-            if (receivedState)
-            {
-                BOOST_CHECK_EQUAL(streamId.toStdString(),
-                                  testStreamId.toStdString());
-                BOOST_CHECK(sizeHints == testHints);
-
-                serverThread.quit();
-                serverThread.wait();
-                mutex.unlock();
-                return;
-            }
-            mutex.unlock();
-        }
-        BOOST_CHECK(!"reachable");
+        waitForMessage();
     }
+
+    waitForMessage();
+    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+    BOOST_CHECK(received);
 }
 
 BOOST_AUTO_TEST_CASE(testRegisterForEventReceivedByServer)
 {
-    QThread serverThread;
-    deflect::Server* server = new deflect::Server(0 /* OS-chosen port */);
-    server->moveToThread(&serverThread);
-    serverThread.connect(&serverThread, &QThread::finished, server,
-                         &deflect::Server::deleteLater);
-    serverThread.start();
-
-    QWaitCondition received;
-    QMutex mutex;
-
-    QString streamId;
-    bool exclusiveBind = false;
-    deflect::EventReceiver* eventReceiver = nullptr;
-
-    bool receivedState = false;
-    server->connect(server, &deflect::Server::registerToEvents,
-                    [&](const QString id, const bool exclusive,
-                        deflect::EventReceiver* receiver,
-                        deflect::BoolPromisePtr success) {
-                        streamId = id;
-                        exclusiveBind = exclusive;
-                        eventReceiver = receiver;
-                        success->set_value(true);
-                        mutex.lock();
-                        receivedState = true;
-                        received.wakeAll();
-                        mutex.unlock();
-                    });
+    bool received = false;
+    setRegisterToEventsCallback([&](const QString id, const bool exclusive,
+                                    deflect::EventReceiver* eventReceiver) {
+        BOOST_CHECK_EQUAL(id.toStdString(), testStreamId.toStdString());
+        BOOST_CHECK(exclusive);
+        BOOST_CHECK(eventReceiver);
+        received = true;
+    });
 
     {
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
-                               server->serverPort());
+                               serverPort());
         BOOST_REQUIRE(stream.isConnected());
         BOOST_CHECK(stream.registerForEvents(true));
+        waitForMessage();
     }
 
-    for (size_t i = 0; i < 20; ++i)
-    {
-        mutex.lock();
-        received.wait(&mutex, 100 /*ms*/);
-        if (receivedState)
-        {
-            BOOST_CHECK_EQUAL(streamId.toStdString(),
-                              testStreamId.toStdString());
-            BOOST_CHECK(exclusiveBind);
-            BOOST_CHECK(eventReceiver);
-
-            serverThread.quit();
-            serverThread.wait();
-            mutex.unlock();
-            return;
-        }
-        mutex.unlock();
-    }
-    BOOST_CHECK(!"reachable");
+    waitForMessage();
+    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+    BOOST_CHECK(received);
 }
 
 BOOST_AUTO_TEST_CASE(testDataReceivedByServer)
 {
-    if (getenv("TRAVIS"))
-    {
-        std::cout << "ignore testDataReceivedByServer on Jenkins" << std::endl;
-        return;
-    }
-
-    QThread serverThread;
-    deflect::Server* server = new deflect::Server(0 /* OS-chosen port */);
-    server->moveToThread(&serverThread);
-    serverThread.connect(&serverThread, &QThread::finished, server,
-                         &deflect::Server::deleteLater);
-    serverThread.start();
-
-    QWaitCondition received;
-    QMutex mutex;
-
-    QString streamId;
-    std::string receivedData;
     const auto sentData = std::string{"Hello World!"};
 
-    bool receivedState = false;
-    server->connect(server, &deflect::Server::receivedData,
-                    [&](const QString id, QByteArray data) {
-                        streamId = id;
-                        receivedData = QString(data).toStdString();
-                        mutex.lock();
-                        receivedState = true;
-                        received.wakeAll();
-                        mutex.unlock();
-                    });
+    bool received = false;
+    setDataReceivedCallback([&](const QString id, QByteArray data) {
+        BOOST_CHECK_EQUAL(id.toStdString(), testStreamId.toStdString());
+        BOOST_CHECK_EQUAL(data.toStdString(), sentData);
+        received = true;
+    });
 
     {
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
-                               server->serverPort());
+                               serverPort());
         BOOST_REQUIRE(stream.isConnected());
         stream.sendData(sentData.data(), sentData.size());
+        waitForMessage();
     }
 
-    for (size_t i = 0; i < 20; ++i)
-    {
-        mutex.lock();
-        received.wait(&mutex, 100 /*ms*/);
-        if (receivedState)
-        {
-            BOOST_CHECK_EQUAL(streamId.toStdString(),
-                              testStreamId.toStdString());
-            BOOST_CHECK_EQUAL(receivedData, sentData);
-
-            serverThread.quit();
-            serverThread.wait();
-            mutex.unlock();
-            return;
-        }
-        mutex.unlock();
-    }
-    BOOST_CHECK(!"reachable");
+    waitForMessage();
+    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+    BOOST_CHECK(received);
 }
 
 BOOST_AUTO_TEST_CASE(testOneObserverAndOneStream)
 {
-    QThread serverThread;
-    deflect::Server* server = new deflect::Server(0 /* OS-chosen port */);
-    server->moveToThread(&serverThread);
-    serverThread.connect(&serverThread, &QThread::finished, server,
-                         &deflect::Server::deleteLater);
-    serverThread.start();
-
-    // to wait in this thread until server thread is done with certain
-    // operations
-    QWaitCondition received;
-    QMutex mutex;
-    bool receivedState = false;
-
-    auto processServerMessages = [&] {
-        for (size_t j = 0; j < 20; ++j)
-        {
-            mutex.lock();
-            received.wait(&mutex, 100 /*ms*/);
-            if (receivedState)
-            {
-                mutex.unlock();
-                break;
-            }
-            mutex.unlock();
-        }
-        BOOST_REQUIRE(receivedState);
-        receivedState = false;
-    };
-
-    size_t openedStreams = 0;
-
-    // only continue once we have the stream, whichever comes first
-    server->connect(server, &deflect::Server::pixelStreamOpened,
-                    [&](const QString) {
-                        ++openedStreams;
-                        if (openedStreams == 1)
-                        {
-                            mutex.lock();
-                            receivedState = true;
-                            received.wakeAll();
-                            mutex.unlock();
-                        }
-                    });
-
-    // make sure that we get the close of the stream and the observer
-    server->connect(server, &deflect::Server::pixelStreamClosed,
-                    [&](const QString) {
-                        --openedStreams;
-                        if (openedStreams == 0)
-                        {
-                            mutex.lock();
-                            receivedState = true;
-                            received.wakeAll();
-                            mutex.unlock();
-                        }
-                    });
-
-    // register to events to test the observer's purpose
-    deflect::EventReceiver* eventReceiver = nullptr;
-    server->connect(server, &deflect::Server::registerToEvents,
-                    [&](const QString, const bool,
-                        deflect::EventReceiver* evtReceiver,
-                        deflect::BoolPromisePtr success) {
-                        eventReceiver = evtReceiver;
-                        success->set_value(true);
-                    });
+    setFrameReceivedCallback([&](deflect::FramePtr frame) {
+        BOOST_CHECK_EQUAL(frame->segments.size(), 1);
+        BOOST_CHECK_EQUAL(frame->uri.toStdString(), testStreamId.toStdString());
+    });
 
     // handle received frames to test the stream's purpose
     const size_t expectedFrames = 2;
-    size_t receivedFrames = 0;
-    server->connect(server, &deflect::Server::receivedFrame,
-                    [&](deflect::FramePtr frame) {
-                        BOOST_CHECK_EQUAL(frame->segments.size(), 1);
-                        BOOST_CHECK_EQUAL(frame->uri.toStdString(),
-                                          testStreamId.toStdString());
-                        ++receivedFrames;
-                        mutex.lock();
-                        receivedState = true;
-                        received.wakeAll();
-                        mutex.unlock();
-                    });
 
     {
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
-                               server->serverPort());
+                               serverPort());
         BOOST_REQUIRE(stream.isConnected());
 
         deflect::Observer observer(testStreamId.toStdString(), "localhost",
-                                   server->serverPort());
+                                   serverPort());
         BOOST_REQUIRE(observer.isConnected());
 
         BOOST_CHECK(observer.registerForEvents(true));
 
         // handle connects first before sending and receiving frames
-        processServerMessages();
+        waitForMessage();
 
         const unsigned int width = 4;
         const unsigned int height = 4;
@@ -350,14 +170,13 @@ BOOST_AUTO_TEST_CASE(testOneObserverAndOneStream)
         // are received accordingly
         for (size_t i = 0; i < expectedFrames; ++i)
         {
-            receivedState = false;
             stream.sendAndFinish(image).wait();
-            server->requestFrame(testStreamId);
+            requestFrame(testStreamId);
             event.key = i;
-            eventReceiver->processEvent(event);
+            processEvent(event);
 
             // process event sending first before receiving in observer
-            processServerMessages();
+            waitForMessage();
 
             while (!observer.hasEvent())
                 ;
@@ -369,46 +188,14 @@ BOOST_AUTO_TEST_CASE(testOneObserverAndOneStream)
     }
 
     // handle close of streamer and observer
-    processServerMessages();
+    waitForMessage();
 
-    serverThread.quit();
-    serverThread.wait();
-
-    BOOST_CHECK_EQUAL(openedStreams, 0);
-    BOOST_CHECK_EQUAL(receivedFrames, expectedFrames);
+    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+    BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames);
 }
 
 BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
 {
-    QThread serverThread;
-    deflect::Server* server = new deflect::Server(0 /* OS-chosen port */);
-    server->moveToThread(&serverThread);
-    serverThread.connect(&serverThread, &QThread::finished, server,
-                         &deflect::Server::deleteLater);
-    serverThread.start();
-
-    // to wait in this thread until server thread is done with certain
-    // operations
-    QWaitCondition received;
-    QMutex mutex;
-    bool receivedState = false;
-
-    auto processServerMessages = [&] {
-        for (size_t j = 0; j < 20; ++j)
-        {
-            mutex.lock();
-            received.wait(&mutex, 100 /*ms*/);
-            if (receivedState)
-            {
-                mutex.unlock();
-                break;
-            }
-            mutex.unlock();
-        }
-        BOOST_REQUIRE(receivedState);
-        receivedState = false;
-    };
-
     const unsigned int segmentSize = 64;
     const unsigned int width = 1920;
     const unsigned int height = 1088;
@@ -430,66 +217,30 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
                         std::ceil((float)width / segmentSize) *
                             std::ceil((float)height / segmentSize));
 
+    setFrameReceivedCallback([&](deflect::FramePtr frame) {
+        BOOST_CHECK_EQUAL(frame->segments.size(), numSegments);
+        BOOST_CHECK_EQUAL(frame->uri.toStdString(), testStreamId.toStdString());
+        const auto dim = frame->computeDimensions();
+        BOOST_CHECK_EQUAL(dim.width(), width);
+        BOOST_CHECK_EQUAL(dim.height(), height);
+    });
+
     const std::vector<uint8_t> pixels(segmentSize * segmentSize * 4, 42);
-
-    size_t openedStreams = 0;
-    // only continue once we have the stream
-    server->connect(server, &deflect::Server::pixelStreamOpened,
-                    [&](const QString) {
-                        ++openedStreams;
-                        if (openedStreams == 1)
-                        {
-                            mutex.lock();
-                            receivedState = true;
-                            received.wakeAll();
-                            mutex.unlock();
-                        }
-                    });
-
-    // make sure that we get the close of the stream
-    server->connect(server, &deflect::Server::pixelStreamClosed,
-                    [&](const QString) {
-                        --openedStreams;
-                        if (openedStreams == 0)
-                        {
-                            mutex.lock();
-                            receivedState = true;
-                            received.wakeAll();
-                            mutex.unlock();
-                        }
-                    });
 
     // handle received frames to test the stream's purpose
     const size_t expectedFrames = 10;
-    size_t receivedFrames = 0;
-    server->connect(server, &deflect::Server::receivedFrame,
-                    [&](deflect::FramePtr frame) {
-                        BOOST_CHECK_EQUAL(frame->segments.size(), numSegments);
-                        BOOST_CHECK_EQUAL(frame->uri.toStdString(),
-                                          testStreamId.toStdString());
-                        const auto dim = frame->computeDimensions();
-                        BOOST_CHECK_EQUAL(dim.width(), width);
-                        BOOST_CHECK_EQUAL(dim.height(), height);
-                        ++receivedFrames;
-                        mutex.lock();
-                        receivedState = true;
-                        received.wakeAll();
-                        mutex.unlock();
-                    });
 
     {
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
-                               server->serverPort());
+                               serverPort());
         BOOST_REQUIRE(stream.isConnected());
 
         // handle connects first before sending and receiving frames
-        processServerMessages();
+        waitForMessage();
 
         std::mutex testMutex; // BOOST_CHECK is not thread-safe
         for (size_t i = 0; i < expectedFrames; ++i)
         {
-            receivedState = false;
-
 // to make coverage report work; otherwise fails for unknown reasons
 #ifdef NDEBUG
 #pragma omp parallel for
@@ -510,87 +261,32 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
 
             BOOST_CHECK(stream.finishFrame().get());
 
-            server->requestFrame(testStreamId);
+            requestFrame(testStreamId);
 
             // process frame receive
-            processServerMessages();
+            waitForMessage();
         }
     }
 
     // handle close of streamer
-    processServerMessages();
+    waitForMessage();
 
-    serverThread.quit();
-    serverThread.wait();
-
-    BOOST_CHECK_EQUAL(openedStreams, 0);
-    BOOST_CHECK_EQUAL(receivedFrames, expectedFrames);
+    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+    BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames);
 }
 
 BOOST_AUTO_TEST_CASE(testCompressionErrorForBigNullImage)
 {
-    QThread serverThread;
-    deflect::Server* server = new deflect::Server(0 /* OS-chosen port */);
-    server->moveToThread(&serverThread);
-    serverThread.connect(&serverThread, &QThread::finished, server,
-                         &deflect::Server::deleteLater);
-    serverThread.start();
+    deflect::Stream stream(testStreamId.toStdString(), "localhost",
+                           serverPort());
+    BOOST_REQUIRE(stream.isConnected());
 
-    // to wait in this thread until server thread is done with certain
-    // operations
-    QWaitCondition received;
-    QMutex mutex;
-    bool receivedState = false;
+    // handle connect of stream
+    waitForMessage();
 
-    auto processServerMessages = [&] {
-        for (size_t j = 0; j < 20; ++j)
-        {
-            mutex.lock();
-            received.wait(&mutex, 100 /*ms*/);
-            if (receivedState)
-            {
-                mutex.unlock();
-                break;
-            }
-            mutex.unlock();
-        }
-        BOOST_REQUIRE(receivedState);
-        receivedState = false;
-    };
-
-    // only continue once we have the stream
-    server->connect(server, &deflect::Server::pixelStreamOpened,
-                    [&](const QString) {
-                        mutex.lock();
-                        receivedState = true;
-                        received.wakeAll();
-                        mutex.unlock();
-                    });
-
-    // make sure that we get the close of the stream
-    server->connect(server, &deflect::Server::pixelStreamClosed,
-                    [&](const QString) {
-                        mutex.lock();
-                        receivedState = true;
-                        received.wakeAll();
-                        mutex.unlock();
-                    });
-
-    {
-        deflect::Stream stream(testStreamId.toStdString(), "localhost",
-                               server->serverPort());
-        BOOST_REQUIRE(stream.isConnected());
-
-        processServerMessages();
-
-        deflect::ImageWrapper bigImage(nullptr, 1000, 1000, deflect::ARGB);
-        bigImage.compressionPolicy = deflect::COMPRESSION_ON;
-        BOOST_CHECK_THROW(stream.send(bigImage).get(), std::invalid_argument);
-    }
-
-    // handle close of streamer
-    processServerMessages();
-
-    serverThread.quit();
-    serverThread.wait();
+    deflect::ImageWrapper bigImage(nullptr, 1000, 1000, deflect::ARGB);
+    bigImage.compressionPolicy = deflect::COMPRESSION_ON;
+    BOOST_CHECK_THROW(stream.send(bigImage).get(), std::invalid_argument);
 }
+
+BOOST_AUTO_TEST_SUITE_END()

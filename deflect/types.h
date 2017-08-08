@@ -82,11 +82,16 @@ std::future<T> make_ready_future(T&& value)
 }
 
 template <typename T>
-std::future<T> make_exception_future(std::exception_ptr exc)
+std::future<T> make_exception_future(std::exception_ptr&& e)
 {
     std::promise<T> promise;
-    promise.set_exception(exc);
+    promise.set_exception(std::move(e));
     return promise.get_future();
+}
+template <typename T, typename Exception>
+std::future<T> make_exception_future(Exception&& e)
+{
+    return make_exception_future<T>(std::make_exception_ptr(std::move(e)));
 }
 
 class EventReceiver;
