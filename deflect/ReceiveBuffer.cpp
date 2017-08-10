@@ -63,6 +63,10 @@ bool ReceiveBuffer::addSource(const size_t sourceIndex)
 void ReceiveBuffer::removeSource(const size_t sourceIndex)
 {
     _sourceBuffers.erase(sourceIndex);
+
+    // reset for new sources starting with getBackFrameIndex() == 0
+    if (_sourceBuffers.empty())
+        _lastFrameComplete = 0;
 }
 
 size_t ReceiveBuffer::getSourceCount() const
