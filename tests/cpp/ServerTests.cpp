@@ -59,7 +59,7 @@ BOOST_GLOBAL_FIXTURE(MinimalGlobalQtApp);
 
 BOOST_FIXTURE_TEST_SUITE(server, DeflectServer)
 
-BOOST_AUTO_TEST_CASE(testSizeHintsReceivedByServer)
+BOOST_AUTO_TEST_CASE(sizeHintsReceivedByServer)
 {
     deflect::SizeHints testHints;
     testHints.maxWidth = 500;
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(testSizeHintsReceivedByServer)
     SAFE_BOOST_CHECK(received);
 }
 
-BOOST_AUTO_TEST_CASE(testRegisterForEventReceivedByServer)
+BOOST_AUTO_TEST_CASE(registerForEventReceivedByServer)
 {
     bool received = false;
     setRegisterToEventsCallback([&](const QString id, const bool exclusive,
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(testRegisterForEventReceivedByServer)
     SAFE_BOOST_CHECK(received);
 }
 
-BOOST_AUTO_TEST_CASE(testDataReceivedByServer)
+BOOST_AUTO_TEST_CASE(dataReceivedByServer)
 {
     const auto sentData = std::string{"Hello World!"};
 
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(testDataReceivedByServer)
     SAFE_BOOST_CHECK(received);
 }
 
-BOOST_AUTO_TEST_CASE(testOneObserverAndOneStream)
+BOOST_AUTO_TEST_CASE(oneObserverAndOneStream)
 {
     setFrameReceivedCallback([&](deflect::FramePtr frame) {
         SAFE_BOOST_CHECK_EQUAL(frame->segments.size(), 1);
@@ -196,7 +196,100 @@ BOOST_AUTO_TEST_CASE(testOneObserverAndOneStream)
     SAFE_BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames);
 }
 
-BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
+BOOST_AUTO_TEST_CASE(closeObserverBeforeStream)
+{
+    {
+        deflect::Stream stream(testStreamId.toStdString(), "localhost",
+                               serverPort());
+        BOOST_REQUIRE(stream.isConnected());
+
+        waitForMessage();
+        BOOST_CHECK_EQUAL(getOpenedStreams(), 1);
+
+        {
+            deflect::Observer observer(testStreamId.toStdString(), "localhost",
+                                       serverPort());
+            BOOST_REQUIRE(observer.isConnected());
+        }
+    }
+
+    waitForMessage();
+    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(closeStreamBeforeObserver)
+{
+    {
+        deflect::Observer observer(testStreamId.toStdString(), "localhost",
+                                   serverPort());
+        SAFE_BOOST_REQUIRE(observer.isConnected());
+
+        waitForMessage();
+        BOOST_CHECK_EQUAL(getOpenedStreams(), 1);
+
+        {
+            deflect::Stream stream(testStreamId.toStdString(), "localhost",
+                                   serverPort());
+            BOOST_REQUIRE(stream.isConnected());
+        }
+    }
+
+    waitForMessage();
+    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(closeAndReopenStreamWithObserverStayingAliveAndRendering)
+{
+    const unsigned int width = 4;
+    const unsigned int height = 4;
+    const unsigned int byte = width * height * 4;
+    std::unique_ptr<uint8_t[]> pixels(new uint8_t[byte]);
+    ::memset(pixels.get(), 0, byte);
+    deflect::ImageWrapper image(pixels.get(), width, height, deflect::RGBA);
+
+    const size_t expectedFrames = 5;
+
+    {
+        deflect::Observer observer(testStreamId.toStdString(), "localhost",
+                                   serverPort());
+        BOOST_REQUIRE(observer.isConnected());
+        waitForMessage();
+
+        {
+            deflect::Stream stream(testStreamId.toStdString(), "localhost",
+                                   serverPort());
+            BOOST_REQUIRE(stream.isConnected());
+
+            for (size_t i = 0; i < expectedFrames; ++i)
+            {
+                stream.sendAndFinish(image).wait();
+                requestFrame(testStreamId);
+                waitForMessage();
+                BOOST_CHECK_EQUAL(getReceivedFrames(), i + 1);
+            }
+        }
+
+        {
+            deflect::Stream stream(testStreamId.toStdString(), "localhost",
+                                   serverPort());
+            BOOST_REQUIRE(stream.isConnected());
+
+            for (size_t i = 0; i < expectedFrames; ++i)
+            {
+                stream.sendAndFinish(image).wait();
+                requestFrame(testStreamId);
+                waitForMessage();
+                BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames + i + 1);
+            }
+        }
+    }
+
+    waitForMessage();
+    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+    BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames * 2);
+}
+
+BOOST_AUTO_TEST_CASE(threadedSmallSegmentStream)
 {
     const unsigned int segmentSize = 64;
     const unsigned int width = 1920;
@@ -278,7 +371,7 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
     SAFE_BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames);
 }
 
-BOOST_AUTO_TEST_CASE(testCompressionErrorForBigNullImage)
+BOOST_AUTO_TEST_CASE(compressionErrorForBigNullImage)
 {
     deflect::Stream stream(testStreamId.toStdString(), "localhost",
                            serverPort());

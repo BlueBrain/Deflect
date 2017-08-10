@@ -170,12 +170,10 @@ void FrameDispatcher::requestFrame(const QString uri)
 void FrameDispatcher::deleteStream(const QString uri)
 {
     if (_impl->streamBuffers[uri].getSourceCount() == 0 &&
-        _impl->streamBuffers.count(uri))
+        _impl->streamBuffers.count(uri) && _impl->observers[uri] == 0)
     {
         _impl->streamBuffers.erase(uri);
-
-        if (_impl->observers[uri] == 0)
-            emit pixelStreamClosed(uri);
+        emit pixelStreamClosed(uri);
     }
 }
 }
