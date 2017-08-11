@@ -5,6 +5,8 @@ Changelog {#Changelog}
 
 ### 0.14.0 (git master)
 
+* [179](https://github.com/BlueBrain/Deflect/pull/179):
+  Added stopping() signal to qt::QuickRenderer for GL cleanup operations.
 * [177](https://github.com/BlueBrain/Deflect/pull/177):
   Improve stream error handling
   * Catch errors regarding invalid JPEG quality values

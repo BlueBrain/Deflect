@@ -135,6 +135,12 @@ signals:
      */
     void afterRender();
 
+    /**
+     * Emitted from the render thread during stop(). Can be used to do some last
+     * cleanup operations while the GL context is bound.
+     */
+    void stopping();
+
 private:
     QQuickWindow& _quickWindow;
     QQuickRenderControl& _renderControl;
