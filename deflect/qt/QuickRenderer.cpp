@@ -226,6 +226,8 @@ void QuickRenderer::_onStop()
     if (_context)
         _context->makeCurrent(_getSurface());
 
+    emit stopping();
+
     _renderControl.invalidate();
 
     _fbo.reset();
