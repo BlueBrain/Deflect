@@ -124,11 +124,25 @@ bool ImageSegmenter::_generateJpeg(const ImageWrapper& image,
     // Note: Qt insists that sending (by calling handler()) should happen
     // exclusively from the QThread where the socket lives. Sending from the
     // worker threads triggers a qWarning.
-    bool result = true;
-    for (size_t i = 0; i < segments.size(); ++i)
-        if (!handler(_sendQueue.dequeue()))
-            result = false;
-    return result;
+    size_t i = 0;
+    try
+    {
+        bool result = true;
+        for (; i < segments.size(); ++i)
+            if (!handler(_sendQueue.dequeue()))
+                result = false;
+        return result;
+    }
+    catch (...)
+    {
+        // Wait for remaining threaded operations to finish, without calling the
+        // handler. Otherwise the remaining threads may wait forever leading to
+        // a deadlock in QApplication destructor.
+        ++i;
+        for (; i < segments.size(); ++i)
+            _sendQueue.dequeue();
+        std::rethrow_exception(std::current_exception());
+    }
 #else
     static bool first = true;
     if (first)
