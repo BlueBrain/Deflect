@@ -325,28 +325,31 @@ void MainWindow::_updateSingleStream()
         return;
     }
 
-    if (_streams.empty())
+    if (!_streams.empty())
+        return;
+
+    try
     {
-        const QPersistentModelIndex index; // default == use desktop
-        StreamPtr stream(new Stream(*this, index,
-                                    _streamIdLineEdit->text().toStdString(),
-                                    _getStreamHost()));
-        if (stream->isConnected())
-        {
-            if (_remoteControlCheckBox->isChecked())
-                stream->registerForEvents();
-            _streams[index] = stream;
-            _startStreaming();
-        }
-        else
-            _showConnectionErrorStatus();
+        const auto index = QPersistentModelIndex(); // default == use desktop
+        const auto id = _streamIdLineEdit->text().toStdString();
+        const auto host = _getStreamHost();
+
+        _streams[index] = std::make_shared<Stream>(*this, index, id, host);
+
+        if (_remoteControlCheckBox->isChecked())
+            _streams[index]->registerForEvents();
+
+        _startStreaming();
+    }
+    catch (const std::runtime_error& e)
+    {
+        _showConnectionErrorStatus(e.what());
     }
 }
 
-void MainWindow::_showConnectionErrorStatus()
+void MainWindow::_showConnectionErrorStatus(const QString& message)
 {
-    _statusbar->showMessage(
-        QString("Cannot connect to host: '%1'").arg(_getStreamHost().c_str()));
+    _statusbar->showMessage(message);
 }
 
 void MainWindow::_processStreamEvents()

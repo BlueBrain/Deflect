@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -52,9 +52,15 @@ void testSocketConnect(const int32_t versionOffset)
 {
     MinimalDeflectServer server(versionOffset);
 
-    deflect::Socket socket("localhost", server.serverPort());
-
-    BOOST_CHECK(socket.isConnected() == (versionOffset >= 0));
+    try
+    {
+        deflect::Socket socket("localhost", server.serverPort());
+        BOOST_CHECK(socket.isConnected());
+    }
+    catch (const std::runtime_error&)
+    {
+        BOOST_CHECK(versionOffset < 0);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(

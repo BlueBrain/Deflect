@@ -47,7 +47,8 @@
 #include <QDataStream>
 #include <QLoggingCategory>
 #include <QTcpSocket>
-#include <iostream>
+
+#include <sstream>
 
 namespace
 {
@@ -67,10 +68,7 @@ Socket::Socket(const std::string& host, const unsigned short port)
     // _connect(): QObject::connect: Cannot connect (null)::destroyed() to
     // QHostInfoLookupManager::waitForThreadPoolDone()
     if (!qApp)
-    {
-        QLoggingCategory* log = QLoggingCategory::defaultCategory();
-        log->setEnabled(QtWarningMsg, false);
-    }
+        QLoggingCategory::defaultCategory()->setEnabled(QtWarningMsg, false);
 
     _connect(host, port);
 
@@ -178,33 +176,30 @@ bool Socket::_receiveHeader(MessageHeader& messageHeader)
     return stream.status() == QDataStream::Ok;
 }
 
-bool Socket::_connect(const std::string& host, const unsigned short port)
+void Socket::_connect(const std::string& host, const unsigned short port)
 {
     _socket->connectToHost(host.c_str(), port);
     if (!_socket->waitForConnected(RECEIVE_TIMEOUT_MS))
     {
-        std::cerr << "could not connect to " << host << ":" << port
-                  << std::endl;
-        return false;
+        std::stringstream ss;
+        ss << "could not connect to " << host << ":" << port;
+        throw std::runtime_error(ss.str());
     }
 
     if (!_receiveProtocolVersion())
     {
-        std::cerr << "server protocol version was not received" << std::endl;
         _socket->disconnectFromHost();
-        return false;
+        throw std::runtime_error("server protocol version was not received");
     }
 
     if (_serverProtocolVersion < NETWORK_PROTOCOL_VERSION)
     {
-        std::cerr << "server uses unsupported protocol: "
-                  << _serverProtocolVersion << " < " << NETWORK_PROTOCOL_VERSION
-                  << std::endl;
         _socket->disconnectFromHost();
-        return false;
+        std::stringstream ss;
+        ss << "server uses unsupported protocol: " << _serverProtocolVersion
+           << " < " << NETWORK_PROTOCOL_VERSION;
+        throw std::runtime_error(ss.str());
     }
-
-    return true;
 }
 
 bool Socket::_receiveProtocolVersion()

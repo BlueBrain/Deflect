@@ -70,6 +70,7 @@ public:
      * Construct a Socket and connect to host.
      * @param host The target host (IP address or hostname)
      * @param port The target port
+     * @throw std::runtime_error if the socket could not connect
      */
     DEFLECT_API Socket(const std::string& host, unsigned short port);
 
@@ -128,7 +129,7 @@ private:
     int32_t _serverProtocolVersion;
 
     bool _receiveHeader(MessageHeader& messageHeader);
-    bool _connect(const std::string& host, const unsigned short port);
+    void _connect(const std::string& host, const unsigned short port);
     bool _receiveProtocolVersion();
     bool _write(const QByteArray& data);
 };

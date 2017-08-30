@@ -104,7 +104,7 @@ private:
     void _updateStreams();
     void _updateMultipleStreams();
     void _updateSingleStream();
-    void _showConnectionErrorStatus();
+    void _showConnectionErrorStatus(const QString& message);
 
     void _deselect(ConstStreamPtr stream);
     void _processStreamEvents();
