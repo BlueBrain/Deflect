@@ -47,6 +47,11 @@
 
 class MainWindow;
 
+class stream_failure : public std::runtime_error
+{
+    using runtime_error::runtime_error;
+};
+
 class Stream : public deflect::Stream
 {
 public:
@@ -57,11 +62,12 @@ public:
 
     /**
      * Send an update to the server.
+     * @param compress the image in jpeg
      * @param quality the quality setting for compression [1; 100].
      * @param subsamp the chrominance subsampling mode.
-     * @return an empty string on success, the error message otherwise.
+     * @throw stream_failure on error.
      */
-    std::string update(int quality, deflect::ChromaSubsampling subsamp);
+    void update(bool compress, int quality, deflect::ChromaSubsampling subsamp);
 
     /**
      * Process all pending events.

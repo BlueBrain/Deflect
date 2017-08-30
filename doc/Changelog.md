@@ -5,6 +5,8 @@ Changelog {#Changelog}
 
 ### 0.14.0 (git master)
 
+* [190](https://github.com/BlueBrain/Deflect/pull/190):
+  DesktopStreamer: jpeg compression can be turned on or off.
 * [188](https://github.com/BlueBrain/Deflect/pull/188):
   The default constructors for Stream and Observer can read the port variable
   from the DEFLECT\_HOST environment variable (using hostname[:port]).
