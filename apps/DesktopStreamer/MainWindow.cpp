@@ -214,16 +214,15 @@ void MainWindow::_showMultiWindowMode()
 
     _listView->setVisible(true);
 
-    // select 'Desktop' item as initial default stream item
-    _listView->setCurrentIndex(_listView->model()->index(0, 0));
+    const auto desktopIndex = _listView->model()->index(0, 0);
+    _listView->setCurrentIndex(desktopIndex);
     _streamButton->setText(streamSelected);
 
+    const auto itemsCount = _listView->model()->rowCount();
     const int itemsHorizontal =
-        std::min(3.f,
-                 std::ceil(std::sqrt(float(_listView->model()->rowCount()))));
+        std::min(3.f, std::ceil(std::sqrt(float(itemsCount))));
     const int itemsVertical =
-        std::min(3.f, std::ceil(float(_listView->model()->rowCount()) /
-                                itemsHorizontal));
+        std::min(3.f, std::ceil(float(itemsCount) / itemsHorizontal));
 
     layout()->setSizeConstraint(QLayout::SetDefaultConstraint);
     setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
@@ -267,11 +266,10 @@ void MainWindow::_updateStreams()
 void MainWindow::_updateMultipleStreams()
 {
 #ifdef DEFLECT_USE_QT5MACEXTRAS
-    const QModelIndexList windowIndices =
-        _listView->selectionModel()->selectedIndexes();
+    const auto windowIndices = _listView->selectionModel()->selectedIndexes();
 
     StreamMap streams;
-    for (const QPersistentModelIndex& index : windowIndices)
+    for (const auto& index : windowIndices)
     {
         if (_streams.count(index))
         {
@@ -279,33 +277,19 @@ void MainWindow::_updateMultipleStreams()
             continue;
         }
 
-        const std::string appName = index.isValid()
-                                        ? _listView->model()
-                                              ->data(index, Qt::DisplayRole)
-                                              .toString()
-                                              .toStdString()
-                                        : std::string();
-        const std::string streamId = std::to_string(++_streamID) + " " +
-                                     appName + " - " +
-                                     _streamIdLineEdit->text().toStdString();
-        const int pid = index.isValid()
-                            ? _listView->model()
-                                  ->data(index, DesktopWindowsModel::ROLE_PID)
-                                  .toInt()
-                            : 0;
-        const std::string host = _getStreamHost();
-        StreamPtr stream(new Stream(*this, index, streamId, host, pid));
+        const auto appName = _getAppName(index);
+        const auto streamId = _getFormattedStreamId(++_streamID, appName);
+        const auto host = _getStreamHost();
+        const auto pid = _getAppPid(index);
 
-        if (!stream->isConnected())
+        try
         {
-            _showConnectionErrorStatus();
-            continue;
+            streams.emplace(index, _makeStream(index, streamId, host, pid));
         }
-
-        if (_remoteControlCheckBox->isChecked())
-            stream->registerForEvents();
-
-        streams[index] = stream;
+        catch (const std::runtime_error& e)
+        {
+            _showConnectionErrorStatus(e.what());
+        }
     }
     _streams.swap(streams);
 
@@ -328,23 +312,33 @@ void MainWindow::_updateSingleStream()
     if (!_streams.empty())
         return;
 
+    const auto index = QPersistentModelIndex(); // default == use desktop
+    const auto streamId = _getStreamId();
+    const auto host = _getStreamHost();
+    const auto pid = 0;
+
     try
     {
-        const auto index = QPersistentModelIndex(); // default == use desktop
-        const auto id = _streamIdLineEdit->text().toStdString();
-        const auto host = _getStreamHost();
-
-        _streams[index] = std::make_shared<Stream>(*this, index, id, host);
-
-        if (_remoteControlCheckBox->isChecked())
-            _streams[index]->registerForEvents();
-
+        _streams.emplace(index, _makeStream(index, streamId, host, pid));
         _startStreaming();
     }
     catch (const std::runtime_error& e)
     {
         _showConnectionErrorStatus(e.what());
     }
+}
+
+MainWindow::StreamPtr MainWindow::_makeStream(const QPersistentModelIndex index,
+                                              const std::string& id,
+                                              const std::string& host,
+                                              const int pid) const
+{
+    auto stream = std::make_shared<Stream>(*this, index, id, host, pid);
+
+    if (_remoteControlCheckBox->isChecked())
+        stream->registerForEvents();
+
+    return stream;
 }
 
 void MainWindow::_showConnectionErrorStatus(const QString& message)
@@ -368,7 +362,7 @@ void MainWindow::_processStreamEvents()
         }
     }
 
-    for (ConstStreamPtr stream : closedStreams)
+    for (auto stream : closedStreams)
         _deselect(stream);
 }
 
@@ -429,6 +423,39 @@ void MainWindow::_regulateFrameRate()
             _getStreamHost() + " @ " + std::to_string(fps) + " fps";
         _statusbar->showMessage(message.c_str());
     }
+}
+
+std::string MainWindow::_getAppName(const QModelIndex& appIndex) const
+{
+    if (!appIndex.isValid())
+        return std::string();
+
+    const auto name = _listView->model()->data(appIndex, Qt::DisplayRole);
+    return name.toString().toStdString();
+}
+
+int MainWindow::_getAppPid(const QModelIndex& appIndex) const
+{
+    if (!appIndex.isValid())
+        return 0;
+
+#ifdef DEFLECT_USE_QT5MACEXTRAS
+    const auto pidRole = DesktopWindowsModel::ROLE_PID;
+    return _listView->model()->data(appIndex, pidRole).toInt();
+#else
+    return 0;
+#endif
+}
+
+std::string MainWindow::_getFormattedStreamId(const uint32_t id,
+                                              const std::string& appName) const
+{
+    return std::to_string(id) + " " + appName + " - " + _getStreamId();
+}
+
+std::string MainWindow::_getStreamId() const
+{
+    return _streamIdLineEdit->text().toStdString();
 }
 
 std::string MainWindow::_getStreamHost() const
