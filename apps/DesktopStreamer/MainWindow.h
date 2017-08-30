@@ -104,12 +104,20 @@ private:
     void _updateStreams();
     void _updateMultipleStreams();
     void _updateSingleStream();
-    void _showConnectionErrorStatus();
+    void _showConnectionErrorStatus(const QString& message);
+    StreamPtr _makeStream(QPersistentModelIndex index, const std::string& id,
+                          const std::string& host, int pid) const;
 
     void _deselect(ConstStreamPtr stream);
     void _processStreamEvents();
     void _shareDesktopUpdate();
     void _regulateFrameRate();
+
+    std::string _getAppName(const QModelIndex& appIndex) const;
+    int _getAppPid(const QModelIndex& appIndex) const;
+    std::string _getFormattedStreamId(uint32_t id,
+                                      const std::string& appName) const;
+    std::string _getStreamId() const;
     std::string _getStreamHost() const;
     deflect::ChromaSubsampling _getSubsampling() const;
 };
