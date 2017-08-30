@@ -132,17 +132,16 @@ public:
         return true;
     }
 
-    std::string update(const int quality,
-                       const deflect::ChromaSubsampling subsamp)
+    void update(const bool compress, const int quality,
+                const deflect::ChromaSubsampling subsamp)
     {
         QPixmap pixmap;
 
         if (!_window.isValid() || _window.row() == 0)
         {
             pixmap = QApplication::primaryScreen()->grabWindow(0);
-            _windowRect =
-                QRect(0, 0, pixmap.width() / _parent.devicePixelRatio(),
-                      pixmap.height() / _parent.devicePixelRatio());
+            const auto pixelRatio = _parent.devicePixelRatio();
+            _windowRect = QRect(QPoint{0, 0}, pixmap.size() / pixelRatio);
         }
         else
         {
@@ -156,7 +155,7 @@ public:
         }
 
         if (pixmap.isNull())
-            return "Got no pixmap for desktop or window";
+            throw stream_failure("Got no pixmap for desktop or window");
 
         QImage image = pixmap.toImage();
 #ifdef DEFLECT_USE_QT5MACEXTRAS
@@ -187,23 +186,26 @@ public:
         }
 
         if (image == _image)
-            return std::string(); // OPT: Image is unchanged
+            return; // OPT: Image is unchanged
 
         if (_lastSend.valid() && !_lastSend.get())
-            return "Streaming failure, connection closed";
-        _image = image;
+            throw stream_failure("Streaming failure, connection closed");
 
-        // QImage Format_RGB32 (0xffRRGGBB) corresponds to GL_BGRA ==
-        // deflect::BGRA
+        // Native QImage Format_RGB32 (0xffRRGGBB) corresponds to GL_BGRA ==
+        // deflect::BGRA. But for uncompressed images, Deflect currently only
+        // supports GL_RGBA so the image colors have to be swapped.
+        const auto format = compress ? deflect::BGRA : deflect::RGBA;
+        _image = compress ? image : image.rgbSwapped();
+
         deflect::ImageWrapper deflectImage((const void*)_image.bits(),
                                            _image.width(), _image.height(),
-                                           deflect::BGRA);
-        deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
+                                           format);
+        deflectImage.compressionPolicy =
+            compress ? deflect::COMPRESSION_ON : deflect::COMPRESSION_OFF;
         deflectImage.compressionQuality = std::max(1, std::min(quality, 100));
         deflectImage.subsampling = subsamp;
 
         _lastSend = _stream.sendAndFinish(deflectImage);
-        return std::string();
     }
 
 #ifdef __APPLE__
@@ -318,10 +320,10 @@ Stream::~Stream()
 {
 }
 
-std::string Stream::update(const int quality,
-                           const deflect::ChromaSubsampling subsamp)
+void Stream::update(const bool compress, const int quality,
+                    const deflect::ChromaSubsampling subsamp)
 {
-    return _impl->update(quality, subsamp);
+    _impl->update(compress, quality, subsamp);
 }
 
 bool Stream::processEvents(const bool interact)

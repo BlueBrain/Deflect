@@ -108,6 +108,12 @@ MainWindow::MainWindow()
     connect(_remoteControlCheckBox, &QCheckBox::clicked, this,
             &MainWindow::_onStreamEventsBoxClicked);
 
+    connect(_compressionCheckBox, &QCheckBox::clicked, _qualitySlider,
+            &QSlider::setEnabled);
+
+    connect(_compressionCheckBox, &QCheckBox::clicked, _subsamplingComboBox,
+            &QComboBox::setEnabled);
+
     connect(_qualitySlider, &QSlider::valueChanged, [](const int value) {
         QToolTip::showText(QCursor::pos(), QString::number(value) + "/100");
     });
@@ -248,6 +254,9 @@ void MainWindow::_showAdvancedSettings(const bool visible)
     _streamIdLineEdit->setVisible(visible);
     _streamIdLabel->setVisible(visible);
 
+    _compressionLabel->setVisible(visible);
+    _compressionCheckBox->setVisible(visible);
+
     _qualitySlider->setVisible(visible);
     _qualityLabel->setVisible(visible);
 
@@ -368,19 +377,18 @@ void MainWindow::_processStreamEvents()
 
 void MainWindow::_shareDesktopUpdate()
 {
-    if (_streams.empty())
-        return;
-
-    for (auto i = _streams.begin(); i != _streams.end();)
+    for (auto it = _streams.begin(); it != _streams.end();)
     {
-        const auto error =
-            i->second->update(_qualitySlider->value(), _getSubsampling());
-        if (error.empty())
-            ++i;
-        else
+        try
         {
-            _statusbar->showMessage(QString::fromStdString(error));
-            i = _streams.erase(i);
+            it->second->update(_compressionCheckBox->isChecked(),
+                               _qualitySlider->value(), _getSubsampling());
+            ++it;
+        }
+        catch (const stream_failure& e)
+        {
+            _statusbar->showMessage(e.what());
+            it = _streams.erase(it);
         }
     }
 }
