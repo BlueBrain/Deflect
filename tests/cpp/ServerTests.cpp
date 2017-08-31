@@ -43,6 +43,7 @@ namespace ut = boost::unit_test;
 
 #include "DeflectServer.h"
 #include "MinimalGlobalQtApp.h"
+#include "boost_test_thread_safe.h"
 
 #include <deflect/Frame.h>
 #include <deflect/Stream.h>
@@ -66,8 +67,8 @@ BOOST_AUTO_TEST_CASE(testSizeHintsReceivedByServer)
 
     bool received = false;
     setSizeHintsCallback([&](const QString id, const deflect::SizeHints hints) {
-        BOOST_CHECK_EQUAL(id.toStdString(), testStreamId.toStdString());
-        BOOST_CHECK(hints == testHints);
+        SAFE_BOOST_CHECK_EQUAL(id.toStdString(), testStreamId.toStdString());
+        SAFE_BOOST_CHECK(hints == testHints);
         received = true;
     });
 
@@ -80,8 +81,8 @@ BOOST_AUTO_TEST_CASE(testSizeHintsReceivedByServer)
     }
 
     waitForMessage();
-    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
-    BOOST_CHECK(received);
+    SAFE_BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+    SAFE_BOOST_CHECK(received);
 }
 
 BOOST_AUTO_TEST_CASE(testRegisterForEventReceivedByServer)
@@ -89,9 +90,9 @@ BOOST_AUTO_TEST_CASE(testRegisterForEventReceivedByServer)
     bool received = false;
     setRegisterToEventsCallback([&](const QString id, const bool exclusive,
                                     deflect::EventReceiver* eventReceiver) {
-        BOOST_CHECK_EQUAL(id.toStdString(), testStreamId.toStdString());
-        BOOST_CHECK(exclusive);
-        BOOST_CHECK(eventReceiver);
+        SAFE_BOOST_CHECK_EQUAL(id.toStdString(), testStreamId.toStdString());
+        SAFE_BOOST_CHECK(exclusive);
+        SAFE_BOOST_CHECK(eventReceiver);
         received = true;
     });
 
@@ -104,8 +105,8 @@ BOOST_AUTO_TEST_CASE(testRegisterForEventReceivedByServer)
     }
 
     waitForMessage();
-    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
-    BOOST_CHECK(received);
+    SAFE_BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+    SAFE_BOOST_CHECK(received);
 }
 
 BOOST_AUTO_TEST_CASE(testDataReceivedByServer)
@@ -114,29 +115,30 @@ BOOST_AUTO_TEST_CASE(testDataReceivedByServer)
 
     bool received = false;
     setDataReceivedCallback([&](const QString id, QByteArray data) {
-        BOOST_CHECK_EQUAL(id.toStdString(), testStreamId.toStdString());
-        BOOST_CHECK_EQUAL(data.toStdString(), sentData);
+        SAFE_BOOST_CHECK_EQUAL(id.toStdString(), testStreamId.toStdString());
+        SAFE_BOOST_CHECK_EQUAL(data.toStdString(), sentData);
         received = true;
     });
 
     {
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
                                serverPort());
-        BOOST_REQUIRE(stream.isConnected());
+        SAFE_BOOST_REQUIRE(stream.isConnected());
         stream.sendData(sentData.data(), sentData.size());
         waitForMessage();
     }
 
     waitForMessage();
-    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
-    BOOST_CHECK(received);
+    SAFE_BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+    SAFE_BOOST_CHECK(received);
 }
 
 BOOST_AUTO_TEST_CASE(testOneObserverAndOneStream)
 {
     setFrameReceivedCallback([&](deflect::FramePtr frame) {
-        BOOST_CHECK_EQUAL(frame->segments.size(), 1);
-        BOOST_CHECK_EQUAL(frame->uri.toStdString(), testStreamId.toStdString());
+        SAFE_BOOST_CHECK_EQUAL(frame->segments.size(), 1);
+        SAFE_BOOST_CHECK_EQUAL(frame->uri.toStdString(),
+                               testStreamId.toStdString());
     });
 
     // handle received frames to test the stream's purpose
@@ -145,13 +147,13 @@ BOOST_AUTO_TEST_CASE(testOneObserverAndOneStream)
     {
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
                                serverPort());
-        BOOST_REQUIRE(stream.isConnected());
+        SAFE_BOOST_REQUIRE(stream.isConnected());
 
         deflect::Observer observer(testStreamId.toStdString(), "localhost",
                                    serverPort());
-        BOOST_REQUIRE(observer.isConnected());
+        SAFE_BOOST_REQUIRE(observer.isConnected());
 
-        BOOST_CHECK(observer.registerForEvents(true));
+        SAFE_BOOST_CHECK(observer.registerForEvents(true));
 
         // handle connects first before sending and receiving frames
         waitForMessage();
@@ -182,16 +184,16 @@ BOOST_AUTO_TEST_CASE(testOneObserverAndOneStream)
                 ;
 
             const auto receivedEvent = observer.getEvent();
-            BOOST_CHECK_EQUAL(receivedEvent.key, event.key);
-            BOOST_CHECK_EQUAL(receivedEvent.type, event.type);
+            SAFE_BOOST_CHECK_EQUAL(receivedEvent.key, event.key);
+            SAFE_BOOST_CHECK_EQUAL(receivedEvent.type, event.type);
         }
     }
 
     // handle close of streamer and observer
     waitForMessage();
 
-    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
-    BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames);
+    SAFE_BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+    SAFE_BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames);
 }
 
 BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
@@ -213,16 +215,17 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
     }
 
     const unsigned int numSegments = segments.size();
-    BOOST_REQUIRE_EQUAL(numSegments,
-                        std::ceil((float)width / segmentSize) *
-                            std::ceil((float)height / segmentSize));
+    SAFE_BOOST_REQUIRE_EQUAL(numSegments,
+                             std::ceil((float)width / segmentSize) *
+                                 std::ceil((float)height / segmentSize));
 
     setFrameReceivedCallback([&](deflect::FramePtr frame) {
-        BOOST_CHECK_EQUAL(frame->segments.size(), numSegments);
-        BOOST_CHECK_EQUAL(frame->uri.toStdString(), testStreamId.toStdString());
+        SAFE_BOOST_CHECK_EQUAL(frame->segments.size(), numSegments);
+        SAFE_BOOST_CHECK_EQUAL(frame->uri.toStdString(),
+                               testStreamId.toStdString());
         const auto dim = frame->computeDimensions();
-        BOOST_CHECK_EQUAL(dim.width(), width);
-        BOOST_CHECK_EQUAL(dim.height(), height);
+        SAFE_BOOST_CHECK_EQUAL(dim.width(), width);
+        SAFE_BOOST_CHECK_EQUAL(dim.height(), height);
     });
 
     const std::vector<uint8_t> pixels(segmentSize * segmentSize * 4, 42);
@@ -233,7 +236,7 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
     {
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
                                serverPort());
-        BOOST_REQUIRE(stream.isConnected());
+        SAFE_BOOST_REQUIRE(stream.isConnected());
 
         // handle connects first before sending and receiving frames
         waitForMessage();
@@ -256,10 +259,10 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
                 const bool success = stream.send(deflectImage).get();
 
                 std::lock_guard<std::mutex> lock(testMutex);
-                BOOST_CHECK(success);
+                SAFE_BOOST_CHECK(success);
             }
 
-            BOOST_CHECK(stream.finishFrame().get());
+            SAFE_BOOST_CHECK(stream.finishFrame().get());
 
             requestFrame(testStreamId);
 
@@ -271,22 +274,22 @@ BOOST_AUTO_TEST_CASE(testThreadedSmallSegmentStream)
     // handle close of streamer
     waitForMessage();
 
-    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
-    BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames);
+    SAFE_BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
+    SAFE_BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames);
 }
 
 BOOST_AUTO_TEST_CASE(testCompressionErrorForBigNullImage)
 {
     deflect::Stream stream(testStreamId.toStdString(), "localhost",
                            serverPort());
-    BOOST_REQUIRE(stream.isConnected());
+    SAFE_BOOST_REQUIRE(stream.isConnected());
 
     // handle connect of stream
     waitForMessage();
 
     deflect::ImageWrapper bigImage(nullptr, 1000, 1000, deflect::ARGB);
     bigImage.compressionPolicy = deflect::COMPRESSION_ON;
-    BOOST_CHECK_THROW(stream.send(bigImage).get(), std::invalid_argument);
+    SAFE_BOOST_CHECK_THROW(stream.send(bigImage).get(), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -6,6 +6,7 @@
 # Generates a mock library used by the cpp unit tests.
 
 set(DEFLECTMOCK_HEADERS
+  boost_test_thread_safe.h
   DeflectServer.h
   MinimalGlobalQtApp.h
   MinimalDeflectServer.h
