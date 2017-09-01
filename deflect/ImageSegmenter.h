@@ -75,8 +75,7 @@ public:
      * @return true if all image handlers returned true, false on failure
      * @see setNominalSegmentDimensions()
      */
-    DEFLECT_API bool generate(const ImageWrapper& image,
-                              const Handler& handler);
+    DEFLECT_API bool generate(const ImageWrapper& image, Handler handler);
 
     /**
      * Set the nominal segment dimensions.

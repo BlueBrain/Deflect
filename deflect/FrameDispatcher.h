@@ -58,7 +58,7 @@ class FrameDispatcher : public QObject
 
 public:
     /** Construct a dispatcher */
-    FrameDispatcher(QObject* parent);
+    FrameDispatcher(QObject* parent = nullptr);
 
     /** Destructor. */
     ~FrameDispatcher();
@@ -143,6 +143,14 @@ signals:
     void pixelStreamOpened(QString uri);
 
     /**
+     * Notify that an exception occured and the stream should be closed.
+     *
+     * @param uri Identifier for the stream
+     * @param what The description of the exception that occured
+     */
+    void pixelStreamException(QString uri, QString what);
+
+    /**
      * Notify that a pixel stream has been closed.
      *
      * @param uri Identifier for the stream
@@ -155,13 +163,6 @@ signals:
      * @param frame The latest frame available for a stream
      */
     void sendFrame(deflect::FramePtr frame);
-
-    /**
-     * Notify that a pixel stream has exceeded its maximum allowed size.
-     *
-     * @param uri Identifier for the stream
-     */
-    void bufferSizeExceeded(QString uri);
 
 private:
     class Impl;

@@ -61,6 +61,7 @@ ServerWorker::ServerWorker(const int socketDescriptor)
     , _clientProtocolVersion{NETWORK_PROTOCOL_VERSION}
     , _registeredToEvents{false}
     , _activeView{View::mono}
+    , _activeRowOrder{RowOrder::top_down}
 {
     if (!_tcpSocket->setSocketDescriptor(socketDescriptor))
     {
@@ -266,6 +267,14 @@ void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
         break;
     }
 
+    case MESSAGE_TYPE_IMAGE_ROW_ORDER:
+    {
+        const auto order = reinterpret_cast<const RowOrder*>(byteArray.data());
+        if (*order >= RowOrder::top_down && *order <= RowOrder::bottom_up)
+            _activeRowOrder = *order;
+        break;
+    }
+
     case MESSAGE_TYPE_BIND_EVENTS:
     case MESSAGE_TYPE_BIND_EVENTS_EX:
         if (_registeredToEvents)
@@ -311,6 +320,8 @@ void ServerWorker::_handlePixelStreamMessage(const QByteArray& message)
     segment.imageData =
         message.right(message.size() - sizeof(SegmentParameters));
     segment.view = _activeView;
+    segment.rowOrder = _activeRowOrder;
+
     emit(receivedSegment(_streamId, _sourceId, segment));
 }
 

@@ -41,10 +41,9 @@
 #ifndef DEFLECT_STREAMSENDWORKER_H
 #define DEFLECT_STREAMSENDWORKER_H
 
-#include "ImageSegmenter.h" // member
-#include "MessageHeader.h"  // MessageType
-#include "Socket.h"         // member
-#include "Stream.h"         // Stream::Future
+#include "MessageHeader.h" // MessageType
+#include "Socket.h"        // member
+#include "Stream.h"        // Stream::Future
 
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -59,6 +58,8 @@
 
 namespace deflect
 {
+using Task = std::function<bool()>;
+
 /**
  * Worker thread class that sends images and messages through a Socket.
  *
@@ -77,29 +78,21 @@ public:
     /** Stop and destroy the worker. */
     ~StreamSendWorker();
 
-    /** Stop the worker and clear any pending send tasks. */
-    void stop();
+    /** Enqueue a request to be send during the execution of run(). */
+    Stream::Future enqueueRequest(Task&& action, bool isFinish = false);
 
-    /** Enqueue an image to be send during the execution of run(). */
-    Stream::Future enqueueImage(const ImageWrapper& image, bool finish);
-    Stream::Future enqueueFinish();       //!< Enqueue a finishFrame()
-    Stream::Future enqueueOpen();         //!< Enqueue an open message
-    Stream::Future enqueueClose();        //!< Enqueue a close message
-    Stream::Future enqueueObserverOpen(); //!< Enqueue an observer open message
+    /** Enqueue a request to be send during the execution of run(). */
+    Stream::Future enqueueRequest(std::vector<Task>&& actions,
+                                  bool isFinish = false);
 
-    /** @sa Stream::registerForEvents */
-    Stream::Future enqueueBindRequest(bool exclusive);
+    /** Enqueue a request with no future to check for its completion. */
+    void enqueueFastRequest(Task&& task);
 
-    /** @sa Stream::sendSizeHints */
-    Stream::Future enqueueSizeHints(const SizeHints& hints);
-
-    /** @sa Stream::sendData */
-    Stream::Future enqueueData(QByteArray data);
-
+    /** @return true if a finsh frame operation is pending. */
+    bool canAcceptNewImageSend() const { return !_pendingFinish; }
 private:
     using Promise = std::promise<bool>;
     using PromisePtr = std::shared_ptr<Promise>;
-    using Task = std::function<bool()>;
 
     struct Request
     {
@@ -111,26 +104,36 @@ private:
     Socket& _socket;
     const std::string& _id;
 
-    ImageSegmenter _imageSegmenter;
     moodycamel::BlockingConcurrentQueue<Request> _requests;
     bool _running = false;
     View _currentView = View::mono;
+    RowOrder _currentRowOrder = RowOrder::top_down;
 
     std::vector<Request> _dequeuedRequests;
     bool _pendingFinish = false;
     Request _finishRequest;
 
+    /** Stop the worker and clear any pending send tasks. */
+    void stop();
+
     /** Main QThread loop doing asynchronous processing of queued tasks. */
     void run() final;
 
-    Stream::Future _enqueueRequest(std::vector<Task>&& actions,
-                                   bool isFinish = false);
-
     friend class deflect::test::Application; // to send pre-compressed segments
-    bool _sendImage(const ImageWrapper& image);
-    bool _sendImageView(View view);
+    friend class TaskBuilder;
+
+    bool _sendOpenObserver();
+    bool _sendOpenStream();
+    bool _sendClose();
     bool _sendSegment(const Segment& segment);
+    bool _sendImageView(View view);
+    bool _sendRowOrderIfChanged(RowOrder rowOrder);
+    bool _sendImageRowOrder(RowOrder rowOrder);
     bool _sendFinish();
+    bool _sendData(const QByteArray data);
+    bool _sendSizeHints(const SizeHints& hints);
+    bool _sendBindEvents(const bool exclusive);
+
     bool _send(MessageType type, const QByteArray& message,
                bool waitForBytesWritten = true);
 };

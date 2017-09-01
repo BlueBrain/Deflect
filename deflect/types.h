@@ -66,6 +66,13 @@ enum class ChromaSubsampling
     YUV420  /**< 50% vertical + horizontal sub-sampling */
 };
 
+/** Row order for images memory layout. */
+enum class RowOrder
+{
+    top_down, /**< Standard image with (0,0) at the top-left corner. */
+    bottom_up /**< OpenGL image with (0,0) at the bottom-left corner. */
+};
+
 /** Cast an enum class value to its underlying type. */
 template <typename E>
 constexpr typename std::underlying_type<E>::type as_underlying_type(E e)
@@ -97,6 +104,7 @@ std::future<T> make_exception_future(Exception&& e)
 class EventReceiver;
 class Frame;
 class FrameDispatcher;
+class ImageSegmenter;
 class SegmentDecoder;
 class Server;
 class Stream;

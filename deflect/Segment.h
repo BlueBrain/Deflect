@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -60,6 +60,8 @@ struct Segment
 
     /** Image data of the segment. */
     QByteArray imageData;
+
+    RowOrder rowOrder = RowOrder::top_down; //!< imageData row order
 
     /** @internal raw, uncompressed source image, used for compression */
     const ImageWrapper* sourceImage = nullptr;

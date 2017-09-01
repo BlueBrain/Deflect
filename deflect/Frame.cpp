@@ -45,14 +45,30 @@ QSize Frame::computeDimensions() const
 {
     QSize size(0, 0);
 
-    for (size_t i = 0; i < segments.size(); ++i)
+    for (const auto& segment : segments)
     {
-        const deflect::SegmentParameters& params = segments[i].parameters;
+        const auto& params = segment.parameters;
         size.setWidth(std::max(size.width(), (int)(params.width + params.x)));
         size.setHeight(
             std::max(size.height(), (int)(params.height + params.y)));
     }
 
     return size;
+}
+
+RowOrder Frame::determineRowOrder() const
+{
+    if (segments.empty())
+        throw std::runtime_error("frame has no segements");
+
+    const auto frameRowOrder = segments[0].rowOrder;
+
+    for (const auto& segment : segments)
+    {
+        if (segment.rowOrder != frameRowOrder)
+            throw std::runtime_error("frame has incoherent row orders");
+    }
+
+    return frameRowOrder;
 }
 }

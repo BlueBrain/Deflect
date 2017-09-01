@@ -29,6 +29,7 @@ set(DEFLECT_HEADERS
   Socket.h
   SourceBuffer.h
   StreamPrivate.h
+  TaskBuilder.h
 )
 
 set(DEFLECT_SOURCES
@@ -48,6 +49,7 @@ set(DEFLECT_SOURCES
   Stream.cpp
   StreamPrivate.cpp
   StreamSendWorker.cpp
+  TaskBuilder.cpp
 )
 
 set(DEFLECT_LINK_LIBRARIES PRIVATE Qt5::Concurrent Qt5::Core Qt5::Network)

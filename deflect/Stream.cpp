@@ -61,16 +61,16 @@ Stream::~Stream()
 
 Stream::Future Stream::send(const ImageWrapper& image)
 {
-    return _impl->sendWorker.enqueueImage(image, false);
+    return _impl->sendImage(image, false);
 }
 
 Stream::Future Stream::finishFrame()
 {
-    return _impl->sendWorker.enqueueFinish();
+    return _impl->sendFinishFrame();
 }
 
 Stream::Future Stream::sendAndFinish(const ImageWrapper& image)
 {
-    return _impl->sendWorker.enqueueImage(image, true);
+    return _impl->sendImage(image, true);
 }
 }

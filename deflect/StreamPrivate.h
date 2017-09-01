@@ -42,8 +42,10 @@
 #ifndef DEFLECT_STREAMPRIVATE_H
 #define DEFLECT_STREAMPRIVATE_H
 
+#include "ImageSegmenter.h"   // member
 #include "Socket.h"           // member
 #include "StreamSendWorker.h" // member
+#include "TaskBuilder.h"      // member
 
 #include <functional>
 #include <string>
@@ -82,6 +84,20 @@ public:
 
     /** The worker doing all the socket send operations. */
     StreamSendWorker sendWorker;
+
+    /** Prepare tasks for the sendWorker. */
+    TaskBuilder task;
+
+    /** The segmenter for doing multithreaded image segmentation + send. */
+    ImageSegmenter _imageSegmenter;
+
+    Stream::Future bindEvents(bool exclusive);
+    Stream::Future send(const SizeHints& hints);
+    Stream::Future send(QByteArray&& data);
+    Stream::Future sendImage(const ImageWrapper& image, bool finish);
+    Stream::Future sendSingleSegment(Segment&& segment, RowOrder orientation,
+                                     bool finish);
+    Stream::Future sendFinishFrame();
 };
 }
 #endif

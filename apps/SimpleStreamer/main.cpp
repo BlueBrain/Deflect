@@ -254,9 +254,6 @@ struct Image
         image.data.resize(image.width * image.height * 4);
         glReadPixels(0, 0, image.width, image.height, GL_RGBA, GL_UNSIGNED_BYTE,
                      (GLvoid*)image.data.data());
-
-        deflect::ImageWrapper::swapYAxis(image.data.data(), image.width,
-                                         image.height, 4);
         return image;
     }
 
@@ -292,6 +289,7 @@ bool send(const Image& image, const deflect::View view)
                                          : deflect::COMPRESSION_OFF;
     deflectImage.compressionQuality = deflectCompressionQuality;
     deflectImage.view = view;
+    deflectImage.rowOrder = deflect::RowOrder::bottom_up;
     return deflectStream->send(deflectImage).get();
 }
 

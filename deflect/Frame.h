@@ -63,6 +63,12 @@ public:
 
     /** Get the total dimensions of this frame. */
     DEFLECT_API QSize computeDimensions() const;
+
+    /**
+     * @return the row order of all frame segments
+     * @throws std::runtime_error if not all segments have the same RowOrder
+     */
+    DEFLECT_API RowOrder determineRowOrder() const;
 };
 }
 

@@ -45,13 +45,6 @@
 #include "SizeHints.h"
 
 #include <iostream>
-#include <sstream>
-
-namespace
-{
-const unsigned int SEGMENT_SIZE = 512;
-const unsigned int SMALL_IMAGE_SIZE = 64;
-}
 
 namespace deflect
 {
@@ -60,12 +53,29 @@ StreamSendWorker::StreamSendWorker(Socket& socket, const std::string& id)
     , _id(id)
     , _dequeuedRequests(std::thread::hardware_concurrency() / 2)
 {
-    _imageSegmenter.setNominalSegmentDimensions(SEGMENT_SIZE, SEGMENT_SIZE);
 }
 
 StreamSendWorker::~StreamSendWorker()
 {
     stop();
+}
+
+void StreamSendWorker::stop()
+{
+    {
+        _running = false;
+        enqueueRequest(std::vector<Task>());
+    }
+
+    quit();
+    wait();
+
+    Request request;
+    while (_requests.try_dequeue(request))
+    {
+        if (request.promise)
+            request.promise->set_value(false);
+    }
 }
 
 void StreamSendWorker::run()
@@ -101,7 +111,6 @@ void StreamSendWorker::run()
 
         for (size_t i = 0; i < count; ++i)
         {
-            bool success = true;
             auto& request = _dequeuedRequests[i];
 
             // postpone a finish request to maintain order (as the lockfree
@@ -123,6 +132,7 @@ void StreamSendWorker::run()
 
             try
             {
+                bool success = true;
                 for (auto& task : request.tasks)
                 {
                     if (!task())
@@ -144,153 +154,40 @@ void StreamSendWorker::run()
     }
 }
 
-void StreamSendWorker::stop()
+Stream::Future StreamSendWorker::enqueueRequest(Task&& action, bool isFinish)
 {
-    {
-        _running = false;
-        _enqueueRequest(std::vector<Task>());
-    }
-
-    quit();
-    wait();
-
-    Request request;
-    while (_requests.try_dequeue(request))
-    {
-        if (request.promise)
-            request.promise->set_value(false);
-    }
+    return enqueueRequest(std::vector<Task>{std::move(action)}, isFinish);
 }
 
-Stream::Future StreamSendWorker::enqueueImage(const ImageWrapper& image,
-                                              const bool finish)
+Stream::Future StreamSendWorker::enqueueRequest(std::vector<Task>&& tasks,
+                                                const bool isFinish)
 {
-    if (_pendingFinish)
-    {
-        return make_exception_future<bool>(
-            std::runtime_error("Pending finish, no send allowed"));
-    }
-
-    if (image.compressionPolicy != COMPRESSION_ON && image.pixelFormat != RGBA)
-    {
-        return make_exception_future<bool>(std::invalid_argument(
-            "Currently, RAW images can only be sent in RGBA format. Other "
-            "formats support remain to be implemented."));
-    }
-
-    if (image.compressionPolicy == COMPRESSION_ON)
-    {
-        if (image.compressionQuality < 1 || image.compressionQuality > 100)
-        {
-            std::stringstream msg;
-            msg << "JPEG compression quality must be between 1 and 100, got "
-                << image.compressionQuality << std::endl;
-            return make_exception_future<bool>(
-                std::invalid_argument(msg.str()));
-        }
-    }
-
-    std::vector<Task> tasks;
-
-    if (image.width <= SMALL_IMAGE_SIZE && image.height <= SMALL_IMAGE_SIZE)
-    {
-        try
-        {
-            auto segment = _imageSegmenter.createSingleSegment(image);
-
-            tasks.emplace_back(
-                [this, segment] { return _sendSegment(segment); });
-
-            // as we expect to encounter a lot of these small sends, be
-            // optimistic and fulfill the promise already to reduce load in the
-            // send thread (c.f. lock ops performance on KNL)
-            _requests.enqueue({nullptr, tasks, false});
-            if (finish)
-                return enqueueFinish();
-            return make_ready_future(true);
-        }
-        catch (...)
-        {
-            return make_exception_future<bool>(std::current_exception());
-        }
-    }
-    else
-        tasks.emplace_back([this, image] { return _sendImage(image); });
-
-    if (finish)
-        tasks.emplace_back([this] { return _sendFinish(); });
-
-    return _enqueueRequest(std::move(tasks));
+    auto promise = std::make_shared<Promise>();
+    auto future = promise->get_future();
+    _requests.enqueue({std::move(promise), std::move(tasks), isFinish});
+    return future;
 }
 
-Stream::Future StreamSendWorker::enqueueFinish()
+void StreamSendWorker::enqueueFastRequest(Task&& task)
 {
-    return _enqueueRequest({[this] { return _sendFinish(); }}, true);
+    _requests.enqueue({nullptr, std::vector<Task>{std::move(task)}, false});
 }
 
-Stream::Future StreamSendWorker::enqueueOpen()
+bool StreamSendWorker::_sendOpenObserver()
 {
-    return _enqueueRequest({[this] {
-        return _send(MESSAGE_TYPE_PIXELSTREAM_OPEN,
-                     QByteArray::number(NETWORK_PROTOCOL_VERSION));
-    }});
+    return _send(MESSAGE_TYPE_OBSERVER_OPEN,
+                 QByteArray::number(NETWORK_PROTOCOL_VERSION));
 }
 
-Stream::Future StreamSendWorker::enqueueClose()
+bool StreamSendWorker::_sendOpenStream()
 {
-    return _enqueueRequest({[this] { return _send(MESSAGE_TYPE_QUIT, {}); }});
+    return _send(MESSAGE_TYPE_PIXELSTREAM_OPEN,
+                 QByteArray::number(NETWORK_PROTOCOL_VERSION));
 }
 
-Stream::Future StreamSendWorker::enqueueObserverOpen()
+bool StreamSendWorker::_sendClose()
 {
-    return _enqueueRequest({[this] {
-        return _send(MESSAGE_TYPE_OBSERVER_OPEN,
-                     QByteArray::number(NETWORK_PROTOCOL_VERSION));
-    }});
-}
-
-Stream::Future StreamSendWorker::enqueueBindRequest(const bool exclusive)
-{
-    return _enqueueRequest({[this, exclusive] {
-        return _send(exclusive ? MESSAGE_TYPE_BIND_EVENTS_EX
-                               : MESSAGE_TYPE_BIND_EVENTS,
-                     {});
-    }});
-}
-
-Stream::Future StreamSendWorker::enqueueSizeHints(const SizeHints& hints)
-{
-    return _enqueueRequest({[this, hints] {
-        return _send(MESSAGE_TYPE_SIZE_HINTS,
-                     QByteArray{(const char*)(&hints), sizeof(SizeHints)});
-    }});
-}
-
-Stream::Future StreamSendWorker::enqueueData(const QByteArray data)
-{
-    return _enqueueRequest(
-        {[this, data] { return _send(MESSAGE_TYPE_DATA, data); }});
-}
-
-Stream::Future StreamSendWorker::_enqueueRequest(std::vector<Task>&& tasks,
-                                                 const bool isFinish)
-{
-    PromisePtr promise(new Promise);
-    _requests.enqueue({promise, tasks, isFinish});
-    return promise->get_future();
-}
-
-bool StreamSendWorker::_sendImage(const ImageWrapper& image)
-{
-    const auto sendFunc =
-        std::bind(&StreamSendWorker::_sendSegment, this, std::placeholders::_1);
-    return _imageSegmenter.generate(image, sendFunc);
-}
-
-bool StreamSendWorker::_sendImageView(const View view)
-{
-    return _send(MESSAGE_TYPE_IMAGE_VIEW,
-                 QByteArray{(const char*)(&view), sizeof(View)});
+    return _send(MESSAGE_TYPE_QUIT, {});
 }
 
 bool StreamSendWorker::_sendSegment(const Segment& segment)
@@ -304,6 +201,7 @@ bool StreamSendWorker::_sendSegment(const Segment& segment)
             return false;
         _currentView = segment.view;
     }
+    _sendRowOrderIfChanged(segment.rowOrder);
 
     auto message = QByteArray{(const char*)(&segment.parameters),
                               sizeof(SegmentParameters)};
@@ -311,9 +209,50 @@ bool StreamSendWorker::_sendSegment(const Segment& segment)
     return _send(MESSAGE_TYPE_PIXELSTREAM, message, false);
 }
 
+bool StreamSendWorker::_sendImageView(const View view)
+{
+    return _send(MESSAGE_TYPE_IMAGE_VIEW,
+                 QByteArray{(const char*)(&view), sizeof(View)});
+}
+
+bool StreamSendWorker::_sendRowOrderIfChanged(const RowOrder rowOrder)
+{
+    if (rowOrder != _currentRowOrder)
+    {
+        if (!_sendImageRowOrder(rowOrder))
+            return false;
+        _currentRowOrder = rowOrder;
+    }
+    return true;
+}
+
+bool StreamSendWorker::_sendImageRowOrder(const RowOrder rowOrder)
+{
+    return _send(MESSAGE_TYPE_IMAGE_ROW_ORDER,
+                 QByteArray{(const char*)(&rowOrder), sizeof(RowOrder)});
+}
+
 bool StreamSendWorker::_sendFinish()
 {
     return _send(MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, {});
+}
+
+bool StreamSendWorker::_sendData(const QByteArray data)
+{
+    return _send(MESSAGE_TYPE_DATA, data);
+}
+
+bool StreamSendWorker::_sendSizeHints(const SizeHints& hints)
+{
+    return _send(MESSAGE_TYPE_SIZE_HINTS,
+                 QByteArray{(const char*)(&hints), sizeof(SizeHints)});
+}
+
+bool StreamSendWorker::_sendBindEvents(const bool exclusive)
+{
+    return _send(exclusive ? MESSAGE_TYPE_BIND_EVENTS_EX
+                           : MESSAGE_TYPE_BIND_EVENTS,
+                 {});
 }
 
 bool StreamSendWorker::_send(const MessageType type, const QByteArray& message,

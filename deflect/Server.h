@@ -106,6 +106,16 @@ signals:
     void pixelStreamOpened(QString uri);
 
     /**
+     * Notify that a stream has encountered an exception and will be closed.
+     *
+     * Used for error reporting.
+     *
+     * @param uri Identifier for the stream
+     * @param what The error message
+     */
+    void pixelStreamException(QString uri, QString what);
+
+    /**
      * Notify that a pixel stream has been closed.
      *
      * @param uri Identifier for the stream

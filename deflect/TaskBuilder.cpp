@@ -1,7 +1,8 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
-/*                          Raphael.Dumusc@epfl.ch                   */
-/*                          Daniel.Nachbaur@epfl.ch                  */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* All rights reserved.                                              */
+/*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
 /* without modification, are permitted provided that the following   */
 /* conditions are met:                                               */
@@ -33,81 +34,79 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of The University of Texas at Austin.                 */
+/* or implied, of Ecole polytechnique federale de Lausanne.          */
 /*********************************************************************/
 
-#ifndef DEFLECT_MESSAGE_HEADER_H
-#define DEFLECT_MESSAGE_HEADER_H
+#include "TaskBuilder.h"
 
-#include <deflect/api.h>
-
-#ifdef _WIN32
-typedef unsigned __int32 uint32_t;
-#else
-#include <stdint.h>
-#endif
-
-#include <string>
-
-class QDataStream;
+#include "ImageSegmenter.h"
+#include "SizeHints.h"
 
 namespace deflect
 {
-/** The message types. */
-enum MessageType
+TaskBuilder::TaskBuilder(StreamSendWorker* worker)
+    : _worker{worker}
 {
-    MESSAGE_TYPE_NONE = 0,
-    MESSAGE_TYPE_PIXELSTREAM_OPEN = 3,
-    MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME = 4,
-    MESSAGE_TYPE_PIXELSTREAM = 5,
-    MESSAGE_TYPE_BIND_EVENTS = 6,
-    MESSAGE_TYPE_BIND_EVENTS_EX = 7,
-    MESSAGE_TYPE_BIND_EVENTS_REPLY = 8,
-    MESSAGE_TYPE_EVENT = 9,
-    MESSAGE_TYPE_QUIT = 12,
-    MESSAGE_TYPE_SIZE_HINTS = 13,
-    MESSAGE_TYPE_DATA = 14,
-    MESSAGE_TYPE_IMAGE_VIEW = 15,
-    MESSAGE_TYPE_OBSERVER_OPEN = 16,
-    MESSAGE_TYPE_IMAGE_ROW_ORDER = 17
-};
-
-#define MESSAGE_HEADER_URI_LENGTH 64
-
-/** Fixed-size message header. */
-struct MessageHeader
-{
-    /** Message type. */
-    MessageType type;
-
-    /** Size of the message payload. */
-    uint32_t size;
-
-    /**
-     * Optional URI related to message.
-     * @note Needs to be of fixed size so that sizeof(MessageHeader) is constant
-     */
-    char uri[MESSAGE_HEADER_URI_LENGTH];
-
-    /** Construct a default message header */
-    DEFLECT_API MessageHeader();
-
-    /** Construct a message header with a uri */
-    DEFLECT_API MessageHeader(const MessageType type, const uint32_t size,
-                              const std::string& streamUri = "");
-
-    /** The size of the QDataStream serialized output. */
-    static const size_t serializedSize;
-};
 }
 
-/**
- * Serialization for network, where sizeof(MessageHeader) can differ between
- * compilers.
- */
-DEFLECT_API QDataStream& operator<<(QDataStream& out,
-                                    const deflect::MessageHeader& header);
-DEFLECT_API QDataStream& operator>>(QDataStream& in,
-                                    deflect::MessageHeader& header);
+Task TaskBuilder::openStream()
+{
+    return std::bind(&StreamSendWorker::_sendOpenStream, _worker);
+}
 
-#endif
+Task TaskBuilder::close()
+{
+    return std::bind(&StreamSendWorker::_sendClose, _worker);
+}
+
+Task TaskBuilder::openObserver()
+{
+    return std::bind(&StreamSendWorker::_sendOpenObserver, _worker);
+}
+
+Task TaskBuilder::bindEvents(const bool exclusive)
+{
+    return std::bind(&StreamSendWorker::_sendBindEvents, _worker, exclusive);
+}
+
+Task TaskBuilder::send(const SizeHints& hints)
+{
+    return std::bind(&StreamSendWorker::_sendSizeHints, _worker, hints);
+}
+
+Task TaskBuilder::send(const QByteArray& data)
+{
+    return std::bind(&StreamSendWorker::_sendData, _worker, data);
+}
+
+std::vector<Task> TaskBuilder::sendUsingMTCompression(
+    const ImageWrapper& image, ImageSegmenter& imageSegmenter,
+    const bool finish)
+{
+    std::vector<Task> tasks;
+    tasks.emplace_back(send(image, imageSegmenter));
+    if (finish)
+        tasks.emplace_back(finishFrame());
+    return tasks;
+}
+
+Task TaskBuilder::finishFrame()
+{
+    return std::bind(&StreamSendWorker::_sendFinish, _worker);
+}
+
+Task TaskBuilder::send(Segment&& segment)
+{
+    return std::bind(&StreamSendWorker::_sendSegment, _worker, segment);
+}
+
+Task TaskBuilder::send(const ImageWrapper& image,
+                       ImageSegmenter& imageSegmenter)
+{
+    auto sendFunc = std::bind(&StreamSendWorker::_sendSegment, _worker,
+                              std::placeholders::_1);
+    return [&imageSegmenter, image, sendFunc]() {
+        return imageSegmenter.generate(image, sendFunc);
+    };
+}
+}

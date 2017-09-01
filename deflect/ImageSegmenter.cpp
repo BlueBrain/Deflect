@@ -62,7 +62,7 @@ bool _isOnRightSideOfSideBySideImage(const Segment& segment)
 }
 }
 
-bool ImageSegmenter::generate(const ImageWrapper& image, const Handler& handler)
+bool ImageSegmenter::generate(const ImageWrapper& image, Handler handler)
 {
     if (image.compressionPolicy == COMPRESSION_ON)
         return _generateJpeg(image, handler);
@@ -240,6 +240,7 @@ Segments ImageSegmenter::_generateSegments(const ImageWrapper& image) const
         segment.view =
             image.view == View::side_by_side ? View::left_eye : image.view;
         segment.sourceImage = &image;
+        segment.rowOrder = image.rowOrder;
         segments.push_back(segment);
     }
 

@@ -100,7 +100,7 @@ bool Observer::registerForEvents(const bool exclusive)
         return true;
 
     // Send the bind message
-    if (!_impl->sendWorker.enqueueBindRequest(exclusive).get())
+    if (!_impl->bindEvents(exclusive).get())
     {
         std::cerr << "deflect::Stream::registerForEvents: sending bind message "
                   << "failed" << std::endl;
@@ -175,13 +175,11 @@ void Observer::setDisconnectedCallback(const std::function<void()> callback)
 
 void Observer::sendSizeHints(const SizeHints& hints)
 {
-    _impl->sendWorker.enqueueSizeHints(hints);
+    _impl->send(hints);
 }
 
 bool Observer::sendData(const char* data, const size_t count)
 {
-    return _impl->sendWorker
-        .enqueueData(QByteArray::fromRawData(data, int(count)))
-        .get();
+    return _impl->send(QByteArray::fromRawData(data, int(count))).get();
 }
 }

@@ -83,8 +83,11 @@ Server::Server(const int port)
             &Server::pixelStreamClosed);
     connect(_impl->frameDispatcher, &FrameDispatcher::sendFrame, this,
             &Server::receivedFrame);
-    connect(_impl->frameDispatcher, &FrameDispatcher::bufferSizeExceeded, this,
-            &Server::closePixelStream);
+    connect(_impl->frameDispatcher, &FrameDispatcher::pixelStreamException,
+            [this](const QString uri, const QString what) {
+                emit pixelStreamException(uri, what);
+                closePixelStream(uri);
+            });
 }
 
 Server::~Server()

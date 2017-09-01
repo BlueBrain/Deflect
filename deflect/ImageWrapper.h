@@ -138,6 +138,22 @@ struct ImageWrapper
     View view = View::mono;
 
     /**
+     * The order of the image's data rows in memory.
+     *
+     * Set this value to bottom_up if the image data is stored following the
+     * OpenGL convention.
+     *
+     * All images that form a frame (possibly from multiple Streams) must have
+     * the same row order, otherwise the frame is invalid. This is because the
+     * frame's segments need to be reordered in addtion to flipping them
+     * individually.
+     *
+     * This is an alternative to calling swapYAxis() before sending.
+     * @version 1.7
+     */
+    RowOrder rowOrder = RowOrder::top_down;
+
+    /**
      * Get the number of bytes per pixel based on the pixelFormat.
      * @version 1.0
      */

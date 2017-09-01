@@ -1,7 +1,8 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
-/*                          Raphael.Dumusc@epfl.ch                   */
-/*                          Daniel.Nachbaur@epfl.ch                  */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* All rights reserved.                                              */
+/*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
 /* without modification, are permitted provided that the following   */
 /* conditions are met:                                               */
@@ -36,78 +37,40 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_MESSAGE_HEADER_H
-#define DEFLECT_MESSAGE_HEADER_H
+#define BOOST_TEST_MODULE FrameTests
 
-#include <deflect/api.h>
+#include <boost/test/unit_test.hpp>
+namespace ut = boost::unit_test;
 
-#ifdef _WIN32
-typedef unsigned __int32 uint32_t;
-#else
-#include <stdint.h>
-#endif
+#include "FrameUtils.h"
 
-#include <string>
-
-class QDataStream;
-
-namespace deflect
+BOOST_AUTO_TEST_CASE(compute_frame_dimensions)
 {
-/** The message types. */
-enum MessageType
-{
-    MESSAGE_TYPE_NONE = 0,
-    MESSAGE_TYPE_PIXELSTREAM_OPEN = 3,
-    MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME = 4,
-    MESSAGE_TYPE_PIXELSTREAM = 5,
-    MESSAGE_TYPE_BIND_EVENTS = 6,
-    MESSAGE_TYPE_BIND_EVENTS_EX = 7,
-    MESSAGE_TYPE_BIND_EVENTS_REPLY = 8,
-    MESSAGE_TYPE_EVENT = 9,
-    MESSAGE_TYPE_QUIT = 12,
-    MESSAGE_TYPE_SIZE_HINTS = 13,
-    MESSAGE_TYPE_DATA = 14,
-    MESSAGE_TYPE_IMAGE_VIEW = 15,
-    MESSAGE_TYPE_OBSERVER_OPEN = 16,
-    MESSAGE_TYPE_IMAGE_ROW_ORDER = 17
-};
+    auto frame = makeTestFrame(640, 480, 64);
+    BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(640, 480));
 
-#define MESSAGE_HEADER_URI_LENGTH 64
+    frame = makeTestFrame(1920, 1200, 64);
+    BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(1920, 1200));
 
-/** Fixed-size message header. */
-struct MessageHeader
-{
-    /** Message type. */
-    MessageType type;
+    frame = makeTestFrame(1920, 1080, 32);
+    BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(1920, 1080));
 
-    /** Size of the message payload. */
-    uint32_t size;
-
-    /**
-     * Optional URI related to message.
-     * @note Needs to be of fixed size so that sizeof(MessageHeader) is constant
-     */
-    char uri[MESSAGE_HEADER_URI_LENGTH];
-
-    /** Construct a default message header */
-    DEFLECT_API MessageHeader();
-
-    /** Construct a message header with a uri */
-    DEFLECT_API MessageHeader(const MessageType type, const uint32_t size,
-                              const std::string& streamUri = "");
-
-    /** The size of the QDataStream serialized output. */
-    static const size_t serializedSize;
-};
+    frame = makeTestFrame(2158, 1786, 56);
+    BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(2158, 1786));
 }
 
-/**
- * Serialization for network, where sizeof(MessageHeader) can differ between
- * compilers.
- */
-DEFLECT_API QDataStream& operator<<(QDataStream& out,
-                                    const deflect::MessageHeader& header);
-DEFLECT_API QDataStream& operator>>(QDataStream& in,
-                                    deflect::MessageHeader& header);
+BOOST_AUTO_TEST_CASE(determine_frame_row_order)
+{
+    auto frame = makeTestFrame(640, 480, 64);
+    BOOST_CHECK(frame.determineRowOrder() == deflect::RowOrder::top_down);
 
-#endif
+    frame.segments[0].rowOrder = deflect::RowOrder::bottom_up;
+    BOOST_CHECK_THROW(frame.determineRowOrder(), std::runtime_error);
+
+    for (auto& segment : frame.segments)
+        segment.rowOrder = deflect::RowOrder::bottom_up;
+    BOOST_CHECK(frame.determineRowOrder() == deflect::RowOrder::bottom_up);
+
+    frame.segments[0].rowOrder = deflect::RowOrder::top_down;
+    BOOST_CHECK_THROW(frame.determineRowOrder(), std::runtime_error);
+}
