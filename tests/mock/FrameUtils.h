@@ -1,7 +1,8 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
-/*                          Raphael.Dumusc@epfl.ch                   */
-/*                          Daniel.Nachbaur@epfl.ch                  */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* All rights reserved.                                              */
+/*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
 /* without modification, are permitted provided that the following   */
 /* conditions are met:                                               */
@@ -36,78 +37,62 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_MESSAGE_HEADER_H
-#define DEFLECT_MESSAGE_HEADER_H
+#include <deflect/Frame.h>
 
-#include <deflect/api.h>
+#include <cmath> // std::ceil
 
-#ifdef _WIN32
-typedef unsigned __int32 uint32_t;
-#else
-#include <stdint.h>
-#endif
-
-#include <string>
-
-class QDataStream;
-
-namespace deflect
+inline deflect::Frame makeTestFrame(int width, int height, int segmentSize)
 {
-/** The message types. */
-enum MessageType
-{
-    MESSAGE_TYPE_NONE = 0,
-    MESSAGE_TYPE_PIXELSTREAM_OPEN = 3,
-    MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME = 4,
-    MESSAGE_TYPE_PIXELSTREAM = 5,
-    MESSAGE_TYPE_BIND_EVENTS = 6,
-    MESSAGE_TYPE_BIND_EVENTS_EX = 7,
-    MESSAGE_TYPE_BIND_EVENTS_REPLY = 8,
-    MESSAGE_TYPE_EVENT = 9,
-    MESSAGE_TYPE_QUIT = 12,
-    MESSAGE_TYPE_SIZE_HINTS = 13,
-    MESSAGE_TYPE_DATA = 14,
-    MESSAGE_TYPE_IMAGE_VIEW = 15,
-    MESSAGE_TYPE_OBSERVER_OPEN = 16,
-    MESSAGE_TYPE_IMAGE_ROW_ORDER = 17
-};
+    const int numSegmentsX = std::ceil((float)width / (float)segmentSize);
+    const int numSegmentsY = std::ceil((float)height / (float)segmentSize);
 
-#define MESSAGE_HEADER_URI_LENGTH 64
+    const int lastSegmentWidth =
+        (width % segmentSize) > 0 ? (width % segmentSize) : segmentSize;
+    const int lastSegmentHeight =
+        (height % segmentSize) > 0 ? (height % segmentSize) : segmentSize;
 
-/** Fixed-size message header. */
-struct MessageHeader
-{
-    /** Message type. */
-    MessageType type;
-
-    /** Size of the message payload. */
-    uint32_t size;
-
-    /**
-     * Optional URI related to message.
-     * @note Needs to be of fixed size so that sizeof(MessageHeader) is constant
-     */
-    char uri[MESSAGE_HEADER_URI_LENGTH];
-
-    /** Construct a default message header */
-    DEFLECT_API MessageHeader();
-
-    /** Construct a message header with a uri */
-    DEFLECT_API MessageHeader(const MessageType type, const uint32_t size,
-                              const std::string& streamUri = "");
-
-    /** The size of the QDataStream serialized output. */
-    static const size_t serializedSize;
-};
+    deflect::Frame frame;
+    for (int y = 0; y < numSegmentsY; ++y)
+    {
+        for (int x = 0; x < numSegmentsX; ++x)
+        {
+            deflect::Segment segment;
+            segment.parameters.x = x * segmentSize;
+            segment.parameters.y = y * segmentSize;
+            segment.parameters.width = segmentSize;
+            segment.parameters.height = segmentSize;
+            if (x == numSegmentsX - 1)
+                segment.parameters.width = lastSegmentWidth;
+            if (y == numSegmentsY - 1)
+                segment.parameters.height = lastSegmentHeight;
+            frame.segments.push_back(segment);
+        }
+    }
+    return frame;
 }
 
-/**
- * Serialization for network, where sizeof(MessageHeader) can differ between
- * compilers.
- */
-DEFLECT_API QDataStream& operator<<(QDataStream& out,
-                                    const deflect::MessageHeader& header);
-DEFLECT_API QDataStream& operator>>(QDataStream& in,
-                                    deflect::MessageHeader& header);
+inline void compare(const deflect::Frame& frame1, const deflect::Frame& frame2)
+{
+    BOOST_REQUIRE_EQUAL(frame1.segments.size(), frame2.segments.size());
 
-#endif
+    for (size_t i = 0; i < frame1.segments.size(); ++i)
+    {
+        const auto& s1 = frame1.segments[i];
+        const auto& s2 = frame2.segments[i];
+        BOOST_CHECK(s1.view == s2.view);
+        BOOST_CHECK(s1.rowOrder == s2.rowOrder);
+
+        const auto& p1 = s1.parameters;
+        const auto& p2 = s2.parameters;
+        BOOST_CHECK_EQUAL(p1.x, p2.x);
+        BOOST_CHECK_EQUAL(p1.y, p2.y);
+        BOOST_CHECK_EQUAL(p1.width, p2.width);
+        BOOST_CHECK_EQUAL(p1.height, p2.height);
+    }
+}
+
+inline std::ostream& operator<<(std::ostream& str, const QSize& s)
+{
+    str << s.width() << 'x' << s.height();
+    return str;
+}

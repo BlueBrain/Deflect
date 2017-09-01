@@ -63,10 +63,20 @@ public:
 
         assert(!frame->segments.empty());
 
+        if (frame->determineRowOrder() == RowOrder::bottom_up)
+            mirrorSegmentsPositionsVertically(*frame);
+
         // receiver will request a new frame once this frame was consumed
         buffer.setAllowedToSend(false);
 
         return frame;
+    }
+
+    void mirrorSegmentsPositionsVertically(Frame& frame) const
+    {
+        const auto height = frame.computeDimensions().height();
+        for (auto& s : frame.segments)
+            s.parameters.y = height - s.parameters.y - s.parameters.height;
     }
 
     typedef std::map<QString, ReceiveBuffer> StreamBuffers;
@@ -143,17 +153,13 @@ void FrameDispatcher::processFrameFinished(const QString uri,
     try
     {
         buffer.finishFrameForSource(sourceIndex);
+        if (buffer.isAllowedToSend() && buffer.hasCompleteFrame())
+            emit sendFrame(_impl->consumeLatestFrame(uri));
     }
     catch (const std::runtime_error& e)
     {
-        std::cerr << "processFrameFinished got exception, closing stream: "
-                  << e.what() << std::endl;
-        emit bufferSizeExceeded(uri);
-        return;
+        emit pixelStreamException(uri, e.what());
     }
-
-    if (buffer.isAllowedToSend() && buffer.hasCompleteFrame())
-        emit sendFrame(_impl->consumeLatestFrame(uri));
 }
 
 void FrameDispatcher::requestFrame(const QString uri)
@@ -163,8 +169,15 @@ void FrameDispatcher::requestFrame(const QString uri)
 
     ReceiveBuffer& buffer = _impl->streamBuffers[uri];
     buffer.setAllowedToSend(true);
-    if (buffer.hasCompleteFrame())
-        emit sendFrame(_impl->consumeLatestFrame(uri));
+    try
+    {
+        if (buffer.hasCompleteFrame())
+            emit sendFrame(_impl->consumeLatestFrame(uri));
+    }
+    catch (const std::runtime_error& e)
+    {
+        emit pixelStreamException(uri, e.what());
+    }
 }
 
 void FrameDispatcher::deleteStream(const QString uri)

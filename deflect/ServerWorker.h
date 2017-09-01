@@ -106,6 +106,7 @@ private:
     QQueue<Event> _events;
 
     View _activeView;
+    RowOrder _activeRowOrder;
 
     void _receiveMessage();
     MessageHeader _receiveMessageHeader();

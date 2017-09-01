@@ -1,7 +1,8 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
-/*                          Raphael.Dumusc@epfl.ch                   */
-/*                          Daniel.Nachbaur@epfl.ch                  */
+/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* All rights reserved.                                              */
+/*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
 /* without modification, are permitted provided that the following   */
 /* conditions are met:                                               */
@@ -36,78 +37,80 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_MESSAGE_HEADER_H
-#define DEFLECT_MESSAGE_HEADER_H
+#define BOOST_TEST_MODULE FrameDispatcherTests
 
-#include <deflect/api.h>
+#include <boost/test/unit_test.hpp>
+namespace ut = boost::unit_test;
 
-#ifdef _WIN32
-typedef unsigned __int32 uint32_t;
-#else
-#include <stdint.h>
-#endif
+#include "FrameUtils.h"
 
-#include <string>
+#include <deflect/FrameDispatcher.h>
 
-class QDataStream;
-
-namespace deflect
+namespace
 {
-/** The message types. */
-enum MessageType
-{
-    MESSAGE_TYPE_NONE = 0,
-    MESSAGE_TYPE_PIXELSTREAM_OPEN = 3,
-    MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME = 4,
-    MESSAGE_TYPE_PIXELSTREAM = 5,
-    MESSAGE_TYPE_BIND_EVENTS = 6,
-    MESSAGE_TYPE_BIND_EVENTS_EX = 7,
-    MESSAGE_TYPE_BIND_EVENTS_REPLY = 8,
-    MESSAGE_TYPE_EVENT = 9,
-    MESSAGE_TYPE_QUIT = 12,
-    MESSAGE_TYPE_SIZE_HINTS = 13,
-    MESSAGE_TYPE_DATA = 14,
-    MESSAGE_TYPE_IMAGE_VIEW = 15,
-    MESSAGE_TYPE_OBSERVER_OPEN = 16,
-    MESSAGE_TYPE_IMAGE_ROW_ORDER = 17
-};
-
-#define MESSAGE_HEADER_URI_LENGTH 64
-
-/** Fixed-size message header. */
-struct MessageHeader
-{
-    /** Message type. */
-    MessageType type;
-
-    /** Size of the message payload. */
-    uint32_t size;
-
-    /**
-     * Optional URI related to message.
-     * @note Needs to be of fixed size so that sizeof(MessageHeader) is constant
-     */
-    char uri[MESSAGE_HEADER_URI_LENGTH];
-
-    /** Construct a default message header */
-    DEFLECT_API MessageHeader();
-
-    /** Construct a message header with a uri */
-    DEFLECT_API MessageHeader(const MessageType type, const uint32_t size,
-                              const std::string& streamUri = "");
-
-    /** The size of the QDataStream serialized output. */
-    static const size_t serializedSize;
-};
+const char* streamId = "test";
 }
 
-/**
- * Serialization for network, where sizeof(MessageHeader) can differ between
- * compilers.
- */
-DEFLECT_API QDataStream& operator<<(QDataStream& out,
-                                    const deflect::MessageHeader& header);
-DEFLECT_API QDataStream& operator>>(QDataStream& in,
-                                    deflect::MessageHeader& header);
+struct Fixture
+{
+    deflect::FrameDispatcher dispatcher;
+    deflect::FramePtr receivedFrame;
+    Fixture()
+    {
+        QObject::connect(&dispatcher, &deflect::FrameDispatcher::sendFrame,
+                         [&](deflect::FramePtr f) { receivedFrame = f; });
 
-#endif
+        dispatcher.addSource(streamId, 0);
+    }
+
+    void dispatch(const deflect::Frame& frame)
+    {
+        for (auto& segment : frame.segments)
+            dispatcher.processSegment(streamId, 0, segment);
+        dispatcher.processFrameFinished(streamId, 0);
+        dispatcher.requestFrame(streamId);
+    }
+};
+
+BOOST_FIXTURE_TEST_CASE(dispatch_multiple_frames, Fixture)
+{
+    auto frame = makeTestFrame(640, 480, 64);
+
+    dispatch(frame);
+    BOOST_REQUIRE(receivedFrame);
+    compare(frame, *receivedFrame);
+
+    receivedFrame = nullptr;
+    dispatch(frame);
+    BOOST_REQUIRE(receivedFrame);
+    compare(frame, *receivedFrame);
+
+    receivedFrame = nullptr;
+    dispatch(frame);
+    BOOST_REQUIRE(receivedFrame);
+    compare(frame, *receivedFrame);
+}
+
+BOOST_FIXTURE_TEST_CASE(dispatch_frame_bottom_up, Fixture)
+{
+    auto frame = makeTestFrame(640, 480, 64);
+    for (auto& segment : frame.segments)
+        segment.rowOrder = deflect::RowOrder::bottom_up;
+
+    dispatch(frame);
+    BOOST_REQUIRE(receivedFrame);
+
+    // mirror segments positions vertically
+    for (auto& s : frame.segments)
+        s.parameters.y = 480 - s.parameters.y - s.parameters.height;
+
+    compare(frame, *receivedFrame);
+}
+
+BOOST_FIXTURE_TEST_CASE(dispatch_frame_with_inconsistent_row_order, Fixture)
+{
+    auto frame = makeTestFrame(640, 480, 64);
+    frame.segments[2].rowOrder = deflect::RowOrder::bottom_up;
+    dispatch(frame);
+    BOOST_CHECK(!receivedFrame);
+}

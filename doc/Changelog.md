@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.14.0 (git master)
 
+* [184](https://github.com/BlueBrain/Deflect/pull/184):
+  Images in OpenGL format (bottom-up row order) can be streamed directly,
+  replacing the need for ImageWrapper::swapYAxis() in user code.
 * [179](https://github.com/BlueBrain/Deflect/pull/179):
   Added stopping() signal to qt::QuickRenderer for GL cleanup operations.
 * [177](https://github.com/BlueBrain/Deflect/pull/177):

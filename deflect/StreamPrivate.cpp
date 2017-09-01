@@ -43,12 +43,16 @@
 
 #include <QHostInfo>
 
+#include <sstream>
 #include <stdexcept>
 
 namespace
 {
 const char* STREAM_ID_ENV_VAR = "DEFLECT_ID";
 const char* STREAM_HOST_ENV_VAR = "DEFLECT_HOST";
+
+const unsigned int SEGMENT_SIZE = 512;
+const unsigned int SMALL_IMAGE_SIZE = 64;
 
 std::string _getStreamHost(const std::string& host)
 {
@@ -79,12 +83,44 @@ std::string _getStreamId(const std::string& id)
 
 namespace deflect
 {
+namespace
+{
+void _checkParameters(const ImageWrapper& image)
+{
+    if (image.compressionPolicy != COMPRESSION_ON && image.pixelFormat != RGBA)
+    {
+        throw std::invalid_argument(
+            "Currently, RAW images can only be sent in RGBA format. Other "
+            "formats support remain to be implemented.");
+    }
+
+    if (image.compressionPolicy == COMPRESSION_ON)
+    {
+        if (image.compressionQuality < 1 || image.compressionQuality > 100)
+        {
+            std::stringstream msg;
+            msg << "JPEG compression quality must be between 1 and 100, got "
+                << image.compressionQuality << std::endl;
+            throw std::invalid_argument(msg.str());
+        }
+    }
+}
+
+bool _canSendAsSingleSegment(const ImageWrapper& image)
+{
+    return image.width <= SMALL_IMAGE_SIZE && image.height <= SMALL_IMAGE_SIZE;
+}
+}
+
 StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
                              const unsigned short port, const bool observer)
     : id{_getStreamId(id_)}
     , socket{_getStreamHost(host), port}
     , sendWorker{socket, id}
+    , task{&sendWorker}
 {
+    _imageSegmenter.setNominalSegmentDimensions(SEGMENT_SIZE, SEGMENT_SIZE);
+
     socket.connect(&socket, &Socket::disconnected, [this]() {
         if (disconnectedCallback)
             disconnectedCallback();
@@ -94,14 +130,65 @@ StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
     sendWorker.start();
 
     if (observer)
-        sendWorker.enqueueObserverOpen().wait();
+        sendWorker.enqueueRequest(task.openObserver()).wait();
     else
-        sendWorker.enqueueOpen().wait();
+        sendWorker.enqueueRequest(task.openStream()).wait();
 }
 
 StreamPrivate::~StreamPrivate()
 {
     if (socket.isConnected())
-        sendWorker.enqueueClose().wait();
+        sendWorker.enqueueRequest(task.close()).wait();
+}
+
+Stream::Future StreamPrivate::bindEvents(const bool exclusive)
+{
+    return sendWorker.enqueueRequest(task.bindEvents(exclusive));
+}
+
+Stream::Future StreamPrivate::send(const SizeHints& hints)
+{
+    return sendWorker.enqueueRequest(task.send(hints));
+}
+
+Stream::Future StreamPrivate::send(QByteArray&& data)
+{
+    return sendWorker.enqueueRequest(task.send(std::move(data)));
+}
+
+Stream::Future StreamPrivate::sendImage(const ImageWrapper& image,
+                                        const bool finish)
+{
+    try
+    {
+        if (!sendWorker.canAcceptNewImageSend())
+            throw std::runtime_error("Pending finish, no send allowed");
+
+        _checkParameters(image);
+
+        if (_canSendAsSingleSegment(image))
+        {
+            // OPT for OSPRay-KNL with external thread pool - compress directly
+            // in caller thread.
+            auto segment = _imageSegmenter.createSingleSegment(image);
+            // As we expect to encounter a lot of these small sends, be
+            // optimistic and fulfill the promise already to reduce load in the
+            // send thread (c.f. lock ops performance on KNL).
+            sendWorker.enqueueFastRequest(task.send(std::move(segment)));
+            return finish ? sendFinishFrame() : make_ready_future(true);
+        }
+
+        return sendWorker.enqueueRequest(
+            task.sendUsingMTCompression(image, _imageSegmenter, finish));
+    }
+    catch (...)
+    {
+        return make_exception_future<bool>(std::current_exception());
+    }
+}
+
+Stream::Future StreamPrivate::sendFinishFrame()
+{
+    return sendWorker.enqueueRequest(task.finishFrame(), true);
 }
 }
