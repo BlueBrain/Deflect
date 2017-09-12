@@ -74,8 +74,8 @@ public:
     std::map<QString, size_t> observers;
 };
 
-FrameDispatcher::FrameDispatcher(QObject* parent)
-    : QObject(parent)
+FrameDispatcher::FrameDispatcher(QObject* parent_)
+    : QObject(parent_)
     , _impl(new Impl)
 {
 }

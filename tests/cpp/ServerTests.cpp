@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(testDataReceivedByServer)
     bool received = false;
     setDataReceivedCallback([&](const QString id, QByteArray data) {
         SAFE_BOOST_CHECK_EQUAL(id.toStdString(), testStreamId.toStdString());
-        SAFE_BOOST_CHECK_EQUAL(data.toStdString(), sentData);
+        SAFE_BOOST_CHECK_EQUAL(std::string(data.constData()), sentData);
         received = true;
     });
 
