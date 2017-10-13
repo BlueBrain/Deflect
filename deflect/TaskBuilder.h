@@ -51,7 +51,7 @@ namespace deflect
 class TaskBuilder
 {
 public:
-    explicit TaskBuilder(StreamSendWorker* worker);
+    TaskBuilder(StreamSendWorker* worker, StreamPrivate* stream);
 
     Task openStream();
     Task openObserver();
@@ -64,10 +64,11 @@ public:
     std::vector<Task> sendUsingMTCompression(const ImageWrapper& image,
                                              ImageSegmenter& imageSegmenter,
                                              bool finish);
-    Task finishFrame();
+    std::vector<Task> finishFrame();
 
 private:
     StreamSendWorker* _worker = nullptr;
+    StreamPrivate* _stream = nullptr;
 
     Task send(const ImageWrapper& image, ImageSegmenter& imageSegmenter);
 };

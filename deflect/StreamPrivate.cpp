@@ -117,7 +117,7 @@ StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
     : id{_getStreamId(id_)}
     , socket{_getStreamHost(host), port}
     , sendWorker{socket, id}
-    , task{&sendWorker}
+    , task{&sendWorker, this}
 {
     _imageSegmenter.setNominalSegmentDimensions(SEGMENT_SIZE, SEGMENT_SIZE);
 
@@ -161,7 +161,7 @@ Stream::Future StreamPrivate::sendImage(const ImageWrapper& image,
 {
     try
     {
-        if (!sendWorker.canAcceptNewImageSend())
+        if (_pendingFinish)
             throw std::runtime_error("Pending finish, no send allowed");
 
         _checkParameters(image);
@@ -189,6 +189,13 @@ Stream::Future StreamPrivate::sendImage(const ImageWrapper& image,
 
 Stream::Future StreamPrivate::sendFinishFrame()
 {
+    _pendingFinish = true;
     return sendWorker.enqueueRequest(task.finishFrame(), true);
+}
+
+bool StreamPrivate::_finishFrameDone()
+{
+    _pendingFinish = false;
+    return true;
 }
 }

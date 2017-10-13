@@ -91,6 +91,9 @@ public:
     /** The segmenter for doing multithreaded image segmentation + send. */
     ImageSegmenter _imageSegmenter;
 
+    /** Remember a pending finishFrame where no sendImage() is allowed. */
+    std::atomic_bool _pendingFinish{false};
+
     Stream::Future bindEvents(bool exclusive);
     Stream::Future send(const SizeHints& hints);
     Stream::Future send(QByteArray&& data);
@@ -98,6 +101,9 @@ public:
     Stream::Future sendSingleSegment(Segment&& segment, RowOrder orientation,
                                      bool finish);
     Stream::Future sendFinishFrame();
+
+    /** @internal Called by StreamSendWorker when finishFrame was processed. */
+    bool _finishFrameDone();
 };
 }
 #endif

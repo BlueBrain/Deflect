@@ -88,8 +88,6 @@ public:
     /** Enqueue a request with no future to check for its completion. */
     void enqueueFastRequest(Task&& task);
 
-    /** @return true if a finsh frame operation is pending. */
-    bool canAcceptNewImageSend() const { return !_pendingFinish; }
 private:
     using Promise = std::promise<bool>;
     using PromisePtr = std::shared_ptr<Promise>;
