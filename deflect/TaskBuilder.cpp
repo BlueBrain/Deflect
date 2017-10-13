@@ -41,11 +41,13 @@
 
 #include "ImageSegmenter.h"
 #include "SizeHints.h"
+#include "StreamPrivate.h"
 
 namespace deflect
 {
-TaskBuilder::TaskBuilder(StreamSendWorker* worker)
+TaskBuilder::TaskBuilder(StreamSendWorker* worker, StreamPrivate* stream)
     : _worker{worker}
+    , _stream{stream}
 {
 }
 
@@ -86,13 +88,20 @@ std::vector<Task> TaskBuilder::sendUsingMTCompression(
     std::vector<Task> tasks;
     tasks.emplace_back(send(image, imageSegmenter));
     if (finish)
-        tasks.emplace_back(finishFrame());
+    {
+        auto finishTasks = finishFrame();
+        tasks.insert(tasks.end(), std::make_move_iterator(finishTasks.begin()),
+                     std::make_move_iterator(finishTasks.end()));
+    }
     return tasks;
 }
 
-Task TaskBuilder::finishFrame()
+std::vector<Task> TaskBuilder::finishFrame()
 {
-    return std::bind(&StreamSendWorker::_sendFinish, _worker);
+    std::vector<Task> tasks;
+    tasks.emplace_back(std::bind(&StreamSendWorker::_sendFinish, _worker));
+    tasks.emplace_back(std::bind(&StreamPrivate::_finishFrameDone, _stream));
+    return tasks;
 }
 
 Task TaskBuilder::send(Segment&& segment)
