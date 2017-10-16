@@ -123,6 +123,7 @@ void FrameDispatcher::addObserver(const QString uri)
         (!_impl->streamBuffers.count(uri) ||
          _impl->streamBuffers[uri].getSourceCount() == 0))
     {
+        _impl->streamBuffers.emplace(uri, ReceiveBuffer());
         emit pixelStreamOpened(uri);
     }
 }
