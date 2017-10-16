@@ -48,6 +48,7 @@ namespace ut = boost::unit_test;
 #include <deflect/Frame.h>
 #include <deflect/Stream.h>
 
+#include <boost/mpl/vector.hpp>
 #include <cmath>
 
 namespace
@@ -238,7 +239,18 @@ BOOST_AUTO_TEST_CASE(closeStreamBeforeObserver)
     BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(closeAndReopenStreamWithObserverStayingAliveAndRendering)
+struct Fixture1 : public DeflectServer
+{
+    bool requestBeforeSource{true};
+};
+struct Fixture2 : public DeflectServer
+{
+    bool requestBeforeSource{false};
+};
+using Fixtures = boost::mpl::vector<Fixture1, Fixture2>;
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(
+    closeAndReopenStreamWithObserverStayingAliveAndRendering, F, Fixtures, F)
 {
     const unsigned int width = 4;
     const unsigned int height = 4;
@@ -251,42 +263,51 @@ BOOST_AUTO_TEST_CASE(closeAndReopenStreamWithObserverStayingAliveAndRendering)
 
     {
         deflect::Observer observer(testStreamId.toStdString(), "localhost",
-                                   serverPort());
+                                   F::serverPort());
         BOOST_REQUIRE(observer.isConnected());
-        waitForMessage();
+        F::waitForMessage();
+
+        if (F::requestBeforeSource)
+            F::requestFrame(testStreamId);
 
         {
             deflect::Stream stream(testStreamId.toStdString(), "localhost",
-                                   serverPort());
+                                   F::serverPort());
             BOOST_REQUIRE(stream.isConnected());
 
             for (size_t i = 0; i < expectedFrames; ++i)
             {
                 stream.sendAndFinish(image).wait();
-                requestFrame(testStreamId);
-                waitForMessage();
-                BOOST_CHECK_EQUAL(getReceivedFrames(), i + 1);
+                if (!F::requestBeforeSource)
+                    F::requestFrame(testStreamId);
+
+                F::waitForMessage();
+
+                if (F::requestBeforeSource)
+                    F::requestFrame(testStreamId);
+                BOOST_CHECK_EQUAL(F::getReceivedFrames(), i + 1);
             }
         }
 
         {
             deflect::Stream stream(testStreamId.toStdString(), "localhost",
-                                   serverPort());
+                                   F::serverPort());
             BOOST_REQUIRE(stream.isConnected());
 
             for (size_t i = 0; i < expectedFrames; ++i)
             {
                 stream.sendAndFinish(image).wait();
-                requestFrame(testStreamId);
-                waitForMessage();
-                BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames + i + 1);
+                F::requestFrame(testStreamId);
+                F::waitForMessage();
+                BOOST_CHECK_EQUAL(F::getReceivedFrames(),
+                                  expectedFrames + i + 1);
             }
         }
     }
 
-    waitForMessage();
-    BOOST_CHECK_EQUAL(getOpenedStreams(), 0);
-    BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames * 2);
+    F::waitForMessage();
+    BOOST_CHECK_EQUAL(F::getOpenedStreams(), 0);
+    BOOST_CHECK_EQUAL(F::getReceivedFrames(), expectedFrames * 2);
 }
 
 BOOST_AUTO_TEST_CASE(threadedSmallSegmentStream)
