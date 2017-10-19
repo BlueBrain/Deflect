@@ -53,6 +53,20 @@ namespace
 {
 const char* STREAM_ID_ENV_VAR = "DEFLECT_ID";
 const char* STREAM_HOST_ENV_VAR = "DEFLECT_HOST";
+
+struct ScopedEnvironment
+{
+    ScopedEnvironment(const QByteArray& id, const QByteArray& host)
+    {
+        qputenv(STREAM_ID_ENV_VAR, id);
+        qputenv(STREAM_HOST_ENV_VAR, host);
+    }
+    ~ScopedEnvironment()
+    {
+        qunsetenv(STREAM_ID_ENV_VAR);
+        qunsetenv(STREAM_HOST_ENV_VAR);
+    }
+};
 }
 
 BOOST_AUTO_TEST_CASE(testConstructionWithNoServer)
@@ -60,20 +74,68 @@ BOOST_AUTO_TEST_CASE(testConstructionWithNoServer)
     BOOST_CHECK_THROW(deflect::Stream("id", "notahost"), std::runtime_error);
 }
 
+BOOST_AUTO_TEST_CASE(testDefaultConstructorWithNoServer)
+{
+    const ScopedEnvironment env{"mystream", "notahost"};
+    BOOST_CHECK_THROW(deflect::Stream(), std::runtime_error);
+}
+
 BOOST_GLOBAL_FIXTURE(MinimalGlobalQtApp);
 BOOST_FIXTURE_TEST_SUITE(server, MinimalDeflectServer)
 
+BOOST_AUTO_TEST_CASE(testConstructionWithInvalidEnvironementThrows)
+{
+    {
+        const ScopedEnvironment env{"mystream", "localhost:829382"};
+        BOOST_CHECK_THROW(deflect::Stream(), std::runtime_error);
+    }
+    {
+        const ScopedEnvironment env{"mystream", ":990:9393"};
+        BOOST_CHECK_THROW(deflect::Stream(), std::runtime_error);
+    }
+    {
+        const auto host = QString(":%1").arg(serverPort()).toLocal8Bit();
+        const ScopedEnvironment env{"mystream", host};
+        BOOST_CHECK_THROW(deflect::Stream(), std::runtime_error);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(
+    testDefaultConstructorReadsEnvironmentVariablesAndUsesDefaultPort)
+{
+    const ScopedEnvironment env{"mystream", "localhost"};
+    try
+    {
+        deflect::Stream stream;
+        // Only in the case serverPort happens to be 1701
+        BOOST_CHECK(stream.isConnected());
+        BOOST_CHECK_EQUAL(serverPort(), 1701);
+    }
+    catch (const std::runtime_error& e)
+    {
+        BOOST_CHECK_EQUAL(e.what(), "could not connect to localhost:1701");
+    }
+}
+
 BOOST_AUTO_TEST_CASE(testDefaultConstructorReadsEnvironmentVariables)
 {
-    qputenv(STREAM_ID_ENV_VAR, "mystream");
-    qputenv(STREAM_HOST_ENV_VAR, "localhost");
+    const auto host = QString("localhost:%1").arg(serverPort()).toLocal8Bit();
+    const ScopedEnvironment env{"mystream", host};
+    deflect::Stream stream;
+    BOOST_CHECK(stream.isConnected());
+    BOOST_CHECK_EQUAL(stream.getId(), "mystream");
+    BOOST_CHECK_EQUAL(stream.getHost(), "localhost");
+    BOOST_CHECK_EQUAL(stream.getPort(), serverPort());
+}
+
+BOOST_AUTO_TEST_CASE(testPortConstructorReadsEnvironmentVariables)
+{
+    const ScopedEnvironment env{"mystream", "localhost"};
     deflect::Stream stream(serverPort());
     BOOST_CHECK(stream.isConnected());
     BOOST_CHECK_EQUAL(stream.getId(), "mystream");
     BOOST_CHECK_EQUAL(stream.getHost(), "localhost");
     BOOST_CHECK_EQUAL(stream.getPort(), serverPort());
-    qunsetenv(STREAM_ID_ENV_VAR);
-    qunsetenv(STREAM_HOST_ENV_VAR);
 }
 
 BOOST_AUTO_TEST_CASE(testParameterizedConstructorWithValues)
