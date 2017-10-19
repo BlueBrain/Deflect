@@ -87,6 +87,11 @@ const std::string& Observer::getHost() const
     return _impl->socket.getHost();
 }
 
+unsigned short Observer::getPort() const
+{
+    return _impl->socket.getPort();
+}
+
 bool Observer::registerForEvents(const bool exclusive)
 {
     if (!isConnected())

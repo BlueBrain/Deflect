@@ -56,6 +56,7 @@ void testSocketConnect(const int32_t versionOffset)
     {
         deflect::Socket socket("localhost", server.serverPort());
         BOOST_CHECK(socket.isConnected());
+        BOOST_CHECK_EQUAL(socket.getPort(), server.serverPort());
     }
     catch (const std::runtime_error&)
     {

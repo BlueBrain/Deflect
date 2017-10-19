@@ -80,6 +80,9 @@ public:
     /** Get the host passed to the constructor. */
     const std::string& getHost() const;
 
+    /** Get the remote port the socket is connected to. */
+    unsigned short getPort() const;
+
     /** Is the Socket connected */
     DEFLECT_API bool isConnected() const;
 

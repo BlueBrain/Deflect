@@ -48,7 +48,6 @@ namespace ut = boost::unit_test;
 
 #include <QString>
 #include <QtGlobal>
-#include <memory>
 
 namespace
 {
@@ -58,7 +57,7 @@ const char* STREAM_HOST_ENV_VAR = "DEFLECT_HOST";
 
 BOOST_AUTO_TEST_CASE(testConstructionWithNoServer)
 {
-    BOOST_CHECK_THROW(deflect::Stream("id", "localhost"), std::runtime_error);
+    BOOST_CHECK_THROW(deflect::Stream("id", "notahost"), std::runtime_error);
 }
 
 BOOST_GLOBAL_FIXTURE(MinimalGlobalQtApp);
@@ -69,8 +68,10 @@ BOOST_AUTO_TEST_CASE(testDefaultConstructorReadsEnvironmentVariables)
     qputenv(STREAM_ID_ENV_VAR, "mystream");
     qputenv(STREAM_HOST_ENV_VAR, "localhost");
     deflect::Stream stream(serverPort());
+    BOOST_CHECK(stream.isConnected());
     BOOST_CHECK_EQUAL(stream.getId(), "mystream");
     BOOST_CHECK_EQUAL(stream.getHost(), "localhost");
+    BOOST_CHECK_EQUAL(stream.getPort(), serverPort());
     qunsetenv(STREAM_ID_ENV_VAR);
     qunsetenv(STREAM_HOST_ENV_VAR);
 }
@@ -78,8 +79,10 @@ BOOST_AUTO_TEST_CASE(testDefaultConstructorReadsEnvironmentVariables)
 BOOST_AUTO_TEST_CASE(testParameterizedConstructorWithValues)
 {
     const deflect::Stream stream("mystream", "localhost", serverPort());
+    BOOST_CHECK(stream.isConnected());
     BOOST_CHECK_EQUAL(stream.getId(), "mystream");
     BOOST_CHECK_EQUAL(stream.getHost(), "localhost");
+    BOOST_CHECK_EQUAL(stream.getPort(), serverPort());
 }
 
 BOOST_AUTO_TEST_CASE(testParameterizedConstructorReadsEnvironmentVariables)
@@ -87,8 +90,10 @@ BOOST_AUTO_TEST_CASE(testParameterizedConstructorReadsEnvironmentVariables)
     qputenv(STREAM_ID_ENV_VAR, "mystream");
     qputenv(STREAM_HOST_ENV_VAR, "localhost");
     const deflect::Stream stream("", "", serverPort());
+    BOOST_CHECK(stream.isConnected());
     BOOST_CHECK_EQUAL(stream.getId(), "mystream");
     BOOST_CHECK_EQUAL(stream.getHost(), "localhost");
+    BOOST_CHECK_EQUAL(stream.getPort(), serverPort());
     qunsetenv(STREAM_ID_ENV_VAR);
     qunsetenv(STREAM_HOST_ENV_VAR);
 }

@@ -81,6 +81,11 @@ const std::string& Socket::getHost() const
     return _host;
 }
 
+unsigned short Socket::getPort() const
+{
+    return _socket->peerPort();
+}
+
 bool Socket::isConnected() const
 {
     return _socket->state() == QTcpSocket::ConnectedState;
