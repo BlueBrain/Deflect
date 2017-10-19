@@ -41,6 +41,8 @@
 
 #include "StreamPrivate.h"
 
+#include "NetworkProtocol.h"
+
 #include <QHostInfo>
 
 #include <sstream>
@@ -60,10 +62,32 @@ std::string _getStreamHost(const std::string& host)
         return host;
 
     const QString streamHost = qgetenv(STREAM_HOST_ENV_VAR).constData();
-    if (!streamHost.isEmpty())
-        return streamHost.toStdString();
+    const auto list = streamHost.split(':');
+    if (list.size() > 0 && !list[0].isEmpty())
+        return list[0].toStdString();
 
     throw std::runtime_error("No host provided");
+}
+
+unsigned short _getStreamPort(const unsigned short port)
+{
+    if (port != 0)
+        return port;
+
+    const QString streamHost = qgetenv(STREAM_HOST_ENV_VAR).constData();
+    const auto list = streamHost.split(':');
+    if (list.size() == 1)
+        return DEFAULT_PORT_NUMBER;
+
+    if (list.size() == 2)
+    {
+        bool ok = false;
+        const auto portNum = list[1].toUShort(&ok);
+        if (ok)
+            return portNum;
+    }
+
+    throw std::runtime_error("No port provided");
 }
 
 std::string _getStreamId(const std::string& id)
@@ -115,7 +139,7 @@ bool _canSendAsSingleSegment(const ImageWrapper& image)
 StreamPrivate::StreamPrivate(const std::string& id_, const std::string& host,
                              const unsigned short port, const bool observer)
     : id{_getStreamId(id_)}
-    , socket{_getStreamHost(host), port}
+    , socket{_getStreamHost(host), _getStreamPort(port)}
     , sendWorker{socket, id}
     , task{&sendWorker, this}
 {

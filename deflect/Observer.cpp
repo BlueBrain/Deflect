@@ -52,6 +52,11 @@ namespace deflect
 {
 const unsigned short Observer::defaultPortNumber = DEFAULT_PORT_NUMBER;
 
+Observer::Observer()
+    : _impl(new StreamPrivate("", "", 0, true))
+{
+}
+
 Observer::Observer(const unsigned short port)
     : _impl(new StreamPrivate("", "", port, true))
 {

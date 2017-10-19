@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.14.0 (git master)
 
+* [188](https://github.com/BlueBrain/Deflect/pull/188):
+  The default constructors for Stream and Observer can read the port variable
+  from the DEFLECT\_HOST environment variable (using hostname[:port]).
 * [184](https://github.com/BlueBrain/Deflect/pull/184):
   Images in OpenGL format (bottom-up row order) can be streamed directly,
   replacing the need for ImageWrapper::swapYAxis() in user code.
