@@ -124,6 +124,9 @@ public:
     /** @return the host defined by the constructor. @version 1.3 */
     DEFLECT_API const std::string& getHost() const;
 
+    /** @return the remote port the observer is connected to. @version 1.7 */
+    DEFLECT_API unsigned short getPort() const;
+
     /**
      * Register to receive Events.
      *

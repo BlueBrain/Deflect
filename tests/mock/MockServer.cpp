@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -42,22 +42,15 @@
 #include <QTcpSocket>
 
 MockServer::MockServer(const int32_t protocolVersion)
-    : _protocolVersion(protocolVersion)
+    : _protocolVersion{protocolVersion}
 {
     if (!listen())
         qDebug("MockServer could not start listening!!");
-}
-
-MockServer::~MockServer()
-{
-}
-
-void MockServer::incomingConnection(const qintptr handle)
-{
-    QTcpSocket tcpSocket;
-    tcpSocket.setSocketDescriptor(handle);
 
     // Handshake -> send network protocol version
-    tcpSocket.write((char*)&_protocolVersion, sizeof(int32_t));
-    tcpSocket.flush();
+    connect(this, &QTcpServer::newConnection, [this]() {
+        auto tcpSocket = nextPendingConnection();
+        tcpSocket->write((char*)&_protocolVersion, sizeof(int32_t));
+        tcpSocket->flush();
+    });
 }

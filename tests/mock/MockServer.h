@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -55,13 +55,9 @@ class MockServer : public QTcpServer
 
 public:
     DEFLECT_API explicit MockServer(int32_t protocolVersion);
-    DEFLECT_API virtual ~MockServer();
-
-protected:
-    void incomingConnection(qintptr handle) final;
 
 private:
-    int32_t _protocolVersion;
+    const int32_t _protocolVersion;
 };
 
 #endif
