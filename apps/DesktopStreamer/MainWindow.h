@@ -62,7 +62,14 @@ class MainWindow : public QMainWindow, public Ui::MainWindow
     Q_OBJECT
 
 public:
-    MainWindow();
+    struct Options
+    {
+        QString initialHost;
+        bool enableStream;
+        bool showAdvancedSettings;
+    };
+
+    MainWindow(Options options);
     ~MainWindow();
 
     const QAbstractItemModel* getItemModel() const

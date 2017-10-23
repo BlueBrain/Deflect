@@ -5,6 +5,9 @@ Changelog {#Changelog}
 
 ### 0.14.0 (git master)
 
+* [191](https://github.com/BlueBrain/Deflect/pull/191):
+  DesktopStreamer: default host and other options can be specified on the
+  command line.
 * [190](https://github.com/BlueBrain/Deflect/pull/190):
   DesktopStreamer: jpeg compression can be turned on or off.
 * [188](https://github.com/BlueBrain/Deflect/pull/188):

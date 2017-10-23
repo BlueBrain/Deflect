@@ -53,13 +53,27 @@ int main(int argc, char* argv[])
 
     QCommandLineParser parser;
     parser.setApplicationDescription("Stream your desktop to a remote host");
+    QCommandLineOption streamEnabledOption(QStringList() << "e"
+                                                         << "enable",
+                                           "Enable streaming on startup.");
+    parser.addOption(streamEnabledOption);
+    QCommandLineOption advancedOption(QStringList() << "a"
+                                                    << "advanced",
+                                      "Show advanced settings.");
+    parser.addOption(advancedOption);
+    parser.addPositionalArgument("host", "Default host to stream to.");
     parser.addHelpOption();
     parser.addVersionOption();
     parser.process(app);
 
+    const auto posArgs = parser.positionalArguments();
+    const auto host = posArgs.isEmpty() ? QString() : posArgs.at(0);
+    const auto enable = parser.isSet(streamEnabledOption);
+    const auto advanced = parser.isSet(advancedOption);
+
     Q_INIT_RESOURCE(resources);
 
-    MainWindow mainWindow;
+    MainWindow mainWindow{{host, enable, advanced}};
     mainWindow.show();
 
     // enter Qt event loop
