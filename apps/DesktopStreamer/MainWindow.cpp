@@ -78,7 +78,7 @@ const int FAILURE_UPDATE_DELAY = 100;
 const float FRAME_RATE_DAMPING = 0.1f; // influence of new value between 0-1
 }
 
-MainWindow::MainWindow()
+MainWindow::MainWindow(Options options)
     : _streamID(0)
     , _averageUpdate(0)
 {
@@ -94,6 +94,9 @@ MainWindow::MainWindow()
                 _streamButton->setEnabled(!text.isEmpty());
                 _listView->setEnabled(!text.isEmpty());
             });
+
+    if (!options.initialHost.isEmpty())
+        _hostComboBox->setCurrentText(options.initialHost);
 
     const auto username = nameutils::getFullUsername();
     if (username.isEmpty())
@@ -141,8 +144,12 @@ MainWindow::MainWindow()
 #ifndef DEFLECT_USE_QT5MACEXTRAS
     _actionMultiWindowMode->setVisible(false);
 #endif
-    _showAdvancedSettings(false);
+    _actionAdvancedSettings->setChecked(options.showAdvancedSettings);
+    _showAdvancedSettings(options.showAdvancedSettings);
     _showSingleWindowMode();
+
+    if (options.enableStream)
+        _streamButton->click();
 }
 
 MainWindow::~MainWindow()
