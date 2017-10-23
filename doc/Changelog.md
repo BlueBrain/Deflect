@@ -3,7 +3,7 @@ Changelog {#Changelog}
 
 ## Deflect 0.14
 
-### 0.14.0 (git master)
+### 0.14.0 (23-10-2017)
 
 * [191](https://github.com/BlueBrain/Deflect/pull/191):
   DesktopStreamer: default host and other options can be specified on the
