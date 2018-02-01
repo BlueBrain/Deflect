@@ -1,7 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2015-2016, EPFL/Blue Brain Project                  */
-/*                     Daniel.Nachbaur <daniel.nachbaur@epfl.ch>     */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2015-2018, EPFL/Blue Brain Project                  */
+/*                          Daniel.Nachbaur <daniel.nachbaur@epfl.ch>*/
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -105,10 +105,18 @@ void QmlStreamer::Impl::_afterRender(const QImage image)
     if (!_sendFuture.valid() || !_sendFuture.get())
         return;
 
-    if (!_stream && !_setupDeflectStream())
+    if (!_stream)
     {
-        qWarning() << "Could not setup Deflect stream";
-        return;
+        try
+        {
+            _setupDeflectStream();
+        }
+        catch (const std::runtime_error& e)
+        {
+            qWarning() << e.what();
+            _onStreamClosed();
+            return;
+        }
     }
 
     if (image.isNull())
@@ -248,16 +256,13 @@ std::string QmlStreamer::Impl::_getDeflectStreamIdentifier() const
     return streamId.empty() ? DEFAULT_STREAM_ID : streamId;
 }
 
-bool QmlStreamer::Impl::_setupDeflectStream()
+void QmlStreamer::Impl::_setupDeflectStream()
 {
     if (!_stream)
         _stream.reset(new Stream(_getDeflectStreamIdentifier(), _streamHost));
 
-    if (!_stream->isConnected())
-        return false;
-
     if (!_stream->registerForEvents())
-        return false;
+        throw std::runtime_error("Stream failed to register for events");
 
     if (_sizeHints != SizeHints())
         _stream->sendSizeHints(_sizeHints);
@@ -297,8 +302,6 @@ bool QmlStreamer::Impl::_setupDeflectStream()
 
     connect(_eventReceiver.get(), &EventReceiver::closed, this,
             &QmlStreamer::Impl::_onStreamClosed);
-
-    return true;
 }
 
 void QmlStreamer::Impl::_connectTouchInjector()

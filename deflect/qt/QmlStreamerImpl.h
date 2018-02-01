@@ -96,7 +96,7 @@ private:
     void _send(QKeyEvent& keyEvent);
     bool _sendToWebengineviewItems(QKeyEvent& keyEvent);
     std::string _getDeflectStreamIdentifier() const;
-    bool _setupDeflectStream();
+    void _setupDeflectStream();
 
     void _connectTouchInjector();
     void _setupMouseModeSwitcher();

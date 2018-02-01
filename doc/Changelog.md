@@ -3,6 +3,10 @@ Changelog {#Changelog}
 
 ## Deflect 0.14
 
+### 0.14.1 (git master)
+* [192](https://github.com/BlueBrain/Deflect/pull/192):
+  QmlStreamer bugfix: gracefully exit if the stream connection fails.
+
 ### 0.14.0 (23-10-2017)
 
 * [191](https://github.com/BlueBrain/Deflect/pull/191):
