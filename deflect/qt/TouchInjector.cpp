@@ -39,8 +39,6 @@
 
 #include "TouchInjector.h"
 
-#include "helpers.h"
-
 #include <QCoreApplication>
 #include <QWindow>
 
@@ -61,7 +59,7 @@ std::unique_ptr<TouchInjector> TouchInjector::create(QWindow& window)
         return QPointF{normPos.x() * window.width(),
                        normPos.y() * window.height()};
     };
-    return make_unique<TouchInjector>(window, mapFunc);
+    return std::make_unique<TouchInjector>(window, mapFunc);
 }
 
 void TouchInjector::addTouchPoint(const int id, const QPointF position)
