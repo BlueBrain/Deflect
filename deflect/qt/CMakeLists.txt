@@ -5,7 +5,6 @@
 
 set(DEFLECTQT_HEADERS
   EventReceiver.h
-  helpers.h
   QmlGestures.h
   QmlStreamerImpl.h
 )

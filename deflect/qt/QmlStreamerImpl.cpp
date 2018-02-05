@@ -43,7 +43,6 @@
 #include "EventReceiver.h"
 #include "QmlGestures.h"
 #include "TouchInjector.h"
-#include "helpers.h"
 
 #include <QCoreApplication>
 #include <QQmlContext>
@@ -70,7 +69,7 @@ namespace qt
 {
 QmlStreamer::Impl::Impl(const QString& qmlFile, const std::string& streamHost,
                         const std::string& streamId)
-    : _quickView{new OffscreenQuickView{make_unique<QQuickRenderControl>(),
+    : _quickView{new OffscreenQuickView{std::make_unique<QQuickRenderControl>(),
                                         renderMode}}
     , _qmlGestures{new QmlGestures}
     , _touchInjector{TouchInjector::create(*_quickView)}
