@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -95,18 +95,18 @@ private slots:
     void _processMessages();
 
 private:
-    QTcpSocket* _tcpSocket;
+    QTcpSocket* _tcpSocket = nullptr;
 
     QString _streamId;
-    int _sourceId;
-    int _clientProtocolVersion;
-    bool _observer{false};
+    int _sourceId = -1;
+    int _clientProtocolVersion = -1;
+    bool _observer = false;
 
-    bool _registeredToEvents;
+    bool _registeredToEvents = false;
     QQueue<Event> _events;
 
-    View _activeView;
-    RowOrder _activeRowOrder;
+    View _activeView = View::mono;
+    RowOrder _activeRowOrder = RowOrder::top_down;
 
     void _receiveMessage();
     MessageHeader _receiveMessageHeader();

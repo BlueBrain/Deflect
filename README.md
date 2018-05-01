@@ -2,7 +2,7 @@
 
 Welcome to Deflect, a C++ library for streaming pixels to other Deflect-based
 applications, for example [Tide](https://github.com/BlueBrain/Tide).
-Deflect offers a stable API marked with version 1.7 (for the client part).
+Deflect offers a stable API marked with version 1.0 (for the client part).
 
 ## Overview
 
@@ -55,5 +55,5 @@ environments are tested:
 * Linux: Ubuntu 16.04 and RHEL 6 (Makefile, Ninja; x64)
 * Mac OS X: 10.7 - 10.10 (Makefile, Ninja; x86_64)
 
-The [latest API documentation](http://bluebrain.github.io/Deflect-0.14/index.html)
+The [latest API documentation](http://bluebrain.github.io/Deflect-1.0/index.html)
 can be found on [bluebrain.github.io](http://bluebrain.github.io).

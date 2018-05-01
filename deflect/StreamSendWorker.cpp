@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
@@ -192,9 +192,6 @@ bool StreamSendWorker::_sendClose()
 
 bool StreamSendWorker::_sendSegment(const Segment& segment)
 {
-    if (segment.exception)
-        std::rethrow_exception(segment.exception);
-
     if (segment.view != _currentView)
     {
         if (!_sendImageView(segment.view))

@@ -1,6 +1,13 @@
 Changelog {#Changelog}
 ============
 
+## Deflect 1.0
+
+### 1.0.0 (git master)
+* [194](https://github.com/BlueBrain/Deflect/pull/194):
+  Reset API versionning to 1.0, remove deprecated functions (Stream::asyncSend,
+  ImageWrapper::swapYAxis).
+
 ## Deflect 0.14
 
 ### 0.14.1 (01-05-2018)

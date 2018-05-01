@@ -1,10 +1,9 @@
 
-# Copyright (c) 2013-2017, EPFL/Blue Brain Project
+# Copyright (c) 2013-2018, EPFL/Blue Brain Project
 #                          Raphael Dumusc <raphael.dumusc@epfl.ch>
 #                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 
 set(DEFLECT_PUBLIC_HEADERS
-  config.h
   Event.h
   EventReceiver.h
   Frame.h
@@ -19,6 +18,8 @@ set(DEFLECT_PUBLIC_HEADERS
 )
 
 set(DEFLECT_HEADERS
+  moodycamel/blockingconcurrentqueue.h
+  moodycamel/concurrentqueue.h
   FrameDispatcher.h
   ImageSegmenter.h
   MessageHeader.h

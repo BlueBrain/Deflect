@@ -62,9 +62,6 @@ class StreamPrivate;
  *
  * On the server side the observer also opens and closes the stream as regular
  * deflect::Streams would do.
- *
- * This class is new since version 1.7 while sharing the same API as
- * deflect::Stream prior 1.7.
  */
 class Observer
 {
@@ -81,7 +78,7 @@ public:
      *               unique identifier will be used.
      * @throw std::runtime_error if DEFLECT_HOST was not provided or no
      *                           connection to server could be established
-     * @version 1.7
+     * @version 1.0
      */
     DEFLECT_API Observer();
 
@@ -94,7 +91,7 @@ public:
      * @param port Port of the Server instance.
      * @throw std::runtime_error if DEFLECT_HOST was not provided or no
      *                           connection to server could be established
-     * @version 1.3
+     * @version 1.0
      */
     DEFLECT_API explicit Observer(unsigned short port);
 
@@ -131,13 +128,13 @@ public:
      */
     DEFLECT_API bool isConnected() const;
 
-    /** @return the identifier defined by the constructor. @version 1.3 */
+    /** @return the identifier defined by the constructor. @version 1.0 */
     DEFLECT_API const std::string& getId() const;
 
-    /** @return the host defined by the constructor. @version 1.3 */
+    /** @return the host defined by the constructor. @version 1.0 */
     DEFLECT_API const std::string& getHost() const;
 
-    /** @return the remote port the observer is connected to. @version 1.7 */
+    /** @return the remote port the observer is connected to. @version 1.0 */
     DEFLECT_API unsigned short getPort() const;
 
     /**
@@ -217,7 +214,7 @@ public:
      *
      * @param callback the function to call
      * @note replaces the previous disconnected signal
-     * @version 1.5
+     * @version 1.0
      */
     DEFLECT_API void setDisconnectedCallback(std::function<void()> callback);
 
@@ -227,7 +224,7 @@ public:
      *
      * @note blocks until all pending asynchonous send operations are finished.
      * @param hints the new size hints for the server
-     * @version 1.2
+     * @version 1.0
      */
     DEFLECT_API void sendSizeHints(const SizeHints& hints);
 
@@ -238,7 +235,7 @@ public:
      * @param data the pointer to the data buffer.
      * @param count the number of bytes to send.
      * @return true if the data could be sent, false otherwise
-     * @version 1.3
+     * @version 1.0
      */
     DEFLECT_API bool sendData(const char* data, size_t count);
 
