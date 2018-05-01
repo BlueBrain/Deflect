@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -46,28 +46,18 @@
 
 namespace deflect
 {
-struct ImageWrapper;
-
 /**
- * Image data and parameters for a single segment of a PixelStream.
+ * Image data and parameters for a single segment of a Frame.
  */
 struct Segment
 {
-    /** Parameters of the segment. */
     SegmentParameters parameters;
-
-    View view = View::mono; //!< Eye pass for the segment
-
-    /** Image data of the segment. */
     QByteArray imageData;
 
-    RowOrder rowOrder = RowOrder::top_down; //!< imageData row order
+    /** Extra parameters sent separately for network protocol compatiblity. */
 
-    /** @internal raw, uncompressed source image, used for compression */
-    const ImageWrapper* sourceImage = nullptr;
-
-    /** @internal holds potential exception from compression thread */
-    std::exception_ptr exception;
+    View view = View::mono;                 //!< Eye pass for the segment
+    RowOrder rowOrder = RowOrder::top_down; //!< Row order of imageData
 };
 }
 

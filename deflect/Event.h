@@ -144,47 +144,31 @@ struct Event
     };
 
     /** The type of event */
-    EventType type;
+    EventType type = EVT_NONE;
 
     /** @name Mouse and touch events */
     //@{
-    double mouseX;    /**< Normalized X mouse/touch position relative to the
-                         window */
-    double mouseY;    /**< Normalized Y mouse/touch position relative to the
-                         window */
-    double dx;        /**< Normalized horizontal delta for pan/pinch events /
-                         delta in pixels for wheel events */
-    double dy;        /**< Normalized vertical delta for pan/pinch events /
-                         delta in pixels for wheel events */
-    bool mouseLeft;   /**< State of the left mouse button (pressed=true) */
-    bool mouseRight;  /**< State of the right mouse button (pressed=true) */
-    bool mouseMiddle; /**< State of the middle mouse button (pressed=true) */
+    double mouseX = 0.0; /**< Normalized X mouse/touch position relative to the
+                              window */
+    double mouseY = 0.0; /**< Normalized Y mouse/touch position relative to the
+                              window */
+    double dx = 0.0;     /**< Normalized horizontal delta for pan/pinch events /
+                              delta in pixels for wheel events */
+    double dy = 0.0;     /**< Normalized vertical delta for pan/pinch events /
+                              delta in pixels for wheel events */
+    bool mouseLeft = false;   /**< State of left mouse button (pressed=true) */
+    bool mouseRight = false;  /**< State of right mouse button (pressed=true) */
+    bool mouseMiddle = false; /**< State of middle mouse button (pressed=true)*/
     //@}
 
     /** @name Keyboard events */
     //@{
-    int key;       /**< The key code, see QKeyEvent::key() / number of fingers
+    int key = 0; /**< The key code, see QKeyEvent::key() / number of fingers
                       for gestures / point id for touch events */
-    int modifiers; /**< The keyboard modifiers, see QKeyEvent::modifiers() */
+    int modifiers = 0; /**< The keyboard modifiers, see QKeyEvent::modifiers()*/
     char text[UNICODE_TEXT_SIZE]; /**< Carries unicode for key, see
-                                     QKeyEvent::text() */
+                                       QKeyEvent::text() */
     //@}
-
-    /** Construct a new event. @version 1.0 */
-    Event()
-        : type(EVT_NONE)
-        , mouseX(0)
-        , mouseY(0)
-        , dx(0)
-        , dy(0)
-        , mouseLeft(false)
-        , mouseRight(false)
-        , mouseMiddle(false)
-        , key(0)
-        , modifiers(0)
-        , text()
-    {
-    }
 
     /** The size of the QDataStream serialized output. */
     static const uint32_t serializedSize;

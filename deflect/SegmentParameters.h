@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -52,7 +52,7 @@ namespace deflect
 {
 /**
  * The possible formats for segment data.
- * @version 1.6
+ * @version 1.0
  */
 enum class DataType : std::uint8_t
 {
@@ -64,7 +64,8 @@ enum class DataType : std::uint8_t
 };
 
 /**
- * Parameters for a Frame Segment.
+ * Parameters for a Segment of a Frame.
+ * @version 1.0
  */
 struct SegmentParameters
 {
@@ -80,8 +81,15 @@ struct SegmentParameters
     uint32_t height = 0u; /**< The height in pixels. */
     //@}
 
-    /** Data format of the Segment. @version 1.6 */
+    /** Format in which the segment data is stored. */
     DataType dataType = DataType::jpeg;
+
+    /**
+     * WARNING:
+     * Extending this struct breaks compatibility with current
+     * NETWORK_PROTOCOL_VERSION == 8. This is due to the use of
+     * sizeof(SegmentParameters) in (de)serialization code.
+     */
 };
 }
 

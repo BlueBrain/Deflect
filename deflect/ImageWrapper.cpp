@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -72,26 +72,5 @@ unsigned int ImageWrapper::getBytesPerPixel() const
 size_t ImageWrapper::getBufferSize() const
 {
     return width * height * getBytesPerPixel();
-}
-
-void ImageWrapper::swapYAxis(void* data, const unsigned int width,
-                             const unsigned int height, const unsigned int bpp)
-{
-    unsigned char* src = (unsigned char*)data;
-
-    size_t bytesPerLine = width * bpp;
-    size_t bufferSize = bytesPerLine * height;
-
-    unsigned char* tmp = new unsigned char[bufferSize];
-
-    for (size_t y = 0; y < height; ++y)
-    {
-        memcpy((void*)(&tmp[y * bytesPerLine]),
-               (const void*)&src[(height - y - 1) * bytesPerLine],
-               bytesPerLine);
-    }
-    memcpy(data, (const void*)tmp, bufferSize);
-
-    delete[] tmp;
 }
 }

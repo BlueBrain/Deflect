@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -66,13 +66,13 @@ public:
     /**
      * Generate segments.
      *
-     * The generation might be parallelized, calling the handler function
-     * concurrently in multiple threads for different segments. When one handler
-     * fails, the remaining handlers may or may not be executed.
+     * The generation might be parallelized, but the Handler callback is always
+     * executed from the calling thread. When one handle() fails, the remaining
+     * handle() calls may or may not be executed.
      *
-     * @param image The image to be segmented
+     * @param image The image to be segmented.
      * @param handler the function to handle the generated segment.
-     * @return true if all image handlers returned true, false on failure
+     * @return true if all image handlers returned true, false on failure.
      * @see setNominalSegmentDimensions()
      */
     DEFLECT_API bool generate(const ImageWrapper& image, Handler handler);
@@ -117,11 +117,24 @@ private:
         uint lastHeight = 0;
     };
 
+    struct SegmentTask : Segment
+    {
+        /** Uncompressed source image used for compression */
+        const ImageWrapper* sourceImage = nullptr;
+
+        /** Holds potential exception from compression thread */
+        std::exception_ptr exception;
+    };
+    static bool _isOnRightSideOfSideBySideImage(const SegmentTask& segment);
+
     bool _generateJpeg(const ImageWrapper& image, const Handler& handler);
-    void _computeJpeg(Segment& task, bool sendSegment);
+    void _computeJpeg(SegmentTask& segment, bool sendSegment);
     bool _generateRaw(const ImageWrapper& image, const Handler& handler) const;
 
-    Segments _generateSegments(const ImageWrapper& image) const;
+    using SegmentTasks = std::vector<SegmentTask>;
+    SegmentTasks _generateSegmentTasks(const ImageWrapper& image) const;
+
+    using SegmentParametersList = std::vector<SegmentParameters>;
     SegmentParametersList _makeSegmentParameters(
         const ImageWrapper& image) const;
     SegmentationInfo _makeSegmentationInfo(const ImageWrapper& image) const;
@@ -129,7 +142,7 @@ private:
     uint _nominalSegmentWidth = 0;
     uint _nominalSegmentHeight = 0;
 
-    MTQueue<Segment> _sendQueue;
+    MTQueue<SegmentTask> _sendQueue;
 };
 }
 #endif

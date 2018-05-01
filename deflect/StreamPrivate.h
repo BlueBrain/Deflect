@@ -98,8 +98,6 @@ public:
     Stream::Future send(const SizeHints& hints);
     Stream::Future send(QByteArray&& data);
     Stream::Future sendImage(const ImageWrapper& image, bool finish);
-    Stream::Future sendSingleSegment(Segment&& segment, RowOrder orientation,
-                                     bool finish);
     Stream::Future sendFinishFrame();
 
     /** @internal Called by StreamSendWorker when finishFrame was processed. */

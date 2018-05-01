@@ -211,13 +211,10 @@ public:
         deflectImage.compressionPolicy = deflect::COMPRESSION_ON;
         deflectImage.compressionQuality = _options.quality;
 
-        static QMutex lock;
-        const auto appendHandler = [&](const deflect::Segment& segment) {
-            QMutexLocker locker(&lock);
+        const auto appendHandler = [this](const deflect::Segment& segment) {
             _jpegSegments.push_back(segment);
             return true;
         };
-
         return segmenter.generate(deflectImage, appendHandler);
     }
 

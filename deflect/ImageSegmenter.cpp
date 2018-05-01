@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -53,13 +53,10 @@
 
 namespace deflect
 {
-namespace
-{
-bool _isOnRightSideOfSideBySideImage(const Segment& segment)
+bool ImageSegmenter::_isOnRightSideOfSideBySideImage(const SegmentTask& segment)
 {
     return segment.sourceImage->view == View::side_by_side &&
            segment.view == View::right_eye;
-}
 }
 
 bool ImageSegmenter::generate(const ImageWrapper& image, Handler handler)
@@ -71,7 +68,7 @@ bool ImageSegmenter::generate(const ImageWrapper& image, Handler handler)
 
 Segment ImageSegmenter::createSingleSegment(const ImageWrapper& image)
 {
-    auto segments = _generateSegments(image);
+    auto segments = _generateSegmentTasks(image);
     if (segments.size() > 1)
         throw std::runtime_error(
             "createSingleSegment only works for small images");
@@ -114,7 +111,7 @@ bool ImageSegmenter::_generateJpeg(const ImageWrapper& image,
 {
 #ifdef DEFLECT_USE_LIBJPEGTURBO
     // The resulting Jpeg segments
-    auto segments = _generateSegments(image);
+    auto segments = _generateSegmentTasks(image);
 
     // start creating JPEGs for each segment, in parallel
     QtConcurrent::map(segments, std::bind(&ImageSegmenter::_computeJpeg, this,
@@ -129,8 +126,13 @@ bool ImageSegmenter::_generateJpeg(const ImageWrapper& image,
     {
         bool result = true;
         for (; i < segments.size(); ++i)
-            if (!handler(_sendQueue.dequeue()))
+        {
+            const auto segment = _sendQueue.dequeue();
+            if (segment.exception)
+                std::rethrow_exception(segment.exception);
+            if (!handler(segment))
                 result = false;
+        }
         return result;
     }
     catch (...)
@@ -155,7 +157,7 @@ bool ImageSegmenter::_generateJpeg(const ImageWrapper& image,
 #endif
 }
 
-void ImageSegmenter::_computeJpeg(Segment& segment, const bool sendSegment)
+void ImageSegmenter::_computeJpeg(SegmentTask& segment, const bool sendSegment)
 {
 #ifdef DEFLECT_USE_LIBJPEGTURBO
     QRect imageRegion(segment.parameters.x - segment.sourceImage->x,
@@ -188,7 +190,7 @@ void ImageSegmenter::_computeJpeg(Segment& segment, const bool sendSegment)
 bool ImageSegmenter::_generateRaw(const ImageWrapper& image,
                                   const Handler& handler) const
 {
-    auto segments = _generateSegments(image);
+    auto segments = _generateSegmentTasks(image);
     for (auto& segment : segments)
     {
         segment.imageData.reserve(segment.parameters.width *
@@ -230,17 +232,18 @@ bool ImageSegmenter::_generateRaw(const ImageWrapper& image,
     return true;
 }
 
-Segments ImageSegmenter::_generateSegments(const ImageWrapper& image) const
+ImageSegmenter::SegmentTasks ImageSegmenter::_generateSegmentTasks(
+    const ImageWrapper& image) const
 {
-    Segments segments;
+    SegmentTasks segments;
     for (const auto& params : _makeSegmentParameters(image))
     {
-        Segment segment;
+        SegmentTask segment;
         segment.parameters = params;
         segment.view =
             image.view == View::side_by_side ? View::left_eye : image.view;
-        segment.sourceImage = &image;
         segment.rowOrder = image.rowOrder;
+        segment.sourceImage = &image;
         segments.push_back(segment);
     }
 
@@ -262,7 +265,7 @@ Segments ImageSegmenter::_generateSegments(const ImageWrapper& image) const
     return segments;
 }
 
-SegmentParametersList ImageSegmenter::_makeSegmentParameters(
+ImageSegmenter::SegmentParametersList ImageSegmenter::_makeSegmentParameters(
     const ImageWrapper& image) const
 {
     const auto info = _makeSegmentationInfo(image);

@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -128,12 +128,12 @@ struct ImageWrapper
                                               100 best, default: 75).
                                               @version 1.0 */
     ChromaSubsampling subsampling;       /**< Chrominance sub-sampling.
-                                              (default: YUV444). @version 1.6 */
+                                              (default: YUV444). @version 1.0 */
     //@}
 
     /**
      * The view that this image represents.
-     * @version 1.6
+     * @version 1.0
      */
     View view = View::mono;
 
@@ -148,8 +148,7 @@ struct ImageWrapper
      * frame's segments need to be reordered in addtion to flipping them
      * individually.
      *
-     * This is an alternative to calling swapYAxis() before sending.
-     * @version 1.7
+     * @version 1.0
      */
     RowOrder rowOrder = RowOrder::top_down;
 
@@ -164,22 +163,6 @@ struct ImageWrapper
      * @version 1.0
      */
     DEFLECT_API size_t getBufferSize() const;
-
-    /**
-     * Swap an image along the Y axis.
-     *
-     * Used to switch between OpenGL convention (origin in bottom-left corner)
-     * and "standard" image format (origin in top-left corner).
-     * @param data The image buffer to be modified, containing width*height*bpp
-     *        bytes
-     * @param width The width of the image
-     * @param height The height of the image
-     * @param bpp The number of bytes per pixel (RGB=3, ARGB=4, etc.)
-     * @version 1.0
-     */
-    DEFLECT_API static void swapYAxis(void* data, const unsigned int width,
-                                      const unsigned int height,
-                                      const unsigned int bpp);
 };
 }
 

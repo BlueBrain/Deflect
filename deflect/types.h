@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2014-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -41,8 +41,6 @@
 #ifndef DEFLECT_TYPES_H
 #define DEFLECT_TYPES_H
 
-#include <deflect/config.h>
-
 #include <future>
 #include <memory>
 #include <vector>
@@ -80,6 +78,7 @@ constexpr typename std::underlying_type<E>::type as_underlying_type(E e)
     return static_cast<typename std::underlying_type<E>::type>(e);
 }
 
+/** Make a ready future with the given value. */
 template <typename T>
 std::future<T> make_ready_future(T&& value)
 {
@@ -88,6 +87,7 @@ std::future<T> make_ready_future(T&& value)
     return promise.get_future();
 }
 
+/** Make a ready future with the given exception. */
 template <typename T>
 std::future<T> make_exception_future(std::exception_ptr&& e)
 {
@@ -95,6 +95,8 @@ std::future<T> make_exception_future(std::exception_ptr&& e)
     promise.set_exception(std::move(e));
     return promise.get_future();
 }
+
+/** Make a ready future with the given exception. */
 template <typename T, typename Exception>
 std::future<T> make_exception_future(Exception&& e)
 {
@@ -119,7 +121,6 @@ struct SizeHints;
 using BoolPromisePtr = std::shared_ptr<std::promise<bool>>;
 using FramePtr = std::shared_ptr<Frame>;
 using Segments = std::vector<Segment>;
-using SegmentParametersList = std::vector<SegmentParameters>;
 
 namespace qt
 {

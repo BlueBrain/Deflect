@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Stefan.Eilemann@epfl.ch                  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
@@ -71,7 +71,7 @@ public:
      *               unique identifier will be used.
      * @throw std::runtime_error if DEFLECT_HOST was not provided or no
      *                           connection to server could be established
-     * @version 1.7
+     * @version 1.0
      */
     DEFLECT_API Stream();
 
@@ -84,7 +84,7 @@ public:
      * @param port Port of the Server instance.
      * @throw std::runtime_error if DEFLECT_HOST was not provided or no
      *                           connection to server could be established
-     * @version 1.3
+     * @version 1.0
      */
     DEFLECT_API explicit Stream(unsigned short port);
 
@@ -118,7 +118,7 @@ public:
 
     /** @name Asynchronous send API */
     //@{
-    /** Future signaling success of asyncSend(). @version 1.5 */
+    /** Future signaling success of asyncSend(). @version 1.0 */
     using Future = std::future<bool>;
 
     /**
@@ -131,7 +131,7 @@ public:
      * @throw std::invalid_argument if invalid JPEG compression arguments
      * @throw std::runtime_error if pending finishFrame() has not been completed
      * @throw std::runtime_error if JPEG compression failed
-     * @version 1.6
+     * @version 1.0
      * @sa finishFrame()
      */
     DEFLECT_API Future send(const ImageWrapper& image);
@@ -146,7 +146,7 @@ public:
      * stereo rendering.
      *
      * @sa send()
-     * @version 1.6
+     * @version 1.0
      */
     DEFLECT_API Future finishFrame();
 
@@ -165,12 +165,9 @@ public:
      * @throw std::runtime_error if pending finishFrame() has not been completed
      * @throw std::runtime_error if JPEG compression failed
      * @see send()
-     * @version 1.6
+     * @version 1.0
      */
     DEFLECT_API Future sendAndFinish(const ImageWrapper& image);
-
-    /** @deprecated */
-    Future asyncSend(const ImageWrapper& image) { return sendAndFinish(image); }
     //@}
 
 private:

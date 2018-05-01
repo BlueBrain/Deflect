@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -59,9 +59,6 @@ ServerWorker::ServerWorker(const int socketDescriptor)
                                        // *this* so it gets moved to thread
     , _sourceId{socketDescriptor}
     , _clientProtocolVersion{NETWORK_PROTOCOL_VERSION}
-    , _registeredToEvents{false}
-    , _activeView{View::mono}
-    , _activeRowOrder{RowOrder::top_down}
 {
     if (!_tcpSocket->setSocketDescriptor(socketDescriptor))
     {
@@ -151,9 +148,9 @@ void ServerWorker::_processMessages()
 
 void ServerWorker::_receiveMessage()
 {
-    const MessageHeader mh = _receiveMessageHeader();
-    const QByteArray messageByteArray = _receiveMessageBody(mh.size);
-    _handleMessage(mh, messageByteArray);
+    const auto messageHeader = _receiveMessageHeader();
+    const auto messageBody = _receiveMessageBody(messageHeader.size);
+    _handleMessage(messageHeader, messageBody);
 }
 
 MessageHeader ServerWorker::_receiveMessageHeader()
@@ -249,9 +246,8 @@ void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
 
     case MESSAGE_TYPE_SIZE_HINTS:
     {
-        const SizeHints* hints =
-            reinterpret_cast<const SizeHints*>(byteArray.data());
-        emit receivedSizeHints(_streamId, SizeHints(*hints));
+        const auto hints = reinterpret_cast<const SizeHints*>(byteArray.data());
+        emit receivedSizeHints(_streamId, *hints);
         break;
     }
 
