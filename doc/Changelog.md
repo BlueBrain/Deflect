@@ -3,12 +3,13 @@ Changelog {#Changelog}
 
 ## Deflect 0.14
 
-### 0.14.1 (git master)
+### 0.14.1 (01-05-2018)
+* [193](https://github.com/BlueBrain/Deflect/pull/193):
+  Moved to C++14 standard.
 * [192](https://github.com/BlueBrain/Deflect/pull/192):
   QmlStreamer bugfix: gracefully exit if the stream connection fails.
 
 ### 0.14.0 (23-10-2017)
-
 * [191](https://github.com/BlueBrain/Deflect/pull/191):
   DesktopStreamer: default host and other options can be specified on the
   command line.
