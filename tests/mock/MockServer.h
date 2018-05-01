@@ -44,7 +44,7 @@
 typedef __int32 int32_t;
 #endif
 
-#include <deflect/mock/api.h>
+#include <deflect/api.h>
 
 #include <QtNetwork/QTcpServer>
 

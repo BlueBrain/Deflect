@@ -45,8 +45,8 @@ namespace ut = boost::unit_test;
 #include "MinimalGlobalQtApp.h"
 #include "boost_test_thread_safe.h"
 
-#include <deflect/Frame.h>
 #include <deflect/Stream.h>
+#include <deflect/server/Frame.h>
 
 #include <boost/mpl/vector.hpp>
 #include <cmath>
@@ -89,13 +89,15 @@ BOOST_AUTO_TEST_CASE(sizeHintsReceivedByServer)
 BOOST_AUTO_TEST_CASE(registerForEventReceivedByServer)
 {
     bool received = false;
-    setRegisterToEventsCallback([&](const QString id, const bool exclusive,
-                                    deflect::EventReceiver* eventReceiver) {
-        SAFE_BOOST_CHECK_EQUAL(id.toStdString(), testStreamId.toStdString());
-        SAFE_BOOST_CHECK(exclusive);
-        SAFE_BOOST_CHECK(eventReceiver);
-        received = true;
-    });
+    setRegisterToEventsCallback(
+        [&](const QString id, const bool exclusive,
+            deflect::server::EventReceiver* eventReceiver) {
+            SAFE_BOOST_CHECK_EQUAL(id.toStdString(),
+                                   testStreamId.toStdString());
+            SAFE_BOOST_CHECK(exclusive);
+            SAFE_BOOST_CHECK(eventReceiver);
+            received = true;
+        });
 
     {
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
@@ -136,7 +138,7 @@ BOOST_AUTO_TEST_CASE(dataReceivedByServer)
 
 BOOST_AUTO_TEST_CASE(oneObserverAndOneStream)
 {
-    setFrameReceivedCallback([&](deflect::FramePtr frame) {
+    setFrameReceivedCallback([&](deflect::server::FramePtr frame) {
         SAFE_BOOST_CHECK_EQUAL(frame->segments.size(), 1);
         SAFE_BOOST_CHECK_EQUAL(frame->uri.toStdString(),
                                testStreamId.toStdString());
@@ -333,7 +335,7 @@ BOOST_AUTO_TEST_CASE(threadedSmallSegmentStream)
                              std::ceil((float)width / segmentSize) *
                                  std::ceil((float)height / segmentSize));
 
-    setFrameReceivedCallback([&](deflect::FramePtr frame) {
+    setFrameReceivedCallback([&](deflect::server::FramePtr frame) {
         SAFE_BOOST_CHECK_EQUAL(frame->segments.size(), numSegments);
         SAFE_BOOST_CHECK_EQUAL(frame->uri.toStdString(),
                                testStreamId.toStdString());

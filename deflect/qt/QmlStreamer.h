@@ -40,7 +40,7 @@
 #ifndef DELFECT_QT_QMLSTREAMER_H
 #define DELFECT_QT_QMLSTREAMER_H
 
-#include <deflect/qt/api.h>
+#include <deflect/api.h>
 
 #include <QQmlEngine>
 #include <QQuickItem>
@@ -71,7 +71,7 @@ namespace qt
  * switch to a "mouse" interaction mode. This allows users to interact within
  * a WebGL canevas or select text instead of scrolling the page.
  */
-class DEFLECTQT_API QmlStreamer : public QObject
+class DEFLECT_API QmlStreamer : public QObject
 {
     Q_OBJECT
 

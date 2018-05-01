@@ -1,6 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,100 +38,96 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "ReceiveBuffer.h"
+#ifndef DEFLECT_SERVER_SERVERWORKER_H
+#define DEFLECT_SERVER_SERVERWORKER_H
 
-#include <cassert>
-namespace
-{
-const size_t MAX_QUEUE_SIZE = 150; // stream blocked for ~5 seconds at 30Hz
-}
+#include <deflect/Event.h>
+#include <deflect/MessageHeader.h>
+#include <deflect/Segment.h>
+#include <deflect/SizeHints.h>
+#include <deflect/server/EventReceiver.h>
+#include <deflect/types.h>
+
+#include <QQueue>
+#include <QtNetwork/QTcpSocket>
 
 namespace deflect
 {
-bool ReceiveBuffer::addSource(const size_t sourceIndex)
+namespace server
 {
-    assert(!_sourceBuffers.count(sourceIndex));
-
-    // TODO: This function must return false if the stream was already started!
-    // This requires a full adaptation of the Stream library (DISCL-241)
-    if (_sourceBuffers.count(sourceIndex))
-        return false;
-
-    _sourceBuffers[sourceIndex] = SourceBuffer();
-    return true;
-}
-
-void ReceiveBuffer::removeSource(const size_t sourceIndex)
+class ServerWorker : public EventReceiver
 {
-    _sourceBuffers.erase(sourceIndex);
+    Q_OBJECT
 
-    // reset for new sources starting with getBackFrameIndex() == 0
-    if (_sourceBuffers.empty())
-        _lastFrameComplete = 0;
+public:
+    explicit ServerWorker(int socketDescriptor);
+    ~ServerWorker();
+
+public slots:
+    void processEvent(Event evt) final;
+
+    void initConnection();
+    void closeConnection(QString uri);
+
+signals:
+    void addStreamSource(QString uri, size_t sourceIndex);
+    void removeStreamSource(QString uri, size_t sourceIndex);
+
+    void addObserver(QString uri);
+    void removeObserver(QString uri);
+
+    void receivedSegment(QString uri, size_t sourceIndex,
+                         deflect::Segment segment);
+    void receivedFrameFinished(QString uri, size_t sourceIndex);
+
+    void registerToEvents(QString uri, bool exclusive,
+                          deflect::server::EventReceiver* receiver,
+                          deflect::server::BoolPromisePtr success);
+
+    void receivedSizeHints(QString uri, deflect::SizeHints hints);
+
+    void receivedData(QString uri, QByteArray data);
+
+    void connectionClosed();
+
+    /** @internal */
+    void _dataAvailable();
+
+private slots:
+    void _processMessages();
+
+private:
+    QTcpSocket* _tcpSocket = nullptr;
+
+    QString _streamId;
+    int _sourceId = -1;
+    int _clientProtocolVersion = -1;
+    bool _observer = false;
+
+    bool _registeredToEvents = false;
+    QQueue<Event> _events;
+
+    View _activeView = View::mono;
+    RowOrder _activeRowOrder = RowOrder::top_down;
+
+    void _receiveMessage();
+    MessageHeader _receiveMessageHeader();
+    QByteArray _receiveMessageBody(int size);
+
+    void _handleMessage(const MessageHeader& messageHeader,
+                        const QByteArray& message);
+    void _parseClientProtocolVersion(const QByteArray& message);
+    void _handlePixelStreamMessage(const QByteArray& message);
+
+    void _sendProtocolVersion();
+    void _sendBindReply(bool successful);
+    void _send(const Event& evt);
+    void _sendQuit();
+    bool _send(const MessageHeader& messageHeader);
+    void _flushSocket();
+    bool _isConnected() const;
+};
+}
 }
 
-size_t ReceiveBuffer::getSourceCount() const
-{
-    return _sourceBuffers.size();
-}
-
-void ReceiveBuffer::insert(const Segment& segment, const size_t sourceIndex)
-{
-    assert(_sourceBuffers.count(sourceIndex));
-
-    _sourceBuffers[sourceIndex].insert(segment);
-}
-
-void ReceiveBuffer::finishFrameForSource(const size_t sourceIndex)
-{
-    assert(_sourceBuffers.count(sourceIndex));
-
-    auto& buffer = _sourceBuffers[sourceIndex];
-    if (buffer.getQueueSize() > MAX_QUEUE_SIZE)
-        throw std::runtime_error("maximum queue size exceeded");
-
-    if (buffer.isBackFrameEmpty())
-        throw std::runtime_error("client sent finish frame without image data");
-
-    buffer.push();
-}
-
-bool ReceiveBuffer::hasCompleteFrame() const
-{
-    // Check if all sources for Stream have reached the same index
-    for (const auto& kv : _sourceBuffers)
-    {
-        const auto& buffer = kv.second;
-        if (buffer.getBackFrameIndex() <= _lastFrameComplete)
-            return false;
-    }
-    return !_sourceBuffers.empty();
-}
-
-Segments ReceiveBuffer::popFrame()
-{
-    Segments frame;
-    for (auto& kv : _sourceBuffers)
-    {
-        auto& buffer = kv.second;
-        if (buffer.getBackFrameIndex() > _lastFrameComplete)
-        {
-            const auto& segments = buffer.getSegments();
-            frame.insert(frame.end(), segments.begin(), segments.end());
-            buffer.pop();
-        }
-    }
-    ++_lastFrameComplete;
-    return frame;
-}
-
-void ReceiveBuffer::setAllowedToSend(const bool enable)
-{
-    _allowedToSend = enable;
-}
-
-bool ReceiveBuffer::isAllowedToSend() const
-{
-    return _allowedToSend;
-}
-}
+#endif

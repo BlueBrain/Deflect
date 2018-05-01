@@ -55,12 +55,14 @@ struct MetaTypeRegistration
     MetaTypeRegistration()
     {
         qRegisterMetaType<size_t>("size_t");
-        qRegisterMetaType<deflect::BoolPromisePtr>("deflect::BoolPromisePtr");
         qRegisterMetaType<deflect::Segment>("deflect::Segment");
         qRegisterMetaType<deflect::SizeHints>("deflect::SizeHints");
         qRegisterMetaType<deflect::Event>("deflect::Event");
-        qRegisterMetaType<deflect::FramePtr>("deflect::FramePtr");
         qRegisterMetaType<deflect::View>("deflect::View");
+        qRegisterMetaType<deflect::server::BoolPromisePtr>(
+            "deflect::server::BoolPromisePtr");
+        qRegisterMetaType<deflect::server::FramePtr>(
+            "deflect::server::FramePtr");
     }
 };
 

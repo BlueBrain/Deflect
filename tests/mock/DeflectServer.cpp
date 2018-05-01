@@ -43,13 +43,13 @@
 
 DeflectServer::DeflectServer()
 {
-    _server = new deflect::Server(0 /* OS-chosen port */);
+    _server = new deflect::server::Server(0 /* OS-chosen port */);
     _server->moveToThread(&_thread);
     _thread.connect(&_thread, &QThread::finished, _server,
-                    &deflect::Server::deleteLater);
+                    &deflect::server::Server::deleteLater);
     _thread.start();
 
-    _server->connect(_server, &deflect::Server::pixelStreamOpened,
+    _server->connect(_server, &deflect::server::Server::pixelStreamOpened,
                      [&](const QString) {
                          ++_openedStreams;
                          _mutex.lock();
@@ -58,7 +58,7 @@ DeflectServer::DeflectServer()
                          _mutex.unlock();
                      });
 
-    _server->connect(_server, &deflect::Server::pixelStreamClosed,
+    _server->connect(_server, &deflect::server::Server::pixelStreamClosed,
                      [&](const QString) {
                          --_openedStreams;
                          _mutex.lock();
@@ -67,7 +67,7 @@ DeflectServer::DeflectServer()
                          _mutex.unlock();
                      });
 
-    _server->connect(_server, &deflect::Server::receivedSizeHints,
+    _server->connect(_server, &deflect::server::Server::receivedSizeHints,
                      [&](const QString id, const deflect::SizeHints hints) {
                          if (_sizeHintsCallback)
                              _sizeHintsCallback(id, hints);
@@ -77,7 +77,7 @@ DeflectServer::DeflectServer()
                          _mutex.unlock();
                      });
 
-    _server->connect(_server, &deflect::Server::receivedData,
+    _server->connect(_server, &deflect::server::Server::receivedData,
                      [&](const QString id, QByteArray data) {
                          if (_dataReceivedCallback)
                              _dataReceivedCallback(id, data);
@@ -87,8 +87,8 @@ DeflectServer::DeflectServer()
                          _mutex.unlock();
                      });
 
-    _server->connect(_server, &deflect::Server::receivedFrame,
-                     [&](deflect::FramePtr frame) {
+    _server->connect(_server, &deflect::server::Server::receivedFrame,
+                     [&](deflect::server::FramePtr frame) {
                          if (_frameReceivedCallback)
                              _frameReceivedCallback(frame);
                          ++_receivedFrames;
@@ -98,10 +98,10 @@ DeflectServer::DeflectServer()
                          _mutex.unlock();
                      });
 
-    _server->connect(_server, &deflect::Server::registerToEvents,
+    _server->connect(_server, &deflect::server::Server::registerToEvents,
                      [&](const QString id, const bool exclusive,
-                         deflect::EventReceiver* evtReceiver,
-                         deflect::BoolPromisePtr success) {
+                         deflect::server::EventReceiver* evtReceiver,
+                         deflect::server::BoolPromisePtr success) {
 
                          if (_registerToEventsCallback)
                              _registerToEventsCallback(id, exclusive,

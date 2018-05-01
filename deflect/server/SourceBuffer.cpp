@@ -43,6 +43,8 @@
 
 namespace deflect
 {
+namespace server
+{
 SourceBuffer::SourceBuffer()
 {
     _segments.push(Segments());
@@ -82,5 +84,6 @@ void SourceBuffer::insert(const Segment& segment)
 size_t SourceBuffer::getQueueSize() const
 {
     return _segments.size();
+}
 }
 }

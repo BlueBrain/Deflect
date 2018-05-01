@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2017, EPFL/Blue Brain Project                  */
-/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/* Copyright (c) 2015, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,39 +37,41 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_FRAME_H
-#define DEFLECT_FRAME_H
-
-#include <deflect/Segment.h>
-#include <deflect/api.h>
-#include <deflect/types.h>
-
-#include <QSize>
-#include <QString>
+#include "Frame.h"
 
 namespace deflect
 {
-/**
- * A frame for a PixelStream.
- */
-class Frame
+namespace server
 {
-public:
-    /** The full set of segments for this frame. */
-    Segments segments;
+QSize Frame::computeDimensions() const
+{
+    QSize size(0, 0);
 
-    /** The PixelStream uri to which this frame is associated. */
-    QString uri;
+    for (const auto& segment : segments)
+    {
+        const auto& params = segment.parameters;
+        size.setWidth(std::max(size.width(), (int)(params.width + params.x)));
+        size.setHeight(
+            std::max(size.height(), (int)(params.height + params.y)));
+    }
 
-    /** Get the total dimensions of this frame. */
-    DEFLECT_API QSize computeDimensions() const;
-
-    /**
-     * @return the row order of all frame segments
-     * @throws std::runtime_error if not all segments have the same RowOrder
-     */
-    DEFLECT_API RowOrder determineRowOrder() const;
-};
+    return size;
 }
 
-#endif
+RowOrder Frame::determineRowOrder() const
+{
+    if (segments.empty())
+        throw std::runtime_error("frame has no segements");
+
+    const auto frameRowOrder = segments[0].rowOrder;
+
+    for (const auto& segment : segments)
+    {
+        if (segment.rowOrder != frameRowOrder)
+            throw std::runtime_error("frame has incoherent row orders");
+    }
+
+    return frameRowOrder;
+}
+}
+}

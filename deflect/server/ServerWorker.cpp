@@ -40,12 +40,12 @@
 
 #include "ServerWorker.h"
 
-#include "NetworkProtocol.h"
-
-#include <iostream>
-#include <stdint.h>
+#include "deflect/NetworkProtocol.h"
 
 #include <QDataStream>
+
+#include <cstdint>
+#include <iostream>
 
 namespace
 {
@@ -53,6 +53,8 @@ const int RECEIVE_TIMEOUT_MS = 3000;
 }
 
 namespace deflect
+{
+namespace server
 {
 ServerWorker::ServerWorker(const int socketDescriptor)
     : _tcpSocket{new QTcpSocket(this)} // Ensure that _tcpSocket parent is
@@ -375,5 +377,6 @@ void ServerWorker::_flushSocket()
 bool ServerWorker::_isConnected() const
 {
     return _tcpSocket->state() == QTcpSocket::ConnectedState;
+}
 }
 }

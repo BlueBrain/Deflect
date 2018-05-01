@@ -40,14 +40,16 @@
 #include "SegmentDecoder.h"
 
 #include "ImageJpegDecompressor.h"
-#include "Segment.h"
-
-#include <iostream>
+#include "deflect/Segment.h"
 
 #include <QFuture>
 #include <QtConcurrentRun>
 
+#include <iostream>
+
 namespace deflect
+{
+namespace server
 {
 class SegmentDecoder::Impl
 {
@@ -196,5 +198,6 @@ void SegmentDecoder::waitDecoding()
 bool SegmentDecoder::isRunning() const
 {
     return _impl->decodingFuture.isRunning();
+}
 }
 }

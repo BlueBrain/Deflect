@@ -47,6 +47,8 @@
 
 namespace deflect
 {
+namespace server
+{
 class FrameDispatcher::Impl
 {
 public:
@@ -189,5 +191,6 @@ void FrameDispatcher::deleteStream(const QString uri)
         _impl->streamBuffers.erase(uri);
         emit pixelStreamClosed(uri);
     }
+}
 }
 }

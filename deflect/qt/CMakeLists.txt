@@ -1,5 +1,5 @@
 
-# Copyright (c) 2015-2016, EPFL/Blue Brain Project
+# Copyright (c) 2015-2018, EPFL/Blue Brain Project
 #                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 #                          Raphael Dumusc <raphael.dumusc@epfl.ch>
 
@@ -24,9 +24,12 @@ set(DEFLECTQT_SOURCES
 )
 
 set(DEFLECTQT_LINK_LIBRARIES
-  PUBLIC Deflect Qt5::Quick PRIVATE Qt5::Qml)
+  PUBLIC Deflect Qt5::Quick PRIVATE Qt5::Qml
+)
+
 set(DEFLECTQT_INCLUDE_NAME deflect/qt)
-set(DEFLECTQT_NAMESPACE deflectqt)
+set(DEFLECTQT_OMIT_VERSION_HEADERS ON)
+
 common_library(DeflectQt)
 
 if(DEFLECT_QMLSTREAMER_MULTITHREADED)

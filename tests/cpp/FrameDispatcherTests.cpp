@@ -44,7 +44,7 @@ namespace ut = boost::unit_test;
 
 #include "FrameUtils.h"
 
-#include <deflect/FrameDispatcher.h>
+#include <deflect/server/FrameDispatcher.h>
 
 namespace
 {
@@ -53,17 +53,20 @@ const char* streamId = "test";
 
 struct Fixture
 {
-    deflect::FrameDispatcher dispatcher;
-    deflect::FramePtr receivedFrame;
+    deflect::server::FrameDispatcher dispatcher;
+    deflect::server::FramePtr receivedFrame;
     Fixture()
     {
-        QObject::connect(&dispatcher, &deflect::FrameDispatcher::sendFrame,
-                         [&](deflect::FramePtr f) { receivedFrame = f; });
+        QObject::connect(&dispatcher,
+                         &deflect::server::FrameDispatcher::sendFrame,
+                         [&](deflect::server::FramePtr f) {
+                             receivedFrame = f;
+                         });
 
         dispatcher.addSource(streamId, 0);
     }
 
-    void dispatch(const deflect::Frame& frame)
+    void dispatch(const deflect::server::Frame& frame)
     {
         for (auto& segment : frame.segments)
             dispatcher.processSegment(streamId, 0, segment);

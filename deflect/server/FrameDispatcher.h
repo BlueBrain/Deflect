@@ -1,7 +1,6 @@
 /*********************************************************************/
 /* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
-/*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -38,80 +37,118 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_SERVER_H
-#define DEFLECT_SERVER_H
+#ifndef DEFLECT_SERVER_FRAMEDISPATCHER_H
+#define DEFLECT_SERVER_FRAMEDISPATCHER_H
 
-#include <deflect/SizeHints.h>
+#include <deflect/Segment.h>
 #include <deflect/api.h>
 #include <deflect/types.h>
 
-#include <QtNetwork/QTcpServer>
+#include <QObject>
+#include <map>
 
 namespace deflect
 {
+namespace server
+{
 /**
- * Listen to incoming connections from multiple Stream clients.
- *
- * Both mono and frame-sequential stereo 3D streams are supported.
- *
- * The server integrates a flow-control mechanism to ensure that new frames are
- * dispatched only as fast as the application is capable of processing them.
+ * Gather segments from multiple sources and dispatch full frames.
  */
-class DEFLECT_API Server : public QTcpServer
+class FrameDispatcher : public QObject
 {
     Q_OBJECT
 
 public:
-    /** The default port number used for Stream connections. */
-    static const int defaultPortNumber;
+    /** Construct a dispatcher */
+    FrameDispatcher(QObject* parent = nullptr);
 
-    /**
-     * Create a new server listening for Stream connections.
-     *
-     * @param port The port to listen on. Must be available.
-     * @throw std::runtime_error if the server could not be started.
-     */
-    explicit Server(int port = defaultPortNumber);
-
-    /** Stop the server and close all open pixel stream connections. */
-    ~Server();
+    /** Destructor. */
+    ~FrameDispatcher();
 
 public slots:
     /**
-     * Request the dispatching of the next frame for a given pixel stream.
+     * Add a source of Segments for a Stream.
      *
-     * A receivedFrame() signal will subsequently be emitted for each of the
-     * view(s) (mono or stereo) for which a frame is or becomes available.
+     * @param uri Identifier for the stream
+     * @param sourceIndex Identifier for the source in this stream
+     */
+    void addSource(QString uri, size_t sourceIndex);
+
+    /**
+     * Remove a source of Segments for a Stream.
      *
-     * To ensure that the two eye channels remain synchronized, stereo
-     * left/right frames are dispatched together only when both are available.
+     * @param uri Identifier for the stream
+     * @param sourceIndex Identifier for the source in this stream
+     */
+    void removeSource(QString uri, size_t sourceIndex);
+
+    /**
+     * Add a stream source as an observer which does not contribute segments.
+     * Emits pixelStreamOpened() if no other observer or source is present.
+     *
+     * @param uri Identifier for the stream
+     */
+    void addObserver(QString uri);
+
+    /**
+     * Remove a stream observer, emits pixelStreamClosed() if all observers and
+     * sources are gone.
+     *
+     * @param uri Identifier for the stream
+     */
+    void removeObserver(QString uri);
+
+    /**
+     * Process a new Segment.
+     *
+     * @param uri Identifier for the stream
+     * @param sourceIndex Identifier for the source in the stream
+     * @param segment to process
+     */
+    void processSegment(QString uri, size_t sourceIndex,
+                        deflect::Segment segment);
+
+    /**
+     * The given source has finished sending segments for the current frame.
+     *
+     * @param uri Identifier for the stream
+     * @param sourceIndex Identifier for the source in the stream
+     */
+    void processFrameFinished(QString uri, size_t sourceIndex);
+
+    /**
+     * Request the dispatching of a new frame for any stream (mono/stereo).
+     *
+     * A sendFrame() signal will be emitted for each of the view for which a
+     * frame becomes available.
+     *
+     * Stereo left/right frames will only be be dispatched together when both
+     * are available to ensure that the two eye channels remain synchronized.
      *
      * @param uri Identifier for the stream
      */
     void requestFrame(QString uri);
 
     /**
-     * Close a pixel stream, disconnecting the remote client.
+     * Delete all the buffers for a Stream.
      *
      * @param uri Identifier for the stream
      */
-    void closePixelStream(QString uri);
+    void deleteStream(QString uri);
 
 signals:
     /**
-     * Notify that a pixel stream has been opened.
+     * Notify that a PixelStream has been opened.
      *
      * @param uri Identifier for the stream
      */
     void pixelStreamOpened(QString uri);
 
     /**
-     * Notify that a stream has encountered an exception and will be closed.
-     *
-     * Used for error reporting.
+     * Notify that an exception occured and the stream should be closed.
      *
      * @param uri Identifier for the stream
-     * @param what The error message
+     * @param what The description of the exception that occured
      */
     void pixelStreamException(QString uri, QString what);
 
@@ -123,53 +160,17 @@ signals:
     void pixelStreamClosed(QString uri);
 
     /**
-     * Emitted when a full frame has been received from a pixel stream.
+     * Dispatch a full frame.
      *
-     * This signal is only emitted after the application signals that it is
-     * ready to handle a new frame by calling requestFrame().
-     *
-     * @param frame The latest frame that was received for a stream.
+     * @param frame The latest frame available for a stream
      */
-    void receivedFrame(deflect::FramePtr frame);
-
-    /**
-     * Emitted when a remote client wants to register for receiving events.
-     *
-     * @param uri Identifier for the stream
-     * @param exclusive true if the receiver should receive events exclusively
-     * @param receiver the event receiver instance
-     * @param success the promise that must receive the success of the operation
-     */
-    void registerToEvents(QString uri, bool exclusive,
-                          deflect::EventReceiver* receiver,
-                          deflect::BoolPromisePtr success);
-
-    /**
-     * Emitted when a remote client sends size hints for displaying the stream.
-     *
-     * @param uri Identifier for the stream
-     * @param hints The size hints to apply
-     */
-    void receivedSizeHints(QString uri, deflect::SizeHints hints);
-
-    /**
-     * Emitted when a remote client sends generic data.
-     *
-     * @param uri Identifier for the stream
-     * @param data A streamer-specific message
-     */
-    void receivedData(QString uri, QByteArray data);
+    void sendFrame(deflect::server::FramePtr frame);
 
 private:
     class Impl;
     std::unique_ptr<Impl> _impl;
-
-    /** Re-implemented handling of connections from QTCPSocket. */
-    void incomingConnection(qintptr socketHandle) final;
-
-signals:
-    void _closePixelStream(QString uri);
 };
+}
 }
 
 #endif

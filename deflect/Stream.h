@@ -50,7 +50,7 @@
 namespace deflect
 {
 /**
- * Stream visual data to a deflect::Server.
+ * Stream visual data to a deflect Server.
  *
  * A Stream can be subdivided into one or more images and eye passes. This
  * allows to have different applications each responsible for sending one part
