@@ -37,85 +37,78 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_SEGMENTDECODER_H
-#define DEFLECT_SEGMENTDECODER_H
+#ifndef DEFLECT_SERVER_IMAGEJPEGDECOMPRESSOR_H
+#define DEFLECT_SERVER_IMAGEJPEGDECOMPRESSOR_H
 
 #include <deflect/api.h>
 #include <deflect/defines.h>
 #include <deflect/types.h>
 
+#include <turbojpeg.h>
+
+#include <QByteArray>
+
 namespace deflect
 {
+namespace server
+{
 /**
- * Decode a Segment's image asynchronously.
+ * JPEG header information.
  */
-class SegmentDecoder
+struct JpegHeader
+{
+    int width = 0;
+    int height = 0;
+    ChromaSubsampling subsampling;
+};
+
+/**
+ * Decompress Jpeg compressed data.
+ */
+class ImageJpegDecompressor
 {
 public:
-    /** Construct a Decoder */
-    DEFLECT_API SegmentDecoder();
-
-    /** Destruct a Decoder */
-    DEFLECT_API ~SegmentDecoder();
+    DEFLECT_API ImageJpegDecompressor();
+    DEFLECT_API ~ImageJpegDecompressor();
 
     /**
-     * Decode the data type of a JPEG segment.
+     * Decompress the header of a Jpeg image.
      *
-     * @param segment The segment to decode.
+     * @param jpegData The compressed Jpeg data
+     * @return The decompressed Jpeg header
      * @throw std::runtime_error if a decompression error occured
      */
-    DEFLECT_API ChromaSubsampling decodeType(const Segment& segment);
+    DEFLECT_API JpegHeader decompressHeader(const QByteArray& jpegData);
 
     /**
-     * Decode a JPEG segment to RGB.
+     * Decompress a Jpeg image.
      *
-     * @param segment The segment to decode. Upon success, its imageData member
-     *        will hold the decompressed RGB image and its "dataType" flag will
-     *        be set to DataType::rgba.
+     * @param jpegData The compressed Jpeg data
+     * @return The decompressed image data in (GL_)RGBA format
      * @throw std::runtime_error if a decompression error occured
      */
-    DEFLECT_API void decode(Segment& segment);
+    DEFLECT_API QByteArray decompress(const QByteArray& jpegData);
 
 #ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
 
+    using YUVData = std::pair<QByteArray, ChromaSubsampling>;
+
     /**
-     * Decode a JPEG segment to YUV, skipping the YUV -> RGB step.
+     * Decompress a Jpeg image to YUV, skipping the YUV -> RGBA conversion step.
      *
-     * @param segment The segment to decode. Upon success, its imageData member
-     *        will hold the decompressed YUV image and its "dataType" flag will
-     *        be set to the matching DataType::yuv4**.
+     * @param jpegData The compressed Jpeg data
+     * @return The decompressed image data in YUV format
      * @throw std::runtime_error if a decompression error occured
      */
-    DEFLECT_API void decodeToYUV(Segment& segment);
+    DEFLECT_API YUVData decompressToYUV(const QByteArray& jpegData);
 
 #endif
 
-    /**
-     * Start decoding a segment.
-     *
-     * This function will silently ignore the request if a decoding is already
-     * in progress.
-     * @param segment The segement to decode. The segment will be modified by
-     *        this function. It must remain valid and should not be accessed
-     *        until the decoding procedure has completed.
-     * @see isRunning()
-     */
-    DEFLECT_API void startDecoding(Segment& segment);
-
-    /**
-     * Waits for the decoding of a segment to finish, initiated by
-     * startDecoding().
-     * @throw std::runtime_error if a decompression error occured
-     */
-    DEFLECT_API void waitDecoding();
-
-    /** Check if the decoding thread is running. */
-    DEFLECT_API bool isRunning() const;
-
 private:
-    class Impl;
-    std::unique_ptr<Impl> _impl;
+    /** libjpeg-turbo handle for decompression */
+    tjhandle _tjHandle;
 };
+}
 }
 
 #endif

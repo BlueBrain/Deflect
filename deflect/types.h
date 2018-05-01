@@ -103,24 +103,29 @@ std::future<T> make_exception_future(Exception&& e)
     return make_exception_future<T>(std::make_exception_ptr(std::move(e)));
 }
 
-class EventReceiver;
-class Frame;
-class FrameDispatcher;
 class ImageSegmenter;
-class SegmentDecoder;
-class Server;
+class MessageHeader;
 class Stream;
 
 struct Event;
 struct ImageWrapper;
-struct MessageHeader;
 struct Segment;
 struct SegmentParameters;
 struct SizeHints;
 
+using Segments = std::vector<Segment>;
+
+namespace server
+{
+class EventReceiver;
+class Frame;
+class FrameDispatcher;
+class SegmentDecoder;
+class Server;
+
 using BoolPromisePtr = std::shared_ptr<std::promise<bool>>;
 using FramePtr = std::shared_ptr<Frame>;
-using Segments = std::vector<Segment>;
+}
 
 namespace qt
 {

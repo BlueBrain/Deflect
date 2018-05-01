@@ -41,9 +41,9 @@
 #include <boost/test/unit_test.hpp>
 namespace ut = boost::unit_test;
 
-#include <deflect/Frame.h>
-#include <deflect/ReceiveBuffer.h>
 #include <deflect/Segment.h>
+#include <deflect/server/Frame.h>
+#include <deflect/server/ReceiveBuffer.h>
 
 inline std::ostream& operator<<(std::ostream& str, const QSize& s)
 {
@@ -53,7 +53,7 @@ inline std::ostream& operator<<(std::ostream& str, const QSize& s)
 
 BOOST_AUTO_TEST_CASE(TestAddAndRemoveSources)
 {
-    deflect::ReceiveBuffer buffer;
+    deflect::server::ReceiveBuffer buffer;
 
     BOOST_REQUIRE_EQUAL(buffer.getSourceCount(), 0);
 
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(TestAddAndRemoveSources)
 
 BOOST_AUTO_TEST_CASE(TestAllowedToSend)
 {
-    deflect::ReceiveBuffer buffer;
+    deflect::server::ReceiveBuffer buffer;
 
     BOOST_CHECK(!buffer.isAllowedToSend());
 
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(TestCompleteAFrame)
 {
     const size_t sourceIndex = 46;
 
-    deflect::ReceiveBuffer buffer;
+    deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex);
 
     deflect::Segment segment;
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(TestCompleteAFrame)
     BOOST_CHECK_EQUAL(segments.size(), 1);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    deflect::Frame frame;
+    deflect::server::Frame frame;
     frame.segments = segments;
     const QSize frameSize = frame.computeDimensions();
     BOOST_CHECK_EQUAL(frameSize.width(), segment.parameters.width);
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(TestCompleteACompositeFrameSingleSource)
 {
     const size_t sourceIndex = 46;
 
-    deflect::ReceiveBuffer buffer;
+    deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex);
 
     deflect::Segments testSegments = generateTestSegments();
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(TestCompleteACompositeFrameSingleSource)
     BOOST_CHECK_EQUAL(segments.size(), 4);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    deflect::Frame frame;
+    deflect::server::Frame frame;
     frame.segments = segments;
     BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(192, 768));
 }
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(TestCompleteACompositeFrameMultipleSources)
     const size_t sourceIndex2 = 819;
     const size_t sourceIndex3 = 11;
 
-    deflect::ReceiveBuffer buffer;
+    deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
     buffer.addSource(sourceIndex3);
@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(TestCompleteACompositeFrameMultipleSources)
     BOOST_CHECK_EQUAL(segments.size(), 4);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    deflect::Frame frame;
+    deflect::server::Frame frame;
     frame.segments = segments;
     BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(192, 768));
 }
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(TestRemoveSourceWhileStreaming)
     const size_t sourceIndex1 = 46;
     const size_t sourceIndex2 = 819;
 
-    deflect::ReceiveBuffer buffer;
+    deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
 
@@ -263,7 +263,7 @@ BOOST_AUTO_TEST_CASE(TestRemoveSourceWhileStreaming)
     BOOST_CHECK_EQUAL(segments.size(), 2);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    deflect::Frame frame;
+    deflect::server::Frame frame;
     frame.segments = segments;
     BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(192, 256));
 }
@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(TestOneOfTwoSourceStopsSendingSegments)
     const size_t sourceIndex1 = 46;
     const size_t sourceIndex2 = 819;
 
-    deflect::ReceiveBuffer buffer;
+    deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
 
@@ -310,14 +310,14 @@ BOOST_AUTO_TEST_CASE(TestOneOfTwoSourceStopsSendingSegments)
                       std::runtime_error);
 }
 
-void _insert(deflect::ReceiveBuffer& buffer, const size_t sourceIndex,
+void _insert(deflect::server::ReceiveBuffer& buffer, const size_t sourceIndex,
              const deflect::Segments& frame)
 {
     for (const auto& segment : frame)
         buffer.insert(segment, sourceIndex);
 }
 
-void _testStereoBuffer(deflect::ReceiveBuffer& buffer)
+void _testStereoBuffer(deflect::server::ReceiveBuffer& buffer)
 {
     const auto segments = buffer.popFrame();
     BOOST_CHECK_EQUAL(segments.size(), 8);
@@ -343,7 +343,7 @@ void _testStereoBuffer(deflect::ReceiveBuffer& buffer)
     BOOST_CHECK_EQUAL(left, 4);
     BOOST_CHECK_EQUAL(right, 4);
 
-    deflect::Frame frame;
+    deflect::server::Frame frame;
     frame.segments = segments;
     BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(192, 768));
 }
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE(TestStereoOneSource)
 {
     const size_t sourceIndex = 46;
 
-    deflect::ReceiveBuffer buffer;
+    deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex);
 
     auto leftSegments = generateTestSegments(deflect::View::left_eye);
@@ -374,7 +374,7 @@ BOOST_AUTO_TEST_CASE(TestStereoTwoSourcesScreenSpaceSplit)
     const size_t sourceIndex1 = 46;
     const size_t sourceIndex2 = 819;
 
-    deflect::ReceiveBuffer buffer;
+    deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
 
@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE(TestStereoTwoSourcesStereoSplit)
     const size_t sourceIndex1 = 46;
     const size_t sourceIndex2 = 819;
 
-    deflect::ReceiveBuffer buffer;
+    deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
 
@@ -434,7 +434,7 @@ BOOST_AUTO_TEST_CASE(TestStereoFourSourcesScreenSpaceAndStereoSplit)
     const size_t sourceIndex3 = 489;
     const size_t sourceIndex4 = 113;
 
-    deflect::ReceiveBuffer buffer;
+    deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
     buffer.addSource(sourceIndex3);

@@ -48,8 +48,8 @@ typedef __int32 int32_t;
 #include <QThread>
 #include <QWaitCondition>
 
-#include <deflect/EventReceiver.h>
-#include <deflect/Server.h>
+#include <deflect/server/EventReceiver.h>
+#include <deflect/server/Server.h>
 
 class DeflectServer
 {
@@ -71,7 +71,8 @@ public:
     }
 
     using RegisterToEventsCallback =
-        std::function<void(const QString, const bool, deflect::EventReceiver*)>;
+        std::function<void(const QString, const bool,
+                           deflect::server::EventReceiver*)>;
     void setRegisterToEventsCallback(const RegisterToEventsCallback& callback)
     {
         _registerToEventsCallback = callback;
@@ -83,7 +84,8 @@ public:
         _dataReceivedCallback = callback;
     }
 
-    using FrameReceivedCallback = std::function<void(deflect::FramePtr)>;
+    using FrameReceivedCallback =
+        std::function<void(deflect::server::FramePtr)>;
     void setFrameReceivedCallback(const FrameReceivedCallback& callback)
     {
         _frameReceivedCallback = callback;
@@ -93,7 +95,7 @@ public:
 
 private:
     QThread _thread;
-    deflect::Server* _server;
+    deflect::server::Server* _server;
 
     bool _receivedState{false};
     QWaitCondition _received;
@@ -107,7 +109,7 @@ private:
     DataReceivedCallback _dataReceivedCallback;
     FrameReceivedCallback _frameReceivedCallback;
 
-    deflect::EventReceiver* _eventReceiver{nullptr};
+    deflect::server::EventReceiver* _eventReceiver{nullptr};
 };
 
 #endif

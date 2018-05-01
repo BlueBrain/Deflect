@@ -37,11 +37,12 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include <deflect/Frame.h>
+#include <deflect/server/Frame.h>
 
 #include <cmath> // std::ceil
 
-inline deflect::Frame makeTestFrame(int width, int height, int segmentSize)
+inline deflect::server::Frame makeTestFrame(int width, int height,
+                                            int segmentSize)
 {
     const int numSegmentsX = std::ceil((float)width / (float)segmentSize);
     const int numSegmentsY = std::ceil((float)height / (float)segmentSize);
@@ -51,7 +52,7 @@ inline deflect::Frame makeTestFrame(int width, int height, int segmentSize)
     const int lastSegmentHeight =
         (height % segmentSize) > 0 ? (height % segmentSize) : segmentSize;
 
-    deflect::Frame frame;
+    deflect::server::Frame frame;
     for (int y = 0; y < numSegmentsY; ++y)
     {
         for (int x = 0; x < numSegmentsX; ++x)
@@ -71,7 +72,8 @@ inline deflect::Frame makeTestFrame(int width, int height, int segmentSize)
     return frame;
 }
 
-inline void compare(const deflect::Frame& frame1, const deflect::Frame& frame2)
+inline void compare(const deflect::server::Frame& frame1,
+                    const deflect::server::Frame& frame2)
 {
     BOOST_REQUIRE_EQUAL(frame1.segments.size(), frame2.segments.size());
 

@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -34,60 +34,35 @@
 /* The views and conclusions contained in the software and           */
 /* documentation are those of the authors and should not be          */
 /* interpreted as representing official policies, either expressed   */
-/* or implied, of Ecole polytechnique federale de Lausanne.          */
+/* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_SOURCEBUFFER_H
-#define DEFLECT_SOURCEBUFFER_H
+#ifndef DEFLECT_SERVER_EVENTRECEIVER_H
+#define DEFLECT_SERVER_EVENTRECEIVER_H
 
-#include <deflect/Segment.h>
+#include <deflect/Event.h>
 #include <deflect/api.h>
-#include <deflect/types.h>
 
-#include <array>
-#include <queue>
+#include <QObject>
 
 namespace deflect
 {
-using FrameIndex = unsigned int;
-
-/**
- * Buffer for a single source of segments.
- */
-class SourceBuffer
+namespace server
 {
+/**
+ * Interface for classes to register as receivers for events.
+ */
+class DEFLECT_API EventReceiver : public QObject
+{
+    Q_OBJECT
+
 public:
-    /** Construct an empty buffer. */
-    SourceBuffer();
+    virtual ~EventReceiver() = default;
 
-    /** @return the segments at the front of the queue. */
-    const Segments& getSegments() const;
-
-    /** @return the frame index of the back of the buffer. */
-    FrameIndex getBackFrameIndex() const;
-
-    /** @return true if the back frame has no segments. */
-    bool isBackFrameEmpty() const;
-
-    /** Insert a segment into the back frame. */
-    void insert(const Segment& segment);
-
-    /** Push a new frame to the back. */
-    void push();
-
-    /** Pop the front frame. */
-    void pop();
-
-    /** @return the size of the queue. */
-    size_t getQueueSize() const;
-
-private:
-    /** The collections of segments for each mono/left/right view. */
-    std::queue<Segments> _segments;
-
-    /** The current indices of the mono/left/right frame for this source. */
-    FrameIndex _backFrameIndex = 0u;
+public slots:
+    virtual void processEvent(deflect::Event event) = 0;
 };
+}
 }
 
 #endif

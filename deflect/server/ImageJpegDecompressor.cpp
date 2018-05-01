@@ -62,6 +62,8 @@ deflect::ChromaSubsampling _getSubsamp(const int tjJpegSubsamp)
 
 namespace deflect
 {
+namespace server
+{
 ImageJpegDecompressor::ImageJpegDecompressor()
     : _tjHandle(tjInitDecompress())
 {
@@ -140,4 +142,5 @@ ImageJpegDecompressor::YUVData ImageJpegDecompressor::decompressToYUV(
 }
 
 #endif
+}
 }

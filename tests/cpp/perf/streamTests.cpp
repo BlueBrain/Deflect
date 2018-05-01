@@ -44,8 +44,8 @@ namespace ut = boost::unit_test;
 #include "MinimalGlobalQtApp.h"
 #include "Timer.h"
 
-#include <deflect/Server.h>
 #include <deflect/Stream.h>
+#include <deflect/server/Server.h>
 
 #include <iostream>
 
@@ -140,7 +140,7 @@ class DCThread : public QThread
 
 BOOST_AUTO_TEST_CASE(testSocketConnection)
 {
-    deflect::Server server;
+    deflect::server::Server server;
 #ifdef NTHREADS
     QThreadPool::globalInstance()->setMaxThreadCount(NTHREADS);
 #endif

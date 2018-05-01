@@ -1,7 +1,7 @@
 
-# Copyright (c) 2013-2017, EPFL/Blue Brain Project
-#                     Daniel Nachbaur <daniel.nachbaur@epfl.ch>
-#                     Raphael Dumusc <raphael.dumusc@epfl.ch>
+# Copyright (c) 2013-2018, EPFL/Blue Brain Project
+#                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
+#                          Raphael Dumusc <raphael.dumusc@epfl.ch>
 #
 # Generates a mock library used by the cpp unit tests.
 
@@ -26,6 +26,7 @@ set(DEFLECTMOCK_LINK_LIBRARIES Deflect ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 
 set(DEFLECTMOCK_INCLUDE_NAME deflect/mock)
 set(DEFLECTMOCK_OMIT_LIBRARY_HEADER ON)
+set(DEFLECTMOCK_OMIT_VERSION_HEADERS ON)
 set(DEFLECTMOCK_OMIT_CHECK_TARGETS ON)
 set(DEFLECTMOCK_OMIT_INSTALL ON)
 common_library(DeflectMock)

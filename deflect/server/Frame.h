@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2015, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2014-2017, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,38 +37,42 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "Frame.h"
+#ifndef DEFLECT_SERVER_FRAME_H
+#define DEFLECT_SERVER_FRAME_H
+
+#include <deflect/Segment.h>
+#include <deflect/api.h>
+#include <deflect/types.h>
+
+#include <QSize>
+#include <QString>
 
 namespace deflect
 {
-QSize Frame::computeDimensions() const
+namespace server
 {
-    QSize size(0, 0);
-
-    for (const auto& segment : segments)
-    {
-        const auto& params = segment.parameters;
-        size.setWidth(std::max(size.width(), (int)(params.width + params.x)));
-        size.setHeight(
-            std::max(size.height(), (int)(params.height + params.y)));
-    }
-
-    return size;
-}
-
-RowOrder Frame::determineRowOrder() const
+/**
+ * A frame for a PixelStream.
+ */
+class Frame
 {
-    if (segments.empty())
-        throw std::runtime_error("frame has no segements");
+public:
+    /** The full set of segments for this frame. */
+    Segments segments;
 
-    const auto frameRowOrder = segments[0].rowOrder;
+    /** The PixelStream uri to which this frame is associated. */
+    QString uri;
 
-    for (const auto& segment : segments)
-    {
-        if (segment.rowOrder != frameRowOrder)
-            throw std::runtime_error("frame has incoherent row orders");
-    }
+    /** Get the total dimensions of this frame. */
+    DEFLECT_API QSize computeDimensions() const;
 
-    return frameRowOrder;
+    /**
+     * @return the row order of all frame segments
+     * @throws std::runtime_error if not all segments have the same RowOrder
+     */
+    DEFLECT_API RowOrder determineRowOrder() const;
+};
 }
 }
+
+#endif

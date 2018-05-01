@@ -5,13 +5,10 @@
 
 set(DEFLECT_PUBLIC_HEADERS
   Event.h
-  EventReceiver.h
-  Frame.h
   ImageWrapper.h
   Observer.h
   Segment.h
   SegmentParameters.h
-  Server.h
   SizeHints.h
   Stream.h
   types.h
@@ -20,33 +17,23 @@ set(DEFLECT_PUBLIC_HEADERS
 set(DEFLECT_HEADERS
   moodycamel/blockingconcurrentqueue.h
   moodycamel/concurrentqueue.h
-  FrameDispatcher.h
   ImageSegmenter.h
   MessageHeader.h
   MTQueue.h
   NetworkProtocol.h
-  ReceiveBuffer.h
-  ServerWorker.h
   Socket.h
-  SourceBuffer.h
   StreamPrivate.h
   TaskBuilder.h
 )
 
 set(DEFLECT_SOURCES
   Event.cpp
-  Frame.cpp
-  FrameDispatcher.cpp
   ImageSegmenter.cpp
   ImageWrapper.cpp
   MessageHeader.cpp
   MetaTypeRegistration.cpp
   Observer.cpp
-  ReceiveBuffer.cpp
-  Server.cpp
-  ServerWorker.cpp
   Socket.cpp
-  SourceBuffer.cpp
   Stream.cpp
   StreamPrivate.cpp
   StreamSendWorker.cpp
@@ -62,22 +49,18 @@ if(APPLE)
 endif()
 
 if(DEFLECT_USE_LIBJPEGTURBO)
-  list(APPEND DEFLECT_PUBLIC_HEADERS
-    SegmentDecoder.h
-  )
   list(APPEND DEFLECT_HEADERS
     ImageJpegCompressor.h
-    ImageJpegDecompressor.h
   )
   list(APPEND DEFLECT_SOURCES
     ImageJpegCompressor.cpp
-    ImageJpegDecompressor.cpp
-    SegmentDecoder.cpp
   )
-  list(APPEND DEFLECT_LINK_LIBRARIES ${LibJpegTurbo_LIBRARIES})
+  list(APPEND DEFLECT_LINK_LIBRARIES PRIVATE ${LibJpegTurbo_LIBRARIES})
 endif()
 
 common_library(Deflect)
+
+add_subdirectory(server)
 
 if(Qt5Qml_FOUND AND Qt5Quick_FOUND AND NOT Qt5Quick_VERSION VERSION_LESS 5.4)
   add_subdirectory(qt)

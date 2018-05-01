@@ -55,7 +55,7 @@ namespace deflect
 class StreamPrivate;
 
 /**
- * Connect to a deflect::Server and register for events.
+ * Connect to a deflect Server and register for events.
  *
  * In case a dedicated event handling w/o the need for streaming images is
  * required, the Observer class can be used, in contrast to the deflect::Stream.

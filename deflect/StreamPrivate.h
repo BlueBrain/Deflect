@@ -57,7 +57,7 @@ class StreamPrivate
 {
 public:
     /**
-     * Create a new stream and open a new connection to the deflect::Server.
+     * Create a new stream and open a new connection to the deflect Server.
      *
      * @param id the unique stream identifier
      * @param host Address of the target Server instance.

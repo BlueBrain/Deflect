@@ -37,85 +37,88 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_RECEIVEBUFFER_H
-#define DEFLECT_RECEIVEBUFFER_H
+#ifndef DEFLECT_SERVER_SEGMENTDECODER_H
+#define DEFLECT_SERVER_SEGMENTDECODER_H
 
-#include <deflect/Segment.h>
-#include <deflect/SourceBuffer.h>
 #include <deflect/api.h>
+#include <deflect/defines.h>
 #include <deflect/types.h>
-
-#include <QSize>
-
-#include <map>
-#include <queue>
 
 namespace deflect
 {
+namespace server
+{
 /**
- * Buffer Segments from (multiple) sources.
- *
- * The buffer aggregates segments coming from different sources and delivers
- * complete frames.
+ * Decode a Segment's image asynchronously.
  */
-class ReceiveBuffer
+class SegmentDecoder
 {
 public:
-    /**
-     * Add a source of segments.
-     * @param sourceIndex Unique source identifier
-     * @return false if the source was already added or if
-     *         finishFrameForSource() has already been called for all existing
-     *         source (TODO DISCL-241).
-     */
-    DEFLECT_API bool addSource(size_t sourceIndex);
+    /** Construct a Decoder */
+    DEFLECT_API SegmentDecoder();
+
+    /** Destruct a Decoder */
+    DEFLECT_API ~SegmentDecoder();
 
     /**
-     * Remove a source of segments.
-     * @param sourceIndex Unique source identifier
+     * Decode the data type of a JPEG segment.
+     *
+     * @param segment The segment to decode.
+     * @throw std::runtime_error if a decompression error occured
      */
-    DEFLECT_API void removeSource(size_t sourceIndex);
-
-    /** Get the number of sources for this Stream */
-    DEFLECT_API size_t getSourceCount() const;
+    DEFLECT_API ChromaSubsampling decodeType(const Segment& segment);
 
     /**
-     * Insert a segment for the current frame and source.
-     * @param segment The segment to insert
-     * @param sourceIndex Unique source identifier
+     * Decode a JPEG segment to RGB.
+     *
+     * @param segment The segment to decode. Upon success, its imageData member
+     *        will hold the decompressed RGB image and its "dataType" flag will
+     *        be set to DataType::rgba.
+     * @throw std::runtime_error if a decompression error occured
      */
-    DEFLECT_API void insert(const Segment& segment, size_t sourceIndex);
+    DEFLECT_API void decode(Segment& segment);
+
+#ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
 
     /**
-     * Call when the source has finished sending segments for the current frame.
-     * @param sourceIndex Unique source identifier
-     * @throw std::runtime_error if the buffer exceeds its maximum size
+     * Decode a JPEG segment to YUV, skipping the YUV -> RGB step.
+     *
+     * @param segment The segment to decode. Upon success, its imageData member
+     *        will hold the decompressed YUV image and its "dataType" flag will
+     *        be set to the matching DataType::yuv4**.
+     * @throw std::runtime_error if a decompression error occured
      */
-    DEFLECT_API void finishFrameForSource(size_t sourceIndex);
+    DEFLECT_API void decodeToYUV(Segment& segment);
 
-    /** Does the Buffer have a new complete frame (from all sources) */
-    DEFLECT_API bool hasCompleteFrame() const;
+#endif
 
     /**
-     * Get the finished frame.
-     * @return A collection of segments that form a frame
+     * Start decoding a segment.
+     *
+     * This function will silently ignore the request if a decoding is already
+     * in progress.
+     * @param segment The segement to decode. The segment will be modified by
+     *        this function. It must remain valid and should not be accessed
+     *        until the decoding procedure has completed.
+     * @see isRunning()
      */
-    DEFLECT_API Segments popFrame();
+    DEFLECT_API void startDecoding(Segment& segment);
 
-    /** Allow this buffer to be used by the next
-     * FrameDispatcher::sendLatestFrame */
-    DEFLECT_API void setAllowedToSend(bool enable);
+    /**
+     * Waits for the decoding of a segment to finish, initiated by
+     * startDecoding().
+     * @throw std::runtime_error if a decompression error occured
+     */
+    DEFLECT_API void waitDecoding();
 
-    /** @return true if this buffer can be sent by FrameDispatcher */
-    DEFLECT_API bool isAllowedToSend() const;
+    /** Check if the decoding thread is running. */
+    DEFLECT_API bool isRunning() const;
 
 private:
-    using SourceBufferMap = std::map<size_t, SourceBuffer>;
-
-    FrameIndex _lastFrameComplete = 0;
-    SourceBufferMap _sourceBuffers;
-    bool _allowedToSend = false;
+    class Impl;
+    std::unique_ptr<Impl> _impl;
 };
+}
 }
 
 #endif

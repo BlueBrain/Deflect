@@ -42,11 +42,11 @@
 namespace ut = boost::unit_test;
 
 #include <deflect/ImageJpegCompressor.h>
-#include <deflect/ImageJpegDecompressor.h>
 #include <deflect/ImageSegmenter.h>
 #include <deflect/ImageWrapper.h>
 #include <deflect/Segment.h>
-#include <deflect/SegmentDecoder.h>
+#include <deflect/server/ImageJpegDecompressor.h>
+#include <deflect/server/SegmentDecoder.h>
 
 #include <QMutex>
 #include <cmath> // std::round
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(testImageCompressionAndDecompression)
     BOOST_REQUIRE(jpegData.size() != (int)data.size());
 
     // Decompress image
-    deflect::ImageJpegDecompressor decompressor;
+    deflect::server::ImageJpegDecompressor decompressor;
     QByteArray decodedData = decompressor.decompress(jpegData);
 
     // Check decoded image in format RGBA
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(testImageCompressionAndDecompression)
 QByteArray decodeToYUVWithDecompressor(
     const QByteArray& jpegData, const deflect::ChromaSubsampling expected)
 {
-    deflect::ImageJpegDecompressor decompressor;
+    deflect::server::ImageJpegDecompressor decompressor;
     const auto yuvData = decompressor.decompressToYUV(jpegData);
     BOOST_CHECK_EQUAL(yuvData.second, expected);
     return yuvData.first;
@@ -152,7 +152,7 @@ QByteArray decodeToYUVWithSegmentDecoder(
     segment.imageData =
         QByteArray::fromRawData(jpegData.data(), jpegData.size());
 
-    deflect::SegmentDecoder decoder;
+    deflect::server::SegmentDecoder decoder;
     BOOST_CHECK_EQUAL(decoder.decodeType(segment), expected);
 
     decoder.decodeToYUV(segment);
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(testImageSegmentationWithCompressionAndDecompression)
     BOOST_REQUIRE(segment.imageData.size() != (int)data.size());
 
     // Decompress image
-    deflect::SegmentDecoder decoder;
+    deflect::server::SegmentDecoder decoder;
     decoder.startDecoding(segment);
     decoder.waitDecoding();
 
@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE(testImageSegmentationWithCompressionAndDecompression)
 BOOST_AUTO_TEST_CASE(testDecompressionOfInvalidData)
 {
     const QByteArray invalidJpegData{"notjpeg923%^#8"};
-    deflect::ImageJpegDecompressor decompressor;
+    deflect::server::ImageJpegDecompressor decompressor;
     BOOST_CHECK_THROW(decompressor.decompress(invalidJpegData),
                       std::runtime_error);
 
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(testDecompressionOfInvalidData)
     segment.parameters.height = 32;
     segment.imageData = invalidJpegData;
 
-    deflect::SegmentDecoder decoder;
+    deflect::server::SegmentDecoder decoder;
     BOOST_CHECK_THROW(decoder.decode(segment), std::runtime_error);
 
     BOOST_CHECK_NO_THROW(decoder.startDecoding(segment));

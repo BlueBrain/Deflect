@@ -37,75 +37,88 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_IMAGEJPEGDECOMPRESSOR_H
-#define DEFLECT_IMAGEJPEGDECOMPRESSOR_H
+#ifndef DEFLECT_SERVER_RECEIVEBUFFER_H
+#define DEFLECT_SERVER_RECEIVEBUFFER_H
 
+#include <deflect/Segment.h>
 #include <deflect/api.h>
-#include <deflect/defines.h>
+#include <deflect/server/SourceBuffer.h>
 #include <deflect/types.h>
 
-#include <turbojpeg.h>
+#include <QSize>
 
-#include <QByteArray>
+#include <map>
+#include <queue>
 
 namespace deflect
 {
-/**
- * JPEG header information.
- */
-struct JpegHeader
+namespace server
 {
-    int width = 0;
-    int height = 0;
-    ChromaSubsampling subsampling;
-};
-
 /**
- * Decompress Jpeg compressed data.
+ * Buffer Segments from (multiple) sources.
+ *
+ * The buffer aggregates segments coming from different sources and delivers
+ * complete frames.
  */
-class ImageJpegDecompressor
+class ReceiveBuffer
 {
 public:
-    DEFLECT_API ImageJpegDecompressor();
-    DEFLECT_API ~ImageJpegDecompressor();
+    /**
+     * Add a source of segments.
+     * @param sourceIndex Unique source identifier
+     * @return false if the source was already added or if
+     *         finishFrameForSource() has already been called for all existing
+     *         source (TODO DISCL-241).
+     */
+    DEFLECT_API bool addSource(size_t sourceIndex);
 
     /**
-     * Decompress the header of a Jpeg image.
-     *
-     * @param jpegData The compressed Jpeg data
-     * @return The decompressed Jpeg header
-     * @throw std::runtime_error if a decompression error occured
+     * Remove a source of segments.
+     * @param sourceIndex Unique source identifier
      */
-    DEFLECT_API JpegHeader decompressHeader(const QByteArray& jpegData);
+    DEFLECT_API void removeSource(size_t sourceIndex);
+
+    /** Get the number of sources for this Stream */
+    DEFLECT_API size_t getSourceCount() const;
 
     /**
-     * Decompress a Jpeg image.
-     *
-     * @param jpegData The compressed Jpeg data
-     * @return The decompressed image data in (GL_)RGBA format
-     * @throw std::runtime_error if a decompression error occured
+     * Insert a segment for the current frame and source.
+     * @param segment The segment to insert
+     * @param sourceIndex Unique source identifier
      */
-    DEFLECT_API QByteArray decompress(const QByteArray& jpegData);
-
-#ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
-
-    using YUVData = std::pair<QByteArray, ChromaSubsampling>;
+    DEFLECT_API void insert(const Segment& segment, size_t sourceIndex);
 
     /**
-     * Decompress a Jpeg image to YUV, skipping the YUV -> RGBA conversion step.
-     *
-     * @param jpegData The compressed Jpeg data
-     * @return The decompressed image data in YUV format
-     * @throw std::runtime_error if a decompression error occured
+     * Call when the source has finished sending segments for the current frame.
+     * @param sourceIndex Unique source identifier
+     * @throw std::runtime_error if the buffer exceeds its maximum size
      */
-    DEFLECT_API YUVData decompressToYUV(const QByteArray& jpegData);
+    DEFLECT_API void finishFrameForSource(size_t sourceIndex);
 
-#endif
+    /** Does the Buffer have a new complete frame (from all sources) */
+    DEFLECT_API bool hasCompleteFrame() const;
+
+    /**
+     * Get the finished frame.
+     * @return A collection of segments that form a frame
+     */
+    DEFLECT_API Segments popFrame();
+
+    /** Allow this buffer to be used by the next
+     * FrameDispatcher::sendLatestFrame */
+    DEFLECT_API void setAllowedToSend(bool enable);
+
+    /** @return true if this buffer can be sent by FrameDispatcher */
+    DEFLECT_API bool isAllowedToSend() const;
 
 private:
-    /** libjpeg-turbo handle for decompression */
-    tjhandle _tjHandle;
+    using SourceBufferMap = std::map<size_t, SourceBuffer>;
+
+    FrameIndex _lastFrameComplete = 0;
+    SourceBufferMap _sourceBuffers;
+    bool _allowedToSend = false;
 };
+}
 }
 
 #endif

@@ -6,7 +6,8 @@ Changelog {#Changelog}
 ### 1.0.0 (git master)
 * [194](https://github.com/BlueBrain/Deflect/pull/194):
   Reset API versionning to 1.0, remove deprecated functions (Stream::asyncSend,
-  ImageWrapper::swapYAxis).
+  ImageWrapper::swapYAxis). Moved all server-specific classes to a separate
+  namespace.
 
 ## Deflect 0.14
 
@@ -131,7 +132,7 @@ Changelog {#Changelog}
   are available in Qml from a "deflectgestures" context property.
 * [119](https://github.com/BlueBrain/Deflect/pull/119):
   Added deflect::Stream::sendData() to allow sending user-defined information
-  to the deflect::Server.
+  to the deflect Server.
 * [118](https://github.com/BlueBrain/Deflect/pull/118):
   New "pan" event for multi-finger pan gestures.
 * [117](https://github.com/BlueBrain/Deflect/pull/117):

@@ -41,14 +41,17 @@
 #include "Server.h"
 
 #include "FrameDispatcher.h"
-#include "NetworkProtocol.h"
 #include "ServerWorker.h"
+#include "deflect/NetworkProtocol.h"
 
 #include <QNetworkProxy>
 #include <QThread>
+
 #include <stdexcept>
 
 namespace deflect
+{
+namespace server
 {
 const int Server::defaultPortNumber = DEFAULT_PORT_NUMBER;
 
@@ -155,5 +158,6 @@ void Server::incomingConnection(const qintptr socketHandle)
             &FrameDispatcher::removeObserver);
 
     workerThread->start();
+}
 }
 }
