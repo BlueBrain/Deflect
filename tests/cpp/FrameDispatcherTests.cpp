@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2017-2018, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -68,8 +68,8 @@ struct Fixture
 
     void dispatch(const deflect::server::Frame& frame)
     {
-        for (auto& segment : frame.segments)
-            dispatcher.processSegment(streamId, 0, segment);
+        for (auto& tile : frame.tiles)
+            dispatcher.processTile(streamId, 0, tile);
         dispatcher.processFrameFinished(streamId, 0);
         dispatcher.requestFrame(streamId);
     }
@@ -97,15 +97,15 @@ BOOST_FIXTURE_TEST_CASE(dispatch_multiple_frames, Fixture)
 BOOST_FIXTURE_TEST_CASE(dispatch_frame_bottom_up, Fixture)
 {
     auto frame = makeTestFrame(640, 480, 64);
-    for (auto& segment : frame.segments)
-        segment.rowOrder = deflect::RowOrder::bottom_up;
+    for (auto& tile : frame.tiles)
+        tile.rowOrder = deflect::RowOrder::bottom_up;
 
     dispatch(frame);
     BOOST_REQUIRE(receivedFrame);
 
-    // mirror segments positions vertically
-    for (auto& s : frame.segments)
-        s.parameters.y = 480 - s.parameters.y - s.parameters.height;
+    // mirror tiles positions vertically
+    for (auto& tile : frame.tiles)
+        tile.y = 480 - tile.y - tile.height;
 
     compare(frame, *receivedFrame);
 }
@@ -113,7 +113,7 @@ BOOST_FIXTURE_TEST_CASE(dispatch_frame_bottom_up, Fixture)
 BOOST_FIXTURE_TEST_CASE(dispatch_frame_with_inconsistent_row_order, Fixture)
 {
     auto frame = makeTestFrame(640, 480, 64);
-    frame.segments[2].rowOrder = deflect::RowOrder::bottom_up;
+    frame.tiles[2].rowOrder = deflect::RowOrder::bottom_up;
     dispatch(frame);
     BOOST_CHECK(!receivedFrame);
 }

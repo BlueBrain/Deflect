@@ -7,8 +7,6 @@ set(DEFLECT_PUBLIC_HEADERS
   Event.h
   ImageWrapper.h
   Observer.h
-  Segment.h
-  SegmentParameters.h
   SizeHints.h
   Stream.h
   types.h
@@ -21,6 +19,8 @@ set(DEFLECT_HEADERS
   MessageHeader.h
   MTQueue.h
   NetworkProtocol.h
+  Segment.h
+  SegmentParameters.h
   Socket.h
   StreamPrivate.h
   TaskBuilder.h

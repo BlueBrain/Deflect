@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2018, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,38 +37,86 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_SERVER_FRAME_H
-#define DEFLECT_SERVER_FRAME_H
+#ifndef DEFLECT_SERVER_TILEDECODER_H
+#define DEFLECT_SERVER_TILEDECODER_H
 
 #include <deflect/api.h>
-#include <deflect/server/Tile.h>
-
-#include <QSize>
-#include <QString>
+#include <deflect/defines.h>
+#include <deflect/server/types.h>
 
 namespace deflect
 {
 namespace server
 {
 /**
- * A frame for a PixelStream.
+ * Decode a Tile's image asynchronously.
  */
-struct Frame
+class TileDecoder
 {
-    /** The full set of tiles for this frame. */
-    Tiles tiles;
+public:
+    /** Construct a Decoder */
+    DEFLECT_API TileDecoder();
 
-    /** The PixelStream uri to which this frame is associated. */
-    QString uri;
-
-    /** @return the total dimensions of this frame. */
-    DEFLECT_API QSize computeDimensions() const;
+    /** Destruct a Decoder */
+    DEFLECT_API ~TileDecoder();
 
     /**
-     * @return the row order of all frame tiles.
-     * @throws std::runtime_error if not all tiles have the same RowOrder.
+     * Decode the data type of a JPEG tile.
+     *
+     * @param tile The tile to decode.
+     * @throw std::runtime_error if a decompression error occured
      */
-    DEFLECT_API RowOrder determineRowOrder() const;
+    DEFLECT_API ChromaSubsampling decodeType(const Tile& tile);
+
+    /**
+     * Decode a JPEG tile to RGB.
+     *
+     * @param tile The tile to decode. Upon success, its imageData member
+     *        will hold the decompressed RGB image and its "format" flag will
+     *        be set to Format::rgba.
+     * @throw std::runtime_error if a decompression error occured
+     */
+    DEFLECT_API void decode(Tile& tile);
+
+#ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
+
+    /**
+     * Decode a JPEG tile to YUV, skipping the YUV -> RGB step.
+     *
+     * @param tile The tile to decode. Upon success, its imageData member
+     *        will hold the decompressed YUV image and its "format" flag will
+     *        be set to the matching Format::yuv4**.
+     * @throw std::runtime_error if a decompression error occured
+     */
+    DEFLECT_API void decodeToYUV(Tile& tile);
+
+#endif
+
+    /**
+     * Start decoding a tile.
+     *
+     * This function will silently ignore the request if a decoding is already
+     * in progress.
+     * @param tile The tile to decode. The tile will be modified by
+     *        this function. It must remain valid and should not be accessed
+     *        until the decoding procedure has completed.
+     * @see isRunning()
+     */
+    DEFLECT_API void startDecoding(Tile& tile);
+
+    /**
+     * Waits for the decoding of a tile to finish, initiated by
+     * startDecoding().
+     * @throw std::runtime_error if a decompression error occured
+     */
+    DEFLECT_API void waitDecoding();
+
+    /** Check if the decoding thread is running. */
+    DEFLECT_API bool isRunning() const;
+
+private:
+    class Impl;
+    std::unique_ptr<Impl> _impl;
 };
 }
 }

@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -40,9 +40,8 @@
 #ifndef DEFLECT_SERVER_FRAMEDISPATCHER_H
 #define DEFLECT_SERVER_FRAMEDISPATCHER_H
 
-#include <deflect/Segment.h>
 #include <deflect/api.h>
-#include <deflect/types.h>
+#include <deflect/server/Tile.h>
 
 #include <QObject>
 #include <map>
@@ -52,7 +51,7 @@ namespace deflect
 namespace server
 {
 /**
- * Gather segments from multiple sources and dispatch full frames.
+ * Gather Tiles from multiple sources and dispatch full frames.
  */
 class FrameDispatcher : public QObject
 {
@@ -67,7 +66,7 @@ public:
 
 public slots:
     /**
-     * Add a source of Segments for a Stream.
+     * Add a source of Tiles for a Stream.
      *
      * @param uri Identifier for the stream
      * @param sourceIndex Identifier for the source in this stream
@@ -75,7 +74,7 @@ public slots:
     void addSource(QString uri, size_t sourceIndex);
 
     /**
-     * Remove a source of Segments for a Stream.
+     * Remove a source of Tiles for a Stream.
      *
      * @param uri Identifier for the stream
      * @param sourceIndex Identifier for the source in this stream
@@ -83,7 +82,7 @@ public slots:
     void removeSource(QString uri, size_t sourceIndex);
 
     /**
-     * Add a stream source as an observer which does not contribute segments.
+     * Add a stream source as an observer which does not contribute tiles.
      * Emits pixelStreamOpened() if no other observer or source is present.
      *
      * @param uri Identifier for the stream
@@ -99,17 +98,17 @@ public slots:
     void removeObserver(QString uri);
 
     /**
-     * Process a new Segment.
+     * Process a new Tile.
      *
      * @param uri Identifier for the stream
      * @param sourceIndex Identifier for the source in the stream
-     * @param segment to process
+     * @param tile to process
      */
-    void processSegment(QString uri, size_t sourceIndex,
-                        deflect::Segment segment);
+    void processTile(QString uri, size_t sourceIndex,
+                     deflect::server::Tile tile);
 
     /**
-     * The given source has finished sending segments for the current frame.
+     * The given source has finished sending Tiles for the current frame.
      *
      * @param uri Identifier for the stream
      * @param sourceIndex Identifier for the source in the stream

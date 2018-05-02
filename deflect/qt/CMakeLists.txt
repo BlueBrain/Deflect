@@ -7,6 +7,7 @@ set(DEFLECTQT_HEADERS
   EventReceiver.h
   QmlGestures.h
   QmlStreamerImpl.h
+  types.h
 )
 set(DEFLECTQT_PUBLIC_HEADERS
   OffscreenQuickView.h

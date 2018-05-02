@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -77,11 +77,11 @@ size_t ReceiveBuffer::getSourceCount() const
     return _sourceBuffers.size();
 }
 
-void ReceiveBuffer::insert(const Segment& segment, const size_t sourceIndex)
+void ReceiveBuffer::insert(const Tile& tile, const size_t sourceIndex)
 {
     assert(_sourceBuffers.count(sourceIndex));
 
-    _sourceBuffers[sourceIndex].insert(segment);
+    _sourceBuffers[sourceIndex].insert(tile);
 }
 
 void ReceiveBuffer::finishFrameForSource(const size_t sourceIndex)
@@ -110,16 +110,16 @@ bool ReceiveBuffer::hasCompleteFrame() const
     return !_sourceBuffers.empty();
 }
 
-Segments ReceiveBuffer::popFrame()
+Tiles ReceiveBuffer::popFrame()
 {
-    Segments frame;
+    Tiles frame;
     for (auto& kv : _sourceBuffers)
     {
         auto& buffer = kv.second;
         if (buffer.getBackFrameIndex() > _lastFrameComplete)
         {
-            const auto& segments = buffer.getSegments();
-            frame.insert(frame.end(), segments.begin(), segments.end());
+            const auto& tiles = buffer.getTiles();
+            frame.insert(frame.end(), tiles.begin(), tiles.end());
             buffer.pop();
         }
     }

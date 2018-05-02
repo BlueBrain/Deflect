@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2015, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2015-2018, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -47,12 +47,10 @@ QSize Frame::computeDimensions() const
 {
     QSize size(0, 0);
 
-    for (const auto& segment : segments)
+    for (const auto& tile : tiles)
     {
-        const auto& params = segment.parameters;
-        size.setWidth(std::max(size.width(), (int)(params.width + params.x)));
-        size.setHeight(
-            std::max(size.height(), (int)(params.height + params.y)));
+        size.setWidth(std::max(size.width(), (int)(tile.width + tile.x)));
+        size.setHeight(std::max(size.height(), (int)(tile.height + tile.y)));
     }
 
     return size;
@@ -60,14 +58,14 @@ QSize Frame::computeDimensions() const
 
 RowOrder Frame::determineRowOrder() const
 {
-    if (segments.empty())
-        throw std::runtime_error("frame has no segements");
+    if (tiles.empty())
+        throw std::runtime_error("frame has no tiles");
 
-    const auto frameRowOrder = segments[0].rowOrder;
+    const auto frameRowOrder = tiles[0].rowOrder;
 
-    for (const auto& segment : segments)
+    for (const auto& tile : tiles)
     {
-        if (segment.rowOrder != frameRowOrder)
+        if (tile.rowOrder != frameRowOrder)
             throw std::runtime_error("frame has incoherent row orders");
     }
 

@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2017-2018, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -41,32 +41,31 @@
 
 #include <cmath> // std::ceil
 
-inline deflect::server::Frame makeTestFrame(int width, int height,
-                                            int segmentSize)
+inline deflect::server::Frame makeTestFrame(int width, int height, int tileSize)
 {
-    const int numSegmentsX = std::ceil((float)width / (float)segmentSize);
-    const int numSegmentsY = std::ceil((float)height / (float)segmentSize);
+    const int numTilesX = std::ceil((float)width / (float)tileSize);
+    const int numTilesY = std::ceil((float)height / (float)tileSize);
 
-    const int lastSegmentWidth =
-        (width % segmentSize) > 0 ? (width % segmentSize) : segmentSize;
-    const int lastSegmentHeight =
-        (height % segmentSize) > 0 ? (height % segmentSize) : segmentSize;
+    const int lastTileWidth =
+        (width % tileSize) > 0 ? (width % tileSize) : tileSize;
+    const int lastTileHeight =
+        (height % tileSize) > 0 ? (height % tileSize) : tileSize;
 
     deflect::server::Frame frame;
-    for (int y = 0; y < numSegmentsY; ++y)
+    for (int y = 0; y < numTilesY; ++y)
     {
-        for (int x = 0; x < numSegmentsX; ++x)
+        for (int x = 0; x < numTilesX; ++x)
         {
-            deflect::Segment segment;
-            segment.parameters.x = x * segmentSize;
-            segment.parameters.y = y * segmentSize;
-            segment.parameters.width = segmentSize;
-            segment.parameters.height = segmentSize;
-            if (x == numSegmentsX - 1)
-                segment.parameters.width = lastSegmentWidth;
-            if (y == numSegmentsY - 1)
-                segment.parameters.height = lastSegmentHeight;
-            frame.segments.push_back(segment);
+            deflect::server::Tile tile;
+            tile.x = x * tileSize;
+            tile.y = y * tileSize;
+            tile.width = tileSize;
+            tile.height = tileSize;
+            if (x == numTilesX - 1)
+                tile.width = lastTileWidth;
+            if (y == numTilesY - 1)
+                tile.height = lastTileHeight;
+            frame.tiles.push_back(tile);
         }
     }
     return frame;
@@ -75,21 +74,18 @@ inline deflect::server::Frame makeTestFrame(int width, int height,
 inline void compare(const deflect::server::Frame& frame1,
                     const deflect::server::Frame& frame2)
 {
-    BOOST_REQUIRE_EQUAL(frame1.segments.size(), frame2.segments.size());
+    BOOST_REQUIRE_EQUAL(frame1.tiles.size(), frame2.tiles.size());
 
-    for (size_t i = 0; i < frame1.segments.size(); ++i)
+    for (size_t i = 0; i < frame1.tiles.size(); ++i)
     {
-        const auto& s1 = frame1.segments[i];
-        const auto& s2 = frame2.segments[i];
-        BOOST_CHECK(s1.view == s2.view);
-        BOOST_CHECK(s1.rowOrder == s2.rowOrder);
-
-        const auto& p1 = s1.parameters;
-        const auto& p2 = s2.parameters;
-        BOOST_CHECK_EQUAL(p1.x, p2.x);
-        BOOST_CHECK_EQUAL(p1.y, p2.y);
-        BOOST_CHECK_EQUAL(p1.width, p2.width);
-        BOOST_CHECK_EQUAL(p1.height, p2.height);
+        const auto& t1 = frame1.tiles[i];
+        const auto& t2 = frame2.tiles[i];
+        BOOST_CHECK(t1.view == t2.view);
+        BOOST_CHECK(t1.rowOrder == t2.rowOrder);
+        BOOST_CHECK_EQUAL(t1.x, t2.x);
+        BOOST_CHECK_EQUAL(t1.y, t2.y);
+        BOOST_CHECK_EQUAL(t1.width, t2.width);
+        BOOST_CHECK_EQUAL(t1.height, t2.height);
     }
 }
 

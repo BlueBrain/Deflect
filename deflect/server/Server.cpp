@@ -146,8 +146,8 @@ void Server::incomingConnection(const qintptr socketHandle)
     // FrameDispatcher
     connect(worker, &ServerWorker::addStreamSource, _impl->frameDispatcher,
             &FrameDispatcher::addSource);
-    connect(worker, &ServerWorker::receivedSegment, _impl->frameDispatcher,
-            &FrameDispatcher::processSegment);
+    connect(worker, &ServerWorker::receivedTile, _impl->frameDispatcher,
+            &FrameDispatcher::processTile);
     connect(worker, &ServerWorker::receivedFrameFinished,
             _impl->frameDispatcher, &FrameDispatcher::processFrameFinished);
     connect(worker, &ServerWorker::removeStreamSource, _impl->frameDispatcher,

@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2018, EPFL/Blue Brain Project                  */
-/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
+/* Copyright (c) 2018, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,39 +37,26 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_SERVER_FRAME_H
-#define DEFLECT_SERVER_FRAME_H
+#ifndef DEFLECT_SERVER_TYPES_H
+#define DEFLECT_SERVER_TYPES_H
 
-#include <deflect/api.h>
-#include <deflect/server/Tile.h>
-
-#include <QSize>
-#include <QString>
+#include <deflect/types.h>
 
 namespace deflect
 {
 namespace server
 {
-/**
- * A frame for a PixelStream.
- */
-struct Frame
-{
-    /** The full set of tiles for this frame. */
-    Tiles tiles;
+class EventReceiver;
+class FrameDispatcher;
+class TileDecoder;
+class Server;
 
-    /** The PixelStream uri to which this frame is associated. */
-    QString uri;
+struct Frame;
+struct Tile;
 
-    /** @return the total dimensions of this frame. */
-    DEFLECT_API QSize computeDimensions() const;
-
-    /**
-     * @return the row order of all frame tiles.
-     * @throws std::runtime_error if not all tiles have the same RowOrder.
-     */
-    DEFLECT_API RowOrder determineRowOrder() const;
-};
+using Tiles = std::vector<Tile>;
+using BoolPromisePtr = std::shared_ptr<std::promise<bool>>;
+using FramePtr = std::shared_ptr<Frame>;
 }
 }
 

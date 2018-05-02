@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2017-2018, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -64,13 +64,13 @@ BOOST_AUTO_TEST_CASE(determine_frame_row_order)
     auto frame = makeTestFrame(640, 480, 64);
     BOOST_CHECK(frame.determineRowOrder() == deflect::RowOrder::top_down);
 
-    frame.segments[0].rowOrder = deflect::RowOrder::bottom_up;
+    frame.tiles[0].rowOrder = deflect::RowOrder::bottom_up;
     BOOST_CHECK_THROW(frame.determineRowOrder(), std::runtime_error);
 
-    for (auto& segment : frame.segments)
-        segment.rowOrder = deflect::RowOrder::bottom_up;
+    for (auto& tile : frame.tiles)
+        tile.rowOrder = deflect::RowOrder::bottom_up;
     BOOST_CHECK(frame.determineRowOrder() == deflect::RowOrder::bottom_up);
 
-    frame.segments[0].rowOrder = deflect::RowOrder::top_down;
+    frame.tiles[0].rowOrder = deflect::RowOrder::top_down;
     BOOST_CHECK_THROW(frame.determineRowOrder(), std::runtime_error);
 }

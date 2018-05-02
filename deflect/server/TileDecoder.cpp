@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,10 +37,10 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "SegmentDecoder.h"
+#include "TileDecoder.h"
 
 #include "ImageJpegDecompressor.h"
-#include "deflect/Segment.h"
+#include "Tile.h"
 
 #include <QFuture>
 #include <QtConcurrentRun>
@@ -51,7 +51,7 @@ namespace deflect
 {
 namespace server
 {
-class SegmentDecoder::Impl
+class TileDecoder::Impl
 {
 public:
     Impl() {}
@@ -62,67 +62,66 @@ public:
     QFuture<void> decodingFuture;
 };
 
-SegmentDecoder::SegmentDecoder()
+TileDecoder::TileDecoder()
     : _impl(new Impl)
 {
 }
 
-SegmentDecoder::~SegmentDecoder()
+TileDecoder::~TileDecoder()
 {
 }
 
-ChromaSubsampling SegmentDecoder::decodeType(const Segment& segment)
+ChromaSubsampling TileDecoder::decodeType(const Tile& tile)
 {
-    if (segment.parameters.dataType != DataType::jpeg)
-        throw std::runtime_error("Segment is not in JPEG format");
+    if (tile.format != Format::jpeg)
+        throw std::runtime_error("Tile is not in JPEG format");
 
-    return _impl->decompressor.decompressHeader(segment.imageData).subsampling;
+    return _impl->decompressor.decompressHeader(tile.imageData).subsampling;
 }
 
-size_t _getExpectedSize(const DataType dataType,
-                        const SegmentParameters& params)
+size_t _getExpectedSize(const Format format, const Tile& tile)
 {
-    const size_t imageSize = params.height * params.width;
-    switch (dataType)
+    const size_t imageSize = tile.height * tile.width;
+    switch (format)
     {
-    case DataType::rgba:
+    case Format::rgba:
         return imageSize * 4;
-    case DataType::yuv444:
+    case Format::yuv444:
         return imageSize * 3;
-    case DataType::yuv422:
+    case Format::yuv422:
         return imageSize * 2;
-    case DataType::yuv420:
+    case Format::yuv420:
         return imageSize + (imageSize >> 1);
     default:
         return 0;
     };
 }
 
-void _decodeSegment(ImageJpegDecompressor* decompressor, Segment* segment,
-                    const bool skipRgbConversion)
+void _decodeTile(ImageJpegDecompressor* decompressor, Tile* tile,
+                 const bool skipRgbConversion)
 {
-    if (segment->parameters.dataType != DataType::jpeg)
+    if (tile->format != Format::jpeg)
         return;
 
     QByteArray decodedData;
-    DataType dataType;
+    Format format;
     try
     {
 #ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
         if (skipRgbConversion)
         {
-            const auto yuv = decompressor->decompressToYUV(segment->imageData);
+            const auto yuv = decompressor->decompressToYUV(tile->imageData);
             decodedData = yuv.first;
             switch (yuv.second)
             {
             case ChromaSubsampling::YUV444:
-                dataType = DataType::yuv444;
+                format = Format::yuv444;
                 break;
             case ChromaSubsampling::YUV422:
-                dataType = DataType::yuv422;
+                format = Format::yuv422;
                 break;
             case ChromaSubsampling::YUV420:
-                dataType = DataType::yuv420;
+                format = Format::yuv420;
                 break;
             default:
                 throw std::runtime_error("unexpected ChromaSubsampling mode");
@@ -133,8 +132,8 @@ void _decodeSegment(ImageJpegDecompressor* decompressor, Segment* segment,
         Q_UNUSED(skipRgbConversion);
 #endif
         {
-            decodedData = decompressor->decompress(segment->imageData);
-            dataType = DataType::rgba;
+            decodedData = decompressor->decompress(tile->imageData);
+            format = Format::rgba;
         }
     }
     catch (const std::runtime_error&)
@@ -142,29 +141,29 @@ void _decodeSegment(ImageJpegDecompressor* decompressor, Segment* segment,
         throw;
     }
 
-    const auto expectedSize = _getExpectedSize(dataType, segment->parameters);
+    const auto expectedSize = _getExpectedSize(format, *tile);
     if (size_t(decodedData.size()) != expectedSize)
-        throw std::runtime_error("unexpected segment size");
+        throw std::runtime_error("unexpected tile size");
 
-    segment->imageData = decodedData;
-    segment->parameters.dataType = dataType;
+    tile->imageData = decodedData;
+    tile->format = format;
 }
 
-void SegmentDecoder::decode(Segment& segment)
+void TileDecoder::decode(Tile& tile)
 {
-    _decodeSegment(&_impl->decompressor, &segment, false);
+    _decodeTile(&_impl->decompressor, &tile, false);
 }
 
 #ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
 
-void SegmentDecoder::decodeToYUV(Segment& segment)
+void TileDecoder::decodeToYUV(Tile& tile)
 {
-    _decodeSegment(&_impl->decompressor, &segment, true);
+    _decodeTile(&_impl->decompressor, &tile, true);
 }
 
 #endif
 
-void SegmentDecoder::startDecoding(Segment& segment)
+void TileDecoder::startDecoding(Tile& tile)
 {
     // drop frames if we're currently processing
     if (isRunning())
@@ -176,11 +175,10 @@ void SegmentDecoder::startDecoding(Segment& segment)
     }
 
     _impl->decodingFuture =
-        QtConcurrent::run(_decodeSegment, &_impl->decompressor, &segment,
-                          false);
+        QtConcurrent::run(_decodeTile, &_impl->decompressor, &tile, false);
 }
 
-void SegmentDecoder::waitDecoding()
+void TileDecoder::waitDecoding()
 {
     try
     {
@@ -191,11 +189,11 @@ void SegmentDecoder::waitDecoding()
         // Let Qt throws a QUnhandledException and rewrite the error message.
         // QtConcurrent::run can only forward QException subclasses, which does
         // not even work on 5.7.1: https://bugreports.qt.io/browse/QTBUG-58021
-        throw std::runtime_error("Segment decoding failed");
+        throw std::runtime_error("Tile decoding failed");
     }
 }
 
-bool SegmentDecoder::isRunning() const
+bool TileDecoder::isRunning() const
 {
     return _impl->decodingFuture.isRunning();
 }

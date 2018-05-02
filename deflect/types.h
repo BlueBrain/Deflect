@@ -71,6 +71,16 @@ enum class RowOrder
     bottom_up /**< OpenGL image with (0,0) at the bottom-left corner. */
 };
 
+/** The possible formats for image data. */
+enum class Format : std::uint8_t
+{
+    rgba = 0,
+    jpeg = 1,
+    yuv444,
+    yuv422,
+    yuv420
+};
+
 /** Cast an enum class value to its underlying type. */
 template <typename E>
 constexpr typename std::underlying_type<E>::type as_underlying_type(E e)
@@ -104,35 +114,16 @@ std::future<T> make_exception_future(Exception&& e)
 }
 
 class ImageSegmenter;
-class MessageHeader;
 class Stream;
 
 struct Event;
 struct ImageWrapper;
+struct MessageHeader;
 struct Segment;
 struct SegmentParameters;
 struct SizeHints;
 
 using Segments = std::vector<Segment>;
-
-namespace server
-{
-class EventReceiver;
-class Frame;
-class FrameDispatcher;
-class SegmentDecoder;
-class Server;
-
-using BoolPromisePtr = std::shared_ptr<std::promise<bool>>;
-using FramePtr = std::shared_ptr<Frame>;
-}
-
-namespace qt
-{
-class QuickRenderer;
-class QmlStreamer;
-class TouchInjector;
-}
 
 /** @internal */
 namespace test

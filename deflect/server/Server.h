@@ -43,7 +43,7 @@
 
 #include <deflect/SizeHints.h>
 #include <deflect/api.h>
-#include <deflect/types.h>
+#include <deflect/server/types.h>
 
 #include <QtNetwork/QTcpServer>
 
