@@ -42,7 +42,7 @@
 
 #include <deflect/api.h>
 #include <deflect/defines.h>
-#include <deflect/types.h>
+#include <deflect/server/types.h>
 
 #include <turbojpeg.h>
 

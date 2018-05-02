@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -61,12 +61,12 @@ public:
         ReceiveBuffer& buffer = streamBuffers[uri];
 
         while (buffer.hasCompleteFrame())
-            frame->segments = buffer.popFrame();
+            frame->tiles = buffer.popFrame();
 
-        assert(!frame->segments.empty());
+        assert(!frame->tiles.empty());
 
         if (frame->determineRowOrder() == RowOrder::bottom_up)
-            mirrorSegmentsPositionsVertically(*frame);
+            mirrorTilesPositionsVertically(*frame);
 
         // receiver will request a new frame once this frame was consumed
         buffer.setAllowedToSend(false);
@@ -74,11 +74,11 @@ public:
         return frame;
     }
 
-    void mirrorSegmentsPositionsVertically(Frame& frame) const
+    void mirrorTilesPositionsVertically(Frame& frame) const
     {
         const auto height = frame.computeDimensions().height();
-        for (auto& s : frame.segments)
-            s.parameters.y = height - s.parameters.y - s.parameters.height;
+        for (auto& tile : frame.tiles)
+            tile.y = height - tile.y - tile.height;
     }
 
     typedef std::map<QString, ReceiveBuffer> StreamBuffers;
@@ -138,12 +138,11 @@ void FrameDispatcher::removeObserver(QString uri)
     deleteStream(uri);
 }
 
-void FrameDispatcher::processSegment(const QString uri,
-                                     const size_t sourceIndex,
-                                     deflect::Segment segment)
+void FrameDispatcher::processTile(const QString uri, const size_t sourceIndex,
+                                  deflect::server::Tile tile)
 {
     if (_impl->streamBuffers.count(uri))
-        _impl->streamBuffers[uri].insert(segment, sourceIndex);
+        _impl->streamBuffers[uri].insert(tile, sourceIndex);
 }
 
 void FrameDispatcher::processFrameFinished(const QString uri,

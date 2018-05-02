@@ -41,6 +41,8 @@
 #include "Event.h"
 #include "Segment.h"
 #include "SizeHints.h"
+#include "server/Tile.h"
+#include "server/types.h"
 #include "types.h"
 
 #include <QMetaType>
@@ -63,6 +65,7 @@ struct MetaTypeRegistration
             "deflect::server::BoolPromisePtr");
         qRegisterMetaType<deflect::server::FramePtr>(
             "deflect::server::FramePtr");
+        qRegisterMetaType<deflect::server::Tile>("deflect::server::Tile");
     }
 };
 

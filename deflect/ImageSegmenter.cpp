@@ -80,7 +80,7 @@ Segment ImageSegmenter::createSingleSegment(const ImageWrapper& image)
         segment.imageData.reserve(segment.parameters.width *
                                   segment.parameters.height *
                                   image.getBytesPerPixel());
-        segment.parameters.dataType = DataType::rgba;
+        segment.parameters.format = Format::rgba;
         segment.imageData.append((const char*)image.data,
                                  int(image.getBufferSize()));
     }
@@ -181,7 +181,7 @@ void ImageSegmenter::_computeJpeg(SegmentTask& segment, const bool sendSegment)
         segment.exception = std::current_exception();
     }
 
-    segment.parameters.dataType = DataType::jpeg;
+    segment.parameters.format = Format::jpeg;
     if (sendSegment)
         _sendQueue.enqueue(segment);
 #endif
@@ -196,7 +196,7 @@ bool ImageSegmenter::_generateRaw(const ImageWrapper& image,
         segment.imageData.reserve(segment.parameters.width *
                                   segment.parameters.height *
                                   image.getBytesPerPixel());
-        segment.parameters.dataType = DataType::rgba;
+        segment.parameters.format = Format::rgba;
 
         if (segments.size() == 1)
         {

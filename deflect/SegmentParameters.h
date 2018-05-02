@@ -51,20 +51,7 @@ typedef unsigned __int32 uint32_t;
 namespace deflect
 {
 /**
- * The possible formats for segment data.
- * @version 1.0
- */
-enum class DataType : std::uint8_t
-{
-    rgba = 0, // equivalent to old compressed=false property
-    jpeg = 1, // equivalent to old compressed=true property
-    yuv444,
-    yuv422,
-    yuv420
-};
-
-/**
- * Parameters for a Segment of a Frame.
+ * Parameters for a Segment of an image.
  * @version 1.0
  */
 struct SegmentParameters
@@ -82,7 +69,7 @@ struct SegmentParameters
     //@}
 
     /** Format in which the segment data is stored. */
-    DataType dataType = DataType::jpeg;
+    Format format = Format::jpeg;
 
     /**
      * WARNING:

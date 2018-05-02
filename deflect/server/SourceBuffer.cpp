@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2017-2018, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -47,12 +47,12 @@ namespace server
 {
 SourceBuffer::SourceBuffer()
 {
-    _segments.push(Segments());
+    _tiles.push(Tiles());
 }
 
-const Segments& SourceBuffer::getSegments() const
+const Tiles& SourceBuffer::getTiles() const
 {
-    return _segments.front();
+    return _tiles.front();
 }
 
 FrameIndex SourceBuffer::getBackFrameIndex() const
@@ -62,28 +62,28 @@ FrameIndex SourceBuffer::getBackFrameIndex() const
 
 bool SourceBuffer::isBackFrameEmpty() const
 {
-    return _segments.back().empty();
+    return _tiles.back().empty();
 }
 
 void SourceBuffer::pop()
 {
-    _segments.pop();
+    _tiles.pop();
 }
 
 void SourceBuffer::push()
 {
-    _segments.push(Segments());
+    _tiles.push(Tiles());
     ++_backFrameIndex;
 }
 
-void SourceBuffer::insert(const Segment& segment)
+void SourceBuffer::insert(const Tile& tile)
 {
-    _segments.back().push_back(segment);
+    _tiles.back().push_back(tile);
 }
 
 size_t SourceBuffer::getQueueSize() const
 {
-    return _segments.size();
+    return _tiles.size();
 }
 }
 }

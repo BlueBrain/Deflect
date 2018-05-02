@@ -8,6 +8,6 @@
 set(TEST_LIBRARIES DeflectServer DeflectMock ${Boost_LIBRARIES} Qt5::Widgets)
 add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)
 if(NOT DEFLECT_USE_LIBJPEGTURBO)
-  set(EXCLUDE_FROM_TESTS SegmentDecoderTests.cpp)
+  set(EXCLUDE_FROM_TESTS TileDecoderTests.cpp)
 endif()
 include(CommonCTest)

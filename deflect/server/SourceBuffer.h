@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2017-2018, EPFL/Blue Brain Project                  */
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -40,9 +40,7 @@
 #ifndef DEFLECT_SERVER_SOURCEBUFFER_H
 #define DEFLECT_SERVER_SOURCEBUFFER_H
 
-#include <deflect/Segment.h>
-#include <deflect/api.h>
-#include <deflect/types.h>
+#include <deflect/server/Tile.h>
 
 #include <array>
 #include <queue>
@@ -54,7 +52,7 @@ namespace server
 using FrameIndex = unsigned int;
 
 /**
- * Buffer for a single source of segments.
+ * Buffer for a single source of tiles.
  */
 class SourceBuffer
 {
@@ -62,17 +60,17 @@ public:
     /** Construct an empty buffer. */
     SourceBuffer();
 
-    /** @return the segments at the front of the queue. */
-    const Segments& getSegments() const;
+    /** @return the tiles at the front of the queue. */
+    const Tiles& getTiles() const;
 
     /** @return the frame index of the back of the buffer. */
     FrameIndex getBackFrameIndex() const;
 
-    /** @return true if the back frame has no segments. */
+    /** @return true if the back frame has no tiles. */
     bool isBackFrameEmpty() const;
 
-    /** Insert a segment into the back frame. */
-    void insert(const Segment& segment);
+    /** Insert a tile into the back frame. */
+    void insert(const Tile& tile);
 
     /** Push a new frame to the back. */
     void push();
@@ -84,8 +82,8 @@ public:
     size_t getQueueSize() const;
 
 private:
-    /** The collections of segments for each mono/left/right view. */
-    std::queue<Segments> _segments;
+    /** The collections of tiles for each mono/left/right view. */
+    std::queue<Tiles> _tiles;
 
     /** The current indices of the mono/left/right frame for this source. */
     FrameIndex _backFrameIndex = 0u;

@@ -145,7 +145,7 @@ struct ImageWrapper
      *
      * All images that form a frame (possibly from multiple Streams) must have
      * the same row order, otherwise the frame is invalid. This is because the
-     * frame's segments need to be reordered in addtion to flipping them
+     * frame's tiles need to be reordered in addtion to flipping them
      * individually.
      *
      * @version 1.0

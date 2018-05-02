@@ -6,6 +6,8 @@ set(DEFLECTSERVER_PUBLIC_HEADERS
   EventReceiver.h
   Frame.h
   Server.h
+  Tile.h
+  types.h
 )
 set(DEFLECTSERVER_HEADERS
   FrameDispatcher.h
@@ -28,14 +30,14 @@ set(DEFLECTSERVER_LINK_LIBRARIES
 
 if(DEFLECT_USE_LIBJPEGTURBO)
   list(APPEND DEFLECTSERVER_PUBLIC_HEADERS
-    SegmentDecoder.h
+    TileDecoder.h
   )
   list(APPEND DEFLECTSERVER_HEADERS
     ImageJpegDecompressor.h
   )
   list(APPEND DEFLECTSERVER_SOURCES
     ImageJpegDecompressor.cpp
-    SegmentDecoder.cpp
+    TileDecoder.cpp
   )
   list(APPEND DEFLECTSERVER_LINK_LIBRARIES PRIVATE ${LibJpegTurbo_LIBRARIES})
 endif()

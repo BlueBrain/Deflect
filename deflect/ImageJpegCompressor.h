@@ -51,7 +51,7 @@
 namespace deflect
 {
 /**
- * Perform JPEG compression for a PixelStreamSegment
+ * Perform JPEG compression for a region of an image.
  */
 class ImageJpegCompressor
 {

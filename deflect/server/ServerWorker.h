@@ -43,10 +43,9 @@
 
 #include <deflect/Event.h>
 #include <deflect/MessageHeader.h>
-#include <deflect/Segment.h>
 #include <deflect/SizeHints.h>
 #include <deflect/server/EventReceiver.h>
-#include <deflect/types.h>
+#include <deflect/server/Tile.h>
 
 #include <QQueue>
 #include <QtNetwork/QTcpSocket>
@@ -76,8 +75,8 @@ signals:
     void addObserver(QString uri);
     void removeObserver(QString uri);
 
-    void receivedSegment(QString uri, size_t sourceIndex,
-                         deflect::Segment segment);
+    void receivedTile(QString uri, size_t sourceIndex,
+                      deflect::server::Tile tile);
     void receivedFrameFinished(QString uri, size_t sourceIndex);
 
     void registerToEvents(QString uri, bool exclusive,

@@ -41,6 +41,7 @@
 #include "ServerWorker.h"
 
 #include "deflect/NetworkProtocol.h"
+#include "deflect/SegmentParameters.h"
 
 #include <QDataStream>
 
@@ -311,16 +312,19 @@ void ServerWorker::_parseClientProtocolVersion(const QByteArray& message)
 
 void ServerWorker::_handlePixelStreamMessage(const QByteArray& message)
 {
-    Segment segment;
+    Tile tile;
 
     const auto data = message.data();
-    segment.parameters = *reinterpret_cast<const SegmentParameters*>(data);
-    segment.imageData =
-        message.right(message.size() - sizeof(SegmentParameters));
-    segment.view = _activeView;
-    segment.rowOrder = _activeRowOrder;
+    const auto params = reinterpret_cast<const SegmentParameters*>(data);
+    tile.x = params->x;
+    tile.y = params->y;
+    tile.width = params->width;
+    tile.height = params->height;
+    tile.imageData = message.right(message.size() - sizeof(SegmentParameters));
+    tile.view = _activeView;
+    tile.rowOrder = _activeRowOrder;
 
-    emit(receivedSegment(_streamId, _sourceId, segment));
+    emit(receivedTile(_streamId, _sourceId, tile));
 }
 
 void ServerWorker::_sendProtocolVersion()

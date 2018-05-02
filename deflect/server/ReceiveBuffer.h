@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -40,12 +40,8 @@
 #ifndef DEFLECT_SERVER_RECEIVEBUFFER_H
 #define DEFLECT_SERVER_RECEIVEBUFFER_H
 
-#include <deflect/Segment.h>
 #include <deflect/api.h>
 #include <deflect/server/SourceBuffer.h>
-#include <deflect/types.h>
-
-#include <QSize>
 
 #include <map>
 #include <queue>
@@ -55,16 +51,16 @@ namespace deflect
 namespace server
 {
 /**
- * Buffer Segments from (multiple) sources.
+ * Buffer Tiles from (multiple) sources.
  *
- * The buffer aggregates segments coming from different sources and delivers
+ * The buffer aggregates tiles coming from different sources and delivers
  * complete frames.
  */
 class ReceiveBuffer
 {
 public:
     /**
-     * Add a source of segments.
+     * Add a source of tiles.
      * @param sourceIndex Unique source identifier
      * @return false if the source was already added or if
      *         finishFrameForSource() has already been called for all existing
@@ -73,7 +69,7 @@ public:
     DEFLECT_API bool addSource(size_t sourceIndex);
 
     /**
-     * Remove a source of segments.
+     * Remove a source of tiles.
      * @param sourceIndex Unique source identifier
      */
     DEFLECT_API void removeSource(size_t sourceIndex);
@@ -82,14 +78,14 @@ public:
     DEFLECT_API size_t getSourceCount() const;
 
     /**
-     * Insert a segment for the current frame and source.
-     * @param segment The segment to insert
+     * Insert a tile for the current frame and source.
+     * @param tile The tile to insert
      * @param sourceIndex Unique source identifier
      */
-    DEFLECT_API void insert(const Segment& segment, size_t sourceIndex);
+    DEFLECT_API void insert(const Tile& tile, size_t sourceIndex);
 
     /**
-     * Call when the source has finished sending segments for the current frame.
+     * Call when the source has finished sending tiles for the current frame.
      * @param sourceIndex Unique source identifier
      * @throw std::runtime_error if the buffer exceeds its maximum size
      */
@@ -100,9 +96,9 @@ public:
 
     /**
      * Get the finished frame.
-     * @return A collection of segments that form a frame
+     * @return A collection of tiles that form a frame
      */
-    DEFLECT_API Segments popFrame();
+    DEFLECT_API Tiles popFrame();
 
     /** Allow this buffer to be used by the next
      * FrameDispatcher::sendLatestFrame */

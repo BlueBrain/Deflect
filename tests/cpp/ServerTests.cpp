@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(dataReceivedByServer)
 BOOST_AUTO_TEST_CASE(oneObserverAndOneStream)
 {
     setFrameReceivedCallback([&](deflect::server::FramePtr frame) {
-        SAFE_BOOST_CHECK_EQUAL(frame->segments.size(), 1);
+        SAFE_BOOST_CHECK_EQUAL(frame->tiles.size(), 1);
         SAFE_BOOST_CHECK_EQUAL(frame->uri.toStdString(),
                                testStreamId.toStdString());
     });
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(threadedSmallSegmentStream)
                                  std::ceil((float)height / segmentSize));
 
     setFrameReceivedCallback([&](deflect::server::FramePtr frame) {
-        SAFE_BOOST_CHECK_EQUAL(frame->segments.size(), numSegments);
+        SAFE_BOOST_CHECK_EQUAL(frame->tiles.size(), numSegments);
         SAFE_BOOST_CHECK_EQUAL(frame->uri.toStdString(),
                                testStreamId.toStdString());
         const auto dim = frame->computeDimensions();

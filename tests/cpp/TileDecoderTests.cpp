@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,16 +37,17 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#define BOOST_TEST_MODULE SegmentDecoderTests
+#define BOOST_TEST_MODULE TileDecoderTests
+
 #include <boost/test/unit_test.hpp>
 namespace ut = boost::unit_test;
 
 #include <deflect/ImageJpegCompressor.h>
 #include <deflect/ImageSegmenter.h>
 #include <deflect/ImageWrapper.h>
-#include <deflect/Segment.h>
 #include <deflect/server/ImageJpegDecompressor.h>
-#include <deflect/server/SegmentDecoder.h>
+#include <deflect/server/Tile.h>
+#include <deflect/server/TileDecoder.h>
 
 #include <QMutex>
 #include <cmath> // std::round
@@ -77,9 +78,9 @@ const std::vector<char> expectedVData(8 * 8, _toV(92, 28, 0));
 
 namespace deflect
 {
-inline std::ostream& operator<<(std::ostream& str, const DataType t)
+inline std::ostream& operator<<(std::ostream& str, const Format t)
 {
-    str << "DataType(" << as_underlying_type(t) << ")";
+    str << "Format(" << as_underlying_type(t) << ")";
     return str;
 }
 inline std::ostream& operator<<(std::ostream& str, const ChromaSubsampling s)
@@ -142,23 +143,22 @@ QByteArray decodeToYUVWithDecompressor(
     return yuvData.first;
 }
 
-QByteArray decodeToYUVWithSegmentDecoder(
-    const QByteArray& jpegData, const deflect::ChromaSubsampling expected)
+QByteArray decodeToYUVWithTileDecoder(const QByteArray& jpegData,
+                                      const deflect::ChromaSubsampling expected)
 {
-    deflect::Segment segment;
-    segment.parameters.width = 8;
-    segment.parameters.height = 8;
-    segment.parameters.dataType = deflect::DataType::jpeg;
-    segment.imageData =
-        QByteArray::fromRawData(jpegData.data(), jpegData.size());
+    deflect::server::Tile tile;
+    tile.width = 8;
+    tile.height = 8;
+    tile.format = deflect::Format::jpeg;
+    tile.imageData = QByteArray::fromRawData(jpegData.data(), jpegData.size());
 
-    deflect::server::SegmentDecoder decoder;
-    BOOST_CHECK_EQUAL(decoder.decodeType(segment), expected);
+    deflect::server::TileDecoder decoder;
+    BOOST_CHECK_EQUAL(decoder.decodeType(tile), expected);
 
-    decoder.decodeToYUV(segment);
-    BOOST_CHECK_NE(segment.parameters.dataType, deflect::DataType::jpeg);
-    BOOST_CHECK_NE(segment.parameters.dataType, deflect::DataType::rgba);
-    return segment.imageData;
+    decoder.decodeToYUV(tile);
+    BOOST_CHECK_NE(tile.format, deflect::Format::jpeg);
+    BOOST_CHECK_NE(tile.format, deflect::Format::rgba);
+    return tile.imageData;
 }
 
 using DecodeFunc =
@@ -223,11 +223,11 @@ BOOST_AUTO_TEST_CASE(testImageCompressionAndDecompressionYUV)
                                 &decodeToYUVWithDecompressor);
 
     testImageDecompressionToYUV(deflect::ChromaSubsampling::YUV444,
-                                &decodeToYUVWithSegmentDecoder);
+                                &decodeToYUVWithTileDecoder);
     testImageDecompressionToYUV(deflect::ChromaSubsampling::YUV422,
-                                &decodeToYUVWithSegmentDecoder);
+                                &decodeToYUVWithTileDecoder);
     testImageDecompressionToYUV(deflect::ChromaSubsampling::YUV420,
-                                &decodeToYUVWithSegmentDecoder);
+                                &decodeToYUVWithTileDecoder);
 }
 
 #endif
@@ -258,22 +258,28 @@ BOOST_AUTO_TEST_CASE(testImageSegmentationWithCompressionAndDecompression)
     BOOST_REQUIRE_EQUAL(segments.size(), 1);
 
     deflect::Segment& segment = segments.front();
-    BOOST_REQUIRE_EQUAL(segment.parameters.dataType, deflect::DataType::jpeg);
+    BOOST_REQUIRE_EQUAL(segment.parameters.format, deflect::Format::jpeg);
     BOOST_REQUIRE(segment.imageData.size() != (int)data.size());
 
     // Decompress image
-    deflect::server::SegmentDecoder decoder;
-    decoder.startDecoding(segment);
+    deflect::server::Tile tile;
+    tile.width = segment.parameters.width;
+    tile.height = segment.parameters.height;
+    tile.format = segment.parameters.format;
+    tile.imageData = segment.imageData;
+
+    deflect::server::TileDecoder decoder;
+    decoder.startDecoding(tile);
     decoder.waitDecoding();
 
     // Check decoded image in format RGBA
-    BOOST_REQUIRE_EQUAL(segment.parameters.dataType, deflect::DataType::rgba);
-    BOOST_REQUIRE_EQUAL(segment.imageData.size(), data.size());
+    BOOST_REQUIRE_EQUAL(tile.format, deflect::Format::rgba);
+    BOOST_REQUIRE_EQUAL(tile.imageData.size(), data.size());
 
-    const char* dataOut = segment.imageData.constData();
+    const char* dataOut = tile.imageData.constData();
     BOOST_CHECK_EQUAL_COLLECTIONS(data.data(),
-                                  data.data() + segment.imageData.size(),
-                                  dataOut, dataOut + segment.imageData.size());
+                                  data.data() + tile.imageData.size(), dataOut,
+                                  dataOut + tile.imageData.size());
 }
 
 BOOST_AUTO_TEST_CASE(testDecompressionOfInvalidData)
@@ -283,14 +289,14 @@ BOOST_AUTO_TEST_CASE(testDecompressionOfInvalidData)
     BOOST_CHECK_THROW(decompressor.decompress(invalidJpegData),
                       std::runtime_error);
 
-    deflect::Segment segment;
-    segment.parameters.width = 32;
-    segment.parameters.height = 32;
-    segment.imageData = invalidJpegData;
+    deflect::server::Tile tile;
+    tile.width = 32;
+    tile.height = 32;
+    tile.imageData = invalidJpegData;
 
-    deflect::server::SegmentDecoder decoder;
-    BOOST_CHECK_THROW(decoder.decode(segment), std::runtime_error);
+    deflect::server::TileDecoder decoder;
+    BOOST_CHECK_THROW(decoder.decode(tile), std::runtime_error);
 
-    BOOST_CHECK_NO_THROW(decoder.startDecoding(segment));
+    BOOST_CHECK_NO_THROW(decoder.startDecoding(tile));
     BOOST_CHECK_THROW(decoder.waitDecoding(), std::runtime_error);
 }

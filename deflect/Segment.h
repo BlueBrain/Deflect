@@ -47,7 +47,7 @@
 namespace deflect
 {
 /**
- * Image data and parameters for a single segment of a Frame.
+ * Image data and parameters for a segment of a larger image.
  */
 struct Segment
 {

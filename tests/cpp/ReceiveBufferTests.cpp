@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -41,7 +41,6 @@
 #include <boost/test/unit_test.hpp>
 namespace ut = boost::unit_test;
 
-#include <deflect/Segment.h>
 #include <deflect/server/Frame.h>
 #include <deflect/server/ReceiveBuffer.h>
 
@@ -94,69 +93,69 @@ BOOST_AUTO_TEST_CASE(TestCompleteAFrame)
     deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex);
 
-    deflect::Segment segment;
-    segment.parameters.x = 0;
-    segment.parameters.y = 0;
-    segment.parameters.width = 128;
-    segment.parameters.height = 256;
+    deflect::server::Tile tile;
+    tile.x = 0;
+    tile.y = 0;
+    tile.width = 128;
+    tile.height = 256;
 
-    buffer.insert(segment, sourceIndex);
+    buffer.insert(tile, sourceIndex);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex);
     BOOST_CHECK(buffer.hasCompleteFrame());
 
-    deflect::Segments segments = buffer.popFrame();
+    const auto tiles = buffer.popFrame();
 
-    BOOST_CHECK_EQUAL(segments.size(), 1);
+    BOOST_CHECK_EQUAL(tiles.size(), 1);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     deflect::server::Frame frame;
-    frame.segments = segments;
+    frame.tiles = tiles;
     const QSize frameSize = frame.computeDimensions();
-    BOOST_CHECK_EQUAL(frameSize.width(), segment.parameters.width);
-    BOOST_CHECK_EQUAL(frameSize.height(), segment.parameters.height);
+    BOOST_CHECK_EQUAL(frameSize.width(), tile.width);
+    BOOST_CHECK_EQUAL(frameSize.height(), tile.height);
 }
 
-deflect::Segments generateTestSegments(
+deflect::server::Tiles generateTestTiles(
     const deflect::View view = deflect::View::mono)
 {
-    deflect::Segments segments;
+    deflect::server::Tiles tiles;
 
-    deflect::Segment segment1;
-    segment1.parameters.x = 0;
-    segment1.parameters.y = 0;
-    segment1.parameters.width = 128;
-    segment1.parameters.height = 256;
-    segment1.view = view;
+    deflect::server::Tile tile1;
+    tile1.x = 0;
+    tile1.y = 0;
+    tile1.width = 128;
+    tile1.height = 256;
+    tile1.view = view;
 
-    deflect::Segment segment2;
-    segment2.parameters.x = 128;
-    segment2.parameters.y = 0;
-    segment2.parameters.width = 64;
-    segment2.parameters.height = 256;
-    segment2.view = view;
+    deflect::server::Tile tile2;
+    tile2.x = 128;
+    tile2.y = 0;
+    tile2.width = 64;
+    tile2.height = 256;
+    tile2.view = view;
 
-    deflect::Segment segment3;
-    segment3.parameters.x = 0;
-    segment3.parameters.y = 256;
-    segment3.parameters.width = 128;
-    segment3.parameters.height = 512;
-    segment3.view = view;
+    deflect::server::Tile tile3;
+    tile3.x = 0;
+    tile3.y = 256;
+    tile3.width = 128;
+    tile3.height = 512;
+    tile3.view = view;
 
-    deflect::Segment segment4;
-    segment4.parameters.x = 128;
-    segment4.parameters.y = 256;
-    segment4.parameters.width = 64;
-    segment4.parameters.height = 512;
-    segment4.view = view;
+    deflect::server::Tile tile4;
+    tile4.x = 128;
+    tile4.y = 256;
+    tile4.width = 64;
+    tile4.height = 512;
+    tile4.view = view;
 
-    segments.push_back(segment1);
-    segments.push_back(segment2);
-    segments.push_back(segment3);
-    segments.push_back(segment4);
+    tiles.push_back(tile1);
+    tiles.push_back(tile2);
+    tiles.push_back(tile3);
+    tiles.push_back(tile4);
 
-    return segments;
+    return tiles;
 }
 
 BOOST_AUTO_TEST_CASE(TestCompleteACompositeFrameSingleSource)
@@ -166,23 +165,23 @@ BOOST_AUTO_TEST_CASE(TestCompleteACompositeFrameSingleSource)
     deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex);
 
-    deflect::Segments testSegments = generateTestSegments();
+    const auto testTiles = generateTestTiles();
 
-    buffer.insert(testSegments[0], sourceIndex);
-    buffer.insert(testSegments[1], sourceIndex);
-    buffer.insert(testSegments[2], sourceIndex);
-    buffer.insert(testSegments[3], sourceIndex);
+    buffer.insert(testTiles[0], sourceIndex);
+    buffer.insert(testTiles[1], sourceIndex);
+    buffer.insert(testTiles[2], sourceIndex);
+    buffer.insert(testTiles[3], sourceIndex);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex);
     BOOST_CHECK(buffer.hasCompleteFrame());
 
-    deflect::Segments segments = buffer.popFrame();
-    BOOST_CHECK_EQUAL(segments.size(), 4);
+    const auto tiles = buffer.popFrame();
+    BOOST_CHECK_EQUAL(tiles.size(), 4);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     deflect::server::Frame frame;
-    frame.segments = segments;
+    frame.tiles = tiles;
     BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(192, 768));
 }
 
@@ -197,11 +196,11 @@ BOOST_AUTO_TEST_CASE(TestCompleteACompositeFrameMultipleSources)
     buffer.addSource(sourceIndex2);
     buffer.addSource(sourceIndex3);
 
-    deflect::Segments testSegments = generateTestSegments();
+    const auto testTiles = generateTestTiles();
 
-    buffer.insert(testSegments[0], sourceIndex1);
-    buffer.insert(testSegments[1], sourceIndex2);
-    buffer.insert(testSegments[2], sourceIndex3);
+    buffer.insert(testTiles[0], sourceIndex1);
+    buffer.insert(testTiles[1], sourceIndex2);
+    buffer.insert(testTiles[2], sourceIndex3);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex1);
@@ -210,16 +209,16 @@ BOOST_AUTO_TEST_CASE(TestCompleteACompositeFrameMultipleSources)
     buffer.finishFrameForSource(sourceIndex2);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    buffer.insert(testSegments[3], sourceIndex3);
+    buffer.insert(testTiles[3], sourceIndex3);
     buffer.finishFrameForSource(sourceIndex3);
     BOOST_CHECK(buffer.hasCompleteFrame());
 
-    deflect::Segments segments = buffer.popFrame();
-    BOOST_CHECK_EQUAL(segments.size(), 4);
+    const auto tiles = buffer.popFrame();
+    BOOST_CHECK_EQUAL(tiles.size(), 4);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     deflect::server::Frame frame;
-    frame.segments = segments;
+    frame.tiles = tiles;
     BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(192, 768));
 }
 
@@ -232,43 +231,43 @@ BOOST_AUTO_TEST_CASE(TestRemoveSourceWhileStreaming)
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
 
-    deflect::Segments testSegments = generateTestSegments();
+    const auto testTiles = generateTestTiles();
 
     // First Frame - 2 sources
-    buffer.insert(testSegments[0], sourceIndex1);
-    buffer.insert(testSegments[1], sourceIndex1);
-    buffer.insert(testSegments[2], sourceIndex2);
-    buffer.insert(testSegments[3], sourceIndex2);
+    buffer.insert(testTiles[0], sourceIndex1);
+    buffer.insert(testTiles[1], sourceIndex1);
+    buffer.insert(testTiles[2], sourceIndex2);
+    buffer.insert(testTiles[3], sourceIndex2);
     BOOST_CHECK(!buffer.hasCompleteFrame());
     buffer.finishFrameForSource(sourceIndex1);
     BOOST_CHECK(!buffer.hasCompleteFrame());
     buffer.finishFrameForSource(sourceIndex2);
     BOOST_CHECK(buffer.hasCompleteFrame());
 
-    deflect::Segments segments = buffer.popFrame();
+    auto tiles = buffer.popFrame();
 
-    BOOST_CHECK_EQUAL(segments.size(), 4);
+    BOOST_CHECK_EQUAL(tiles.size(), 4);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     // Second frame - 1 source
     buffer.removeSource(sourceIndex2);
 
-    buffer.insert(testSegments[0], sourceIndex1);
-    buffer.insert(testSegments[1], sourceIndex1);
+    buffer.insert(testTiles[0], sourceIndex1);
+    buffer.insert(testTiles[1], sourceIndex1);
     BOOST_CHECK(!buffer.hasCompleteFrame());
     buffer.finishFrameForSource(sourceIndex1);
     BOOST_CHECK(buffer.hasCompleteFrame());
 
-    segments = buffer.popFrame();
-    BOOST_CHECK_EQUAL(segments.size(), 2);
+    tiles = buffer.popFrame();
+    BOOST_CHECK_EQUAL(tiles.size(), 2);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     deflect::server::Frame frame;
-    frame.segments = segments;
+    frame.tiles = tiles;
     BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(192, 256));
 }
 
-BOOST_AUTO_TEST_CASE(TestOneOfTwoSourceStopsSendingSegments)
+BOOST_AUTO_TEST_CASE(TestOneOfTwoSourceStopsSendingTiles)
 {
     const size_t sourceIndex1 = 46;
     const size_t sourceIndex2 = 819;
@@ -277,57 +276,57 @@ BOOST_AUTO_TEST_CASE(TestOneOfTwoSourceStopsSendingSegments)
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
 
-    deflect::Segments testSegments = generateTestSegments();
+    const auto testTiles = generateTestTiles();
 
     // First Frame - 2 sources
-    buffer.insert(testSegments[0], sourceIndex1);
-    buffer.insert(testSegments[1], sourceIndex1);
-    buffer.insert(testSegments[2], sourceIndex2);
-    buffer.insert(testSegments[3], sourceIndex2);
+    buffer.insert(testTiles[0], sourceIndex1);
+    buffer.insert(testTiles[1], sourceIndex1);
+    buffer.insert(testTiles[2], sourceIndex2);
+    buffer.insert(testTiles[3], sourceIndex2);
     BOOST_CHECK(!buffer.hasCompleteFrame());
     buffer.finishFrameForSource(sourceIndex1);
     BOOST_CHECK(!buffer.hasCompleteFrame());
     buffer.finishFrameForSource(sourceIndex2);
     BOOST_CHECK(buffer.hasCompleteFrame());
 
-    deflect::Segments segments = buffer.popFrame();
+    const auto tiles = buffer.popFrame();
 
-    BOOST_CHECK_EQUAL(segments.size(), 4);
+    BOOST_CHECK_EQUAL(tiles.size(), 4);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    // Next frames - one source stops sending segments
+    // Next frames - one source stops sending tiles
     for (int i = 0; i < 150; ++i)
     {
-        buffer.insert(testSegments[0], sourceIndex1);
-        buffer.insert(testSegments[1], sourceIndex1);
+        buffer.insert(testTiles[0], sourceIndex1);
+        buffer.insert(testTiles[1], sourceIndex1);
         BOOST_REQUIRE_NO_THROW(buffer.finishFrameForSource(sourceIndex1));
         BOOST_REQUIRE(!buffer.hasCompleteFrame());
     }
     // Test buffer exceeds maximum allowed size
-    buffer.insert(testSegments[0], sourceIndex1);
-    buffer.insert(testSegments[1], sourceIndex1);
+    buffer.insert(testTiles[0], sourceIndex1);
+    buffer.insert(testTiles[1], sourceIndex1);
     BOOST_CHECK_THROW(buffer.finishFrameForSource(sourceIndex1),
                       std::runtime_error);
 }
 
 void _insert(deflect::server::ReceiveBuffer& buffer, const size_t sourceIndex,
-             const deflect::Segments& frame)
+             const deflect::server::Tiles& frame)
 {
-    for (const auto& segment : frame)
-        buffer.insert(segment, sourceIndex);
+    for (const auto& tile : frame)
+        buffer.insert(tile, sourceIndex);
 }
 
 void _testStereoBuffer(deflect::server::ReceiveBuffer& buffer)
 {
-    const auto segments = buffer.popFrame();
-    BOOST_CHECK_EQUAL(segments.size(), 8);
+    const auto tiles = buffer.popFrame();
+    BOOST_CHECK_EQUAL(tiles.size(), 8);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     size_t left = 0;
     size_t right = 0;
-    for (const auto segment : segments)
+    for (const auto tile : tiles)
     {
-        switch (segment.view)
+        switch (tile.view)
         {
         case deflect::View::left_eye:
             ++left;
@@ -344,7 +343,7 @@ void _testStereoBuffer(deflect::server::ReceiveBuffer& buffer)
     BOOST_CHECK_EQUAL(right, 4);
 
     deflect::server::Frame frame;
-    frame.segments = segments;
+    frame.tiles = tiles;
     BOOST_CHECK_EQUAL(frame.computeDimensions(), QSize(192, 768));
 }
 
@@ -355,12 +354,12 @@ BOOST_AUTO_TEST_CASE(TestStereoOneSource)
     deflect::server::ReceiveBuffer buffer;
     buffer.addSource(sourceIndex);
 
-    auto leftSegments = generateTestSegments(deflect::View::left_eye);
-    _insert(buffer, sourceIndex, leftSegments);
+    auto leftTiles = generateTestTiles(deflect::View::left_eye);
+    _insert(buffer, sourceIndex, leftTiles);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    auto rightSegments = generateTestSegments(deflect::View::right_eye);
-    _insert(buffer, sourceIndex, rightSegments);
+    auto rightTiles = generateTestTiles(deflect::View::right_eye);
+    _insert(buffer, sourceIndex, rightTiles);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex);
@@ -378,18 +377,18 @@ BOOST_AUTO_TEST_CASE(TestStereoTwoSourcesScreenSpaceSplit)
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
 
-    const auto leftSegments = generateTestSegments(deflect::View::left_eye);
-    const auto rightSegments = generateTestSegments(deflect::View::right_eye);
+    const auto leftTiles = generateTestTiles(deflect::View::left_eye);
+    const auto rightTiles = generateTestTiles(deflect::View::right_eye);
 
-    _insert(buffer, sourceIndex1, {leftSegments[0], leftSegments[1]});
+    _insert(buffer, sourceIndex1, {leftTiles[0], leftTiles[1]});
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    _insert(buffer, sourceIndex1, {rightSegments[0], rightSegments[1]});
+    _insert(buffer, sourceIndex1, {rightTiles[0], rightTiles[1]});
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    _insert(buffer, sourceIndex2, {leftSegments[2], leftSegments[3]});
+    _insert(buffer, sourceIndex2, {leftTiles[2], leftTiles[3]});
     BOOST_CHECK(!buffer.hasCompleteFrame());
-    _insert(buffer, sourceIndex2, {rightSegments[2], rightSegments[3]});
+    _insert(buffer, sourceIndex2, {rightTiles[2], rightTiles[3]});
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex1);
@@ -410,12 +409,12 @@ BOOST_AUTO_TEST_CASE(TestStereoTwoSourcesStereoSplit)
     buffer.addSource(sourceIndex1);
     buffer.addSource(sourceIndex2);
 
-    const auto leftSegments = generateTestSegments(deflect::View::left_eye);
-    const auto rightSegments = generateTestSegments(deflect::View::right_eye);
+    const auto leftTiles = generateTestTiles(deflect::View::left_eye);
+    const auto rightTiles = generateTestTiles(deflect::View::right_eye);
 
-    _insert(buffer, sourceIndex1, leftSegments);
+    _insert(buffer, sourceIndex1, leftTiles);
     BOOST_CHECK(!buffer.hasCompleteFrame());
-    _insert(buffer, sourceIndex2, rightSegments);
+    _insert(buffer, sourceIndex2, rightTiles);
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex1);
@@ -440,19 +439,19 @@ BOOST_AUTO_TEST_CASE(TestStereoFourSourcesScreenSpaceAndStereoSplit)
     buffer.addSource(sourceIndex3);
     buffer.addSource(sourceIndex4);
 
-    const auto leftSegments = generateTestSegments(deflect::View::left_eye);
-    const auto rightSegments = generateTestSegments(deflect::View::right_eye);
+    const auto leftTiles = generateTestTiles(deflect::View::left_eye);
+    const auto rightTiles = generateTestTiles(deflect::View::right_eye);
 
-    _insert(buffer, sourceIndex1, {leftSegments[0], leftSegments[1]});
+    _insert(buffer, sourceIndex1, {leftTiles[0], leftTiles[1]});
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    _insert(buffer, sourceIndex2, {rightSegments[0], rightSegments[1]});
+    _insert(buffer, sourceIndex2, {rightTiles[0], rightTiles[1]});
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    _insert(buffer, sourceIndex3, {leftSegments[2], leftSegments[3]});
+    _insert(buffer, sourceIndex3, {leftTiles[2], leftTiles[3]});
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
-    _insert(buffer, sourceIndex4, {rightSegments[2], rightSegments[3]});
+    _insert(buffer, sourceIndex4, {rightTiles[2], rightTiles[3]});
     BOOST_CHECK(!buffer.hasCompleteFrame());
 
     buffer.finishFrameForSource(sourceIndex1);

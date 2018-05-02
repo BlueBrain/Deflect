@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,86 +37,47 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DEFLECT_SERVER_SEGMENTDECODER_H
-#define DEFLECT_SERVER_SEGMENTDECODER_H
+#ifndef DEFLECT_SERVER_TILE_H
+#define DEFLECT_SERVER_TILE_H
 
-#include <deflect/api.h>
-#include <deflect/defines.h>
-#include <deflect/types.h>
+#include <deflect/server/types.h>
+
+#include <QByteArray>
 
 namespace deflect
 {
 namespace server
 {
 /**
- * Decode a Segment's image asynchronously.
+ * A Tile is a sub-region of an image in a Frame.
  */
-class SegmentDecoder
+struct Tile
 {
-public:
-    /** Construct a Decoder */
-    DEFLECT_API SegmentDecoder();
+    /** @name Coordinates */
+    //@{
+    uint32_t x = 0u; /**< The x position in pixels. */
+    uint32_t y = 0u; /**< The y position in pixels. */
+    //@}
 
-    /** Destruct a Decoder */
-    DEFLECT_API ~SegmentDecoder();
+    /** @name Dimensions */
+    //@{
+    uint32_t width = 0u;  /**< The width in pixels. */
+    uint32_t height = 0u; /**< The height in pixels. */
+    //@}
 
-    /**
-     * Decode the data type of a JPEG segment.
-     *
-     * @param segment The segment to decode.
-     * @throw std::runtime_error if a decompression error occured
-     */
-    DEFLECT_API ChromaSubsampling decodeType(const Segment& segment);
+    /** Image data. */
+    QByteArray imageData;
 
-    /**
-     * Decode a JPEG segment to RGB.
-     *
-     * @param segment The segment to decode. Upon success, its imageData member
-     *        will hold the decompressed RGB image and its "dataType" flag will
-     *        be set to DataType::rgba.
-     * @throw std::runtime_error if a decompression error occured
-     */
-    DEFLECT_API void decode(Segment& segment);
+    /** @name Image data parameters */
+    //@{
+    Format format = Format::jpeg; //!< Format in which the data is stored
+    RowOrder rowOrder = RowOrder::top_down; //!< Row order of imageData
+    //@}
 
-#ifndef DEFLECT_USE_LEGACY_LIBJPEGTURBO
-
-    /**
-     * Decode a JPEG segment to YUV, skipping the YUV -> RGB step.
-     *
-     * @param segment The segment to decode. Upon success, its imageData member
-     *        will hold the decompressed YUV image and its "dataType" flag will
-     *        be set to the matching DataType::yuv4**.
-     * @throw std::runtime_error if a decompression error occured
-     */
-    DEFLECT_API void decodeToYUV(Segment& segment);
-
-#endif
-
-    /**
-     * Start decoding a segment.
-     *
-     * This function will silently ignore the request if a decoding is already
-     * in progress.
-     * @param segment The segement to decode. The segment will be modified by
-     *        this function. It must remain valid and should not be accessed
-     *        until the decoding procedure has completed.
-     * @see isRunning()
-     */
-    DEFLECT_API void startDecoding(Segment& segment);
-
-    /**
-     * Waits for the decoding of a segment to finish, initiated by
-     * startDecoding().
-     * @throw std::runtime_error if a decompression error occured
-     */
-    DEFLECT_API void waitDecoding();
-
-    /** Check if the decoding thread is running. */
-    DEFLECT_API bool isRunning() const;
-
-private:
-    class Impl;
-    std::unique_ptr<Impl> _impl;
+    /** @name Metadata */
+    //@{
+    View view = View::mono; //!< Eye pass for the Tile
+    //@}
 };
 }
 }
