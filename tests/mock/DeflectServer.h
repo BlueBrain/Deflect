@@ -57,7 +57,7 @@ public:
     explicit DeflectServer();
     ~DeflectServer();
 
-    quint16 serverPort() const { return _server->serverPort(); }
+    quint16 serverPort() const { return _server->getPort(); }
     void requestFrame(QString uri) { _server->requestFrame(uri); }
     void waitForMessage();
 
@@ -95,7 +95,8 @@ public:
 
 private:
     QThread _thread;
-    deflect::server::Server* _server;
+    // destroyed by Object::deleteLater
+    deflect::server::Server* _server = nullptr;
 
     bool _receivedState{false};
     QWaitCondition _received;

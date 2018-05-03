@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -45,7 +45,7 @@
 #include <deflect/api.h>
 #include <deflect/server/types.h>
 
-#include <QtNetwork/QTcpServer>
+#include <QObject>
 
 namespace deflect
 {
@@ -59,7 +59,7 @@ namespace server
  * The server integrates a flow-control mechanism to ensure that new frames are
  * dispatched only as fast as the application is capable of processing them.
  */
-class DEFLECT_API Server : public QTcpServer
+class DEFLECT_API Server : public QObject
 {
     Q_OBJECT
 
@@ -77,6 +77,9 @@ public:
 
     /** Stop the server and close all open pixel stream connections. */
     ~Server();
+
+    /** @return the port on which the server is running. */
+    quint16 getPort() const;
 
 public slots:
     /**
@@ -166,10 +169,8 @@ private:
     class Impl;
     std::unique_ptr<Impl> _impl;
 
-    /** Re-implemented handling of connections from QTCPSocket. */
-    void incomingConnection(qintptr socketHandle) final;
-
 signals:
+    /** @internal */
     void _closePixelStream(QString uri);
 };
 }
