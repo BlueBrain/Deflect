@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
 /* All rights reserved.                                              */
@@ -44,8 +44,9 @@
 #include "ServerWorker.h"
 #include "deflect/NetworkProtocol.h"
 
-#include <QNetworkProxy>
 #include <QThread>
+#include <QtNetwork/QNetworkProxy>
+#include <QtNetwork/QTcpServer>
 
 #include <stdexcept>
 
@@ -55,30 +56,90 @@ namespace server
 {
 const int Server::defaultPortNumber = DEFAULT_PORT_NUMBER;
 
-class Server::Impl
+class Server::Impl : public QTcpServer
 {
 public:
-    Impl(QObject* parent)
-        : frameDispatcher(
-              new FrameDispatcher(parent)) // will be deleted by parent
+    Impl(const int port, Server* parent_)
+        : QTcpServer(parent_)
+        , server{parent_}
+        , frameDispatcher{new FrameDispatcher{parent_}}
     {
+        setProxy(QNetworkProxy::NoProxy);
+        if (!listen(QHostAddress::Any, port))
+        {
+            const auto err =
+                QString("could not listen on port: %1. QTcpServer: %2")
+                    .arg(port)
+                    .arg(QTcpServer::errorString());
+            throw std::runtime_error(err.toStdString());
+        }
     }
 
-    FrameDispatcher* frameDispatcher;
+    ~Impl()
+    {
+        for (auto child : children())
+        {
+            if (auto workerThread = qobject_cast<QThread*>(child))
+            {
+                workerThread->quit();
+                workerThread->wait();
+            }
+        }
+    }
+
+    /** Re-implemented handling of connections from QTCPSocket. */
+    void incomingConnection(const qintptr socketHandle) final
+    {
+        auto workerThread = new QThread(this);
+        auto worker = new ServerWorker(socketHandle);
+
+        worker->moveToThread(workerThread);
+
+        connect(workerThread, &QThread::started, worker,
+                &ServerWorker::initConnection);
+        connect(worker, &ServerWorker::connectionClosed, workerThread,
+                &QThread::quit);
+
+        // Make sure the thread will be deleted
+        connect(workerThread, &QThread::finished, worker,
+                &ServerWorker::deleteLater);
+        connect(workerThread, &QThread::finished, workerThread,
+                &QThread::deleteLater);
+
+        // public signals/slots, forwarding from/to worker
+        connect(worker, &ServerWorker::registerToEvents, server,
+                &Server::registerToEvents);
+        connect(worker, &ServerWorker::receivedSizeHints, server,
+                &Server::receivedSizeHints);
+        connect(worker, &ServerWorker::receivedData, server,
+                &Server::receivedData);
+        connect(server, &Server::_closePixelStream, worker,
+                &ServerWorker::closeConnection);
+
+        // FrameDispatcher
+        connect(worker, &ServerWorker::addStreamSource, frameDispatcher,
+                &FrameDispatcher::addSource);
+        connect(worker, &ServerWorker::receivedTile, frameDispatcher,
+                &FrameDispatcher::processTile);
+        connect(worker, &ServerWorker::receivedFrameFinished, frameDispatcher,
+                &FrameDispatcher::processFrameFinished);
+        connect(worker, &ServerWorker::removeStreamSource, frameDispatcher,
+                &FrameDispatcher::removeSource);
+        connect(worker, &ServerWorker::addObserver, frameDispatcher,
+                &FrameDispatcher::addObserver);
+        connect(worker, &ServerWorker::removeObserver, frameDispatcher,
+                &FrameDispatcher::removeObserver);
+
+        workerThread->start();
+    }
+
+    Server* server = nullptr;
+    FrameDispatcher* frameDispatcher = nullptr; // owned by QObject's parent
 };
 
 Server::Server(const int port)
-    : _impl(new Impl(this))
+    : _impl(new Impl(port, this))
 {
-    setProxy(QNetworkProxy::NoProxy);
-    if (!listen(QHostAddress::Any, port))
-    {
-        const auto err = QString("could not listen on port: %1. QTcpServer: %2")
-                             .arg(port)
-                             .arg(QTcpServer::errorString());
-        throw std::runtime_error(err.toStdString());
-    }
-
     // Forward FrameDispatcher signals
     connect(_impl->frameDispatcher, &FrameDispatcher::pixelStreamOpened, this,
             &Server::pixelStreamOpened);
@@ -95,14 +156,12 @@ Server::Server(const int port)
 
 Server::~Server()
 {
-    for (QObject* child : children())
-    {
-        if (QThread* workerThread = qobject_cast<QThread*>(child))
-        {
-            workerThread->quit();
-            workerThread->wait();
-        }
-    }
+    _impl.release(); // avoid double-deletion of child QObject
+}
+
+quint16 Server::getPort() const
+{
+    return _impl->serverPort();
 }
 
 void Server::requestFrame(const QString uri)
@@ -114,50 +173,6 @@ void Server::closePixelStream(const QString uri)
 {
     emit _closePixelStream(uri);
     _impl->frameDispatcher->deleteStream(uri);
-}
-
-void Server::incomingConnection(const qintptr socketHandle)
-{
-    QThread* workerThread = new QThread(this);
-    ServerWorker* worker = new ServerWorker(socketHandle);
-
-    worker->moveToThread(workerThread);
-
-    connect(workerThread, &QThread::started, worker,
-            &ServerWorker::initConnection);
-    connect(worker, &ServerWorker::connectionClosed, workerThread,
-            &QThread::quit);
-
-    // Make sure the thread will be deleted
-    connect(workerThread, &QThread::finished, worker,
-            &ServerWorker::deleteLater);
-    connect(workerThread, &QThread::finished, workerThread,
-            &QThread::deleteLater);
-
-    // public signals/slots, forwarding from/to worker
-    connect(worker, &ServerWorker::registerToEvents, this,
-            &Server::registerToEvents);
-    connect(worker, &ServerWorker::receivedSizeHints, this,
-            &Server::receivedSizeHints);
-    connect(worker, &ServerWorker::receivedData, this, &Server::receivedData);
-    connect(this, &Server::_closePixelStream, worker,
-            &ServerWorker::closeConnection);
-
-    // FrameDispatcher
-    connect(worker, &ServerWorker::addStreamSource, _impl->frameDispatcher,
-            &FrameDispatcher::addSource);
-    connect(worker, &ServerWorker::receivedTile, _impl->frameDispatcher,
-            &FrameDispatcher::processTile);
-    connect(worker, &ServerWorker::receivedFrameFinished,
-            _impl->frameDispatcher, &FrameDispatcher::processFrameFinished);
-    connect(worker, &ServerWorker::removeStreamSource, _impl->frameDispatcher,
-            &FrameDispatcher::removeSource);
-    connect(worker, &ServerWorker::addObserver, _impl->frameDispatcher,
-            &FrameDispatcher::addObserver);
-    connect(worker, &ServerWorker::removeObserver, _impl->frameDispatcher,
-            &FrameDispatcher::removeObserver);
-
-    workerThread->start();
 }
 }
 }
