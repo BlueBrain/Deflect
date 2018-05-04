@@ -199,6 +199,7 @@ bool StreamSendWorker::_sendSegment(const Segment& segment)
         _currentView = segment.view;
     }
     _sendRowOrderIfChanged(segment.rowOrder);
+    _sendImageChannelIfChanged(segment.channel);
 
     auto message = QByteArray{(const char*)(&segment.parameters),
                               sizeof(SegmentParameters)};
@@ -227,6 +228,23 @@ bool StreamSendWorker::_sendImageRowOrder(const RowOrder rowOrder)
 {
     return _send(MESSAGE_TYPE_IMAGE_ROW_ORDER,
                  QByteArray{(const char*)(&rowOrder), sizeof(RowOrder)});
+}
+
+bool StreamSendWorker::_sendImageChannelIfChanged(const uint8_t channel)
+{
+    if (channel != _currentChannel)
+    {
+        if (!_sendImageChannel(channel))
+            return false;
+        _currentChannel = channel;
+    }
+    return true;
+}
+
+bool StreamSendWorker::_sendImageChannel(const uint8_t channel)
+{
+    return _send(MESSAGE_TYPE_IMAGE_CHANNEL,
+                 QByteArray{(const char*)(&channel), sizeof(uint8_t)});
 }
 
 bool StreamSendWorker::_sendFinish()

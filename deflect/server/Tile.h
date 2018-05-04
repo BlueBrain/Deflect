@@ -77,6 +77,7 @@ struct Tile
     /** @name Metadata */
     //@{
     View view = View::mono; //!< Eye pass for the Tile
+    uint8_t channel = 0;    //!< Channel for the Tile
     //@}
 };
 }

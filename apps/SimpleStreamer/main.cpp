@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2014-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2014-2018, EPFL/Blue Brain Project                  */
 /*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /*                                                                   */
 /* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
@@ -60,10 +60,14 @@ bool deflectCompressImage = true;
 bool deflectStereoStreamLeft = false;
 bool deflectStereoStreamRight = false;
 bool deflectStereoSideBySide = false;
+bool deflectDualChannel = false;
 unsigned int deflectCompressionQuality = 75;
 std::string deflectHost;
 std::string deflectStreamId = "SimpleStreamer";
 std::unique_ptr<deflect::Stream> deflectStream;
+
+bool deflectFirstEventReceived = false;
+bool waitToStart = false;
 
 void syntax(int exitStatus);
 void readCommandLineArguments(int argc, char** argv);
@@ -118,6 +122,8 @@ void syntax(const int exitStatus)
               << std::endl;
     std::cout << " -2                 enable side-by-side stereo (default: OFF)"
               << std::endl;
+    std::cout << " -c                 enable dual-channel mode (default: OFF)"
+              << std::endl;
     exit(exitStatus);
 }
 
@@ -157,6 +163,9 @@ void readCommandLineArguments(int argc, char** argv)
                 break;
             case '2':
                 deflectStereoSideBySide = true;
+                break;
+            case 'c':
+                deflectDualChannel = true;
                 break;
             case 'h':
                 syntax(EXIT_SUCCESS);
@@ -280,7 +289,7 @@ struct Image
     }
 };
 
-bool send(const Image& image, const deflect::View view)
+bool send(const Image& image, const deflect::View view, const uint8_t channel)
 {
     deflect::ImageWrapper deflectImage(image.data.data(), image.width,
                                        image.height, deflect::RGBA);
@@ -290,6 +299,7 @@ bool send(const Image& image, const deflect::View view)
     deflectImage.compressionQuality = deflectCompressionQuality;
     deflectImage.view = view;
     deflectImage.rowOrder = deflect::RowOrder::bottom_up;
+    deflectImage.channel = channel;
     return deflectStream->send(deflectImage).get();
 }
 
@@ -321,14 +331,10 @@ void drawMono()
     glutSolidTeapot(1.f);
 }
 
-void display()
+bool drawAndSend(const uint8_t channel)
 {
-    static Camera camera;
-    camera.apply();
-
     bool success = false;
-    bool waitToStart = false;
-    static bool deflectFirstEventReceived = false;
+
     if (deflectStereoSideBySide)
     {
         drawLeft();
@@ -336,7 +342,7 @@ void display()
         drawRight();
         const auto rightImage = Image::readGlBuffer();
         const auto sideBySideImage = Image::sideBySide(leftImage, rightImage);
-        success = send(sideBySideImage, deflect::View::side_by_side);
+        success = send(sideBySideImage, deflect::View::side_by_side, channel);
     }
     else if (deflectStereoStreamLeft || deflectStereoStreamRight)
     {
@@ -352,21 +358,41 @@ void display()
         {
             drawLeft();
             const auto leftImage = Image::readGlBuffer();
-            success = send(leftImage, deflect::View::left_eye);
+            success = send(leftImage, deflect::View::left_eye, channel);
         }
         if (deflectStereoStreamRight && !waitToStart)
         {
             drawRight();
             const auto rightImage = Image::readGlBuffer();
             success = (!deflectStereoStreamLeft || success) &&
-                      send(rightImage, deflect::View::right_eye);
+                      send(rightImage, deflect::View::right_eye, channel);
         }
     }
     else
     {
         drawMono();
-        success = send(Image::readGlBuffer(), deflect::View::mono);
+        success = send(Image::readGlBuffer(), deflect::View::mono, channel);
     }
+
+    return success;
+}
+
+void display()
+{
+    static Camera camera;
+    camera.apply();
+
+    bool success = false;
+    if (deflectDualChannel)
+    {
+        glPushMatrix();
+        glRotatef(90, -1.f, 0.f, 0.f);
+        success = drawAndSend(1);
+        glPopMatrix();
+        success = success && drawAndSend(0);
+    }
+    else
+        success = drawAndSend(0);
 
     if (!waitToStart)
         success = success && deflectStream->finishFrame().get();

@@ -61,8 +61,8 @@ struct Frame
     /** The PixelStream uri to which this frame is associated. */
     QString uri;
 
-    /** @return the total dimensions of this frame. */
-    DEFLECT_API QSize computeDimensions() const;
+    /** @return the total dimensions of the given channel of this frame. */
+    DEFLECT_API QSize computeDimensions(const uint8_t channel = 0) const;
 
     /**
      * @return the row order of all frame tiles.

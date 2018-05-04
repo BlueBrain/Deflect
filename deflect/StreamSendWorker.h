@@ -106,6 +106,7 @@ private:
     bool _running = false;
     View _currentView = View::mono;
     RowOrder _currentRowOrder = RowOrder::top_down;
+    uint8_t _currentChannel = 0;
 
     std::vector<Request> _dequeuedRequests;
     bool _pendingFinish = false;
@@ -127,6 +128,8 @@ private:
     bool _sendImageView(View view);
     bool _sendRowOrderIfChanged(RowOrder rowOrder);
     bool _sendImageRowOrder(RowOrder rowOrder);
+    bool _sendImageChannelIfChanged(uint8_t channel);
+    bool _sendImageChannel(uint8_t channel);
     bool _sendFinish();
     bool _sendData(const QByteArray data);
     bool _sendSizeHints(const SizeHints& hints);

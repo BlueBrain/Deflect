@@ -243,6 +243,7 @@ ImageSegmenter::SegmentTasks ImageSegmenter::_generateSegmentTasks(
         segment.view =
             image.view == View::side_by_side ? View::left_eye : image.view;
         segment.rowOrder = image.rowOrder;
+        segment.channel = image.channel;
         segment.sourceImage = &image;
         segments.push_back(segment);
     }

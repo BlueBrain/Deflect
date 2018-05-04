@@ -108,6 +108,7 @@ private:
 
     View _activeView = View::mono;
     RowOrder _activeRowOrder = RowOrder::top_down;
+    uint8_t _activeChannel = 0;
 
     void _receiveMessage();
     MessageHeader _receiveMessageHeader();

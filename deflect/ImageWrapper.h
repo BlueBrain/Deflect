@@ -153,6 +153,12 @@ struct ImageWrapper
     RowOrder rowOrder = RowOrder::top_down;
 
     /**
+     * The index of the channel which the image is a part of.
+     * @version 1.0
+     */
+    uint8_t channel = 0;
+
+    /**
      * Get the number of bytes per pixel based on the pixelFormat.
      * @version 1.0
      */

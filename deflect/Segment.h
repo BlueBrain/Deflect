@@ -58,6 +58,7 @@ struct Segment
 
     View view = View::mono;                 //!< Eye pass for the segment
     RowOrder rowOrder = RowOrder::top_down; //!< Row order of imageData
+    uint8_t channel = 0;                    //!< Channel index for the segment
 };
 }
 
