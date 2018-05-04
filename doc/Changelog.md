@@ -4,7 +4,9 @@ Changelog {#Changelog}
 ## Deflect 1.0
 
 ### 1.0.0 (git master)
-* [194](https://github.com/BlueBrain/Deflect/pull/194):
+* [196](https://github.com/BlueBrain/Deflect/pull/196):
+  Multi-channel support for streaming multiple synchronized views of a scene.
+* [195](https://github.com/BlueBrain/Deflect/pull/195):
   Reset API versioning to 1.0, remove deprecated functions (Stream::asyncSend,
   ImageWrapper::swapYAxis). Moved all server-specific classes to a separate
   namespace.

@@ -43,12 +43,15 @@ namespace deflect
 {
 namespace server
 {
-QSize Frame::computeDimensions() const
+QSize Frame::computeDimensions(const uint8_t channel) const
 {
     QSize size(0, 0);
 
     for (const auto& tile : tiles)
     {
+        if (tile.channel != channel)
+            continue;
+
         size.setWidth(std::max(size.width(), (int)(tile.width + tile.x)));
         size.setHeight(std::max(size.height(), (int)(tile.height + tile.y)));
     }

@@ -274,6 +274,13 @@ void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
         break;
     }
 
+    case MESSAGE_TYPE_IMAGE_CHANNEL:
+    {
+        const auto channel = reinterpret_cast<const uint8_t*>(byteArray.data());
+        _activeChannel = *channel;
+        break;
+    }
+
     case MESSAGE_TYPE_BIND_EVENTS:
     case MESSAGE_TYPE_BIND_EVENTS_EX:
         if (_registeredToEvents)
@@ -323,6 +330,7 @@ void ServerWorker::_handlePixelStreamMessage(const QByteArray& message)
     tile.imageData = message.right(message.size() - sizeof(SegmentParameters));
     tile.view = _activeView;
     tile.rowOrder = _activeRowOrder;
+    tile.channel = _activeChannel;
 
     emit(receivedTile(_streamId, _sourceId, tile));
 }
