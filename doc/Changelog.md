@@ -3,7 +3,7 @@ Changelog {#Changelog}
 
 ## Deflect 1.0
 
-### 1.0.0 (git master)
+### 1.0.0 (17-05-2018)
 * [196](https://github.com/BlueBrain/Deflect/pull/196):
   Multi-channel support for streaming multiple synchronized views of a scene.
 * [195](https://github.com/BlueBrain/Deflect/pull/195):
