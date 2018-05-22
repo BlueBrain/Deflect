@@ -116,9 +116,8 @@ void ServerWorker::closeConnection(const QString uri)
     if (uri != _streamId)
         return;
 
-    Event closeEvent;
-    closeEvent.type = Event::EVT_CLOSE;
-    _send(closeEvent);
+    if (_registeredToEvents)
+        _sendCloseEvent();
 
     emit(connectionClosed());
 }
@@ -362,6 +361,13 @@ void ServerWorker::_send(const Event& evt)
         stream << evt;
     }
     _flushSocket();
+}
+
+void ServerWorker::_sendCloseEvent()
+{
+    Event closeEvent;
+    closeEvent.type = Event::EVT_CLOSE;
+    _send(closeEvent);
 }
 
 void ServerWorker::_sendQuit()

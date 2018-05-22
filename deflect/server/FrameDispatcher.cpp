@@ -43,7 +43,6 @@
 #include "ReceiveBuffer.h"
 
 #include <cassert>
-#include <iostream>
 
 namespace deflect
 {
@@ -55,10 +54,10 @@ public:
     Impl() {}
     FramePtr consumeLatestFrame(const QString& uri)
     {
-        FramePtr frame(new Frame);
+        auto frame = std::make_shared<Frame>();
         frame->uri = uri;
 
-        ReceiveBuffer& buffer = streamBuffers[uri];
+        auto& buffer = streams[uri].buffer;
 
         while (buffer.hasCompleteFrame())
             frame->tiles = buffer.popFrame();
@@ -81,9 +80,18 @@ public:
             tile.y = height - tile.y - tile.height;
     }
 
-    typedef std::map<QString, ReceiveBuffer> StreamBuffers;
-    StreamBuffers streamBuffers;
-    std::map<QString, size_t> observers;
+    bool allConnectionsClosed(const QString& uri) const
+    {
+        const auto& stream = streams.at(uri);
+        return stream.buffer.getSourceCount() == 0 && stream.observers == 0;
+    }
+
+    struct Stream
+    {
+        ReceiveBuffer buffer;
+        size_t observers = 0;
+    };
+    std::map<QString, Stream> streams;
 };
 
 FrameDispatcher::FrameDispatcher(QObject* parent_)
@@ -98,60 +106,60 @@ FrameDispatcher::~FrameDispatcher()
 
 void FrameDispatcher::addSource(const QString uri, const size_t sourceIndex)
 {
-    _impl->streamBuffers[uri].addSource(sourceIndex);
+    auto& stream = _impl->streams[uri];
 
-    if (_impl->streamBuffers[uri].getSourceCount() == 1 &&
-        _impl->observers[uri] == 0)
-    {
+    stream.buffer.addSource(sourceIndex);
+    if (stream.observers == 0 && stream.buffer.getSourceCount() == 1)
         emit pixelStreamOpened(uri);
-    }
 }
 
 void FrameDispatcher::removeSource(const QString uri, const size_t sourceIndex)
 {
-    if (!_impl->streamBuffers.count(uri))
+    if (!_impl->streams.count(uri))
         return;
 
-    _impl->streamBuffers[uri].removeSource(sourceIndex);
+    _impl->streams[uri].buffer.removeSource(sourceIndex);
 
-    deleteStream(uri);
+    if (_impl->allConnectionsClosed(uri))
+        deleteStream(uri);
 }
 
 void FrameDispatcher::addObserver(const QString uri)
 {
-    ++_impl->observers[uri];
+    auto& stream = _impl->streams[uri];
 
-    if (_impl->observers[uri] == 1 &&
-        (!_impl->streamBuffers.count(uri) ||
-         _impl->streamBuffers[uri].getSourceCount() == 0))
-    {
-        _impl->streamBuffers.emplace(uri, ReceiveBuffer());
+    ++stream.observers;
+    if (stream.observers == 1 && stream.buffer.getSourceCount() == 0)
         emit pixelStreamOpened(uri);
-    }
 }
 
 void FrameDispatcher::removeObserver(QString uri)
 {
-    if (_impl->observers[uri] > 0)
-        --_impl->observers[uri];
+    if (!_impl->streams.count(uri))
+        return;
 
-    deleteStream(uri);
+    auto& stream = _impl->streams[uri];
+    if (stream.observers > 0)
+        --stream.observers;
+
+    if (_impl->allConnectionsClosed(uri))
+        deleteStream(uri);
 }
 
 void FrameDispatcher::processTile(const QString uri, const size_t sourceIndex,
                                   deflect::server::Tile tile)
 {
-    if (_impl->streamBuffers.count(uri))
-        _impl->streamBuffers[uri].insert(tile, sourceIndex);
+    if (_impl->streams.count(uri))
+        _impl->streams[uri].buffer.insert(tile, sourceIndex);
 }
 
 void FrameDispatcher::processFrameFinished(const QString uri,
                                            const size_t sourceIndex)
 {
-    if (!_impl->streamBuffers.count(uri))
+    if (!_impl->streams.count(uri))
         return;
 
-    ReceiveBuffer& buffer = _impl->streamBuffers[uri];
+    auto& buffer = _impl->streams[uri].buffer;
     try
     {
         buffer.finishFrameForSource(sourceIndex);
@@ -166,10 +174,10 @@ void FrameDispatcher::processFrameFinished(const QString uri,
 
 void FrameDispatcher::requestFrame(const QString uri)
 {
-    if (!_impl->streamBuffers.count(uri))
+    if (!_impl->streams.count(uri))
         return;
 
-    ReceiveBuffer& buffer = _impl->streamBuffers[uri];
+    auto& buffer = _impl->streams[uri].buffer;
     buffer.setAllowedToSend(true);
     try
     {
@@ -184,12 +192,8 @@ void FrameDispatcher::requestFrame(const QString uri)
 
 void FrameDispatcher::deleteStream(const QString uri)
 {
-    if (_impl->streamBuffers[uri].getSourceCount() == 0 &&
-        _impl->streamBuffers.count(uri) && _impl->observers[uri] == 0)
-    {
-        _impl->streamBuffers.erase(uri);
-        emit pixelStreamClosed(uri);
-    }
+    _impl->streams.erase(uri);
+    emit pixelStreamClosed(uri);
 }
 }
 }
