@@ -122,6 +122,7 @@ private:
     void _sendProtocolVersion();
     void _sendBindReply(bool successful);
     void _send(const Event& evt);
+    void _sendCloseEvent();
     void _sendQuit();
     bool _send(const MessageHeader& messageHeader);
     void _flushSocket();
