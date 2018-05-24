@@ -408,4 +408,41 @@ BOOST_AUTO_TEST_CASE(compressionErrorForBigNullImage)
     SAFE_BOOST_CHECK_THROW(stream.send(bigImage).get(), std::invalid_argument);
 }
 
+BOOST_AUTO_TEST_CASE(uncompressedImages)
+{
+    const unsigned int width = 4;
+    const unsigned int height = 4;
+    const unsigned int byte = width * height * 4;
+    std::unique_ptr<uint8_t[]> pixels(new uint8_t[byte]);
+    ::memset(pixels.get(), 0, byte);
+    deflect::ImageWrapper image(pixels.get(), width, height, deflect::RGBA);
+    image.compressionPolicy = deflect::COMPRESSION_OFF;
+
+    const size_t expectedFrames = 5;
+
+    setFrameReceivedCallback([&](deflect::server::FramePtr frame) {
+        SAFE_BOOST_REQUIRE_EQUAL(frame->tiles.size(), 1);
+        SAFE_BOOST_CHECK(frame->tiles[0].format == deflect::Format::rgba);
+        const auto dim = frame->computeDimensions();
+        SAFE_BOOST_CHECK_EQUAL(dim.width(), width);
+        SAFE_BOOST_CHECK_EQUAL(dim.height(), height);
+    });
+
+    deflect::Stream stream(testStreamId.toStdString(), "localhost",
+                           serverPort());
+    BOOST_REQUIRE(stream.isConnected());
+
+    for (size_t i = 0; i < expectedFrames; ++i)
+    {
+        stream.sendAndFinish(image).wait();
+        requestFrame(testStreamId);
+
+        waitForMessage();
+
+        BOOST_CHECK_EQUAL(getReceivedFrames(), i + 1);
+    }
+
+    BOOST_CHECK_EQUAL(getReceivedFrames(), expectedFrames);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
