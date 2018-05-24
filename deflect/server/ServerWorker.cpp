@@ -322,6 +322,7 @@ void ServerWorker::_handlePixelStreamMessage(const QByteArray& message)
 
     const auto data = message.data();
     const auto params = reinterpret_cast<const SegmentParameters*>(data);
+    tile.format = params->format;
     tile.x = params->x;
     tile.y = params->y;
     tile.width = params->width;

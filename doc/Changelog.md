@@ -4,6 +4,8 @@ Changelog {#Changelog}
 ## Deflect 1.0
 
 ### 1.0.1 (master)
+* [199](https://github.com/BlueBrain/Deflect/pull/199):
+  Fix receiving of uncompressed tiles
 * [198](https://github.com/BlueBrain/Deflect/pull/198):
   Fix unreliable server-side stream close.
 
