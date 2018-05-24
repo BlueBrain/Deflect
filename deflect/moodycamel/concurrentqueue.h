@@ -1,4 +1,4 @@
-// Provides a C++11 implementation of a multi-producer, multi-consumer lock-free
+﻿// Provides a C++11 implementation of a multi-producer, multi-consumer lock-free
 // queue.
 // An overview, including benchmark results, is provided here:
 //     http://moodycamel.com/blog/2014/a-fast-general-purpose-lock-free-queue-for-c++
@@ -336,20 +336,20 @@ namespace moodycamel
 namespace details
 {
 #if defined(__GNUC__)
-inline bool likely(bool x)
+static inline bool(likely)(bool x)
 {
     return __builtin_expect((x), true);
 }
-inline bool unlikely(bool x)
+static inline bool(unlikely)(bool x)
 {
     return __builtin_expect((x), false);
 }
 #else
-inline bool likely(bool x)
+static inline bool(likely)(bool x)
 {
     return x;
 }
-inline bool unlikely(bool x)
+static inline bool(unlikely)(bool x)
 {
     return x;
 }
@@ -377,12 +377,23 @@ struct const_numeric_max
             : static_cast<T>(-1);
 };
 
-#if defined(__GNUC__) && !defined(__clang__)
-typedef ::max_align_t max_align_t; // GCC forgot to add it to std:: for a while
+#if defined(__GLIBCXX__)
+typedef ::max_align_t std_max_align_t; // libstdc++ forgot to add it to std::
+                                       // for a while
 #else
-typedef std::max_align_t max_align_t; // Others (e.g. MSVC) insist it can *only*
-                                      // be accessed via std::
+typedef std::max_align_t std_max_align_t; // Others (e.g. MSVC) insist it can
+                                          // *only* be accessed via std::
 #endif
+
+// Some platforms have incorrectly set max_align_t to a type with <8 bytes
+// alignment even while supporting
+// 8-byte aligned scalar values (*cough* 32-bit iOS). Work around this with our
+// own union. See issue #64.
+typedef union {
+    std_max_align_t x;
+    long long y;
+    void* z;
+} max_align_t;
 }
 
 // Default traits for the ConcurrentQueue. To change some of the
@@ -1420,7 +1431,7 @@ public:
         // tried
         if (nonEmptyCount > 0)
         {
-            if (details::likely(best->dequeue(item)))
+            if ((details::likely)(best->dequeue(item)))
             {
                 return true;
             }
@@ -1683,7 +1694,10 @@ public:
 private:
     friend struct ProducerToken;
     friend struct ConsumerToken;
+    struct ExplicitProducer;
     friend struct ExplicitProducer;
+    struct ImplicitProducer;
+    friend struct ImplicitProducer;
     friend class ConcurrentQueueTests;
 
     enum AllocationMode
@@ -1745,7 +1759,7 @@ private:
         auto prodCount = producerCount.load(std::memory_order_relaxed);
         auto globalOffset =
             globalExplicitConsumerOffset.load(std::memory_order_relaxed);
-        if (details::unlikely(token.desiredProducer == nullptr))
+        if ((details::unlikely)(token.desiredProducer == nullptr))
         {
             // Aha, first time we're dequeueing anything.
             // Figure out our local position
@@ -1885,7 +1899,7 @@ private:
 
                     // Decrease refcount twice, once for our ref, and once for
                     // the list's ref
-                    head->freeListRefs.fetch_add(-2, std::memory_order_release);
+                    head->freeListRefs.fetch_sub(2, std::memory_order_release);
                     return head;
                 }
 
@@ -1895,7 +1909,7 @@ private:
                 // do need to ensure that the reference
                 // count decrement happens-after the CAS on the head.
                 refs =
-                    prevHead->freeListRefs.fetch_add(-1,
+                    prevHead->freeListRefs.fetch_sub(1,
                                                      std::memory_order_acq_rel);
                 if (refs == SHOULD_BE_ON_FREELIST + 1)
                 {
@@ -2635,7 +2649,7 @@ private:
                 // coherency (as defined in the standard), explained here:
                 // http://en.cppreference.com/w/cpp/atomic/memory_order
                 tail = this->tailIndex.load(std::memory_order_acquire);
-                if (details::likely(details::circular_less_than<index_t>(
+                if ((details::likely)(details::circular_less_than<index_t>(
                         myDequeueCount - overcommit, tail)))
                 {
                     // Guaranteed to be at least one element to dequeue!
@@ -3483,7 +3497,7 @@ private:
                     1, std::memory_order_relaxed);
                 assert(overcommit <= myDequeueCount);
                 tail = this->tailIndex.load(std::memory_order_acquire);
-                if (details::likely(details::circular_less_than<index_t>(
+                if ((details::likely)(details::circular_less_than<index_t>(
                         myDequeueCount - overcommit, tail)))
                 {
                     index_t index =
@@ -4756,8 +4770,8 @@ private:
                     if (raw == nullptr)
                     {
                         // Allocation failed
-                        implicitProducerHashCount.fetch_add(
-                            -1, std::memory_order_relaxed);
+                        implicitProducerHashCount.fetch_sub(
+                            1, std::memory_order_relaxed);
                         implicitProducerHashResizeInProgress.clear(
                             std::memory_order_relaxed);
                         return nullptr;
@@ -4802,14 +4816,14 @@ private:
                     recycle_or_create_producer(false, recycled));
                 if (producer == nullptr)
                 {
-                    implicitProducerHashCount.fetch_add(
-                        -1, std::memory_order_relaxed);
+                    implicitProducerHashCount.fetch_sub(
+                        1, std::memory_order_relaxed);
                     return nullptr;
                 }
                 if (recycled)
                 {
-                    implicitProducerHashCount.fetch_add(
-                        -1, std::memory_order_relaxed);
+                    implicitProducerHashCount.fetch_sub(
+                        1, std::memory_order_relaxed);
                 }
 
 #ifdef MOODYCAMEL_CPP11_THREAD_LOCAL_SUPPORTED
