@@ -103,7 +103,7 @@ private:
     const std::string& _id;
 
     moodycamel::BlockingConcurrentQueue<Request> _requests;
-    bool _running = false;
+    std::atomic_bool _running{false};
     View _currentView = View::mono;
     RowOrder _currentRowOrder = RowOrder::top_down;
     uint8_t _currentChannel = 0;
