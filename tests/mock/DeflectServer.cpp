@@ -51,8 +51,8 @@ DeflectServer::DeflectServer()
 
     _server->connect(_server, &deflect::server::Server::pixelStreamOpened,
                      [&](const QString) {
-                         ++_openedStreams;
                          _mutex.lock();
+                         ++_openedStreams;
                          _receivedState = true;
                          _received.wakeAll();
                          _mutex.unlock();
@@ -60,8 +60,8 @@ DeflectServer::DeflectServer()
 
     _server->connect(_server, &deflect::server::Server::pixelStreamClosed,
                      [&](const QString) {
-                         --_openedStreams;
                          _mutex.lock();
+                         --_openedStreams;
                          _receivedState = true;
                          _received.wakeAll();
                          _mutex.unlock();
@@ -69,9 +69,9 @@ DeflectServer::DeflectServer()
 
     _server->connect(_server, &deflect::server::Server::receivedSizeHints,
                      [&](const QString id, const deflect::SizeHints hints) {
+                         _mutex.lock();
                          if (_sizeHintsCallback)
                              _sizeHintsCallback(id, hints);
-                         _mutex.lock();
                          _receivedState = true;
                          _received.wakeAll();
                          _mutex.unlock();
@@ -79,9 +79,9 @@ DeflectServer::DeflectServer()
 
     _server->connect(_server, &deflect::server::Server::receivedData,
                      [&](const QString id, QByteArray data) {
+                         _mutex.lock();
                          if (_dataReceivedCallback)
                              _dataReceivedCallback(id, data);
-                         _mutex.lock();
                          _receivedState = true;
                          _received.wakeAll();
                          _mutex.unlock();
@@ -89,10 +89,10 @@ DeflectServer::DeflectServer()
 
     _server->connect(_server, &deflect::server::Server::receivedFrame,
                      [&](deflect::server::FramePtr frame) {
+                         _mutex.lock();
                          if (_frameReceivedCallback)
                              _frameReceivedCallback(frame);
                          ++_receivedFrames;
-                         _mutex.lock();
                          _receivedState = true;
                          _received.wakeAll();
                          _mutex.unlock();
@@ -120,7 +120,7 @@ DeflectServer::~DeflectServer()
 
 void DeflectServer::waitForMessage()
 {
-    for (size_t j = 0; j < 20; ++j)
+    for (;;)
     {
         _mutex.lock();
         _received.wait(&_mutex, 100 /*ms*/);
