@@ -61,7 +61,7 @@ std::string _getStreamHost(const std::string& host)
     if (!host.empty())
         return host;
 
-    const QString streamHost = qgetenv(STREAM_HOST_ENV_VAR).constData();
+    const auto streamHost = QString(qgetenv(STREAM_HOST_ENV_VAR).constData());
     const auto list = streamHost.split(':');
     if (list.size() > 0 && !list[0].isEmpty())
         return list[0].toStdString();

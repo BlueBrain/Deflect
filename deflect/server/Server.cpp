@@ -119,6 +119,8 @@ public:
         // FrameDispatcher
         connect(worker, &ServerWorker::addStreamSource, frameDispatcher,
                 &FrameDispatcher::addSource);
+        connect(frameDispatcher, &FrameDispatcher::sourceRejected, worker,
+                &ServerWorker::closeSource);
         connect(worker, &ServerWorker::receivedTile, frameDispatcher,
                 &FrameDispatcher::processTile);
         connect(worker, &ServerWorker::receivedFrameFinished, frameDispatcher,
@@ -147,7 +149,9 @@ Server::Server(const int port)
             &Server::pixelStreamClosed);
     connect(_impl->frameDispatcher, &FrameDispatcher::sendFrame, this,
             &Server::receivedFrame);
-    connect(_impl->frameDispatcher, &FrameDispatcher::pixelStreamException,
+    connect(_impl->frameDispatcher, &FrameDispatcher::pixelStreamWarning, this,
+            &Server::pixelStreamException);
+    connect(_impl->frameDispatcher, &FrameDispatcher::pixelStreamError,
             [this](const QString uri, const QString what) {
                 emit pixelStreamException(uri, what);
                 closePixelStream(uri);

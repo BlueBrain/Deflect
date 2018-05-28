@@ -67,6 +67,7 @@ public slots:
 
     void initConnection();
     void closeConnection(QString uri);
+    void closeSource(QString uri, size_t sourceIndex);
 
 signals:
     void addStreamSource(QString uri, size_t sourceIndex);

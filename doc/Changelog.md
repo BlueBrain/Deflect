@@ -4,6 +4,9 @@ Changelog {#Changelog}
 ## Deflect 1.0
 
 ### 1.0.1 (master)
+* [200](https://github.com/BlueBrain/Deflect/pull/200):
+  The Server now rejects Streams attempting to late-join after the first frame
+  was finished.
 * [199](https://github.com/BlueBrain/Deflect/pull/199):
   Fix receiving of uncompressed tiles
 * [198](https://github.com/BlueBrain/Deflect/pull/198):

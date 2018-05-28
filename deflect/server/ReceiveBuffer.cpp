@@ -50,17 +50,12 @@ namespace deflect
 {
 namespace server
 {
-bool ReceiveBuffer::addSource(const size_t sourceIndex)
+void ReceiveBuffer::addSource(const size_t sourceIndex)
 {
-    assert(!_sourceBuffers.count(sourceIndex));
+    if (_lastFrameComplete > 0)
+        throw std::runtime_error("Stream already started; late join forbidden");
 
-    // TODO: This function must return false if the stream was already started!
-    // This requires a full adaptation of the Stream library (DISCL-241)
-    if (_sourceBuffers.count(sourceIndex))
-        return false;
-
-    _sourceBuffers[sourceIndex] = SourceBuffer();
-    return true;
+    _sourceBuffers.emplace(sourceIndex, SourceBuffer());
 }
 
 void ReceiveBuffer::removeSource(const size_t sourceIndex)
@@ -91,9 +86,6 @@ void ReceiveBuffer::finishFrameForSource(const size_t sourceIndex)
     auto& buffer = _sourceBuffers[sourceIndex];
     if (buffer.getQueueSize() > MAX_QUEUE_SIZE)
         throw std::runtime_error("maximum queue size exceeded");
-
-    if (buffer.isBackFrameEmpty())
-        throw std::runtime_error("client sent finish frame without image data");
 
     buffer.push();
 }

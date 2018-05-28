@@ -63,6 +63,8 @@ public:
      * @param host Address of the target Server instance.
      * @param port Port of the target Server instance.
      * @param observer If the stream is used as a pure observer or not.
+     * @throw std::runtime_error if the connection to server could not be
+     *        established.
      */
     StreamPrivate(const std::string& id, const std::string& host,
                   unsigned short port, bool observer);

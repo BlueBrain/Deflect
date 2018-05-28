@@ -111,7 +111,7 @@ signals:
     void pixelStreamOpened(QString uri);
 
     /**
-     * Notify that a stream has encountered an exception and will be closed.
+     * Notify that a stream has encountered an exception.
      *
      * Used for error reporting.
      *

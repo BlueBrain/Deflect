@@ -49,33 +49,36 @@ namespace ut = boost::unit_test;
 namespace
 {
 const char* streamId = "test";
+const size_t sourceIndex = 54;
 }
 
 struct Fixture
 {
-    deflect::server::FrameDispatcher dispatcher;
-    deflect::server::FramePtr receivedFrame;
-    Fixture()
-    {
-        QObject::connect(&dispatcher,
-                         &deflect::server::FrameDispatcher::sendFrame,
-                         [&](deflect::server::FramePtr f) {
-                             receivedFrame = f;
-                         });
-
-        dispatcher.addSource(streamId, 0);
-    }
-
     void dispatch(const deflect::server::Frame& frame)
     {
         for (auto& tile : frame.tiles)
-            dispatcher.processTile(streamId, 0, tile);
-        dispatcher.processFrameFinished(streamId, 0);
+            dispatcher.processTile(streamId, sourceIndex, tile);
+        dispatcher.processFrameFinished(streamId, sourceIndex);
         dispatcher.requestFrame(streamId);
     }
+
+    deflect::server::FrameDispatcher dispatcher;
 };
 
-BOOST_FIXTURE_TEST_CASE(dispatch_multiple_frames, Fixture)
+struct FixtureFrame : Fixture
+{
+    FixtureFrame()
+    {
+        QObject::connect(&dispatcher,
+                         &deflect::server::FrameDispatcher::sendFrame,
+                         [this](auto frame) { receivedFrame = frame; });
+
+        dispatcher.addSource(streamId, sourceIndex);
+    }
+    deflect::server::FramePtr receivedFrame;
+};
+
+BOOST_FIXTURE_TEST_CASE(dispatch_multiple_frames, FixtureFrame)
 {
     auto frame = makeTestFrame(640, 480, 64);
 
@@ -94,7 +97,7 @@ BOOST_FIXTURE_TEST_CASE(dispatch_multiple_frames, Fixture)
     compare(frame, *receivedFrame);
 }
 
-BOOST_FIXTURE_TEST_CASE(dispatch_frame_bottom_up, Fixture)
+BOOST_FIXTURE_TEST_CASE(dispatch_frame_bottom_up, FixtureFrame)
 {
     auto frame = makeTestFrame(640, 480, 64);
     for (auto& tile : frame.tiles)
@@ -110,10 +113,90 @@ BOOST_FIXTURE_TEST_CASE(dispatch_frame_bottom_up, Fixture)
     compare(frame, *receivedFrame);
 }
 
-BOOST_FIXTURE_TEST_CASE(dispatch_frame_with_inconsistent_row_order, Fixture)
+BOOST_FIXTURE_TEST_CASE(dispatch_frame_with_inconsistent_row_order,
+                        FixtureFrame)
 {
     auto frame = makeTestFrame(640, 480, 64);
     frame.tiles[2].rowOrder = deflect::RowOrder::bottom_up;
     dispatch(frame);
     BOOST_CHECK(!receivedFrame);
+}
+
+struct FixtureSignals : Fixture
+{
+    FixtureSignals()
+    {
+        QObject::connect(&dispatcher,
+                         &deflect::server::FrameDispatcher::sourceRejected,
+                         [this](QString uri, size_t index) {
+                             BOOST_CHECK_EQUAL(uri.toStdString(), streamId);
+                             rejectedSourceIndex = index;
+                         });
+        QObject::connect(&dispatcher,
+                         &deflect::server::FrameDispatcher::pixelStreamOpened,
+                         [this](QString uri) { openedSourceUri = uri; });
+        QObject::connect(&dispatcher,
+                         &deflect::server::FrameDispatcher::pixelStreamClosed,
+                         [this](QString uri) { closedSourceUri = uri; });
+        QObject::connect(&dispatcher,
+                         &deflect::server::FrameDispatcher::pixelStreamWarning,
+                         [this](QString uri, QString what) {
+                             BOOST_CHECK_EQUAL(uri.toStdString(), streamId);
+                             warning = what;
+                         });
+        QObject::connect(&dispatcher,
+                         &deflect::server::FrameDispatcher::pixelStreamError,
+                         [this](QString uri, QString what) {
+                             BOOST_CHECK_EQUAL(uri.toStdString(), streamId);
+                             error = what;
+                         });
+    }
+
+    QString openedSourceUri;
+    size_t rejectedSourceIndex = 0;
+    QString closedSourceUri;
+    QString warning;
+    QString error;
+};
+
+BOOST_FIXTURE_TEST_CASE(add_remove_sources, FixtureSignals)
+{
+    dispatcher.addSource(streamId, sourceIndex);
+    BOOST_CHECK_EQUAL(openedSourceUri.toStdString(), streamId);
+
+    dispatcher.addSource("other", sourceIndex);
+    BOOST_CHECK_EQUAL(openedSourceUri.toStdString(), "other");
+
+    dispatcher.removeSource(streamId, sourceIndex);
+    BOOST_CHECK_EQUAL(closedSourceUri.toStdString(), streamId);
+
+    dispatcher.deleteStream("other");
+    BOOST_CHECK_EQUAL(closedSourceUri.toStdString(), "other");
+}
+
+BOOST_FIXTURE_TEST_CASE(late_join_rejected, FixtureSignals)
+{
+    dispatcher.addSource(streamId, sourceIndex);
+    dispatch(makeTestFrame(640, 480, 64));
+
+    dispatcher.addSource(streamId, 8697);
+    BOOST_CHECK_EQUAL(rejectedSourceIndex, 8697);
+    BOOST_CHECK(!warning.isEmpty());
+}
+
+BOOST_FIXTURE_TEST_CASE(max_queue_size_exceeded_when_one_stream_idle,
+                        FixtureSignals)
+{
+    dispatcher.addSource(streamId, sourceIndex);
+    dispatcher.addSource(streamId, 8697);
+
+    const auto frame = makeTestFrame(128, 128, 64);
+    for (auto i = 0; i < 150; ++i)
+        dispatch(frame);
+
+    BOOST_CHECK(error.isEmpty());
+
+    dispatch(frame);
+
+    BOOST_CHECK(!error.isEmpty());
 }
