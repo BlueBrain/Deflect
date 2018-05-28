@@ -62,11 +62,10 @@ public:
     /**
      * Add a source of tiles.
      * @param sourceIndex Unique source identifier
-     * @return false if the source was already added or if
-     *         finishFrameForSource() has already been called for all existing
-     *         source (TODO DISCL-241).
+     * @throw std::runtime_error if finishFrameForSource() has already been
+     *        called for all existing sources (reject late joiners).
      */
-    DEFLECT_API bool addSource(size_t sourceIndex);
+    DEFLECT_API void addSource(size_t sourceIndex);
 
     /**
      * Remove a source of tiles.
@@ -108,10 +107,8 @@ public:
     DEFLECT_API bool isAllowedToSend() const;
 
 private:
-    using SourceBufferMap = std::map<size_t, SourceBuffer>;
-
     FrameIndex _lastFrameComplete = 0;
-    SourceBufferMap _sourceBuffers;
+    std::map<size_t, SourceBuffer> _sourceBuffers;
     bool _allowedToSend = false;
 };
 }

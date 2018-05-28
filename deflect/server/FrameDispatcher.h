@@ -137,6 +137,14 @@ public slots:
 
 signals:
     /**
+     * Notify that a pixel stream source has been rejected.
+     *
+     * @param uri Identifier for the stream
+     * @param sourceIndex Identifier for the source in the stream
+     */
+    void sourceRejected(QString uri, size_t sourceIndex);
+
+    /**
      * Notify that a PixelStream has been opened.
      *
      * @param uri Identifier for the stream
@@ -144,12 +152,20 @@ signals:
     void pixelStreamOpened(QString uri);
 
     /**
-     * Notify that an exception occured and the stream should be closed.
+     * Notify that an unexpected but non-fatal event occured.
      *
      * @param uri Identifier for the stream
      * @param what The description of the exception that occured
      */
-    void pixelStreamException(QString uri, QString what);
+    void pixelStreamWarning(QString uri, QString what);
+
+    /**
+     * Notify that an error occured and the stream should be closed.
+     *
+     * @param uri Identifier for the stream
+     * @param what The description of the exception that occured
+     */
+    void pixelStreamError(QString uri, QString what);
 
     /**
      * Notify that a pixel stream has been closed.

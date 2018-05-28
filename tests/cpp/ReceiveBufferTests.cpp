@@ -62,6 +62,9 @@ BOOST_AUTO_TEST_CASE(TestAddAndRemoveSources)
     buffer.addSource(11981);
     BOOST_CHECK_EQUAL(buffer.getSourceCount(), 2);
 
+    buffer.addSource(11981);
+    BOOST_CHECK_EQUAL(buffer.getSourceCount(), 2);
+
     buffer.addSource(888);
     buffer.removeSource(53);
     BOOST_CHECK_EQUAL(buffer.getSourceCount(), 2);
@@ -72,6 +75,27 @@ BOOST_AUTO_TEST_CASE(TestAddAndRemoveSources)
 
     buffer.removeSource(7777);
     BOOST_CHECK_EQUAL(buffer.getSourceCount(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(TestLateJoinAfterFirstFrameIsForbidden)
+{
+    deflect::server::ReceiveBuffer buffer;
+    buffer.addSource(53);
+    buffer.addSource(11981);
+
+    buffer.insert(deflect::server::Tile(), 53);
+    buffer.insert(deflect::server::Tile(), 11981);
+    buffer.finishFrameForSource(53);
+    buffer.finishFrameForSource(11981);
+    buffer.popFrame();
+
+    BOOST_CHECK_THROW(buffer.addSource(888), std::runtime_error);
+
+    buffer.removeSource(53);
+    buffer.removeSource(11981);
+
+    BOOST_REQUIRE_EQUAL(buffer.getSourceCount(), 0);
+    BOOST_CHECK_NO_THROW(buffer.addSource(888));
 }
 
 BOOST_AUTO_TEST_CASE(TestAllowedToSend)

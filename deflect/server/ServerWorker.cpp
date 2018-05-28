@@ -122,6 +122,12 @@ void ServerWorker::closeConnection(const QString uri)
     emit(connectionClosed());
 }
 
+void ServerWorker::closeSource(const QString uri, const size_t sourceIndex)
+{
+    if (sourceIndex == (size_t)_sourceId)
+        closeConnection(uri);
+}
+
 void ServerWorker::_processMessages()
 {
     const qint64 headerSize(MessageHeader::serializedSize);

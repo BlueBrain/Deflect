@@ -106,11 +106,20 @@ FrameDispatcher::~FrameDispatcher()
 
 void FrameDispatcher::addSource(const QString uri, const size_t sourceIndex)
 {
-    auto& stream = _impl->streams[uri];
+    try
+    {
+        auto& stream = _impl->streams[uri];
 
-    stream.buffer.addSource(sourceIndex);
-    if (stream.observers == 0 && stream.buffer.getSourceCount() == 1)
-        emit pixelStreamOpened(uri);
+        stream.buffer.addSource(sourceIndex);
+
+        if (stream.observers == 0 && stream.buffer.getSourceCount() == 1)
+            emit pixelStreamOpened(uri);
+    }
+    catch (const std::runtime_error& e)
+    {
+        emit sourceRejected(uri, sourceIndex);
+        emit pixelStreamWarning(uri, e.what());
+    }
 }
 
 void FrameDispatcher::removeSource(const QString uri, const size_t sourceIndex)
@@ -168,7 +177,7 @@ void FrameDispatcher::processFrameFinished(const QString uri,
     }
     catch (const std::runtime_error& e)
     {
-        emit pixelStreamException(uri, e.what());
+        emit pixelStreamError(uri, e.what());
     }
 }
 
@@ -186,7 +195,7 @@ void FrameDispatcher::requestFrame(const QString uri)
     }
     catch (const std::runtime_error& e)
     {
-        emit pixelStreamException(uri, e.what());
+        emit pixelStreamError(uri, e.what());
     }
 }
 
