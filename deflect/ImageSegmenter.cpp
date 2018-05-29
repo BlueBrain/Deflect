@@ -146,14 +146,8 @@ bool ImageSegmenter::_generateJpeg(const ImageWrapper& image,
         std::rethrow_exception(std::current_exception());
     }
 #else
-    static bool first = true;
-    if (first)
-    {
-        first = false;
-        std::cerr << "LibJpegTurbo not available, not using compression"
-                  << std::endl;
-    }
-    return generateRaw(image, handler);
+    throw std::runtime_error(
+        "LibJpegTurbo not available, needed for sending JPEG compressed image");
 #endif
 }
 

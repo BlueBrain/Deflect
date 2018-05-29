@@ -73,6 +73,8 @@ public:
      * @param image The image to be segmented.
      * @param handler the function to handle the generated segment.
      * @return true if all image handlers returned true, false on failure.
+     * @throw std::runtime_error if JPEG compression failed.
+     * @throw std::invalid_argument if JPEG compression arguments are invalid.
      * @see setNominalSegmentDimensions()
      */
     DEFLECT_API bool generate(const ImageWrapper& image, Handler handler);
@@ -95,11 +97,11 @@ public:
      * directly compress it to a single segment which will be enqueued for
      * sending.
      *
-     * @param image The image to be compressed
-     * @return the compressed segment
+     * @param image The image to be compressed.
+     * @return the compressed segment.
      * @throw std::invalid_argument if image is too big or invalid JPEG
-     *                              compression arguments
-     * @throw std::runtime_error if JPEG compression failed
+     *        compression arguments.
+     * @throw std::runtime_error if JPEG compression failed.
      * @threadsafe
      */
     DEFLECT_API Segment createSingleSegment(const ImageWrapper& image);

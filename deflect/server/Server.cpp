@@ -90,49 +90,57 @@ public:
     /** Re-implemented handling of connections from QTCPSocket. */
     void incomingConnection(const qintptr socketHandle) final
     {
-        auto workerThread = new QThread(this);
-        auto worker = new ServerWorker(socketHandle);
+        try
+        {
+            auto worker = new ServerWorker(socketHandle);
+            auto workerThread = new QThread(this);
+            worker->moveToThread(workerThread);
 
-        worker->moveToThread(workerThread);
+            connect(workerThread, &QThread::started, worker,
+                    &ServerWorker::initConnection);
+            connect(worker, &ServerWorker::connectionClosed, workerThread,
+                    &QThread::quit);
 
-        connect(workerThread, &QThread::started, worker,
-                &ServerWorker::initConnection);
-        connect(worker, &ServerWorker::connectionClosed, workerThread,
-                &QThread::quit);
+            // Make sure the thread will be deleted
+            connect(workerThread, &QThread::finished, worker,
+                    &ServerWorker::deleteLater);
+            connect(workerThread, &QThread::finished, workerThread,
+                    &QThread::deleteLater);
 
-        // Make sure the thread will be deleted
-        connect(workerThread, &QThread::finished, worker,
-                &ServerWorker::deleteLater);
-        connect(workerThread, &QThread::finished, workerThread,
-                &QThread::deleteLater);
+            // public signals/slots, forwarding from/to worker
+            connect(worker, &ServerWorker::registerToEvents, server,
+                    &Server::registerToEvents);
+            connect(worker, &ServerWorker::receivedSizeHints, server,
+                    &Server::receivedSizeHints);
+            connect(worker, &ServerWorker::receivedData, server,
+                    &Server::receivedData);
+            connect(worker, &ServerWorker::connectionError, server,
+                    &Server::pixelStreamException);
+            connect(server, &Server::_closePixelStream, worker,
+                    &ServerWorker::closeConnections);
 
-        // public signals/slots, forwarding from/to worker
-        connect(worker, &ServerWorker::registerToEvents, server,
-                &Server::registerToEvents);
-        connect(worker, &ServerWorker::receivedSizeHints, server,
-                &Server::receivedSizeHints);
-        connect(worker, &ServerWorker::receivedData, server,
-                &Server::receivedData);
-        connect(server, &Server::_closePixelStream, worker,
-                &ServerWorker::closeConnection);
+            // FrameDispatcher
+            connect(worker, &ServerWorker::addStreamSource, frameDispatcher,
+                    &FrameDispatcher::addSource);
+            connect(frameDispatcher, &FrameDispatcher::sourceRejected, worker,
+                    &ServerWorker::closeConnection);
+            connect(worker, &ServerWorker::receivedTile, frameDispatcher,
+                    &FrameDispatcher::processTile);
+            connect(worker, &ServerWorker::receivedFrameFinished,
+                    frameDispatcher, &FrameDispatcher::processFrameFinished);
+            connect(worker, &ServerWorker::removeStreamSource, frameDispatcher,
+                    &FrameDispatcher::removeSource);
+            connect(worker, &ServerWorker::addObserver, frameDispatcher,
+                    &FrameDispatcher::addObserver);
+            connect(worker, &ServerWorker::removeObserver, frameDispatcher,
+                    &FrameDispatcher::removeObserver);
 
-        // FrameDispatcher
-        connect(worker, &ServerWorker::addStreamSource, frameDispatcher,
-                &FrameDispatcher::addSource);
-        connect(frameDispatcher, &FrameDispatcher::sourceRejected, worker,
-                &ServerWorker::closeSource);
-        connect(worker, &ServerWorker::receivedTile, frameDispatcher,
-                &FrameDispatcher::processTile);
-        connect(worker, &ServerWorker::receivedFrameFinished, frameDispatcher,
-                &FrameDispatcher::processFrameFinished);
-        connect(worker, &ServerWorker::removeStreamSource, frameDispatcher,
-                &FrameDispatcher::removeSource);
-        connect(worker, &ServerWorker::addObserver, frameDispatcher,
-                &FrameDispatcher::addObserver);
-        connect(worker, &ServerWorker::removeObserver, frameDispatcher,
-                &FrameDispatcher::removeObserver);
-
-        workerThread->start();
+            workerThread->start();
+        }
+        catch (const std::runtime_error& e)
+        {
+            emit server->pixelStreamException("", e.what());
+        }
     }
 
     Server* server = nullptr;

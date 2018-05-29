@@ -71,7 +71,9 @@ struct FixtureFrame : Fixture
     {
         QObject::connect(&dispatcher,
                          &deflect::server::FrameDispatcher::sendFrame,
-                         [this](auto frame) { receivedFrame = frame; });
+                         [this](deflect::server::FramePtr frame) {
+                             receivedFrame = frame;
+                         });
 
         dispatcher.addSource(streamId, sourceIndex);
     }

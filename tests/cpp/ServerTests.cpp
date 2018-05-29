@@ -412,10 +412,8 @@ BOOST_AUTO_TEST_CASE(uncompressedImages)
 {
     const unsigned int width = 4;
     const unsigned int height = 4;
-    const unsigned int byte = width * height * 4;
-    std::unique_ptr<uint8_t[]> pixels(new uint8_t[byte]);
-    ::memset(pixels.get(), 0, byte);
-    deflect::ImageWrapper image(pixels.get(), width, height, deflect::RGBA);
+    const std::vector<uint8_t> pixels(width * height * 4);
+    deflect::ImageWrapper image(pixels.data(), width, height, deflect::RGBA);
     image.compressionPolicy = deflect::COMPRESSION_OFF;
 
     const size_t expectedFrames = 5;
