@@ -47,7 +47,6 @@
 #include <deflect/server/EventReceiver.h>
 #include <deflect/server/Tile.h>
 
-#include <QQueue>
 #include <QtNetwork/QTcpSocket>
 
 namespace deflect
@@ -66,8 +65,8 @@ public slots:
     void processEvent(Event evt) final;
 
     void initConnection();
-    void closeConnection(QString uri);
-    void closeSource(QString uri, size_t sourceIndex);
+    void closeConnections(QString uri);
+    void closeConnection(QString uri, size_t sourceIndex);
 
 signals:
     void addStreamSource(QString uri, size_t sourceIndex);
@@ -79,16 +78,16 @@ signals:
     void receivedTile(QString uri, size_t sourceIndex,
                       deflect::server::Tile tile);
     void receivedFrameFinished(QString uri, size_t sourceIndex);
-
     void registerToEvents(QString uri, bool exclusive,
                           deflect::server::EventReceiver* receiver,
                           deflect::server::BoolPromisePtr success);
-
     void receivedSizeHints(QString uri, deflect::SizeHints hints);
 
     void receivedData(QString uri, QByteArray data);
 
     void connectionClosed();
+
+    void connectionError(QString uri, QString what);
 
     /** @internal */
     void _dataAvailable();
@@ -97,30 +96,45 @@ private slots:
     void _processMessages();
 
 private:
-    QTcpSocket* _tcpSocket = nullptr;
+    QTcpSocket* _tcpSocket = nullptr; // child QObject
+    const int _sourceId;
 
     QString _streamId;
-    int _sourceId = -1;
-    int _clientProtocolVersion = -1;
+    int _clientProtocolVersion;
     bool _observer = false;
 
     bool _registeredToEvents = false;
-    QQueue<Event> _events;
+    std::vector<Event> _events;
 
     View _activeView = View::mono;
     RowOrder _activeRowOrder = RowOrder::top_down;
     uint8_t _activeChannel = 0;
 
+    bool _protocolEnded = false;
+
+    void _terminateConnection();
+
     void _receiveMessage();
     MessageHeader _receiveMessageHeader();
     QByteArray _receiveMessageBody(int size);
 
+    bool _socketHasMessage() const;
     void _handleMessage(const MessageHeader& messageHeader,
                         const QByteArray& message);
+    void _validate(MessageType messageType) const;
+    void _startProtocol(const QString& uri, const QByteArray& byteArray,
+                        bool observer);
+    void _stopProtocol();
+    void _notifyProtocolEnd();
+    bool _isProtocolStarted() const;
+
     void _parseClientProtocolVersion(const QByteArray& message);
-    void _handlePixelStreamMessage(const QByteArray& message);
+    Tile _parseTile(const QByteArray& message) const;
+
+    void _tryRegisteringForEvents(bool exclusive);
 
     void _sendProtocolVersion();
+    void _sendPendingEvents();
     void _sendBindReply(bool successful);
     void _send(const Event& evt);
     void _sendCloseEvent();

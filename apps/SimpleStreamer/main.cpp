@@ -204,18 +204,16 @@ void initGLWindow(int argc, char** argv)
 
 void initDeflectStream()
 {
-    deflectStream.reset(new deflect::Stream(deflectStreamId, deflectHost));
-    if (!deflectStream->isConnected())
+    try
     {
-        std::cerr << "Could not connect to host!" << std::endl;
-        deflectStream.reset();
-        exit(EXIT_FAILURE);
+        // Note: no std::make_unique on Travis Trusty (gcc 4.8.4)
+        deflectStream.reset(new deflect::Stream(deflectStreamId, deflectHost));
+        if (deflectInteraction && !deflectStream->registerForEvents())
+            throw std::runtime_error("Could not register for events!");
     }
-
-    if (deflectInteraction && !deflectStream->registerForEvents())
+    catch (const std::runtime_error& e)
     {
-        std::cerr << "Could not register for events!" << std::endl;
-        deflectStream.reset();
+        std::cerr << e.what() << std::endl;
         exit(EXIT_FAILURE);
     }
 }

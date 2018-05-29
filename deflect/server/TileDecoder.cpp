@@ -167,12 +167,7 @@ void TileDecoder::startDecoding(Tile& tile)
 {
     // drop frames if we're currently processing
     if (isRunning())
-    {
-        std::cerr << "Decoding in process, Frame dropped. See if we need to "
-                     "change this..."
-                  << std::endl;
         return;
-    }
 
     _impl->decodingFuture =
         QtConcurrent::run(_decodeTile, &_impl->decompressor, &tile, false);

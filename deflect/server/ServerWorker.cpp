@@ -46,11 +46,22 @@
 #include <QDataStream>
 
 #include <cstdint>
-#include <iostream>
+#include <stdexcept>
 
 namespace
 {
 const int RECEIVE_TIMEOUT_MS = 3000;
+
+class protocol_error : public std::runtime_error
+{
+    using runtime_error::runtime_error;
+};
+
+bool _isProtocolStart(const deflect::MessageType messageType)
+{
+    return messageType == deflect::MESSAGE_TYPE_PIXELSTREAM_OPEN ||
+           messageType == deflect::MESSAGE_TYPE_OBSERVER_OPEN;
+}
 }
 
 namespace deflect
@@ -65,10 +76,8 @@ ServerWorker::ServerWorker(const int socketDescriptor)
 {
     if (!_tcpSocket->setSocketDescriptor(socketDescriptor))
     {
-        std::cerr << "could not set socket descriptor: "
-                  << _tcpSocket->errorString().toStdString() << std::endl;
-        emit(connectionClosed());
-        return;
+        throw std::runtime_error("could not set socket descriptor: " +
+                                 _tcpSocket->errorString().toStdString());
     }
 
     connect(_tcpSocket, &QTcpSocket::disconnected, this,
@@ -86,23 +95,16 @@ ServerWorker::~ServerWorker()
     // We still want to remove this source so that the stream does not get stuck
     // if other senders are still active / resp. the window gets closed if no
     // more senders contribute to it.
-    if (!_streamId.isEmpty())
-    {
-        if (_observer)
-            emit removeObserver(_streamId);
-        else
-            emit removeStreamSource(_streamId, _sourceId);
-    }
+    if (_isProtocolStarted())
+        _notifyProtocolEnd();
 
     if (_isConnected())
         _sendQuit();
-
-    delete _tcpSocket;
 }
 
 void ServerWorker::processEvent(const Event evt)
 {
-    _events.enqueue(evt);
+    _events.emplace_back(evt);
     emit _dataAvailable();
 }
 
@@ -111,54 +113,58 @@ void ServerWorker::initConnection()
     _sendProtocolVersion();
 }
 
-void ServerWorker::closeConnection(const QString uri)
+void ServerWorker::closeConnections(const QString uri)
 {
-    if (uri != _streamId)
-        return;
+    if (uri == _streamId)
+        _terminateConnection();
+}
 
+void ServerWorker::closeConnection(const QString uri, const size_t sourceIndex)
+{
+    if (uri == _streamId && sourceIndex == (size_t)_sourceId)
+        _terminateConnection();
+}
+
+void ServerWorker::_terminateConnection()
+{
     if (_registeredToEvents)
         _sendCloseEvent();
 
-    emit(connectionClosed());
-}
-
-void ServerWorker::closeSource(const QString uri, const size_t sourceIndex)
-{
-    if (sourceIndex == (size_t)_sourceId)
-        closeConnection(uri);
+    emit connectionClosed();
 }
 
 void ServerWorker::_processMessages()
 {
-    const qint64 headerSize(MessageHeader::serializedSize);
-
-    if (_tcpSocket->bytesAvailable() >= headerSize)
+    if (_socketHasMessage())
         _receiveMessage();
 
-    // Send all events
-    foreach (const Event& evt, _events)
-        _send(evt);
-    _events.clear();
+    _sendPendingEvents();
 
-    _tcpSocket->flush();
-
-    // Finish reading messages from the socket if connection closed
     if (!_isConnected())
     {
-        while (_tcpSocket->bytesAvailable() >= headerSize)
+        // Drain pending messages from closed socket
+        while (_socketHasMessage())
             _receiveMessage();
 
-        emit(connectionClosed());
+        emit connectionClosed();
     }
-    else if (_tcpSocket->bytesAvailable() >= headerSize)
+    else if (_socketHasMessage())
         emit _dataAvailable();
 }
 
 void ServerWorker::_receiveMessage()
 {
-    const auto messageHeader = _receiveMessageHeader();
-    const auto messageBody = _receiveMessageBody(messageHeader.size);
-    _handleMessage(messageHeader, messageBody);
+    try
+    {
+        const auto messageHeader = _receiveMessageHeader();
+        const auto messageBody = _receiveMessageBody(messageHeader.size);
+        _handleMessage(messageHeader, messageBody);
+    }
+    catch (const std::runtime_error& e)
+    {
+        emit connectionError(_streamId, e.what());
+        _terminateConnection();
+    }
 }
 
 MessageHeader ServerWorker::_receiveMessageHeader()
@@ -173,75 +179,47 @@ MessageHeader ServerWorker::_receiveMessageHeader()
 
 QByteArray ServerWorker::_receiveMessageBody(const int size)
 {
-    QByteArray messageByteArray;
+    QByteArray messageData;
 
     if (size > 0)
     {
-        messageByteArray = _tcpSocket->read(size);
+        messageData = _tcpSocket->read(size);
 
-        while (messageByteArray.size() < size)
+        while (messageData.size() < size)
         {
             if (!_tcpSocket->waitForReadyRead(RECEIVE_TIMEOUT_MS))
-            {
-                emit connectionClosed();
-                return QByteArray();
-            }
+                throw std::runtime_error("Timeout reading message data");
 
-            messageByteArray.append(
-                _tcpSocket->read(size - messageByteArray.size()));
+            messageData.append(_tcpSocket->read(size - messageData.size()));
         }
     }
 
-    return messageByteArray;
+    return messageData;
+}
+
+bool ServerWorker::_socketHasMessage() const
+{
+    return _tcpSocket->bytesAvailable() >=
+           (qint64)MessageHeader::serializedSize;
 }
 
 void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
                                   const QByteArray& byteArray)
 {
-    const QString uri(messageHeader.uri);
-    if (uri.isEmpty())
-    {
-        std::cerr << "Warning: rejecting streamer with empty id" << std::endl;
-        closeConnection(_streamId);
-        return;
-    }
-    if (uri != _streamId &&
-        messageHeader.type != MESSAGE_TYPE_PIXELSTREAM_OPEN &&
-        messageHeader.type != MESSAGE_TYPE_OBSERVER_OPEN)
-    {
-        std::cerr << "Warning: ignoring message with incorrect stream id: '"
-                  << messageHeader.uri << "', expected: '"
-                  << _streamId.toStdString() << "'" << std::endl;
-        return;
-    }
+    _validate(messageHeader.type);
 
     switch (messageHeader.type)
     {
-    case MESSAGE_TYPE_QUIT:
-        if (_observer)
-            emit removeObserver(_streamId);
-        else
-            emit removeStreamSource(_streamId, _sourceId);
-        _streamId = QString();
-        break;
-
     case MESSAGE_TYPE_PIXELSTREAM_OPEN:
-        if (!_streamId.isEmpty())
-        {
-            std::cerr << "Warning: PixelStream already opened!" << std::endl;
-            return;
-        }
-        _streamId = uri;
-        // The version is only sent by deflect clients since v. 0.12.1
-        if (!byteArray.isEmpty())
-            _parseClientProtocolVersion(byteArray);
-        emit addStreamSource(_streamId, _sourceId);
+        _startProtocol(messageHeader.uri, byteArray, false);
         break;
 
     case MESSAGE_TYPE_OBSERVER_OPEN:
-        _streamId = uri;
-        emit addObserver(_streamId);
-        _observer = true;
+        _startProtocol(messageHeader.uri, byteArray, true);
+        break;
+
+    case MESSAGE_TYPE_QUIT:
+        _stopProtocol();
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME:
@@ -249,7 +227,7 @@ void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
         break;
 
     case MESSAGE_TYPE_PIXELSTREAM:
-        _handlePixelStreamMessage(byteArray);
+        emit receivedTile(_streamId, _sourceId, _parseTile(byteArray));
         break;
 
     case MESSAGE_TYPE_SIZE_HINTS:
@@ -288,41 +266,88 @@ void ServerWorker::_handleMessage(const MessageHeader& messageHeader,
 
     case MESSAGE_TYPE_BIND_EVENTS:
     case MESSAGE_TYPE_BIND_EVENTS_EX:
-        if (_registeredToEvents)
-            std::cerr << "We are already bound!!" << std::endl;
-        else
-        {
-            const bool exclusive =
-                (messageHeader.type == MESSAGE_TYPE_BIND_EVENTS_EX);
-            auto promise = std::make_shared<std::promise<bool>>();
-            auto future = promise->get_future();
-            emit registerToEvents(_streamId, exclusive, this,
-                                  std::move(promise));
-            try
-            {
-                _registeredToEvents = future.get();
-            }
-            catch (...)
-            {
-            }
-            _sendBindReply(_registeredToEvents);
-        }
+    {
+        const auto excl = messageHeader.type == MESSAGE_TYPE_BIND_EVENTS_EX;
+        _tryRegisteringForEvents(excl);
+        _sendBindReply(_registeredToEvents);
         break;
+    }
 
     default:
         break;
     }
 }
 
+void ServerWorker::_validate(const MessageType messageType) const
+{
+    if (!_isProtocolStarted() && !_isProtocolStart(messageType))
+    {
+        throw protocol_error(
+            std::string("Unexpected message received before protocol start (") +
+            std::to_string((int)messageType) + ")");
+    }
+}
+
+void ServerWorker::_startProtocol(const QString& uri,
+                                  const QByteArray& byteArray,
+                                  const bool observer)
+{
+    if (_isProtocolStarted())
+        throw protocol_error("Stream protocol was started already");
+
+    if (uri.isEmpty())
+        throw protocol_error("Can't init stream protocol with empty stream id");
+
+    if (_protocolEnded)
+        throw protocol_error("Stream protocol cannot be restarted once ended");
+
+    _streamId = uri;
+    _observer = observer;
+    _parseClientProtocolVersion(byteArray);
+
+    if (_observer)
+        emit addObserver(_streamId);
+    else
+        emit addStreamSource(_streamId, _sourceId);
+}
+
+void ServerWorker::_stopProtocol()
+{
+    if (!_isProtocolStarted())
+        throw protocol_error("Stream protocol had already ended");
+
+    _notifyProtocolEnd();
+
+    _streamId = QString();
+    _protocolEnded = true;
+}
+
+void ServerWorker::_notifyProtocolEnd()
+{
+    if (_observer)
+        emit removeObserver(_streamId);
+    else
+        emit removeStreamSource(_streamId, _sourceId);
+}
+
+bool ServerWorker::_isProtocolStarted() const
+{
+    return !_streamId.isEmpty();
+}
+
 void ServerWorker::_parseClientProtocolVersion(const QByteArray& message)
 {
+    // The version is only sent by deflect clients since release 0.12.1
+    if (message.isEmpty())
+        return;
+
     bool ok = false;
     const int version = message.toInt(&ok);
     if (ok)
         _clientProtocolVersion = version;
 }
 
-void ServerWorker::_handlePixelStreamMessage(const QByteArray& message)
+Tile ServerWorker::_parseTile(const QByteArray& message) const
 {
     Tile tile;
 
@@ -338,13 +363,40 @@ void ServerWorker::_handlePixelStreamMessage(const QByteArray& message)
     tile.rowOrder = _activeRowOrder;
     tile.channel = _activeChannel;
 
-    emit(receivedTile(_streamId, _sourceId, tile));
+    return tile;
+}
+
+void ServerWorker::_tryRegisteringForEvents(const bool exclusive)
+{
+    if (_registeredToEvents)
+        throw protocol_error("The stream has already registered for events");
+
+    auto promise = std::make_shared<std::promise<bool>>();
+    auto future = promise->get_future();
+
+    emit registerToEvents(_streamId, exclusive, this, std::move(promise));
+
+    try
+    {
+        _registeredToEvents = future.get();
+    }
+    catch (...)
+    {
+    }
 }
 
 void ServerWorker::_sendProtocolVersion()
 {
     const int32_t protocolVersion = NETWORK_PROTOCOL_VERSION;
     _tcpSocket->write((char*)&protocolVersion, sizeof(int32_t));
+    _flushSocket();
+}
+
+void ServerWorker::_sendPendingEvents()
+{
+    for (const auto& evt : _events)
+        _send(evt);
+    _events.clear();
     _flushSocket();
 }
 
