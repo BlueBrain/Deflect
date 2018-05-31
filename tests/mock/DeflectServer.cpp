@@ -1,6 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2017, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2018, EPFL/Blue Brain Project                       */
 /*                     Daniel.Nachbaur@epfl.ch                       */
+/*                     Raphael.Dumusc@epfl.ch                        */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -102,13 +103,16 @@ DeflectServer::DeflectServer()
                      [&](const QString id, const bool exclusive,
                          deflect::server::EventReceiver* evtReceiver,
                          deflect::server::BoolPromisePtr success) {
-
+                         _mutex.lock();
                          if (_registerToEventsCallback)
                              _registerToEventsCallback(id, exclusive,
                                                        evtReceiver);
 
                          _eventReceiver = evtReceiver;
                          success->set_value(true);
+                         _receivedState = true;
+                         _received.wakeAll();
+                         _mutex.unlock();
                      });
 }
 

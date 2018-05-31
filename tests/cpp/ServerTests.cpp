@@ -1,6 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2015-2017, EPFL/Blue Brain Project                  */
+/* Copyright (c) 2015-2018, EPFL/Blue Brain Project                  */
 /*                          Daniel.Nachbaur@epfl.ch                  */
+/*                          Raphael.Dumusc@epfl.ch                   */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -77,6 +78,8 @@ BOOST_AUTO_TEST_CASE(sizeHintsReceivedByServer)
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
                                serverPort());
         BOOST_CHECK(stream.isConnected());
+        waitForMessage(); // handle stream open
+
         stream.sendSizeHints(testHints);
         waitForMessage();
     }
@@ -103,6 +106,8 @@ BOOST_AUTO_TEST_CASE(registerForEventReceivedByServer)
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
                                serverPort());
         BOOST_REQUIRE(stream.isConnected());
+        waitForMessage(); // handle stream open
+
         BOOST_CHECK(stream.registerForEvents(true));
         waitForMessage();
     }
@@ -127,6 +132,8 @@ BOOST_AUTO_TEST_CASE(dataReceivedByServer)
         deflect::Stream stream(testStreamId.toStdString(), "localhost",
                                serverPort());
         SAFE_BOOST_REQUIRE(stream.isConnected());
+        waitForMessage(); // handle stream open
+
         stream.sendData(sentData.data(), sentData.size());
         waitForMessage();
     }
@@ -156,17 +163,18 @@ BOOST_AUTO_TEST_CASE(oneObserverAndOneStream)
                                    serverPort());
         SAFE_BOOST_REQUIRE(observer.isConnected());
 
+        waitForMessage(); // handle stream open
+
         SAFE_BOOST_CHECK(observer.registerForEvents(true));
 
-        // handle connects first before sending and receiving frames
+        // handle event registration first before sending and receiving frames
         waitForMessage();
 
         const unsigned int width = 4;
         const unsigned int height = 4;
-        const unsigned int byte = width * height * 4;
-        std::unique_ptr<uint8_t[]> pixels(new uint8_t[byte]);
-        ::memset(pixels.get(), 0, byte);
-        deflect::ImageWrapper image(pixels.get(), width, height, deflect::RGBA);
+        const std::vector<uint8_t> pixels(width * height * 4);
+        deflect::ImageWrapper image(pixels.data(), width, height,
+                                    deflect::RGBA);
 
         deflect::Event event;
         event.type = deflect::Event::EVT_CLICK;
@@ -256,10 +264,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(
 {
     const unsigned int width = 4;
     const unsigned int height = 4;
-    const unsigned int byte = width * height * 4;
-    std::unique_ptr<uint8_t[]> pixels(new uint8_t[byte]);
-    ::memset(pixels.get(), 0, byte);
-    deflect::ImageWrapper image(pixels.get(), width, height, deflect::RGBA);
+    const std::vector<uint8_t> pixels(width * height * 4);
+    deflect::ImageWrapper image(pixels.data(), width, height, deflect::RGBA);
 
     const size_t expectedFrames = 5;
 
@@ -399,9 +405,7 @@ BOOST_AUTO_TEST_CASE(compressionErrorForBigNullImage)
     deflect::Stream stream(testStreamId.toStdString(), "localhost",
                            serverPort());
     SAFE_BOOST_REQUIRE(stream.isConnected());
-
-    // handle connect of stream
-    waitForMessage();
+    waitForMessage(); // handle stream open
 
     deflect::ImageWrapper bigImage(nullptr, 1000, 1000, deflect::ARGB);
     bigImage.compressionPolicy = deflect::COMPRESSION_ON;
@@ -429,6 +433,7 @@ BOOST_AUTO_TEST_CASE(uncompressedImages)
     deflect::Stream stream(testStreamId.toStdString(), "localhost",
                            serverPort());
     BOOST_REQUIRE(stream.isConnected());
+    waitForMessage(); // handle stream open
 
     for (size_t i = 0; i < expectedFrames; ++i)
     {
