@@ -131,7 +131,7 @@ void readCommandLineArguments(int argc, char** argv)
 {
     for (int i = 1; i < argc; ++i)
     {
-        if (std::string(argv[i]) == "--help")
+        if (std::string(argv[i]) == "--help" || std::string(argv[i]) == "-h")
             syntax(EXIT_SUCCESS);
 
         if (argv[i][0] == '-')
@@ -167,8 +167,6 @@ void readCommandLineArguments(int argc, char** argv)
             case 'c':
                 deflectDualChannel = true;
                 break;
-            case 'h':
-                syntax(EXIT_SUCCESS);
             default:
                 std::cerr << "Unknown command line option: " << argv[i]
                           << std::endl;
