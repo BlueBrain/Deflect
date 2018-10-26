@@ -246,6 +246,33 @@ void QmlStreamer::Impl::_setupSizeHintsConnections()
             [this](int size_) { _sizeHints.preferredHeight = size_; });
 }
 
+bool QmlStreamer::Impl::_isWithinSizeHintsRange(const QSize& size) const
+{
+    return !size.isEmpty() &&
+           _isWithinSizeHintsRange(static_cast<uint>(size.width()),
+                                   static_cast<uint>(size.height()));
+}
+
+bool QmlStreamer::Impl::_isWithinSizeHintsRange(const uint width,
+                                                const uint height) const
+{
+    const auto minWidth = _sizeHints.minWidth == SizeHints::UNSPECIFIED_SIZE
+                              ? std::numeric_limits<uint>::min()
+                              : _sizeHints.minWidth;
+    const auto maxWidth = _sizeHints.maxWidth == SizeHints::UNSPECIFIED_SIZE
+                              ? std::numeric_limits<uint>::max()
+                              : _sizeHints.maxWidth;
+    const auto minHeight = _sizeHints.minHeight == SizeHints::UNSPECIFIED_SIZE
+                               ? std::numeric_limits<uint>::min()
+                               : _sizeHints.minHeight;
+    const auto maxHeight = _sizeHints.maxHeight == SizeHints::UNSPECIFIED_SIZE
+                               ? std::numeric_limits<uint>::max()
+                               : _sizeHints.maxHeight;
+
+    return minWidth <= width && width <= maxWidth && minHeight <= height &&
+           height <= maxHeight;
+}
+
 std::string QmlStreamer::Impl::_getDeflectStreamIdentifier() const
 {
     if (!_streamId.empty())
@@ -281,7 +308,10 @@ void QmlStreamer::Impl::_setupDeflectStream()
 
     // handle view resize
     connect(_eventReceiver.get(), &EventReceiver::resized,
-            [this](const QSize size) { _quickView->resize(size); });
+            [this](const QSize size) {
+                if (_isWithinSizeHintsRange(size))
+                    _quickView->resize(size);
+            });
 
     // inject key events
     connect(_eventReceiver.get(), &EventReceiver::keyPress, this,
