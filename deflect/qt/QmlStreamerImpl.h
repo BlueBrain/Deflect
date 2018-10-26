@@ -1,7 +1,7 @@
 /*********************************************************************/
-/* Copyright (c) 2015-2016, EPFL/Blue Brain Project                  */
-/*                     Daniel.Nachbaur <daniel.nachbaur@epfl.ch>     */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* Copyright (c) 2015-2018, EPFL/Blue Brain Project                  */
+/*                          Daniel.Nachbaur <daniel.nachbaur@epfl.ch>*/
+/*                          Raphael Dumusc <raphael.dumusc@epfl.ch>  */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -93,6 +93,8 @@ private slots:
 
 private:
     void _setupSizeHintsConnections();
+    bool _isWithinSizeHintsRange(const QSize& size) const;
+    bool _isWithinSizeHintsRange(uint width, uint height) const;
     void _send(QKeyEvent& keyEvent);
     bool _sendToWebengineviewItems(QKeyEvent& keyEvent);
     std::string _getDeflectStreamIdentifier() const;
