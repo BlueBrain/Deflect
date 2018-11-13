@@ -20,6 +20,9 @@ set(DEFLECT_DEB_DEPENDS freeglut3-dev libxi-dev libxmu-dev
   libjpeg-turbo8-dev libturbojpeg
   libboost-program-options-dev libboost-test-dev
   qtbase5-dev qtdeclarative5-dev)
+if(LSB_DISTRIBUTOR_ID STREQUAL "Ubuntu" AND LSB_RELEASE VERSION_GREATER 16.04)
+  list(APPEND DEFLECT_DEB_DEPENDS libturbojpeg0-dev)
+endif()
 set(DEFLECT_PORT_DEPENDS boost freeglut qt5)
 set(DEFLECT_BREW_DEPENDS boost freeglut jpeg-turbo qt5)
 
