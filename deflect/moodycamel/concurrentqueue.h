@@ -2640,7 +2640,11 @@ private:
                 // recent as overcommit (due to the release upon
                 // incrementing dequeueOvercommit and the acquire above that
                 // synchronizes with it), overcommit <= myDequeueCount.
-                assert(overcommit <= myDequeueCount);
+                // However, we can't assert this since both
+                // dequeueOptimisticCount and dequeueOvercommit may
+                // (independently)
+                // overflow; in such a case, though, the logic still holds since
+                // the difference between the two is maintained.
 
                 // Note that we reload tail here in case it changed; it will be
                 // the same value as before or greater, since
@@ -3061,7 +3065,6 @@ private:
 
                 auto myDequeueCount = this->dequeueOptimisticCount.fetch_add(
                     desiredCount, std::memory_order_relaxed);
-                assert(overcommit <= myDequeueCount);
 
                 tail = this->tailIndex.load(std::memory_order_acquire);
                 auto actualCount =
@@ -3495,7 +3498,6 @@ private:
 
                 index_t myDequeueCount = this->dequeueOptimisticCount.fetch_add(
                     1, std::memory_order_relaxed);
-                assert(overcommit <= myDequeueCount);
                 tail = this->tailIndex.load(std::memory_order_acquire);
                 if ((details::likely)(details::circular_less_than<index_t>(
                         myDequeueCount - overcommit, tail)))
@@ -3838,7 +3840,6 @@ private:
 
                 auto myDequeueCount = this->dequeueOptimisticCount.fetch_add(
                     desiredCount, std::memory_order_relaxed);
-                assert(overcommit <= myDequeueCount);
 
                 tail = this->tailIndex.load(std::memory_order_acquire);
                 auto actualCount =
