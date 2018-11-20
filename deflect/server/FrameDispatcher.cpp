@@ -75,9 +75,9 @@ public:
 
     void mirrorTilesPositionsVertically(Frame& frame) const
     {
-        const auto height = frame.computeDimensions().height();
+        const auto sizes = frame.computeChannelDimensions();
         for (auto& tile : frame.tiles)
-            tile.y = height - tile.y - tile.height;
+            tile.y = sizes.at(tile.channel).height() - tile.y - tile.height;
     }
 
     bool allConnectionsClosed(const QString& uri) const

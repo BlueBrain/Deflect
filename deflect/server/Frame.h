@@ -46,6 +46,8 @@
 #include <QSize>
 #include <QString>
 
+#include <map>
+
 namespace deflect
 {
 namespace server
@@ -63,6 +65,9 @@ struct Frame
 
     /** @return the total dimensions of the given channel of this frame. */
     DEFLECT_API QSize computeDimensions(const uint8_t channel = 0) const;
+
+    /** @return the total dimensions of all channels of this frame. */
+    DEFLECT_API std::map<uint8_t, QSize> computeChannelDimensions() const;
 
     /**
      * @return the row order of all frame tiles.

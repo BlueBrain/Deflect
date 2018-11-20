@@ -74,5 +74,17 @@ RowOrder Frame::determineRowOrder() const
 
     return frameRowOrder;
 }
+
+std::map<uint8_t, QSize> Frame::computeChannelDimensions() const
+{
+    std::map<uint8_t, QSize> sizes;
+    for (const auto& tile : tiles)
+    {
+        auto& size = sizes[tile.channel];
+        size.setWidth(std::max(size.width(), (int)(tile.width + tile.x)));
+        size.setHeight(std::max(size.height(), (int)(tile.height + tile.y)));
+    }
+    return sizes;
+}
 }
 }

@@ -4,6 +4,8 @@ Changelog {#Changelog}
 ## Deflect 1.0
 
 ### 1.0.1 (master)
+* [207](https://github.com/BlueBrain/Deflect/pull/207):
+  Fix wrong vertical frame mirror for different sized channels
 * [203](https://github.com/BlueBrain/Deflect/pull/203):
   QmlStreamer resizes the window only if the received size event is within the
   specified min/max size hints.
