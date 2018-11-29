@@ -3,18 +3,20 @@
 #                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 #                          Raphael Dumusc <raphael.dumusc@epfl.ch>
 
-set(DEFLECTQT_HEADERS
-  EventReceiver.h
-  QmlGestures.h
-  QmlStreamerImpl.h
-  types.h
-)
 set(DEFLECTQT_PUBLIC_HEADERS
   OffscreenQuickView.h
   QmlStreamer.h
   QuickRenderer.h
   TouchInjector.h
+  types.h
 )
+
+set(DEFLECTQT_HEADERS
+  EventReceiver.h
+  QmlGestures.h
+  QmlStreamerImpl.h
+)
+
 set(DEFLECTQT_SOURCES
   EventReceiver.cpp
   OffscreenQuickView.cpp

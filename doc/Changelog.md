@@ -3,7 +3,11 @@ Changelog {#Changelog}
 
 ## Deflect 1.0
 
-### 1.0.1 (master)
+### 1.0.2 (29-11-2018)
+* [208](https://github.com/BlueBrain/Deflect/pull/208):
+  Fix missing public header: deflect/qt/types.h
+
+### 1.0.1 (29-11-2018)
 * [207](https://github.com/BlueBrain/Deflect/pull/207):
   Fix wrong vertical frame mirror for different sized channels
 * [203](https://github.com/BlueBrain/Deflect/pull/203):
