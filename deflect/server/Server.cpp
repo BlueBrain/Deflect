@@ -120,14 +120,17 @@ public:
                     &ServerWorker::closeConnections);
 
             // FrameDispatcher
+            // direct connection to avoid race with receivedTile in early tiles
             connect(worker, &ServerWorker::addStreamSource, frameDispatcher,
-                    &FrameDispatcher::addSource);
+                    &FrameDispatcher::addSource, Qt::DirectConnection);
             connect(frameDispatcher, &FrameDispatcher::sourceRejected, worker,
                     &ServerWorker::closeConnection);
+            // direct connection for performance
             connect(worker, &ServerWorker::receivedTile, frameDispatcher,
-                    &FrameDispatcher::processTile);
+                    &FrameDispatcher::processTile, Qt::DirectConnection);
             connect(worker, &ServerWorker::receivedFrameFinished,
-                    frameDispatcher, &FrameDispatcher::processFrameFinished);
+                    frameDispatcher, &FrameDispatcher::processFrameFinished,
+                    Qt::DirectConnection);
             connect(worker, &ServerWorker::removeStreamSource, frameDispatcher,
                     &FrameDispatcher::removeSource);
             connect(worker, &ServerWorker::addObserver, frameDispatcher,
