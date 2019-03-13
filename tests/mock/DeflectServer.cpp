@@ -122,6 +122,12 @@ DeflectServer::~DeflectServer()
     _thread.wait();
 }
 
+void DeflectServer::requestFrame(QString uri)
+{
+    QMetaObject::invokeMethod(_server, "requestFrame",
+                              Qt::BlockingQueuedConnection, Q_ARG(QString, uri));
+}
+
 void DeflectServer::waitForMessage()
 {
     for (;;)

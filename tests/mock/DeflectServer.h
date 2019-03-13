@@ -58,7 +58,7 @@ public:
     ~DeflectServer();
 
     quint16 serverPort() const { return _server->getPort(); }
-    void requestFrame(QString uri) { _server->requestFrame(uri); }
+    void requestFrame(QString uri);
     void waitForMessage();
 
     size_t getReceivedFrames() const { return _receivedFrames; }

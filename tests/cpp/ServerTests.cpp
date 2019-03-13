@@ -286,16 +286,24 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(
             for (size_t i = 0; i < expectedFrames; ++i)
             {
                 stream.sendAndFinish(image).wait();
+
                 if (!F::requestBeforeSource)
                     F::requestFrame(testStreamId);
-
                 F::waitForMessage();
-
                 if (F::requestBeforeSource)
+                {
                     F::requestFrame(testStreamId);
-                BOOST_CHECK_EQUAL(F::getReceivedFrames(), i + 1);
+                    BOOST_REQUIRE_EQUAL(F::getReceivedFrames(), i + 1);
+                }
+                else
+                {
+                    BOOST_REQUIRE_LE(F::getReceivedFrames(), i + 1);
+                }
             }
         }
+
+        if (F::requestBeforeSource)
+            F::requestFrame(testStreamId);
 
         {
             deflect::Stream stream(testStreamId.toStdString(), "localhost",
@@ -305,17 +313,31 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(
             for (size_t i = 0; i < expectedFrames; ++i)
             {
                 stream.sendAndFinish(image).wait();
-                F::requestFrame(testStreamId);
+
+                if (!F::requestBeforeSource)
+                    F::requestFrame(testStreamId);
                 F::waitForMessage();
-                BOOST_CHECK_EQUAL(F::getReceivedFrames(),
-                                  expectedFrames + i + 1);
+                if (F::requestBeforeSource)
+                {
+                    F::requestFrame(testStreamId);
+                    BOOST_REQUIRE_EQUAL(F::getReceivedFrames(),
+                                        expectedFrames + i + 1);
+                }
+                else
+                {
+                    BOOST_REQUIRE_LE(F::getReceivedFrames(),
+                                     expectedFrames + i + 1);
+                }
             }
         }
     }
-
     F::waitForMessage();
+
     BOOST_CHECK_EQUAL(F::getOpenedStreams(), 0);
-    BOOST_CHECK_EQUAL(F::getReceivedFrames(), expectedFrames * 2);
+    if (F::requestBeforeSource)
+        BOOST_CHECK_EQUAL(F::getReceivedFrames(), expectedFrames * 2);
+    else
+        BOOST_CHECK_LE(F::getReceivedFrames(), expectedFrames * 2);
 }
 
 BOOST_AUTO_TEST_CASE(threadedSmallSegmentStream)
