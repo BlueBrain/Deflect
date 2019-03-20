@@ -72,8 +72,9 @@ Socket::Socket(const std::string& host, const unsigned short port)
 
     _connect(host, port);
 
+    // Both objects live in the same thread, can use direct connection.
     QObject::connect(_socket, &QTcpSocket::disconnected, this,
-                     &Socket::disconnected);
+                     &Socket::disconnected, Qt::DirectConnection);
 }
 
 const std::string& Socket::getHost() const
