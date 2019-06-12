@@ -62,7 +62,7 @@ common_library(Deflect)
 
 add_subdirectory(server)
 
-if(Qt5Qml_FOUND AND Qt5Quick_FOUND AND QtOpenGL_FOUND AND
+if(Qt5Qml_FOUND AND Qt5Quick_FOUND AND Qt5OpenGL_FOUND AND
    NOT Qt5Quick_VERSION VERSION_LESS 5.4)
   add_subdirectory(qt)
 endif()
