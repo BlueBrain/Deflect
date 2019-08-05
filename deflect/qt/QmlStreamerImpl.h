@@ -76,6 +76,9 @@ public:
     QQuickItem* getRootItem() { return _quickView->getRootItem(); }
     QQmlEngine* getQmlEngine() { return _quickView->getEngine(); }
     Stream* getStream() { return _stream.get(); }
+
+    void setRenderInterval(unsigned int interval);
+
 signals:
     void streamClosed();
 
@@ -134,7 +137,7 @@ private:
     AppNapSuspender _napSuspender;
 #endif
 };
-}
-}
+} // namespace qt
+} // namespace deflect
 
 #endif
