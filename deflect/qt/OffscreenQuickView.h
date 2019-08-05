@@ -99,6 +99,12 @@ public:
     /** @return the root qml context. */
     QQmlContext* getRootContext() const;
 
+    /**
+     * Set a value used to calculate intenal render timer.
+     * @param interval interval to set.
+     */
+    void setRenderInterval(uint interval);
+
 signals:
     /**
      * Notify that the scene has just finished rendering.
@@ -123,6 +129,7 @@ private:
     std::promise<bool> _loadPromise;
 
     int _renderTimer = 0;
+    uint _renderInterval = 16;
     int _stopRenderingDelayTimer = 0;
 
     void timerEvent(QTimerEvent* e) final;
@@ -133,7 +140,7 @@ private:
     void _render();
     void _afterRender();
 };
-}
-}
+} // namespace qt
+} // namespace deflect
 
 #endif

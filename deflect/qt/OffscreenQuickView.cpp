@@ -182,9 +182,13 @@ void OffscreenQuickView::_requestRender()
 {
     killTimer(_stopRenderingDelayTimer);
     _stopRenderingDelayTimer = 0;
-
     if (_renderTimer == 0)
-        _renderTimer = startTimer(5, Qt::PreciseTimer);
+        _renderTimer = startTimer(int(_renderInterval), Qt::PreciseTimer);
+}
+
+void OffscreenQuickView::setRenderInterval(uint interval)
+{
+    _renderInterval = interval;
 }
 
 void OffscreenQuickView::_initRenderer()
@@ -244,5 +248,5 @@ void OffscreenQuickView::_afterRender()
     // The fbo can be safely assumed to be valid when this function executes.
     emit afterRender(_quickRenderer->fbo()->toImage());
 }
-}
-}
+} // namespace qt
+} // namespace deflect
