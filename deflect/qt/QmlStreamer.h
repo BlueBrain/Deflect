@@ -108,6 +108,8 @@ public:
      */
     bool sendData(QByteArray data);
 
+    void setRenderInterval(uint interval);
+
 signals:
     /** Emitted when the stream has been closed. */
     void streamClosed();
@@ -118,7 +120,7 @@ private:
     class Impl;
     std::unique_ptr<Impl> _impl;
 };
-}
-}
+} // namespace qt
+} // namespace deflect
 
 #endif

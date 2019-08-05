@@ -53,9 +53,7 @@ QmlStreamer::QmlStreamer(const QString& qmlFile, const std::string& streamHost,
     connect(_impl.get(), &Impl::streamClosed, this, &QmlStreamer::streamClosed);
 }
 
-QmlStreamer::~QmlStreamer()
-{
-}
+QmlStreamer::~QmlStreamer() {}
 
 void QmlStreamer::useAsyncSend(const bool async)
 {
@@ -76,5 +74,11 @@ bool QmlStreamer::sendData(const QByteArray data)
 {
     return _impl->getStream()->sendData(data.constData(), data.size());
 }
+
+void QmlStreamer::setRenderInterval(uint interval)
+{
+    _impl->setRenderInterval(interval);
 }
-}
+
+} // namespace qt
+} // namespace deflect

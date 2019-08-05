@@ -210,6 +210,11 @@ void QmlStreamer::Impl::_send(QKeyEvent& keyEvent_)
     }
 }
 
+void QmlStreamer::Impl::setRenderInterval(unsigned int interval)
+{
+    _quickView->setRenderInterval(interval);
+}
+
 bool QmlStreamer::Impl::_sendToWebengineviewItems(QKeyEvent& keyEvent_)
 {
     // Special handling for WebEngineView in offscreen Qml windows.
