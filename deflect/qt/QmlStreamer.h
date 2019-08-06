@@ -108,6 +108,13 @@ public:
      */
     bool sendData(QByteArray data);
 
+    /**
+     * Set a value used to calculate intenal render timer
+     * needed in OffscreenQuickView
+     * @param interval interval to set.
+     */
+    void setRenderInterval(uint interval);
+
 signals:
     /** Emitted when the stream has been closed. */
     void streamClosed();
@@ -118,7 +125,7 @@ private:
     class Impl;
     std::unique_ptr<Impl> _impl;
 };
-}
-}
+} // namespace qt
+} // namespace deflect
 
 #endif
