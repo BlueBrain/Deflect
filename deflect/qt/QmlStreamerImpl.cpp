@@ -61,7 +61,7 @@ const auto renderMode = deflect::qt::RenderMode::MULTITHREADED;
 #else
 const auto renderMode = deflect::qt::RenderMode::SINGLETHREADED;
 #endif
-}
+} // namespace
 
 namespace deflect
 {
@@ -95,9 +95,7 @@ QmlStreamer::Impl::Impl(const QString& qmlFile, const std::string& streamHost,
 #endif
 }
 
-QmlStreamer::Impl::~Impl()
-{
-}
+QmlStreamer::Impl::~Impl() {}
 
 void QmlStreamer::Impl::_afterRender(const QImage image)
 {
@@ -203,7 +201,7 @@ void QmlStreamer::Impl::_send(QKeyEvent& keyEvent_)
     {
         if (item->hasFocus())
         {
-            _quickView->sendEvent(item, &keyEvent_);
+            QCoreApplication::instance()->sendEvent(item, &keyEvent_);
             if (keyEvent_.isAccepted())
                 break;
         }
@@ -397,5 +395,5 @@ void QmlStreamer::Impl::_sendMouseEvent(const QEvent::Type eventType,
                              Qt::NoModifier);
     QCoreApplication::postEvent(_quickView.get(), e);
 }
-}
-}
+} // namespace qt
+} // namespace deflect
