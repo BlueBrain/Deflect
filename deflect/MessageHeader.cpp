@@ -64,7 +64,7 @@ MessageHeader::MessageHeader(const MessageType type_, const uint32_t size_,
     const size_t len = streamUri.copy(uri, MESSAGE_HEADER_URI_LENGTH - 1);
     uri[len] = '\0';
 }
-}
+} // namespace deflect
 
 QDataStream& operator<<(QDataStream& out, const deflect::MessageHeader& header)
 {
@@ -83,13 +83,6 @@ QDataStream& operator>>(QDataStream& in, deflect::MessageHeader& header)
     header.type = (deflect::MessageType)type;
     in >> size;
     header.size = size;
-
-    quint8 character;
-    for (size_t i = 0; i < MESSAGE_HEADER_URI_LENGTH; ++i)
-    {
-        in >> character;
-        header.uri[i] = (char)character;
-    }
-
+    in.readRawData(header.uri, MESSAGE_HEADER_URI_LENGTH);
     return in;
 }
