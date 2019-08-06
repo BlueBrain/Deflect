@@ -43,8 +43,6 @@
 #include "ReceiveBuffer.h"
 
 #include <cassert>
-#include <iostream>
-#include <mutex>
 
 namespace deflect
 {
@@ -54,42 +52,12 @@ class FrameDispatcher::Impl
 {
 public:
     Impl() {}
-
-    FramePtr getLastCompletedFrame(const QString& uri, size_t sourceIndex)
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-
-        if (!streams.count(uri))
-            return {};
-
-        auto& buffer = streams[uri].buffer;
-        buffer.finishFrameForSource(sourceIndex);
-
-        return consumeLatestFrame(uri);
-    }
-
-    FramePtr requestOrGetLastCompletedFrame(const QString& uri)
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-
-        if (!streams.count(uri))
-            return {};
-
-        auto& buffer = streams[uri].buffer;
-        buffer.setAllowedToSend(true);
-
-        return consumeLatestFrame(uri);
-    }
-
     FramePtr consumeLatestFrame(const QString& uri)
     {
-        auto& buffer = streams[uri].buffer;
-
-        if (!buffer.isAllowedToSend() || !buffer.hasCompleteFrame())
-            return {};
-
         auto frame = std::make_shared<Frame>();
         frame->uri = uri;
+
+        auto& buffer = streams[uri].buffer;
 
         while (buffer.hasCompleteFrame())
             frame->tiles = buffer.popFrame();
@@ -124,7 +92,6 @@ public:
         size_t observers = 0;
     };
     std::map<QString, Stream> streams;
-    std::mutex mutex;
 };
 
 FrameDispatcher::FrameDispatcher(QObject* parent_)
@@ -141,8 +108,6 @@ void FrameDispatcher::addSource(const QString uri, const size_t sourceIndex)
 {
     try
     {
-        std::lock_guard<std::mutex> lock(_impl->mutex);
-
         auto& stream = _impl->streams[uri];
 
         stream.buffer.addSource(sourceIndex);
@@ -159,8 +124,6 @@ void FrameDispatcher::addSource(const QString uri, const size_t sourceIndex)
 
 void FrameDispatcher::removeSource(const QString uri, const size_t sourceIndex)
 {
-    std::lock_guard<std::mutex> lock(_impl->mutex);
-
     if (!_impl->streams.count(uri))
         return;
 
@@ -172,8 +135,6 @@ void FrameDispatcher::removeSource(const QString uri, const size_t sourceIndex)
 
 void FrameDispatcher::addObserver(const QString uri)
 {
-    std::lock_guard<std::mutex> lock(_impl->mutex);
-
     auto& stream = _impl->streams[uri];
 
     ++stream.observers;
@@ -197,8 +158,6 @@ void FrameDispatcher::removeObserver(QString uri)
 void FrameDispatcher::processTile(const QString uri, const size_t sourceIndex,
                                   deflect::server::Tile tile)
 {
-    std::lock_guard<std::mutex> lock(_impl->mutex);
-
     if (_impl->streams.count(uri))
         _impl->streams[uri].buffer.insert(tile, sourceIndex);
 }
@@ -206,10 +165,15 @@ void FrameDispatcher::processTile(const QString uri, const size_t sourceIndex,
 void FrameDispatcher::processFrameFinished(const QString uri,
                                            const size_t sourceIndex)
 {
+    if (!_impl->streams.count(uri))
+        return;
+
+    auto& buffer = _impl->streams[uri].buffer;
     try
     {
-        if (auto frame = _impl->getLastCompletedFrame(uri, sourceIndex))
-            emit sendFrame(frame);
+        buffer.finishFrameForSource(sourceIndex);
+        if (buffer.isAllowedToSend() && buffer.hasCompleteFrame())
+            emit sendFrame(_impl->consumeLatestFrame(uri));
     }
     catch (const std::runtime_error& e)
     {
@@ -219,10 +183,15 @@ void FrameDispatcher::processFrameFinished(const QString uri,
 
 void FrameDispatcher::requestFrame(const QString uri)
 {
+    if (!_impl->streams.count(uri))
+        return;
+
+    auto& buffer = _impl->streams[uri].buffer;
+    buffer.setAllowedToSend(true);
     try
     {
-        if (auto frame = _impl->requestOrGetLastCompletedFrame(uri))
-            emit sendFrame(frame);
+        if (buffer.hasCompleteFrame())
+            emit sendFrame(_impl->consumeLatestFrame(uri));
     }
     catch (const std::runtime_error& e)
     {

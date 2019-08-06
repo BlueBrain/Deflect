@@ -83,7 +83,13 @@ QDataStream& operator>>(QDataStream& in, deflect::MessageHeader& header)
     header.type = (deflect::MessageType)type;
     in >> size;
     header.size = size;
-    in.readRawData(header.uri, MESSAGE_HEADER_URI_LENGTH);
+
+    quint8 character;
+    for (size_t i = 0; i < MESSAGE_HEADER_URI_LENGTH; ++i)
+    {
+        in >> character;
+        header.uri[i] = (char)character;
+    }
 
     return in;
 }
