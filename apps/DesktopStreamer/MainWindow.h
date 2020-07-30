@@ -49,8 +49,8 @@
 
 #include <deflect/types.h>
 
-#include <QMainWindow>
 #include <QElapsedTimer>
+#include <QMainWindow>
 #include <QTimer>
 #include <map>
 #include <memory>
