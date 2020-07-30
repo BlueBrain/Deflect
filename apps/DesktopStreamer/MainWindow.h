@@ -50,7 +50,7 @@
 #include <deflect/types.h>
 
 #include <QMainWindow>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QTimer>
 #include <map>
 #include <memory>
@@ -93,7 +93,7 @@ private:
     uint32_t _streamID;
 
     QTimer _updateTimer;
-    QTime _frameTime;
+    QElapsedTimer _frameTime;
     float _averageUpdate;
 
 #ifdef __APPLE__
