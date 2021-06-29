@@ -57,3 +57,10 @@ environments are tested:
 
 The [latest API documentation](http://bluebrain.github.io/Deflect-1.0/index.html)
 can be found on [bluebrain.github.io](http://bluebrain.github.io).
+
+## Funding & Acknowledgment
+ 
+The development of this software was supported by funding to the Blue Brain Project,
+a research center of the École polytechnique fédérale de Lausanne (EPFL), from the 
+Swiss government’s ETH Board of the Swiss Federal Institutes of Technology.
+ 
