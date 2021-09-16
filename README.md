@@ -64,4 +64,23 @@ The development of this software was supported by funding to the Blue Brain Proj
 a research center of the École polytechnique fédérale de Lausanne (EPFL), from the 
 Swiss government’s ETH Board of the Swiss Federal Institutes of Technology.
 
-Copyright (c) 2021 Blue Brain Project/EPFL
+## License
+
+Deflect is licensed under the LGPL, unless noted otherwise, e.g., for external dependencies.
+See file LICENSE.txt for the full license. External dependencies are either LGPL or BSD-licensed.
+See file ACKNOWLEDGEMENTS.txt and AUTHORS.txt for further details.
+
+Copyright (C) 2013-2021, Blue Brain Project/EPFL, King Abdullah University of Science and
+Technology and AUTHORS.txt.
+
+This library is free software; you can redistribute it and/or modify it under the terms of the
+GNU Lesser General Public License version 2.1 as published by the Free Software Foundation.
+
+This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with this library;
+if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301 USA
+
