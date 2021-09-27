@@ -1,9 +1,14 @@
-Cyrille Favreau
-Pawel Podhajski
-Juan Hernando
-Ahmet Bilgili
+Raphael Dumusc
 Stefan Eilemann
-Jafet Villafranca
+Juan Bautista Hernando Vieites
 Daniel Nachbaur
-Jonas Karlsson
-Nadir Roman Guerrero
+Pawel Jozef Podhajski
+Jafet Villafranca Diaz
+Ben Simons (contributor)
+Ahmet Bilgili (contributor)
+Cyrille Favreau (contributor)
+Jonas Karlsson (contributor)
+Pablo Toharia (contributor)
+Patric Schmitz (contributor)
+Judit Planas Carbonell (contributor)
+Nadir Roman Guerrero (contributor)
