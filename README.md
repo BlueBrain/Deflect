@@ -80,8 +80,8 @@ Deflect is licensed under the LGPL, unless noted otherwise, e.g., for external d
 See file LICENSE.txt for the full license. External dependencies are either LGPL or BSD-licensed.
 See file ACKNOWLEDGEMENTS.txt and AUTHORS.txt for further details.
 
-Copyright (C) 2013-2022 Blue Brain Project/EPFL, King Abdullah University of Science and
-Technology and AUTHORS.txt.
+Copyright (C) 2013-2023 Blue Brain Project/EPFL and King Abdullah University of Science and
+Technology.
 
 This library is free software; you can redistribute it and/or modify it under the terms of the
 GNU Lesser General Public License version 2.1 as published by the Free Software Foundation.
